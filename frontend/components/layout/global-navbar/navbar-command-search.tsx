@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   Dialog,
@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 
 export function NavbarCommandSearch({ app }: { app: AppContext }) {
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const items = useMemo(() => getSearchIndex(app), [app]);
@@ -42,6 +43,12 @@ export function NavbarCommandSearch({ app }: { app: AppContext }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const id = requestAnimationFrame(() => inputRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, [open]);
 
   return (
     <>
@@ -76,7 +83,7 @@ export function NavbarCommandSearch({ app }: { app: AppContext }) {
               Search pages and actions. Use arrow keys and enter to navigate.
             </DialogDescription>
             <Input
-              autoFocus
+              ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Orders, customers, settings…"
@@ -93,6 +100,7 @@ export function NavbarCommandSearch({ app }: { app: AppContext }) {
                   <button
                     type="button"
                     role="option"
+                    aria-selected={false}
                     className="flex w-full flex-col rounded-lg px-3 py-2 text-left text-sm hover:bg-muted"
                     onClick={() => onSelect(item.href)}
                   >

@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { AppContext } from '@/lib/navigation/types';
 import type { UserRole } from '@/types/user';
-import { cn } from '@/lib/utils';
 
 type QuickAction = { label: string; href: string; roles: UserRole[] };
 

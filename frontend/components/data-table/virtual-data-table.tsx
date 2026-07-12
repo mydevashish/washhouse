@@ -135,7 +135,6 @@ export function VirtualDataTable<T>({
         style={{ maxHeight: SCROLL_MAX_HEIGHT }}
         role="region"
         aria-label={`${tableId} table`}
-        tabIndex={0}
       >
         <Table bare>
           <TableHeader className="sticky top-0 z-10 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/80">
