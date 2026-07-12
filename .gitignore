@@ -39,8 +39,14 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# Python venv lib dirs only — bare `lib/` also ignores frontend/lib/ and features/*/lib/
 lib64/
+dlm_env/lib/
+DLM_env/lib/
+venv/lib/
+.venv/lib/
+env/lib/
+ENV/lib/
 parts/
 sdist/
 var/
