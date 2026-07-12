@@ -20,10 +20,12 @@ Set per environment in the Vercel dashboard:
 
 ## Build settings
 
-- Build: `pnpm --filter frontend build`
-- Install: `pnpm install --frozen-lockfile`
-- Output: `frontend/.next`
-- Root directory: project root (monorepo)
+Vercel project **Root Directory** must be `frontend/`.
+
+- Install: `npm ci` (see `frontend/vercel.json`)
+- Build: `npm run build`
+- Output: `.next`
+- Production URL: `https://washhouse.vercel.app`
 
 ## Edge / regions
 

@@ -1,14 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "version": 2,
   "framework": "nextjs",
-  "buildCommand": "npm run build --prefix frontend",
-  "installCommand": "npm ci --prefix frontend",
-  "outputDirectory": "frontend/.next",
-  "regions": ["bom1", "sin1"],
-  "github": {
-    "silent": true
-  },
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build",
+  "regions": ["bom1"],
   "headers": [
     {
       "source": "/(.*)",
@@ -27,7 +22,5 @@
       ]
     }
   ],
-  "redirects": [
-    { "source": "/home", "destination": "/", "permanent": true }
-  ]
+  "redirects": [{ "source": "/home", "destination": "/", "permanent": true }]
 }
