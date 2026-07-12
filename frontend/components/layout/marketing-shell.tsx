@@ -7,14 +7,7 @@ import { GlobalNavbar } from '@/components/layout/global-navbar';
 import { MarketingFooter } from '@/components/layout/marketing-footer';
 import { getCustomerPageTitle } from '@/lib/navigation/customer-title';
 
-export function PublicShell({
-  children,
-  showBack: _showBack,
-}: {
-  children: React.ReactNode;
-  /** @deprecated Back is handled by GlobalNavbar */
-  showBack?: boolean;
-}) {
+export function MarketingShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (

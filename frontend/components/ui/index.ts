@@ -1,3 +1,4 @@
+export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 export { Badge, badgeVariants, type BadgeProps } from '@/components/ui/badge';
 export { Button, buttonVariants, type ButtonProps } from '@/components/ui/button';
 export {

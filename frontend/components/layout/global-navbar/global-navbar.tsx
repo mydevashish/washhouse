@@ -46,7 +46,7 @@ export function GlobalNavbar({
     >
       {/* Left */}
       <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-1.5">
-        {showCustomerBrand && <WashhouseLogo href="/discover" priority compact />}
+        {showCustomerBrand && <WashhouseLogo href="/" priority compact />}
         {onOpenSidebar && (
           <button
             type="button"

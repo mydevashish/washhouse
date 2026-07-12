@@ -4,6 +4,102 @@
 
 ---
 
+## 2026-07-12 — Sitewide marketing footer navigation
+
+- **Type:** feat
+- **Scope:** Public marketing layout / navigation
+- **Files:** `frontend/components/layout/marketing-footer.tsx`, `frontend/lib/navigation/marketing-footer.ts`, `frontend/lib/navigation/search-index.ts`, `frontend/lib/navigation/index.ts`
+- **Summary:** Rebuilt `MarketingFooter` with grouped link columns — Company (Home, About, Services, Stores), Partner (Franchise), Legal (Terms, Privacy), Support (Contact). Mobile stacks columns; `lg:` uses a 4-column grid. WashhouseLogo, India/UPI/COD/GST tagline, and dynamic copyright year. Links meet 44px tap targets with visible focus rings. Shared `MARKETING_FOOTER_GROUPS` constant feeds customer search index. `PublicShell` / `MarketingShell` unchanged — footer already integrated; GlobalNavbar "Back to Discover" unaffected.
+- **Risks:** None — presentational layout refactor; no route or auth changes.
+- **Tests:** `npm run type-check` pass; E2E smoke tests unchanged (no prior footer link assertions).
+- **Next:** None for footer v1.
+
+---
+
+## 2026-07-12 — Contact Us page at `/contact`
+
+- **Type:** feat
+- **Scope:** Public marketing / support
+- **Files:** `frontend/app/contact/page.tsx`, `frontend/features/marketing/contact/*`, `frontend/components/layout/marketing-footer.tsx`, `frontend/lib/navigation/customer-title.ts`, `frontend/features/marketing/services/services-faq.tsx`, `frontend/.env.example`
+- **Summary:** Added Contact Us page with `PublicShell` — hero ("We're here to help"), env-driven contact channels (email, phone, WhatsApp, IST hours), React Hook Form + Zod message form (name, phone, optional email, subject dropdown, message) with client validation, a11y labels/error announcements, success toast on stub submit (v2: backend `/api/v1/contact`), quick links (FAQ, track order, franchise), and placeholder office address. Footer nav + navbar title wired; `id="faq"` on services FAQ for `/services#faq` anchor.
+- **Risks:** Form submit is a v1 stub — messages are not persisted until backend contact API ships; contact details use placeholder defaults until `NEXT_PUBLIC_*` env vars are set in production.
+- **Tests:** `npm run type-check` pass; no new unit/E2E tests (presentational marketing route + client form stub).
+- **Next:** Ship backend contact endpoint + email/CRM integration; replace placeholder office address.
+
+---
+
+## 2026-07-12 — Privacy Policy page at `/privacy`
+
+- **Type:** feat
+- **Scope:** Public marketing / legal
+- **Files:** `frontend/app/privacy/page.tsx`, `frontend/features/marketing/legal/privacy-content.tsx`, `frontend/features/marketing/legal/legal-constants.ts`, `frontend/features/marketing/legal/legal-section.tsx`, `frontend/features/marketing/legal/terms-content.tsx`, `frontend/features/marketing/legal/index.ts`, `frontend/components/layout/marketing-footer.tsx`, `frontend/lib/navigation/customer-title.ts`
+- **Summary:** Added Privacy Policy page with `PublicShell` — lawyer-review banner, shared `LEGAL_LAST_UPDATED` constant and `LegalSection` component (extracted from terms), sticky TOC with anchor links, 12 India-focused sections (data controller, collection, purposes, IT Act/DPDP basis, Razorpay/Vercel/Railway/Neon/SMS/Resend processors, retention, user rights via `/contact`, cookies/PWA, security, children, grievance officer placeholders), template footer disclaimer. Footer nav + navbar title wired for `/privacy`.
+- **Risks:** Copy is a template — requires qualified legal review before production; placeholder company address and grievance officer details; `/contact` route not yet implemented.
+- **Tests:** `npm run type-check` pass; no new unit/E2E tests (static legal content page).
+- **Next:** Build `/contact`; replace template copy and placeholders after counsel review.
+
+---
+
+## 2026-07-12 — Terms & Conditions page at `/terms`
+
+- **Type:** feat
+- **Scope:** Public marketing / legal
+- **Files:** `frontend/app/terms/page.tsx`, `frontend/features/marketing/legal/*`, `frontend/components/layout/marketing-footer.tsx`, `frontend/lib/navigation/customer-title.ts`
+- **Summary:** Added Terms & Conditions page with `PublicShell` — lawyer-review banner, `LEGAL_LAST_UPDATED` constant, sticky table of contents with anchor links, 14 plain-English sections (India: UPI/COD/Razorpay, GST, OTP, marketplace intermediary role, governing law), readable legal typography, page footer template disclaimer, and contact link to `/contact`. Footer nav + navbar title wired for `/terms`. Metadata indexable (no `noindex`).
+- **Risks:** Copy is a template — requires qualified legal review before production; `/contact` route not yet implemented.
+- **Tests:** `npm run type-check` pass; no new unit/E2E tests (static legal content page).
+- **Next:** Build `/contact` and `/privacy`; replace template copy after counsel review.
+
+---
+
+## 2026-07-12 — Stores page at `/stores`
+
+- **Type:** feat
+- **Scope:** Public marketing / partner store directory
+- **Files:** `frontend/app/stores/page.tsx`, `frontend/features/marketing/stores/*`
+- **Summary:** Replaced `/stores` redirect with a dedicated marketing page using `PublicShell` — hero ("Find a WashHouse store near you"), `HomeSearchBar` + `LaundryFiltersBar`, `LaundryCard` grid powered by `useLaundryDiscovery`, empty/error/loading states (same patterns as discover homepage), and bottom CTA to `/contact`. Cards link to `/discover/[id]`. No duplicated API logic.
+- **Risks:** `/contact` route not yet implemented (CTA links there per spec); store list depends on laundries API availability.
+- **Tests:** `npm run type-check` pass; no new unit/E2E tests (presentational marketing route composing existing discover components).
+- **Next:** Build `/contact` page; optional map/list toggle v2.
+
+---
+
+## 2026-07-12 — Services page at `/services`
+
+- **Type:** feat
+- **Scope:** Public marketing / platform services explainer
+- **Files:** `frontend/app/services/page.tsx`, `frontend/features/marketing/services/*`, `frontend/components/ui/accordion.tsx`, `frontend/components/ui/index.ts`, `frontend/tailwind.config.ts`, `frontend/package.json`
+- **Summary:** Rebuilt Services page with `PublicShell` — hero, 6-category service grid (wash & fold, dry clean, steam press, shoe/bag care, express, subscription) with indicative pricing, turnaround, and per-card CTAs to `/discover`; "How pricing works" (GST, delivery, UPI, COD); FAQ accordion (6 items); final CTA. Added shadcn-style `Accordion` (Radix) + tailwind accordion animations.
+- **Risks:** Indicative prices are copy-only until partner pricing API is surfaced; subscription flow links to Discover until dedicated subscribe marketing route exists.
+- **Tests:** `npm run type-check` pass; no new unit/E2E tests (presentational marketing route).
+- **Next:** Wire live partner price ranges when catalog API supports platform aggregates.
+
+---
+
+## 2026-07-12 — About Us page at `/about`
+
+- **Type:** feat
+- **Scope:** Public marketing / brand story
+- **Files:** `frontend/app/about/page.tsx`, `frontend/features/marketing/about/*`, `frontend/components/layout/marketing-footer.tsx`, `frontend/lib/navigation/customer-title.ts`
+- **Summary:** Added About Us marketing page with `PublicShell` — hero story, placeholder stats row, mission prose, differentiators (verified partners, tracking, GST, UPI/COD), values grid, journey timeline, and CTA to `/stores` and `/contact`. Footer nav + navbar title wired for `/about`.
+- **Risks:** `/contact` route not yet implemented; stats are placeholder until analytics API exists.
+- **Tests:** `npm run type-check` pass; no new unit/E2E tests (presentational marketing route).
+- **Next:** Build `/contact` page; replace placeholder stats with live KPIs when available.
+
+---
+
+## 2026-07-12 — Marketing Home page at `/`
+
+- **Type:** feat
+- **Scope:** Public marketing / brand landing
+- **Files:** `frontend/app/page.tsx`, `frontend/app/services/page.tsx`, `frontend/app/stores/page.tsx`, `frontend/app/franchise/page.tsx`, `frontend/components/layout/marketing-shell.tsx`, `frontend/components/layout/marketing-footer.tsx`, `frontend/components/layout/public-shell.tsx`, `frontend/components/layout/global-navbar/global-navbar.tsx`, `frontend/lib/navigation/customer-title.ts`, `frontend/features/marketing/home/*`
+- **Summary:** Replaced root redirect with a brand marketing Home using `MarketingShell` — hero, trust strip, booking steps, services preview, featured stores teaser, testimonials, and final CTA. `/discover` stays the booking/discovery page. Footer nav links wired across marketing + auth shells; logo now routes to `/`.
+- **Risks:** Featured stores teaser depends on laundries API; `/stores` redirects to `/discover#laundries`.
+- **Tests:** `npm run type-check` pass; no new unit/E2E tests (presentational marketing route).
+- **Next:** Optional dedicated `/stores` listing page; expand `/services` with partner-specific pricing.
+
+---
+
 ## 2026-07-09 — QA fix WashHouse loading layout/a11y
 
 - **Type:** fix

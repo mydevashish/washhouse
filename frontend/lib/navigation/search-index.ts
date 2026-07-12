@@ -1,11 +1,23 @@
 import { ADMIN_NAV_FLAT } from '@/features/admin/lib/admin-nav';
 import { PARTNER_NAV_FLAT } from '@/features/partner/lib/partner-nav';
+import { MARKETING_FOOTER_GROUPS } from '@/lib/navigation/marketing-footer';
 import type { AppContext, SearchItem } from '@/lib/navigation/types';
+
+const MARKETING_ITEMS: SearchItem[] = MARKETING_FOOTER_GROUPS.flatMap((group) =>
+  group.links.map((link) => ({
+    id: `m-${link.href}`,
+    label: link.label,
+    href: link.href,
+    group: group.title,
+    keywords: `${group.title.toLowerCase()} marketing`,
+  })),
+);
 
 const CUSTOMER_ITEMS: SearchItem[] = [
   { id: 'c-discover', label: 'Discover laundries', href: '/discover', group: 'Pages', keywords: 'browse search' },
   { id: 'c-orders', label: 'My orders', href: '/orders', group: 'Pages', keywords: 'bookings tracking' },
   { id: 'c-account', label: 'Account settings', href: '/account', group: 'Pages', keywords: 'profile addresses' },
+  ...MARKETING_ITEMS,
 ];
 
 const ADMIN_EXTRA: SearchItem[] = [

@@ -206,6 +206,14 @@ const config: Config = {
           '80%': { opacity: '0.85', transform: 'translateY(-6px) scale(1)' },
           '100%': { opacity: '0', transform: 'translateY(-10px) scale(0.85)' },
         },
+        'accordion-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
+        },
       },
       animation: {
         'fade-in': 'fade-in var(--dur-base) var(--ease-out)',
@@ -218,6 +226,8 @@ const config: Config = {
         'washhouse-breathe': 'washhouse-breathe 1.6s ease-in-out infinite',
         'washhouse-ring-spin': 'washhouse-ring-spin 1.8s linear infinite',
         'washhouse-bubble-rise': 'washhouse-bubble-rise 1.4s ease-in-out infinite',
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
       },
     },
   },
