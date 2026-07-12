@@ -1,0 +1,21 @@
+# Render Blueprint — DLM backend
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Dashboard alternative: set Root Directory = backend, then:
+#   PYTHON_VERSION=3.12.8
+#   Build:  pip install -r requirements/prod.txt
+#   Start:  alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+services:
+  - type: web
+    name: dlm-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements/prod.txt
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: APP_ENV
+        value: production

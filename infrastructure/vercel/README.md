@@ -11,7 +11,7 @@ Hosts the Next.js frontend (`frontend/`).
 
 Set per environment in the Vercel dashboard:
 
-- `NEXT_PUBLIC_API_BASE_URL`
+- `NEXT_PUBLIC_API_URL`
 - `NEXT_PUBLIC_APP_URL`
 - `NEXT_PUBLIC_SENTRY_DSN`
 - `NEXT_PUBLIC_POSTHOG_KEY`

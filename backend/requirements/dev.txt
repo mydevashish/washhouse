@@ -1,6 +1,9 @@
 -r base.txt
 -r test.txt
 
+# Dev server extras (watchfiles/uvloop — not needed in production)
+uvicorn[standard]>=0.32,<0.33
+
 # Dev tooling
 ruff>=0.7,<1
 mypy>=1.11,<2
