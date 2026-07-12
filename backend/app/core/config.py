@@ -5,8 +5,41 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_DEFAULT_ASYNC_DATABASE_URL = (
+    "postgresql+asyncpg://dlm:dlm_dev_password@localhost:5432/dlm_db"
+)
+_DEFAULT_DIRECT_DATABASE_URL = (
+    "postgresql://dlm:dlm_dev_password@localhost:5432/dlm_db"
+)
+
+
+def normalize_async_database_url(url: str) -> str:
+    """Accept Neon/Railway-style URLs and coerce them for SQLAlchemy async."""
+    if url.startswith("postgres://"):
+        url = "postgresql+asyncpg://" + url.removeprefix("postgres://")
+    elif url.startswith("postgresql://"):
+        url = "postgresql+asyncpg://" + url.removeprefix("postgresql://")
+    elif url.startswith("postgresql+psycopg2://"):
+        url = "postgresql+asyncpg://" + url.removeprefix("postgresql+psycopg2://")
+
+    # asyncpg expects `ssl=` query params, not libpq `sslmode=`
+    url = url.replace("sslmode=require", "ssl=require")
+    url = url.replace("sslmode=verify-full", "ssl=require")
+    url = url.replace("sslmode=verify-ca", "ssl=require")
+    return url
+
+
+def to_sync_database_url(url: str) -> str:
+    """Strip async driver suffix for psycopg2 / Alembic offline migrations."""
+    for prefix in ("postgresql+asyncpg://", "postgresql+psycopg2://"):
+        if url.startswith(prefix):
+            url = "postgresql://" + url.removeprefix(prefix)
+            break
+    url = url.replace("ssl=require", "sslmode=require")
+    return url
 
 
 class Settings(BaseSettings):
@@ -28,12 +61,8 @@ class Settings(BaseSettings):
     PORT: int = 8000
 
     # Database (defaults match docker-compose.yml local Postgres)
-    DATABASE_URL: str = (
-        "postgresql+asyncpg://dlm:dlm_dev_password@localhost:5432/dlm_db"
-    )
-    DATABASE_URL_DIRECT: str = (
-        "postgresql://dlm:dlm_dev_password@localhost:5432/dlm_db"
-    )
+    DATABASE_URL: str = _DEFAULT_ASYNC_DATABASE_URL
+    DATABASE_URL_DIRECT: str = _DEFAULT_DIRECT_DATABASE_URL
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -150,6 +179,31 @@ class Settings(BaseSettings):
     def dispute_upload_path(self) -> Path:
         backend_root = Path(__file__).resolve().parents[2]
         return backend_root / self.DISPUTE_UPLOAD_DIR
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def _normalize_database_url(cls, value: object) -> object:
+        if isinstance(value, str):
+            return normalize_async_database_url(value)
+        return value
+
+    @field_validator("DATABASE_URL_DIRECT", mode="before")
+    @classmethod
+    def _normalize_direct_database_url(cls, value: object) -> object:
+        if isinstance(value, str) and value.startswith(
+            ("postgresql+asyncpg://", "postgresql+psycopg2://", "postgres://")
+        ):
+            return to_sync_database_url(normalize_async_database_url(value))
+        return value
+
+    @model_validator(mode="after")
+    def _derive_direct_database_url(self) -> Settings:
+        if (
+            self.DATABASE_URL != _DEFAULT_ASYNC_DATABASE_URL
+            and self.DATABASE_URL_DIRECT == _DEFAULT_DIRECT_DATABASE_URL
+        ):
+            self.DATABASE_URL_DIRECT = to_sync_database_url(self.DATABASE_URL)
+        return self
 
     @field_validator("SMTP_PORT", mode="before")
     @classmethod
