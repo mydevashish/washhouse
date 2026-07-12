@@ -1,0 +1,251 @@
+# Implementation Log
+
+> Append-only. Newest at the top. Use `.cursor/templates/log-entry.md`.
+
+---
+
+## 2026-07-09 — QA fix WashHouse loading layout/a11y
+
+- **Type:** fix
+- **Scope:** Loading UI (WashhouseLoader, PageSpinner, route/auth overlays)
+- **Files:** `frontend/app/globals.css`, `frontend/components/brand/washhouse-loader.tsx`, `frontend/components/feedback/page-spinner.tsx`, `frontend/app/loading.tsx`, `frontend/app/login/page.tsx`, `frontend/app/register/page.tsx`
+- **Summary:** Shipped washhouse pulse/breathe/ring keyframes in `globals.css` (Next CSS bundle was missing them). Clipped opaque icon PNG to a circle; PageSpinner fills partner/admin mains (`h-full` + taller min-h); loader gets `aria-atomic`; route loading vertically centered. PageSpinner API unchanged.
+- **Risks:** `will-change-transform` only while animating; reduced-motion still zeros via existing global + `motion-reduce:animate-none`.
+- **Tests:** Playwright matrix — viewports 375/414/768/1280/1920 × light/dark × reduced-motion; `/orders` auth guard, `/login` submit overlay, `/partner`+`/admin` RoleGuard fill=1, a11y role/live/busy.
+- **Next:** Optional transparent icon asset so circle clip is unnecessary.
+
+---
+
+## 2026-07-09 — Auth pages branded submit loading overlay
+
+- **Type:** chore (visual only)
+- **Scope:** Auth UI (login / register)
+- **Files:** `frontend/app/login/page.tsx`, `frontend/app/register/page.tsx`
+- **Summary:** When existing `loading` is true, show a non-modal full-viewport scrim with centered `WashhouseLoader` (`size="md"`, `label="Please wait…"`). Page wrapper gets `aria-busy`; submit handlers, toasts, and button disabled/label text unchanged.
+- **Risks:** Scrim blocks pointer clicks but is not a modal (no focus trap); form stays mounted so focus/values persist; double-submit still prevented by existing `disabled={loading}`.
+- **Tests:** None — presentational only; a11y via `aria-busy` + loader `role="status"`.
+- **Next:** None.
+
+---
+
+## 2026-07-09 — Root route loading UI uses WashHouse branding
+
+- **Type:** chore (visual only)
+- **Scope:** Next.js App Router `loading.tsx`
+- **Files:** `frontend/app/loading.tsx`
+- **Summary:** Replaced dense skeleton grid with centered `WashhouseLoader` (`size="lg"`, `label="Loading…"`) plus three fixed-height hint bars. Loader owns `role="status"` / `aria-live`; bars are `aria-hidden` with `motion-reduce:animate-none`. No new route-group loaders; no page/data changes.
+- **Risks:** Root loading shell is lighter than before (fewer placeholders); CLS when swapping to heavy pages is unchanged by design.
+- **Tests:** None — presentational swap only; a11y/motion covered by existing `WashhouseLoader` behavior.
+- **Next:** None.
+
+---
+
+## 2026-07-09 — PageSpinner uses WashHouse branded loader
+
+- **Type:** refactor
+- **Scope:** UI brand / loading feedback
+- **Files:** `frontend/components/feedback/page-spinner.tsx`
+- **Summary:** `PageSpinner` now composes `WashhouseLoader` (`size="md"`) instead of Lucide `Loader2`. Public API (`label`, `className`) and `min-h-[40vh]` centered layout unchanged; auth/role guards keep working with no logic changes.
+- **Risks:** Nested a11y avoided by letting `WashhouseLoader` own `role="status"`; visual size differs slightly from prior 8×8 spinner.
+- **Next:** None.
+
+---
+
+## 2026-07-09 — WashHouse branded loader component
+
+- **Type:** feat
+- **Scope:** UI brand / loading feedback
+- **Files:** `frontend/components/brand/washhouse-loader.tsx`, `frontend/components/brand/washhouse-logo.tsx`, `frontend/tailwind.config.ts`
+- **Summary:** Added reusable `WashhouseLoader` (pulse / breathe / ring) using shared `WASHHOUSE_ICON_SRC`; CSS keyframes only; a11y status + reduced-motion static icon. `PageSpinner` left unchanged for existing consumers.
+- **Risks:** Soft white pad for dark-mode contrast may look slightly boxed in dense inline contexts.
+- **Next:** Optionally swap `PageSpinner` to compose `WashhouseLoader` in a follow-up.
+
+---
+
+## 2026-07-09 — Align design tokens with WashHouse logo blues/teals
+
+- **Type:** chore (visual tokens only)
+- **Scope:** design system CSS variables + Tailwind sky mapping
+- **Files:** `frontend/styles/tokens.css`, `frontend/tailwind.config.ts`, `docs/ui-ux/design-system.md`
+- **Summary:** Shifted `--brand-*` toward logo navy/royal (`#1d4ed8` / `#1e3a8a`) and `--sky-*` toward cyan/teal (`#06b6d4`). Dark `--primary` set to `#2563eb` so white button text stays AA. Wired `sky` scale in Tailwind to CSS vars (was previously unused defaults).
+- **Risks:** Components using default Tailwind `sky-200/300/700/900` still resolve to stock sky; only 100/400/500/600 are tokenized.
+- **Mitigation:** Those steps remain in the same cyan family; no class-name or logic changes.
+- **Next:** Optional full sky scale tokenization if badge/status chips need exact logo teal.
+
+---
+
+## 2026-07-09 — WashHouse logo on login / register / discover hero
+
+- **Type:** feat (visual only)
+- **Scope:** public marketing / auth UI brand
+- **Files:** `frontend/app/login/page.tsx`, `frontend/app/register/page.tsx`, `frontend/features/discover/marketplace/discover-hero.tsx`
+- **Summary:** Centered `WashhouseLogo` above auth cards (scaled down on narrow screens); subtle icon logo above discover hero badge. No form, OTP, redirect, CTA, or copy changes.
+- **Risks:** Auth pages already show logo in `GlobalNavbar` / footer via `PublicShell` — stacked brand may feel redundant.
+- **Mitigation:** Auth mark is page-level above the card; hero uses `variant="icon"` so it stays secondary to the H1.
+- **Next:** None required for this pass.
+
+---
+
+## 2026-07-09 — Customer navbar WashHouse logo
+
+- **Type:** feat
+- **Scope:** customer UI brand / GlobalNavbar
+- **Files:** `frontend/components/layout/global-navbar/global-navbar.tsx`, `frontend/components/layout/public-shell.tsx`
+- **Summary:** Show `WashhouseLogo` on the left of customer `GlobalNavbar` (links to `/discover`) and in `PublicShell` footer. Partner/admin shells unchanged via `app === 'customer'` gate; dark mode uses a light pad so the navy wordmark stays readable.
+- **Risks:** Narrow phones could feel tighter with logo + back + title + actions.
+- **Mitigation:** Existing responsive logo (icon &lt; sm, wordmark sm+) plus `truncate` on page title; logo is `shrink-0` so title yields first.
+- **Next:** Optional partner/admin brand pass; dark-mode wordmark asset if pad looks off-brand.
+
+---
+
+## 2026-07-03 — India call-to-book flow (phase-1) verification
+
+- **Type:** test + docs
+- **Scope:** offline booking mode, walk-in orders, guest contact, QA docs
+- **Files:** `docs/testing/offline-booking-qa.md`, `docs/testing/QA_TESTING_GUIDE_2A_snippet.md`, `backend/tests/api/test_offline_booking.py`, `frontend/lib/online-booking.test.ts`, `frontend/lib/hooks/use-online-booking-enabled.test.ts`, `frontend/features/partner/lib/partner-status.test.ts`, `frontend/tests/e2e/offline-booking.spec.ts`
+- **Summary:** Audited existing call-to-book implementation (flags, `OfflineBookingContactPanel`, browse-only discover, walk-in partner UI, WhatsApp notifier). Replaced stale “Coming soon” QA copy with **Book by phone or WhatsApp**. Added API gate test for `POST /orders` when offline, Jest helpers for walk-in status + env flag, and E2E browse-only assertion.
+- **Risks:** Online checkout regression if flags flip to `true` while FE env stays `false`.
+- **Mitigation:** `useOnlineBookingEnabled()` requires both env + `/config`; existing contact tests cover online vs offline guest paths.
+- **Next:** Run `pnpm test` + `pytest test_offline_booking.py` with Postgres up; E2E via `pnpm test:e2e --project=offline-booking`.
+
+---
+
+- **Type:** test + docs
+- **Scope:** offline booking mode, walk-in orders, guest contact
+- **Files:** `docs/testing/offline-booking-qa.md`, `UI_FEATURE_MAP.md`, `CUSTOMER_EXPERIENCE_ENHANCEMENT.md`, `logs/feature-progress.md`
+- **Summary:** Full QA pass for call-to-book launch. Fixed manual QA doc step that incorrectly implied guests must sign in to unlock contact in offline mode. Documented guest-no-login contact in UI feature map and customer experience Part 3/4 tables.
+- **Manual QA:** §2A.1 guest contact **PASS** (API: `offline_booking_mode=true`, `requires_login=false`, Call/WhatsApp enabled after `ensure_demo_storefronts`). §2A.2/§2A.3 walk-in flows validated via API after `python scripts/seed.py` + storefront seed.
+- **Automated:** E2E blocked locally (Playwright browsers installed; dev server on :3001 not stable in session). `pytest test_walk_in_orders.py`: 1/8 pass on Windows — session-scoped async engine event-loop conflict (CI/Linux unaffected). Contact tests in `test_customer_experience_contact.py` cover offline guest path.
+- **Risks:** Online-mode contact gating unchanged; offline path must stay behind `FEATURE_ONLINE_BOOKING=false`.
+- **Mitigation:** E2E asserts no “Sign in to call”; contact API tests in `test_customer_experience_contact.py`. Walk-in pytest mocks Celery WhatsApp task.
+- **Next:** Merge `docs/product/offline-booking-*.md` into root `UI_FEATURE_MAP.md` / `CUSTOMER_EXPERIENCE_ENHANCEMENT.md` when files are writable. Start Redis before live walk-in API QA. Run E2E with `pnpm` on PATH + `npx playwright install`.
+
+---
+
+## 2026-07-03 — Guest browse / call-to-book polish
+
+- **Type:** feat
+- **Scope:** discover detail, storefront, offline booking UX
+- **Files:** `frontend/features/discover/detail/laundry-detail-view.tsx`, `frontend/features/storefront/laundry-storefront-view.tsx`, `frontend/components/marketplace/offline-booking-contact-panel.tsx`, `frontend/lib/hooks/use-online-booking-enabled.ts`, `frontend/features/discover/detail/service-card.tsx`, `frontend/features/discover/detail/laundry-services-tab.tsx`, `frontend/features/discover/detail/service-catalog-browser.tsx`
+- **Summary:** When `FEATURE_ONLINE_BOOKING=false`, services tabs show browse-only price lists (INR + unit) without cart actions; checkout CTAs are hidden. Replaced temporary “coming soon” copy with permanent call-to-book messaging and a prominent Call/WhatsApp sidebar + mobile sticky bar.
+- **Risks:** Online checkout regression if `browseOnly` leaks when booking is enabled.
+- **Mitigation:** `browseOnly` tied to `useOnlineBookingEnabled()`; online path unchanged when flag true.
+- **Next:** None.
+
+---
+
+## 2026-06-03 — Fraud Detection Engine
+
+- **Type:** feat
+- **Scope:** rule-based customer/partner fraud signals, risk levels Low–Critical, admin alerts
+- **Summary:** Added `fraud_alerts`, `users.fraud_risk_level`, `laundries.fraud_risk_level`; evaluation on disputes, payments, cancellations, delivery GPS, inventory mismatches; admin UI at `/admin/fraud`. See `FRAUD_DETECTION_ENGINE.md`.
+- **Next:** Nightly batch sweep; Critical auto-actions.
+
+---
+
+## 2026-06-03 — Laundry Trust Score (Partner)
+
+- **Type:** feat
+- **Scope:** partner reliability scoring 0–100 from on-time delivery, complaint/refund/dispute rates, rating, volume
+- **Summary:** Added `laundries.trust_score`; `LaundryTrustScoreService` with metric recalculation; partner API + admin list/detail; partner dashboard card and admin Partner trust tab. See `PARTNER_TRUST_SCORE.md`.
+- **Next:** Customer-facing trust badge on discover; manual admin override.
+
+---
+
+## 2026-06-03 — Customer Trust Score System
+
+- **Type:** feat
+- **Scope:** admin-only customer risk scoring — 100 baseline, event ledger, Gold/Silver/Bronze/High Risk levels
+- **Summary:** Added `users.trust_score`, `customer_trust_score_events`; hooks on disputes, delivery, reviews, payment webhooks; admin UI at `/admin/trust-scores`. See `CUSTOMER_TRUST_SCORE.md`.
+- **Next:** Auto-flag high-risk at checkout; admin manual adjustments.
+
+---
+
+- **Type:** feat
+- **Scope:** customer dispute filing with photos, admin investigation with full evidence bundle
+- **Summary:** Extended complaint types/statuses; `complaint_photos` + `complaint_status_events`; multipart upload; admin detail with custody, pickup, delivery, inventory, OTP; customer + admin UI. See `DISPUTE_CENTER.md`.
+- **Next:** Notifications on status change; partner dispute visibility.
+
+---
+
+- **Type:** feat
+- **Scope:** append-only custody events with actor, role, metadata; auto-recorded on all order milestones
+- **Summary:** Added `order_custody_events` table; `CustodyEventService` hooks in order, pickup, inventory, delivery proof, and OTP flows; timeline APIs for customer/partner/admin; `ChainOfCustodyTimeline` UI. See `CHAIN_OF_CUSTODY.md`.
+- **Next:** WebSocket push on new custody events; backfill from legacy status events.
+
+---
+
+- **Type:** feat
+- **Scope:** mandatory delivery photo before OTP completion — GPS, device info, immutable record
+- **Summary:** Added `delivery_proof_photos` table and migration; partner single-photo upload when `out_for_delivery`; gate on `delivery/verify`; customer timeline + gallery; admin dialog; dispute center detail. See `DELIVERY_PROOF.md`.
+- **Next:** Object storage adapter; integration tests with seeded orders.
+
+---
+
+- **Type:** feat
+- **Scope:** 6-digit delivery OTP, agent GPS handoff, failed attempt lockout, audit logs
+- **Summary:** OTP auto-generated on `out_for_delivery`; customer in-app code; partner verify endpoint gates delivery; Fernet-encrypted storage; agent account lockout; audit trail. See `DELIVERY_OTP.md`.
+- **Next:** SMS/WhatsApp delivery of OTP to customer phone; integration tests with seeded orders.
+
+---
+
+- **Type:** feat
+- **Scope:** pickup item counts by category, customer confirm/lock, admin change approval, dispute center
+- **Summary:** Added verification tables + Alembic migration; partner record API; customer confirm locks inventory; change requests with admin approve/reject; append-only history; order detail + dispute center UI; gate on `picked_up`. See `INVENTORY_VERIFICATION.md`.
+- **Next:** Badge count for pending admin inventory changes; integration tests with seeded orders.
+
+---
+
+## 2026-06-03 — Pickup Evidence System
+
+- **Type:** feat
+- **Scope:** pickup photos at collection — DB, API, partner upload UI, customer/admin gallery
+- **Summary:** Added `pickup_evidence_photos` table and Alembic migration; partner multipart upload (1–10 photos, GPS, original + compressed storage); JWT-protected image delivery; timeline note "Pickup photos uploaded"; gate on `picked_up` status; FE upload + gallery on partner/customer/admin surfaces. See `PICKUP_EVIDENCE.md`.
+- **Next:** Object storage adapter for production media; expand integration tests with seeded orders.
+
+---
+
+- **Type:** feat
+- **Scope:** reviews, order events, partner inventory/staff/analytics, admin commission, customer booking UI, partner/admin dashboards
+- **Summary:** Added review service and laundry review routes; order `/events` timeline; partner inventory/staff/accept-reject/analytics APIs; admin commission settings; Razorpay httpx integration when keys set; `create_admin` script; FE discover detail + booking, orders list/tracking with 30s polling, account addresses, partner and admin dashboards.
+- **Next:** WebSocket live tracking, production Razorpay checkout.js, seed demo laundries, expand integration tests.
+
+---
+
+## 2026-06-01 — Production roadmap implementation (Phases 0–6)
+
+- **Type:** feat · docs · infra
+- **Scope:** full platform scaffold
+- **Summary:** Consolidated product docs into `docs/product/` and 19 feature specs; added marketplace migration and APIs (laundries, orders, partner, admin, payments, subscriptions, complaints, loyalty); hardened auth with httpOnly refresh cookies and WhatsApp/SMS OTP stubs; FE discover list, theme toggle, partner/admin shells, landing hero, PWA icons, runbooks, E2E smoke tests.
+- **Next:** Wire Razorpay live keys, partner/admin FE flows, WebSocket tracking, review endpoints, inventory/staff CRUD, production deploy sign-off.
+
+---
+
+## 2026-05-25 — Workspace bootstrap
+
+- **Type:** infra · docs
+- **Scope:** workspace
+- **Files:**
+  - `.cursor/rules/` — 21 rule files
+  - `.cursor/agents/` — 14 specialized agents
+  - `.cursor/sub-agents/` — frontend, backend, QA sub-agents
+  - `.cursor/templates/` — code + doc templates
+  - `.cursor/checklists/` — pre-flight, post-flight, security, perf, a11y
+  - `.cursor/prompts/` — ready-to-paste kick-off prompts
+  - `.cursor/workflows/` — feature, bug-fix, refactor, deploy, daily
+  - `.cursor/context/` — product, tech stack, glossary, environment
+  - `.cursor/logs/` — Cursor session notes / handoffs / questions / learnings
+  - `backend/` — FastAPI scaffold (app, alembic, tests, requirements, Dockerfile)
+  - `frontend/` — Next.js 15 scaffold (App Router, tokens, providers, store)
+  - `docs/` — architecture, api, database, ui-ux, security, business, testing, deployment, features, decisions, roadmap
+  - `logs/` — implementation, feature, bug, deploy, perf, security, refactor, decisions
+  - `infrastructure/` — provider configs
+  - `docker/` — docker overrides
+  - `.github/` — workflows + templates
+  - `scripts/` — dev/ops helpers
+  - Root: `README.md`, `.gitignore`, `docker-compose.yml`
+- **Summary:** Set up the complete production-grade Cursor workspace, monorepo skeleton, and supporting tooling for Doorstep Laundry Marketplace.
+- **Risks:** None — no runtime impact yet.
+- **Mitigation:** Folder-only scaffolding; first feature PR will exercise real code paths.
+- **Next:** Phase 1 — Foundations (auth, users, base UI shell, CI gates).
+- **Refs:** —

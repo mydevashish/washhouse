@@ -1,0 +1,21 @@
+# Default ownership — every change requires a review from at least one owner.
+
+*                       @core-team
+
+# Backend
+/backend/               @backend-team
+/backend/alembic/       @backend-team @db-team
+/backend/app/tasks/     @backend-team @platform-team
+
+# Frontend
+/frontend/              @frontend-team
+
+# Docs + workspace
+/docs/                  @core-team
+/.cursor/               @core-team
+/logs/                  @core-team
+
+# Infra + CI
+/infrastructure/        @platform-team
+/docker/                @platform-team
+/.github/               @platform-team

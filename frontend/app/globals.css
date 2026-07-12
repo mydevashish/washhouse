@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import '../styles/tokens.css';
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-size: 16px;
+  }
+  html,
+  body {
+    transition: background-color var(--dur-base) ease, color var(--dur-base) ease;
+  }
+  body {
+    @apply bg-background text-foreground text-sm;
+    font-family: var(--font-sans);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  ::selection {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+}
+
+@layer components {
+  .page-title {
+    @apply text-xl font-semibold tracking-tight text-foreground;
+  }
+  .section-title {
+    @apply text-base font-semibold text-foreground;
+  }
+  .card-title {
+    @apply text-sm font-semibold text-foreground;
+  }
+  .helper-text {
+    @apply text-xs text-muted-foreground;
+  }
+  .overlay-scrim {
+    background: var(--overlay);
+  }
+  .rating-pill {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+    background-color: var(--rating-muted);
+    color: var(--rating);
+  }
+  .table-sticky-head thead {
+    @apply sticky top-0 z-10 bg-muted shadow-[0_1px_0_0_var(--border)];
+  }
+}
+
+@layer utilities {
+  .pb-safe-nav {
+    padding-bottom: max(3.5rem, calc(3.25rem + env(safe-area-inset-bottom, 0px)));
+  }
+  .bottom-above-nav {
+    bottom: max(3.25rem, calc(3.25rem + env(safe-area-inset-bottom, 0px)));
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .bg-hero-gradient {
+    background: var(--gradient-hero);
+  }
+  .bg-surface-gradient {
+    background: var(--gradient-surface);
+  }
+  .text-on-hero {
+    color: var(--primary-foreground);
+  }
+  .text-on-hero-muted {
+    color: rgb(255 255 255 / 0.85);
+  }
+
+  /*
+   * WashHouse loader — transform/opacity only (GPU-friendly).
+   * Mirrored in tailwind.config.ts; defined here so Next CSS always ships them.
+   */
+  @keyframes washhouse-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(0.96);
+    }
+  }
+  @keyframes washhouse-breathe {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.06);
+    }
+  }
+  @keyframes washhouse-ring-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes washhouse-bubble-rise {
+    0% {
+      opacity: 0;
+      transform: translateY(4px) scale(0.6);
+    }
+    20% {
+      opacity: 1;
+    }
+    80% {
+      opacity: 0.85;
+      transform: translateY(-6px) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.85);
+    }
+  }
+  .animate-washhouse-pulse {
+    animation: washhouse-pulse 1.5s ease-in-out infinite;
+  }
+  .animate-washhouse-breathe {
+    animation: washhouse-breathe 1.6s ease-in-out infinite;
+  }
+  .animate-washhouse-ring-spin {
+    animation: washhouse-ring-spin 1.8s linear infinite;
+  }
+  .animate-washhouse-bubble-rise {
+    animation: washhouse-bubble-rise 1.4s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

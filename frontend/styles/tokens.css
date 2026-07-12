@@ -1,0 +1,180 @@
+/* =========================================================================
+ * DLM Design System — semantic tokens (light / dark / system via .dark)
+ * Compact density · WCAG-oriented contrast · SaaS dashboard scale
+ * ========================================================================= */
+
+:root {
+  /* Brand — WashHouse navy / royal blue */
+  --brand-50: #eff6ff;
+  --brand-100: #dbeafe;
+  --brand-500: #1d4ed8; /* logo royal — white text ~6.7:1 */
+  --brand-600: #1e40af;
+  --brand-700: #1e3a8a; /* logo deep navy */
+  --brand-900: #172554;
+
+  /* Sky — WashHouse cyan / teal accent */
+  --sky-100: #cffafe;
+  --sky-400: #22d3ee;
+  --sky-500: #06b6d4; /* logo teal */
+  --sky-600: #0891b2;
+
+  --accent-50: #fff7ed;
+  --accent-500: #f59e0b;
+  --accent-600: #d97706;
+
+  /* Legacy surface aliases (map to semantic) */
+  --bg-0: #ffffff;
+  --bg-1: #f8fafc;
+  --bg-2: #f1f5f9;
+  --fg-0: #0f172a;
+  --fg-1: #475569;
+  --fg-2: #64748b;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  /* Status */
+  --success: #059669;
+  --success-foreground: #ffffff;
+  --success-muted: #d1fae5;
+  --warning: #d97706;
+  --warning-foreground: #ffffff;
+  --warning-muted: #fef3c7;
+  --danger: #dc2626;
+  --danger-foreground: #ffffff;
+  --danger-muted: #fee2e2;
+  --info: #0891b2;
+  --info-foreground: #ffffff;
+  --info-muted: #cffafe;
+  --rating: #d97706;
+  --rating-muted: #fef3c7;
+
+  /* shadcn semantic */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: var(--brand-500);
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #ecfeff;
+  --accent-foreground: #1e3a8a;
+  --destructive: var(--danger);
+  --destructive-foreground: #ffffff;
+  --input: var(--border);
+  --ring: var(--brand-500);
+  --overlay: rgb(15 23 42 / 0.45);
+
+  /* Typography — compact scale (~18% smaller headings) */
+  --font-sans: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+  --font-mono: ui-monospace, monospace;
+  --text-xs: 0.6875rem;   /* 11px */
+  --text-sm: 0.8125rem;    /* 13px */
+  --text-base: 0.875rem;  /* 14px */
+  --text-lg: 1rem;        /* 16px */
+  --text-xl: 1.125rem;    /* 18px */
+  --text-2xl: 1.375rem;   /* 22px */
+  --text-3xl: 1.625rem;   /* 26px */
+  --text-4xl: 2rem;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.6;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.625rem;
+  --space-4: 0.875rem;
+  --space-5: 1rem;
+  --space-6: 1.25rem;
+  --space-8: 1.5rem;
+  --space-10: 2rem;
+  --space-12: 2.5rem;
+  --space-16: 3rem;
+
+  /* Density */
+  --nav-height: 2.875rem;     /* 46px */
+  --sidebar-width: 13rem;     /* 208px */
+  --control-height: 2.25rem;  /* 36px */
+  --control-height-sm: 2rem;  /* 32px */
+  --table-row: 2.5rem;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-full: 9999px;
+  --radius: var(--radius-lg);
+
+  --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 2px 8px rgb(15 23 42 / 0.05);
+  --shadow-pop: 0 2px 8px rgb(29 78 216 / 0.08), 0 8px 20px rgb(15 23 42 / 0.08);
+  --shadow-modal: 0 16px 40px rgb(15 23 42 / 0.14);
+  --shadow-card-hover: 0 4px 16px rgb(29 78 216 / 0.1);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 280ms;
+
+  --gradient-hero: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 42%, #06b6d4 100%);
+  --gradient-surface: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+
+  color-scheme: light;
+}
+
+.dark {
+  --bg-0: #0b1220;
+  --bg-1: #111827;
+  --bg-2: #1f2937;
+  --fg-0: #f8fafc;
+  --fg-1: #cbd5e1;
+  --fg-2: #94a3b8;
+  --border: #334155;
+  --border-strong: #475569;
+
+  --success-muted: #064e3b;
+  --success: #34d399;
+  --warning-muted: #78350f;
+  --warning: #fbbf24;
+  --danger-muted: #7f1d1d;
+  --danger: #f87171;
+  --info-muted: #083344;
+  --info: #22d3ee;
+  --rating-muted: #78350f;
+  --rating: #fbbf24;
+
+  --background: #0b1220;
+  --foreground: #f8fafc;
+  --card: #111827;
+  --card-foreground: #f8fafc;
+  --popover: #111827;
+  --popover-foreground: #f8fafc;
+  /* Deeper than blue-500 so white label text stays AA (≥4.5:1) */
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #1f2937;
+  --secondary-foreground: #f8fafc;
+  --muted: #1f2937;
+  --muted-foreground: #94a3b8;
+  --accent: #083344;
+  --accent-foreground: #cffafe;
+  --destructive: #f87171;
+  --destructive-foreground: #ffffff;
+  --input: var(--border);
+  --ring: #22d3ee;
+  --overlay: rgb(0 0 0 / 0.55);
+
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.2), 0 2px 8px rgb(0 0 0 / 0.25);
+  --shadow-pop: 0 4px 16px rgb(0 0 0 / 0.35);
+  --shadow-modal: 0 20px 48px rgb(0 0 0 / 0.5);
+  --gradient-hero: linear-gradient(135deg, #172554 0%, #1d4ed8 48%, #0891b2 100%);
+
+  color-scheme: dark;
+}

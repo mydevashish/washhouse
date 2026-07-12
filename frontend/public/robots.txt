@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Block protected app surfaces from indexing.
+Disallow: /admin
+Disallow: /partner
+Disallow: /api
+
+Sitemap: https://dlm.app/sitemap.xml

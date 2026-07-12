@@ -1,0 +1,65 @@
+name: Deploy Backend (Railway)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "production"
+        type: choice
+        options: [staging, production]
+
+concurrency:
+  group: deploy-backend-${{ github.event.inputs.environment || 'production' }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy → Railway (${{ github.event.inputs.environment || 'production' }})
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Deploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up --service dlm-backend --detach
+          railway up --service dlm-worker --detach
+          railway up --service dlm-beat --detach
+
+      - name: Smoke test
+        run: |
+          for i in 1 2 3 4 5; do
+            sleep 10
+            if curl -fsSL "${{ secrets.BACKEND_HEALTHCHECK_URL }}" ; then
+              echo "OK"
+              exit 0
+            fi
+          done
+          echo "Smoke test failed"
+          exit 1
+
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Backend deploy ${{ job.status }} → ${{ github.event.inputs.environment || 'production' }} · ${{ github.sha }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEPLOYS_WEBHOOK }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

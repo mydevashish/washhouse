@@ -1,0 +1,19 @@
+-r base.txt
+-r test.txt
+
+# Dev tooling
+ruff>=0.7,<1
+mypy>=1.11,<2
+pre-commit>=4.0,<5
+ipython>=8.27,<9
+watchfiles>=0.24,<1
+
+# Security scanners
+bandit>=1.7,<2
+pip-audit>=2.7,<3
+
+# Debugging
+rich>=13.8,<14
+
+# SMS / WhatsApp (optional local Twilio sandbox testing)
+twilio>=9.3,<10
