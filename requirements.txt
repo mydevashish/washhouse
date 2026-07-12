@@ -1,0 +1,8 @@
+# Root convenience file — backend dependencies live under backend/
+#
+#   pip install -r requirements.txt
+#
+# Equivalent to:
+#   pip install -r backend/requirements/dev.txt
+
+-r backend/requirements/dev.txt

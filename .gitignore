@@ -1,0 +1,157 @@
+# =============================================================================
+# Doorstep Laundry Marketplace — .gitignore
+# =============================================================================
+
+# --------------------------- OS / Editor -------------------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# --------------------------- Environment / Secrets ---------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+.secrets/
+
+# --------------------------- Python / Backend --------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+dlm_env/
+DLM_env/
+venv/
+env/
+.venv/
+ENV/
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Type checking / linting
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Jupyter
+.ipynb_checkpoints
+
+# --------------------------- Node / Frontend ---------------------------------
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Build outputs
+.next/
+out/
+build/
+dist/
+
+# Misc
+.cache/
+.parcel-cache/
+.turbo/
+.lighthouseci/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# Next.js
+.next/
+next-env.d.ts
+
+# Vercel
+.vercel
+
+# --------------------------- Docker ------------------------------------------
+*.local
+docker-compose.override.yml
+
+# --------------------------- Logs --------------------------------------------
+logs/*.log
+*.log
+runtime-logs/
+
+# --------------------------- IDE / Tooling -----------------------------------
+.history/
+.fleet/
+.zed/
+
+# --------------------------- Misc --------------------------------------------
+*.tmp
+*.temp
+*.bak
+.tmp/
+.temp/
+tmp/
+temp/
+
+# Database dumps
+*.sql.gz
+*.dump
+backups/
+
+# Storybook
+storybook-static/
+
+# Sentry
+.sentryclirc
