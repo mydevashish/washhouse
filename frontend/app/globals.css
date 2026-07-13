@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @import '../styles/tokens.css';
+@import '../styles/glass.css';
 
 @layer base {
   html {

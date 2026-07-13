@@ -20,6 +20,11 @@ Target: **WCAG 2.1 AA**. Tested via automated + manual checks.
 | Disclosure         | `aria-expanded` on trigger                       |
 | Active nav item    | `aria-current="page"`                            |
 | Skeleton           | `role="status"` + `<span class="sr-only">Loading…</span>` |
+| Carousel slide     | `aria-hidden` + `inert` on inactive slides; move section `aria-labelledby` id to the active slide heading |
+| Responsive carousel + grid | One variant visible via `hidden` / `lg:grid` — never wrap `<li>` in animation `<div>`; put motion inside `<li>` |
+| FAB vs bottom CTAs | `IntersectionObserver` on `[data-marketing-sticky-cta]` / `[data-marketing-bottom-cta]`; hide with `inert` + `aria-hidden` (not opacity alone) |
+| Horizontal scroll strip | `tabIndex={0}` + `focus-visible:ring-*` on scroll container |
+| Glass hero copy    | Use `GlassSurface variant="strong"`; body text uses token `text-foreground` / `text-muted-foreground` (audited on opaque card mix) |
 
 ## Contrast minimums
 

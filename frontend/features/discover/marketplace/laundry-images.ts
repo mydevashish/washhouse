@@ -4,7 +4,15 @@
 const U = (id: string, w: number) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
 
-export const HERO_IMAGE = U('photo-1558618666-fcd25c85cd64', 1200);
+export const HERO_IMAGE = U('photo-1558618666-fcd25c85cd64', 800);
+
+/** Verified IDs for marketing hero carousel (broken legacy URLs returned 404). */
+export const HERO_SLIDE_IMAGES = {
+  primary: HERO_IMAGE,
+  doorstep: U('photo-1517677208171-0bc6725a3e60', 1200),
+  compare: U('photo-1571902943202-507ec2618e8f', 1200),
+  partner: U('photo-1558618666-fcd25c85cd64', 1200),
+} as const;
 
 export const LAUNDRY_IMAGES_BY_SLUG: Record<string, string> = {
   'demo-quick-wash-koramangala': U('photo-1558618666-fcd25c85cd64', 800),

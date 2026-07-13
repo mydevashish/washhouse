@@ -2,18 +2,18 @@ import type { LaundryListItem } from '@/services/laundries';
 
 export const LAUNDRY_IMAGES_BY_SLUG: Record<string, string> = {
   'demo-quick-wash-koramangala':
-    'https://images.unsplash.com/photo-1582735680409-38e523e2aabf?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
   'demo-sparkle-indiranagar':
-    'https://images.unsplash.com/photo-1610557892470-55d9a53970f0?auto=format&fit=crop&w=800&q=80',
-  'demo-freshfold-hsr':
     'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=800&q=80',
+  'demo-freshfold-hsr':
+    'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=800&q=80',
 };
 
 const FALLBACK_POOL = [
-  'https://images.unsplash.com/photo-1582735680409-38e523e2aabf?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1610557892470-55d9a53970f0?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1604339454409-256c4f13cb20?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80',
 ];
 
 export type LaundryMeta = {

@@ -1,3 +1,5 @@
+import type { AxiosError } from 'axios';
+
 /** Shared stale times (ms) for TanStack Query. */
 
 export const STALE = {
@@ -12,3 +14,17 @@ export const STALE = {
   partnerAnalytics: 60_000,
   adminDashboard: 60_000,
 } as const;
+
+/** Longer timeout for public discovery lists (Render cold start). */
+export const DISCOVERY_API_TIMEOUT_MS = 60_000;
+
+/** Retry network/timeout failures while a hosted API wakes from sleep. */
+export function discoveryQueryRetry(failureCount: number, error: unknown): boolean {
+  if (failureCount >= 3) return false;
+  const axiosError = error as AxiosError;
+  return !axiosError.response;
+}
+
+export function discoveryQueryRetryDelay(attempt: number): number {
+  return Math.min(2_000 * 2 ** attempt, 15_000);
+}

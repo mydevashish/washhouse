@@ -129,15 +129,12 @@ export function LaundryListing() {
 
 
         <LaundryFiltersBar
-
           filters={filters}
-
           onChange={setFilters}
-
           resultCount={filtered.length}
-
           totalCount={isSearching ? total : undefined}
-
+          isLoading={isLoading}
+          isFetching={isFetching}
         />
 
 
@@ -176,7 +173,11 @@ export function LaundryListing() {
 
               title="Could not load laundries"
 
-              description="Check your connection and try again."
+              description={
+                isFetching
+                  ? 'Still trying to reach the server — hosted APIs can take up to a minute to wake up.'
+                  : 'The server may still be starting. Wait a moment, then try again.'
+              }
 
               secondaryAction={{
 

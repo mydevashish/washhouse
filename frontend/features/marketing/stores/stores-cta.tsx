@@ -13,7 +13,7 @@ export function StoresCta() {
         >
           Don&apos;t see your area?
         </h2>
-        <p className="mt-3 text-base leading-relaxed text-primary-foreground/85 sm:text-lg">
+        <p className="mt-3 text-base leading-relaxed text-primary-foreground sm:text-lg">
           We&apos;re expanding across India. Tell us where you are — we&apos;ll let you know when a
           WashHouse partner opens nearby.
         </p>

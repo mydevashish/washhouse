@@ -17,6 +17,23 @@ BRAND_DIR = os.path.join(os.path.dirname(__file__), '..', 'public', 'brand')
 PUBLIC_DIR = os.path.join(os.path.dirname(__file__), '..', 'public')
 
 PAD = 4
+NEAR_WHITE_THRESHOLD = 245
+
+
+def make_near_white_transparent(
+    img: Image.Image,
+    threshold: int = NEAR_WHITE_THRESHOLD,
+) -> Image.Image:
+    """Set alpha=0 for near-white pixels (RGB all > threshold); keep colored ink opaque."""
+    rgba = img.convert('RGBA')
+    arr = rgba.load()
+    w, h = rgba.size
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = arr[x, y]
+            if a > 0 and r > threshold and g > threshold and b > threshold:
+                arr[x, y] = (r, g, b, 0)
+    return rgba
 
 
 def trim_to_ink(img: Image.Image, threshold: int = 245, pad: int = PAD) -> Image.Image:
@@ -144,13 +161,13 @@ def main() -> None:
     source = Image.open(SRC)
     print('Source:', source.size)
 
-    full = trim_to_ink(source, pad=2)
+    full = make_near_white_transparent(trim_to_ink(source, pad=2))
     full_path = os.path.join(BRAND_DIR, 'washhouse-logo.png')
     full.save(full_path, 'PNG', optimize=True)
     print('Full logo:', full.size, '->', full_path)
 
     box = find_icon_bounds(source)
-    icon_img = source.crop(box)
+    icon_img = make_near_white_transparent(source.crop(box))
     icon_path = os.path.join(BRAND_DIR, 'washhouse-icon.png')
     icon_img.save(icon_path, 'PNG', optimize=True)
     print('Icon:', icon_img.size, 'box', box, '->', icon_path)

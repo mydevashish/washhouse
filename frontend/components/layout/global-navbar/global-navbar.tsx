@@ -1,11 +1,11 @@
 'use client';
 
-import { Menu } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { Menu, Search } from 'lucide-react';
 
 import { WashhouseLogo } from '@/components/brand/washhouse-logo';
 import { NavbarBackButton } from '@/components/layout/global-navbar/navbar-back-button';
 import { NavbarBreadcrumbs } from '@/components/layout/global-navbar/navbar-breadcrumbs';
-import { NavbarCommandSearch } from '@/components/layout/global-navbar/navbar-command-search';
 import { NavbarNotifications } from '@/components/layout/global-navbar/navbar-notifications';
 import { NavbarQuickActions } from '@/components/layout/global-navbar/navbar-quick-actions';
 import { NavbarThemeToggle } from '@/components/layout/global-navbar/navbar-theme-toggle';
@@ -13,6 +13,27 @@ import { NavbarUserMenu } from '@/components/layout/global-navbar/navbar-user-me
 import type { AppContext } from '@/lib/navigation/types';
 import type { UserRole } from '@/types/user';
 import { cn } from '@/lib/utils';
+
+const NavbarCommandSearch = dynamic(
+  () =>
+    import('@/components/layout/global-navbar/navbar-command-search').then((m) => ({
+      default: m.NavbarCommandSearch,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <button
+        type="button"
+        className="inline-flex h-9 w-full max-w-sm items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 text-sm text-muted-foreground"
+        aria-hidden
+        tabIndex={-1}
+      >
+        <Search className="h-4 w-4 shrink-0" aria-hidden />
+        <span>Search…</span>
+      </button>
+    ),
+  },
+);
 
 export type GlobalNavbarProps = {
   app: AppContext;

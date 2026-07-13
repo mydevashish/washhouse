@@ -1,47 +1,47 @@
 'use client';
 
-
-
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 
 import { MapPin, Search, Store } from 'lucide-react';
 
-
-
-import { BookingFlowSteps } from '@/components/marketplace/booking-flow-steps';
-
 import { SectionHeader } from '@/components/marketplace/section-header';
-
 import { TrustStrip } from '@/components/marketplace/trust-strip';
-
 import { EmptyState } from '@/components/ui/empty-state';
-
 import { useLaundryDiscovery } from '@/features/discover/hooks/use-laundry-discovery';
-
 import { HomeHero } from '@/features/discover/homepage/home-hero';
-
 import { HomeSearchBar } from '@/features/discover/homepage/home-search-bar';
-
-import { HomeTestimonials } from '@/features/discover/homepage/home-testimonials';
-
-import { HomeWhyChooseUs } from '@/features/discover/homepage/home-why-choose-us';
-
 import {
-
   DEFAULT_FILTERS,
-
   type LaundryFilters,
-
 } from '@/features/discover/listing/filter-laundries';
-
 import { LaundryCard } from '@/features/discover/listing/laundry-card';
-
 import { LaundryCardSkeleton } from '@/features/discover/listing/laundry-card-skeleton';
-
 import { LaundryFiltersBar } from '@/features/discover/listing/laundry-filters';
 
+const BookingFlowSteps = dynamic(
+  () =>
+    import('@/components/marketplace/booking-flow-steps').then((m) => ({
+      default: m.BookingFlowSteps,
+    })),
+  { loading: () => <div className="min-h-[12rem]" aria-hidden /> },
+);
 
+const HomeWhyChooseUs = dynamic(
+  () =>
+    import('@/features/discover/homepage/home-why-choose-us').then((m) => ({
+      default: m.HomeWhyChooseUs,
+    })),
+  { loading: () => <section className="min-h-[20rem] bg-card" aria-hidden /> },
+);
 
+const HomeTestimonials = dynamic(
+  () =>
+    import('@/features/discover/homepage/home-testimonials').then((m) => ({
+      default: m.HomeTestimonials,
+    })),
+  { loading: () => <section className="min-h-[20rem] bg-muted/30" aria-hidden /> },
+);
 export function MarketplaceHomepage() {
 
   const [filters, setFilters] = useState<LaundryFilters>(DEFAULT_FILTERS);
@@ -143,15 +143,12 @@ export function MarketplaceHomepage() {
 
 
           <LaundryFiltersBar
-
             filters={filters}
-
             onChange={setFilters}
-
             resultCount={filtered.length}
-
             totalCount={isSearching ? total : undefined}
-
+            isLoading={isLoading}
+            isFetching={isFetching}
           />
 
 
@@ -188,7 +185,11 @@ export function MarketplaceHomepage() {
 
               title="Could not load laundries"
 
-              description="Check your connection and try again."
+              description={
+                isFetching
+                  ? 'Still trying to reach the server — hosted APIs can take up to a minute to wake up.'
+                  : 'The server may still be starting. Wait a moment, then try again. For local dev, use frontend/.env.local with your backend on port 8000.'
+              }
 
               secondaryAction={{
 

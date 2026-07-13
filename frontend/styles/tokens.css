@@ -33,7 +33,7 @@
   --border-strong: #cbd5e1;
 
   /* Status */
-  --success: #059669;
+  --success: #047857;
   --success-foreground: #ffffff;
   --success-muted: #d1fae5;
   --warning: #d97706;
@@ -98,7 +98,7 @@
   --space-16: 3rem;
 
   /* Density */
-  --nav-height: 2.875rem;     /* 46px */
+  --nav-height: 3.25rem;      /* 52px — room for lg+ wordmark (h-11) */
   --sidebar-width: 13rem;     /* 208px */
   --control-height: 2.25rem;  /* 36px */
   --control-height-sm: 2rem;  /* 32px */
@@ -177,4 +177,18 @@
   --gradient-hero: linear-gradient(135deg, #172554 0%, #1d4ed8 48%, #0891b2 100%);
 
   color-scheme: dark;
+}
+
+/* Marketing / public pages — readable type on mobile & tablet (< lg) */
+@media (max-width: 1023px) {
+  .marketing-readable {
+    --text-xs: 0.75rem;     /* 12px */
+    --text-sm: 0.875rem;    /* 14px */
+    --text-base: 1rem;      /* 16px */
+    --text-lg: 1.125rem;    /* 18px */
+    --text-xl: 1.25rem;     /* 20px */
+    --text-2xl: 1.5rem;     /* 24px */
+    --text-3xl: 1.875rem;   /* 30px */
+    --text-4xl: 2.25rem;    /* 36px */
+  }
 }

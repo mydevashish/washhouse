@@ -56,3 +56,23 @@ def test_settings_respects_explicit_direct_url(
 
     assert settings.DATABASE_URL == async_url
     assert settings.DATABASE_URL_DIRECT == direct_url
+
+
+def test_production_rejects_weak_jwt_secret(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("JWT_SECRET", "dev-secret-change-me")
+
+    with pytest.raises(ValueError, match="JWT_SECRET must be at least 32 characters"):
+        Settings(_env_file=None)
+
+
+def test_production_accepts_strong_jwt_secret(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("JWT_SECRET", "x" * 32)
+    monkeypatch.setenv("OTP_DEBUG", "true")
+    monkeypatch.setenv("AUTO_SEED_DEMO", "true")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.OTP_DEBUG is False
+    assert settings.AUTO_SEED_DEMO is False

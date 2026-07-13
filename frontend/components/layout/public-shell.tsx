@@ -18,7 +18,7 @@ export function PublicShell({
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-screen flex-col bg-muted/30">
+    <div className="marketing-readable flex min-h-screen flex-col bg-muted/30">
       <SkipToContent />
       <GlobalNavbar
         app="customer"

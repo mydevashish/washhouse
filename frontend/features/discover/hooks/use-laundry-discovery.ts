@@ -12,8 +12,17 @@ import {
 import { enrichLaundry } from '@/features/discover/lib/laundry-meta';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { queryKeys } from '@/lib/query-keys';
-import { STALE } from '@/lib/query-config';
-import { listLaundries, searchLaundries, type LaundryListItem } from '@/services/laundries';
+import {
+  discoveryQueryRetry,
+  discoveryQueryRetryDelay,
+  STALE,
+} from '@/lib/query-config';
+import {
+  listLaundries,
+  parseLaundryListPayload,
+  searchLaundries,
+  type LaundryListItem,
+} from '@/services/laundries';
 
 export function useLaundryDiscovery(filters: LaundryFilters = DEFAULT_FILTERS) {
   const debouncedSearch = useDebouncedValue(filters.search.trim(), 300);
@@ -25,6 +34,8 @@ export function useLaundryDiscovery(filters: LaundryFilters = DEFAULT_FILTERS) {
     queryFn: () => listLaundries(),
     enabled: !isSearching,
     staleTime: STALE.laundries,
+    retry: discoveryQueryRetry,
+    retryDelay: discoveryQueryRetryDelay,
   });
 
   const searchQuery = useQuery({
@@ -44,13 +55,15 @@ export function useLaundryDiscovery(filters: LaundryFilters = DEFAULT_FILTERS) {
     enabled: isSearching,
     staleTime: STALE.laundrySearch,
     placeholderData: (prev) => prev,
+    retry: discoveryQueryRetry,
+    retryDelay: discoveryQueryRetryDelay,
   });
 
   const baseItems: LaundryListItem[] = useMemo(() => {
     if (isSearching) {
       return searchQuery.data?.items ?? [];
     }
-    return listQuery.data ?? [];
+    return parseLaundryListPayload(listQuery.data);
   }, [isSearching, searchQuery.data, listQuery.data]);
 
   const enriched = useMemo(
@@ -60,11 +73,11 @@ export function useLaundryDiscovery(filters: LaundryFilters = DEFAULT_FILTERS) {
 
   const filtered = useMemo(() => applyClientFilters(enriched, filters), [enriched, filters]);
 
-  const isLoading = isSearching
-    ? searchQuery.isLoading && !searchQuery.data
-    : listQuery.isLoading;
+  const isPending = isSearching ? searchQuery.isPending : listQuery.isPending;
   const isFetching = isSearching ? searchQuery.isFetching : listQuery.isFetching;
   const isError = isSearching ? searchQuery.isError : listQuery.isError;
+  const isLoading =
+    isPending || isDebouncing || (isFetching && !isError && enriched.length === 0);
   const refetch = isSearching ? searchQuery.refetch : listQuery.refetch;
   const total = isSearching ? (searchQuery.data?.total ?? 0) : enriched.length;
 
@@ -72,7 +85,8 @@ export function useLaundryDiscovery(filters: LaundryFilters = DEFAULT_FILTERS) {
     filters,
     filtered,
     enriched,
-    isLoading: isLoading || isDebouncing,
+    isLoading,
+    isPending,
     isFetching,
     isError,
     refetch,

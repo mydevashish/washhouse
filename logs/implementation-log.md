@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-07-13 — Fix /discover "0 laundries nearby" with API data
+
+- **Type:** fix
+- **Scope:** Discover listing / client filters
+- **Files:** `frontend/features/discover/listing/filter-laundries.ts`, `frontend/features/discover/hooks/use-laundry-discovery.ts`, `frontend/services/laundries.ts`, tests + `tests/e2e/discover-laundries.spec.ts`
+- **Summary:** `applyClientFilters` now normalizes filter caps (guards against `0` / `NaN` / empty string) and skips sentinel "any" delivery/price values. `listLaundries` unwraps array or search-shaped payloads. Hook keeps loading state until enriched rows exist. Added Jest + Playwright regression tests.
+- **Risks:** None — stricter filters still work when caps are intentionally set.
+- **Tests:** `filter-laundries.test.ts`, `laundries.test.ts`, `use-laundry-discovery.test.tsx`, `discover-laundries.spec.ts`; full `npm test`, `npm run type-check`, `npm run lint`.
+- **Next:** None.
+
+---
+
+## 2026-07-13 — Fix hero sticky CTA overlap on mobile
+
+- **Type:** fix
+- **Scope:** Marketing homepage hero
+- **Files:** `frontend/features/marketing/home/home-hero.tsx`, `frontend/features/marketing/home/hero-carousel.tsx`, `frontend/features/marketing/home/hero-static-fallback.tsx`, `frontend/features/marketing/home/home-hero.test.tsx`
+- **Summary:** Moved mobile sticky CTAs ("Book pickup", "Become a partner") out of an absolute overlay into document flow below the carousel (`sm:hidden`). Removed slide `pb-24`/`pb-28` reserved for overlay clearance and reset dot indicators to `bottom-4`/`sm:bottom-6`. Desktop keeps per-slide CTAs inside `GlassSurface`; no duplicate global CTAs on `sm+`.
+- **Risks:** `FloatingContactActions` FAB overlap observer still targets `[data-marketing-sticky-cta]` — works when CTAs scroll into view below carousel.
+- **Tests:** `home-hero.test.tsx` asserts sticky CTA block is not absolutely positioned; `npm run test`, `npm run type-check`, `npm run lint`.
+- **Next:** None.
+
+---
+
 ## 2026-07-12 — Sitewide marketing footer navigation
 
 - **Type:** feat

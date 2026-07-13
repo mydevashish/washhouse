@@ -2,7 +2,7 @@
 
 > Updated whenever a major milestone shifts. The source of truth for "where are we?".
 
-**Last updated:** 2026-06-02
+**Last updated:** 2026-07-13
 
 ## Phase
 
@@ -21,6 +21,8 @@
 ## Blocked / Waiting
 
 - Live Razorpay Checkout.js (server order create shipped)
+- **Production deploy** — Phase 0–2 blockers: forgot-password UI (BUG-001), staging backend health, CI green on remote
+- `staging.dlm.app` + Railway/Neon target stack not yet wired (interim: washhouse.vercel.app + Render)
 
 ## Risks (top 3)
 

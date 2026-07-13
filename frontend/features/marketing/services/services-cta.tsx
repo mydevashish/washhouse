@@ -13,7 +13,7 @@ export function ServicesCta() {
         >
           Ready to book your first pickup?
         </h2>
-        <p className="mt-3 text-base leading-relaxed text-primary-foreground/85 sm:text-lg">
+        <p className="mt-3 text-base leading-relaxed text-primary-foreground sm:text-lg">
           Discover verified laundries near you, compare services, and schedule pickup in minutes.
         </p>
         <div className="mt-8">

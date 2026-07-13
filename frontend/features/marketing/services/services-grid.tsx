@@ -42,7 +42,7 @@ export function ServicesGrid() {
                         <Icon className="h-5 w-5" aria-hidden />
                       </div>
                       {optional ? (
-                        <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                        <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground/70">
                           Optional
                         </span>
                       ) : null}

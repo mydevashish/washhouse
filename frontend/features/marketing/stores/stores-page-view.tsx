@@ -55,14 +55,17 @@ export function StoresPageView() {
             onChange={setFilters}
             resultCount={filtered.length}
             totalCount={isSearching ? total : undefined}
+            isLoading={isLoading}
+            isFetching={isFetching}
           />
 
           {isLoading && (
             <div
               className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              role="status"
               aria-busy="true"
-              aria-label="Loading stores"
             >
+              <span className="sr-only">Loading stores</span>
               {Array.from({ length: 8 }).map((_, i) => (
                 <LaundryCardSkeleton key={i} />
               ))}

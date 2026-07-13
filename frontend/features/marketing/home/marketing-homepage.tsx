@@ -1,41 +1,66 @@
-'use client';
+import dynamic from 'next/dynamic';
 
-import { BookingFlowSteps } from '@/components/marketplace/booking-flow-steps';
-import { SectionHeader } from '@/components/marketplace/section-header';
 import { TrustStrip } from '@/components/marketplace/trust-strip';
-import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
-import { HomeTestimonials } from '@/features/discover/homepage/home-testimonials';
-import { FeaturedStoresTeaser } from '@/features/marketing/home/featured-stores-teaser';
-import { FinalCtaBand } from '@/features/marketing/home/final-cta-band';
 import { MarketingHomeHero } from '@/features/marketing/home/home-hero';
-import { ServicesPreview } from '@/features/marketing/home/services-preview';
+
+const HowItWorksSection = dynamic(
+  () =>
+    import('@/features/marketing/home/how-it-works-section').then((m) => ({
+      default: m.HowItWorksSection,
+    })),
+  { loading: () => <section className="min-h-[24rem] bg-muted/30" aria-hidden /> },
+);
+
+const ServicesPreview = dynamic(
+  () =>
+    import('@/features/marketing/home/services-preview').then((m) => ({
+      default: m.ServicesPreview,
+    })),
+  { loading: () => <section className="min-h-[24rem] bg-card" aria-hidden /> },
+);
+
+const DeliveryOptionsBand = dynamic(
+  () =>
+    import('@/features/marketing/home/delivery-options-band').then((m) => ({
+      default: m.DeliveryOptionsBand,
+    })),
+  { loading: () => <section className="min-h-[20rem] border-y border-border/60" aria-hidden /> },
+);
+
+const FeaturedStoresTeaser = dynamic(
+  () =>
+    import('@/features/marketing/home/featured-stores-teaser').then((m) => ({
+      default: m.FeaturedStoresTeaser,
+    })),
+  { loading: () => <section className="min-h-[24rem] bg-muted/30" aria-hidden /> },
+);
+
+const HomeTestimonials = dynamic(
+  () =>
+    import('@/features/discover/homepage/home-testimonials').then((m) => ({
+      default: m.HomeTestimonials,
+    })),
+  { loading: () => <section className="min-h-[20rem] bg-card" aria-hidden /> },
+);
+
+const FinalCtaBand = dynamic(
+  () =>
+    import('@/features/marketing/home/final-cta-band').then((m) => ({
+      default: m.FinalCtaBand,
+    })),
+  { loading: () => <section className="min-h-[16rem] bg-primary" aria-hidden /> },
+);
 
 export function MarketingHomepage() {
   return (
-    <div className="bg-background">
+    <div className="overflow-x-hidden bg-background">
       <MarketingHomeHero />
       <TrustStrip />
 
-      <section className="border-b border-border bg-card py-12 sm:py-16">
-        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
-          <FadeIn>
-            <FadeInItem>
-              <SectionHeader
-                eyebrow="How it works"
-                title="Book in 4 simple steps"
-                description="No confusion — pick a laundry, add services, schedule pickup, and track until delivery."
-                align="center"
-                className="mb-10"
-              />
-            </FadeInItem>
-            <FadeInItem>
-              <BookingFlowSteps />
-            </FadeInItem>
-          </FadeIn>
-        </div>
-      </section>
+      <HowItWorksSection />
 
       <ServicesPreview />
+      <DeliveryOptionsBand />
       <FeaturedStoresTeaser />
       <HomeTestimonials />
       <FinalCtaBand />

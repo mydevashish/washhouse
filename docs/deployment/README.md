@@ -30,6 +30,8 @@
 6. Tag `vX.Y.Z` → production deploy.
 7. Update `logs/deployment-log.md`.
 
+**Pre-deploy gate:** See [`production-readiness-v0.1.0.md`](production-readiness-v0.1.0.md) for the current checklist, blockers, release notes, and rollback plan.
+
 ## Rollback
 
 - **Frontend:** Vercel → previous deployment → "Promote to production".

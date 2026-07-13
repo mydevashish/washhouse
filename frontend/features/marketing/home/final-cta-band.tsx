@@ -11,7 +11,11 @@ export function FinalCtaBand() {
   const reduce = useReducedMotion();
 
   return (
-    <section aria-labelledby="final-cta-title" className="bg-primary py-12 sm:py-16">
+    <section
+      aria-labelledby="final-cta-title"
+      data-marketing-bottom-cta
+      className="bg-primary py-12 sm:py-16 lg:py-20"
+    >
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
         <FadeIn>
           <FadeInItem>
@@ -28,7 +32,7 @@ export function FinalCtaBand() {
               >
                 Ready for fresh clothes?
               </h2>
-              <p className="mt-3 text-base leading-relaxed text-primary-foreground/85 sm:text-lg">
+              <p className="mt-3 text-base leading-relaxed text-primary-foreground sm:text-lg">
                 Pick a laundry, schedule pickup, and we&apos;ll handle the rest. UPI, COD, and GST
                 included at checkout.
               </p>

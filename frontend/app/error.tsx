@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { PublicShell } from '@/components/layout/public-shell';
 import { Button } from '@/components/ui/button';
 
-export default function GlobalError({
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+export default function RouteError({
   error,
   reset,
 }: {
@@ -26,6 +28,11 @@ export default function GlobalError({
             ? `Reference: ${error.digest}`
             : 'We have logged this issue. Please try again.'}
         </p>
+        {isDevelopment && error.message ? (
+          <p className="mt-3 max-w-full break-words rounded-md bg-muted px-3 py-2 font-mono text-left text-xs text-muted-foreground">
+            {error.message}
+          </p>
+        ) : null}
         <div className="mt-8 flex w-full max-w-xs flex-col gap-3 sm:flex-row sm:max-w-none sm:justify-center">
           <Button type="button" size="lg" className="w-full sm:w-auto" onClick={() => reset()}>
             Try again

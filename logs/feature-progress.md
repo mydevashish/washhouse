@@ -19,7 +19,7 @@
 - Auth (register, login, refresh cookie, OTP, password reset, Google 501): **shipped**
 - User profile + addresses: **shipped** (API + FE account)
 - Base UI shell + dark mode: **shipped**
-- CI / CD baseline: **planned** (workflows exist; verify green locally)
+- CI / CD baseline: **in-progress** (frontend workflow fixed 2026-07-13; verify GitHub Actions green)
 
 ## Phase 2 — Customer MVP
 - Laundry discovery: **shipped** (API + FE list + detail)

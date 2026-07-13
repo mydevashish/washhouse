@@ -1,4 +1,5 @@
 import { api, type ApiEnvelope } from '@/lib/api';
+import { DISCOVERY_API_TIMEOUT_MS } from '@/lib/query-config';
 
 export interface LaundryListItem {
   id: string;
@@ -52,11 +53,29 @@ export interface Review {
   created_at: string;
 }
 
+/** Normalize list API payloads (array or accidental search-shaped envelope). */
+export function parseLaundryListPayload(payload: unknown): LaundryListItem[] {
+  if (Array.isArray(payload)) return payload;
+  if (
+    payload &&
+    typeof payload === 'object' &&
+    'items' in payload &&
+    Array.isArray((payload as LaundrySearchResponse).items)
+  ) {
+    return (payload as LaundrySearchResponse).items;
+  }
+  return [];
+}
+
 export async function listLaundries(city?: string): Promise<LaundryListItem[]> {
-  const { data } = await api.get<ApiEnvelope<LaundryListItem[]>>('/laundries', {
-    params: city ? { city } : undefined,
-  });
-  return data.data;
+  const { data } = await api.get<ApiEnvelope<LaundryListItem[] | LaundrySearchResponse>>(
+    '/laundries',
+    {
+      params: city ? { city } : undefined,
+      timeout: DISCOVERY_API_TIMEOUT_MS,
+    },
+  );
+  return parseLaundryListPayload(data.data);
 }
 
 export async function searchLaundries(params: {

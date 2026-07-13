@@ -28,9 +28,11 @@
 
 ## Frontend (`frontend/.env.local`)
 
+Next.js loads env in this order (later wins): `.env` → `.env.local` → `.env.development` → `.env.development.local`.
+
 | Var                           | Required | Local default                | Notes                                  |
 | ----------------------------- | -------- | ---------------------------- | -------------------------------------- |
-| `NEXT_PUBLIC_API_URL`         | ✅       | `http://localhost:8000/api/v1` |                                       |
+| `NEXT_PUBLIC_API_URL`         | ✅       | `http://localhost:8000/api/v1` | **Use `.env.local` for local backend.** `frontend/.env` ships with Render URL for reference only. |
 | `NEXT_PUBLIC_APP_URL`         | ✅       | `http://localhost:3000`      |                                        |
 | `NEXT_PUBLIC_SENTRY_DSN`      | ❌ local | -                            |                                        |
 | `NEXT_PUBLIC_POSTHOG_KEY`     | ❌ local | -                            |                                        |
@@ -45,6 +47,18 @@
 | Preview     | Vercel + Railway encrypted env stores    |
 | Staging     | Vercel + Railway encrypted env stores    |
 | Production  | Vercel + Railway encrypted env stores    |
+
+## Local discovery troubleshooting
+
+**Symptom:** `/discover` shows `0 laundries nearby` or an empty list while the page is still loading.
+
+| Check | Action |
+| ----- | ------ |
+| API target | Create `frontend/.env.local` with `NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1` and restart `pnpm dev`. Without `.env.local`, the app uses Render from `frontend/.env`. |
+| Backend running | `GET http://localhost:8000/api/v1/health` should return 200. |
+| Demo seed | Backend `AUTO_SEED_DEMO=true` (default) seeds 3 Bengaluru laundries on startup. Or run `python scripts/seed.py` from `backend/`. |
+| Verify data | `GET http://localhost:8000/api/v1/laundries` should return 3 items (`Sparkle Clean Indiranagar`, `Quick Wash Koramangala`, `FreshFold HSR Layout`). |
+| Render cold start | Hosted API can take 30–60s to wake; discovery queries retry with a 60s timeout. UI shows skeletons + “Loading laundries…” instead of `0 nearby`. |
 
 ## Rotation
 

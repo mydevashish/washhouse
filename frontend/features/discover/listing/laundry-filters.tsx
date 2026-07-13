@@ -11,6 +11,10 @@ type LaundryFiltersBarProps = {
   resultCount: number;
   /** Server total when search is active */
   totalCount?: number;
+  /** Hide "0 nearby" while the first fetch is in flight */
+  isLoading?: boolean;
+  /** Show a soft refresh hint when refetching with no rows yet */
+  isFetching?: boolean;
 };
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
@@ -25,6 +29,8 @@ export function LaundryFiltersBar({
   onChange,
   resultCount,
   totalCount,
+  isLoading = false,
+  isFetching = false,
 }: LaundryFiltersBarProps) {
   return (
     <Card className="shadow-soft" role="search" aria-label="Filter laundries">
@@ -114,11 +120,19 @@ export function LaundryFiltersBar({
             </Select>
           </div>
           <p className="text-sm font-medium text-muted-foreground" aria-live="polite">
-            <span className="text-foreground">{resultCount}</span>{' '}
-            {resultCount === 1 ? 'laundry' : 'laundries'}
-            {totalCount !== undefined && totalCount !== resultCount
-              ? ` (of ${totalCount} matches)`
-              : ' nearby'}
+            {isLoading ? (
+              <span className="text-muted-foreground">Loading laundries…</span>
+            ) : isFetching && resultCount === 0 ? (
+              <span className="text-muted-foreground">Connecting to laundries…</span>
+            ) : (
+              <>
+                <span className="text-foreground">{resultCount}</span>{' '}
+                {resultCount === 1 ? 'laundry' : 'laundries'}
+                {totalCount !== undefined && totalCount !== resultCount
+                  ? ` (of ${totalCount} matches)`
+                  : ' nearby'}
+              </>
+            )}
           </p>
         </div>
       </CardContent>

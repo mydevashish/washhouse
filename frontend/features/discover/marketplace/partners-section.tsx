@@ -9,14 +9,20 @@ import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
 import { PartnerCard } from '@/features/discover/marketplace/partner-card';
 import { Section, SectionHeading } from '@/features/discover/marketplace/section';
 import { queryKeys } from '@/lib/query-keys';
-import { STALE } from '@/lib/query-config';
+import {
+  discoveryQueryRetry,
+  discoveryQueryRetryDelay,
+  STALE,
+} from '@/lib/query-config';
 import { listLaundries } from '@/services/laundries';
 
 export function PartnersSection() {
-  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+  const { data, isError, refetch, isFetching, isPending } = useQuery({
     queryKey: queryKeys.laundries(),
     queryFn: () => listLaundries(),
     staleTime: STALE.laundries,
+    retry: discoveryQueryRetry,
+    retryDelay: discoveryQueryRetryDelay,
   });
 
   return (
@@ -39,7 +45,7 @@ export function PartnersSection() {
           </InfoBanner>
         </FadeInItem>
 
-        {isLoading && (
+        {isPending && (
           <div
             className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
             aria-busy="true"
@@ -62,7 +68,11 @@ export function PartnersSection() {
           <EmptyState
             icon={Store}
             title="Could not load laundries"
-            description="Check your internet connection and make sure the app server is running, then try again."
+            description={
+              isFetching
+                ? 'Still trying to reach the server — hosted APIs can take up to a minute to wake up.'
+                : 'Check your internet connection and make sure the app server is running, then try again.'
+            }
             secondaryAction={{
               label: isFetching ? 'Retrying…' : 'Try again',
               onClick: () => void refetch(),

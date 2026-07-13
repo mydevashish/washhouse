@@ -27,7 +27,7 @@ export function FeaturedStoresTeaser() {
   return (
     <section
       aria-labelledby="featured-stores-title"
-      className="border-t border-border bg-surface-gradient py-12 sm:py-16 lg:py-20"
+      className="bg-muted/30 py-12 sm:py-16 lg:py-20"
     >
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
         <FadeIn>
@@ -44,9 +44,10 @@ export function FeaturedStoresTeaser() {
           {isLoading && (
             <div
               className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+              role="status"
               aria-busy="true"
-              aria-label="Loading featured stores"
             >
+              <span className="sr-only">Loading featured stores</span>
               {Array.from({ length: PREVIEW_COUNT }).map((_, i) => (
                 <div
                   key={i}

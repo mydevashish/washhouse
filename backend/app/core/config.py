@@ -205,6 +205,21 @@ class Settings(BaseSettings):
             self.DATABASE_URL_DIRECT = to_sync_database_url(self.DATABASE_URL)
         return self
 
+    @model_validator(mode="after")
+    def _enforce_production_secrets(self) -> Settings:
+        if self.APP_ENV in ("production", "staging"):
+            weak_jwt = self.JWT_SECRET in ("", "dev-secret-change-me") or len(self.JWT_SECRET) < 32
+            if weak_jwt and self.JWT_ALG == "HS256" and not self.JWT_PRIVATE_KEY:
+                raise ValueError(
+                    "JWT_SECRET must be at least 32 characters in staging/production "
+                    "(or configure RS256 JWT_PRIVATE_KEY / JWT_PUBLIC_KEY)"
+                )
+            if self.OTP_DEBUG:
+                self.OTP_DEBUG = False
+            if self.AUTO_SEED_DEMO:
+                self.AUTO_SEED_DEMO = False
+        return self
+
     @field_validator("SMTP_PORT", mode="before")
     @classmethod
     def _empty_optional_int(cls, value: object) -> object:
