@@ -7,11 +7,13 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid4
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
 from app.models.enums import LaundryStatus
 from app.models.storefront import LaundryStorefront
+from app.models.user import User
 from app.repositories.laundry import LaundryRepository
 from app.repositories.storefront import StorefrontRepository
 from app.schemas.storefront import StorefrontHighlight, StorefrontUpdateRequest
@@ -294,7 +296,19 @@ class StorefrontService:
         )
         return await self.update_for_partner(partner_user_id, body)
 
+    async def _resolve_owner_contact(self, laundry) -> tuple[str | None, str | None]:
+        result = await self._session.execute(
+            select(User.phone, User.full_name).where(User.id == laundry.owner_user_id),
+        )
+        row = result.one_or_none()
+        if not row:
+            return None, None
+        phone = (row.phone or "").strip() or None
+        owner_name = (row.full_name or "").strip() or None
+        return phone, owner_name
+
     async def _create_default(self, laundry) -> LaundryStorefront:
+        contact_phone, owner_name = await self._resolve_owner_contact(laundry)
         cover = "https://images.unsplash.com/photo-1582735680409-38e523e2aabf?auto=format&fit=crop&w=1200&q=80"
         gallery_urls = [
             "https://images.unsplash.com/photo-1610557892470-55d9a53970f0?auto=format&fit=crop&w=800&q=80",
@@ -310,9 +324,9 @@ class StorefrontService:
             "cover_url": cover,
             "tagline": laundry.description[:120] if laundry.description else "Quality laundry, delivered.",
             "brand_story": laundry.description,
-            "owner_name": None,
-            "contact_phone": None,
-            "whatsapp_number": None,
+            "owner_name": owner_name,
+            "contact_phone": contact_phone,
+            "whatsapp_number": contact_phone,
             "working_hours": {
                 "Mon–Sat": "8:00 AM – 9:00 PM",
                 "Sunday": "9:00 AM – 6:00 PM",

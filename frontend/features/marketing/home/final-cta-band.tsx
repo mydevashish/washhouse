@@ -1,61 +1,115 @@
 'use client';
 
-import Link from 'next/link';
+import Image from 'next/image';
+import { MessageCircle, Phone } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { GlassSurface } from '@/components/ui/glass-surface';
+import {
+  buildTelHref,
+  buildWhatsAppHref,
+  CONTACT_CONFIG,
+} from '@/features/marketing/contact/contact-constants';
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
+import {
+  GLASS_MOBILE_ON_DARK,
+  MARKETING_CONTAINER,
+  MARKETING_SECTION_PY,
+} from '@/features/marketing/shared/marketing-layout';
+import { cn } from '@/lib/utils';
+
+const CTA_BACKGROUND_IMAGE =
+  'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=1920&q=80';
+
+const WHATSAPP_MESSAGE = 'Hi WashHouse — I would like to book a laundry pickup.';
 
 export function FinalCtaBand() {
   const reduce = useReducedMotion();
+  const telHref = buildTelHref(CONTACT_CONFIG.phone);
+  const whatsappHref = buildWhatsAppHref(CONTACT_CONFIG.whatsapp, WHATSAPP_MESSAGE);
 
   return (
     <section
       aria-labelledby="final-cta-title"
       data-marketing-bottom-cta
-      className="bg-primary py-12 sm:py-16 lg:py-20"
+      className={cn('relative isolate overflow-hidden', MARKETING_SECTION_PY)}
     >
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
+      <Image
+        src={CTA_BACKGROUND_IMAGE}
+        alt=""
+        fill
+        priority={false}
+        sizes="(max-width: 1440px) 100vw, 1440px"
+        className="object-cover"
+        aria-hidden
+      />
+      <div
+        className="absolute inset-0 bg-gradient-to-r from-brand-900/95 via-brand-600/90 to-brand-900/95"
+        aria-hidden
+      />
+
+      <div className={cn('relative', MARKETING_CONTAINER)}>
         <FadeIn>
           <FadeInItem>
             <motion.div
-              className="mx-auto max-w-2xl text-center"
+              className="mx-auto max-w-3xl"
               initial={reduce ? false : { opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             >
-              <h2
-                id="final-cta-title"
-                className="text-2xl font-bold tracking-tight text-primary-foreground sm:text-3xl"
+              <GlassSurface
+                variant="strong"
+                className={cn(
+                  'rounded-2xl px-6 py-8 text-center sm:px-10 sm:py-10 lg:px-12 lg:py-12',
+                  GLASS_MOBILE_ON_DARK,
+                )}
               >
-                Ready for fresh clothes?
-              </h2>
-              <p className="mt-3 text-base leading-relaxed text-primary-foreground sm:text-lg">
-                Pick a laundry, schedule pickup, and we&apos;ll handle the rest. UPI, COD, and GST
-                included at checkout.
-              </p>
-              <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-                <Button
-                  asChild
-                  size="lg"
-                  className="h-11 w-full rounded-full bg-card text-primary hover:bg-card/95 sm:w-auto"
+                <h2
+                  id="final-cta-title"
+                  className="text-2xl font-bold tracking-tight text-on-hero sm:text-3xl lg:text-4xl"
                 >
-                  <Link href="/discover#laundries">
-                    Schedule my pickup
-                    <ArrowRight className="h-4 w-4" aria-hidden />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="h-11 w-full rounded-full border-2 border-primary-foreground/70 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 sm:w-auto"
-                >
-                  <Link href="/franchise">Partner with us</Link>
-                </Button>
-              </div>
+                  Ready to Experience Premium Laundry?
+                </h2>
+                <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-on-hero-muted sm:text-lg">
+                  Chat on WhatsApp or call us — we&apos;ll help you book pickup, answer questions,
+                  and get your clothes back fresh.
+                </p>
+
+                <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:justify-center">
+                  <a
+                    href={whatsappHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(
+                      'inline-flex h-12 min-h-12 w-full items-center justify-center gap-2 rounded-full px-6',
+                      'bg-success text-sm font-semibold text-success-foreground shadow-soft',
+                      'transition-[transform,opacity] duration-base ease-out',
+                      'hover:bg-success/90 active:scale-[0.98]',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                      'sm:w-auto sm:min-w-[12rem]',
+                    )}
+                  >
+                    <MessageCircle className="h-5 w-5 text-success-foreground" aria-hidden />
+                    WhatsApp
+                  </a>
+                  <a
+                    href={telHref}
+                    className={cn(
+                      'inline-flex h-12 min-h-12 w-full items-center justify-center gap-2 rounded-full px-6',
+                      'border-2 border-on-hero/70 bg-white/10 text-sm font-semibold text-on-hero max-md:[backdrop-filter:none]',
+                      'md:backdrop-blur-sm',
+                      'transition-[transform,opacity,background-color] duration-base ease-out',
+                      'hover:bg-white/15 active:scale-[0.98]',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                      'sm:w-auto sm:min-w-[12rem]',
+                    )}
+                  >
+                    <Phone className="h-5 w-5" aria-hidden />
+                    Call {CONTACT_CONFIG.phone}
+                  </a>
+                </div>
+              </GlassSurface>
             </motion.div>
           </FadeInItem>
         </FadeIn>

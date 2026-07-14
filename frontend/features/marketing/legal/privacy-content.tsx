@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { WASHHOUSE_BRAND_NAME } from '@/components/brand/washhouse-logo';
+import { CONTACT_CONFIG } from '@/features/marketing/contact/contact-constants';
 
 import { LEGAL_LAST_UPDATED } from '@/features/marketing/legal/legal-constants';
 import { LegalSection } from '@/features/marketing/legal/legal-section';
@@ -86,13 +87,18 @@ export function PrivacyContent() {
                 personal data processed through our website and apps.
               </p>
               <p>
-                <strong className="text-foreground">Registered entity (placeholder):</strong>
+                <strong className="text-foreground">Registered entity:</strong>
                 <br />
                 WashHouse Laundry &amp; Dryclean Pvt. Ltd.
                 <br />
-                [Registered office address — city, state, PIN — India]
+                {CONTACT_CONFIG.officeAddress.split('\n').map((line, index) => (
+                  <span key={line}>
+                    {line}
+                    {index < CONTACT_CONFIG.officeAddress.split('\n').length - 1 ? <br /> : null}
+                  </span>
+                ))}
                 <br />
-                Email: privacy@washhouse.in (placeholder)
+                Email: privacy@washhouse.in
               </p>
               <p>
                 Independent laundry Partners listed on the Platform may process your data as
@@ -349,15 +355,16 @@ export function PrivacyContent() {
             <LegalSection id="grievance" title="12. Grievance officer & contact">
               <p>
                 For privacy questions, data requests, or complaints under Indian law, contact our
-                Grievance Officer (placeholder):
+                Grievance Officer:
               </p>
               <p>
-                <strong className="text-foreground">Name:</strong> [Grievance Officer Name]
+                <strong className="text-foreground">Name:</strong> Data Protection Team
                 <br />
                 <strong className="text-foreground">Email:</strong> grievance@washhouse.in
                 <br />
-                <strong className="text-foreground">Address:</strong> [Registered office address —
-                city, state, PIN — India]
+                <strong className="text-foreground">Address:</strong>
+                <br />
+                {CONTACT_CONFIG.officeAddress.split('\n').join(', ')}
               </p>
               <p>
                 You may also reach us through our general{' '}

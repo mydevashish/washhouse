@@ -18,7 +18,7 @@ from app.core.logging import configure_logging
 from app.db.migrate import run_pending_migrations
 from app.db.seed_admin import ensure_default_admin
 from app.db.seed_demo import ensure_demo_data
-from app.db.seed_storefront import ensure_demo_storefronts
+from app.db.seed_storefront import backfill_storefront_contacts_from_owners, ensure_demo_storefronts
 from app.core.server_session import init_server_instance
 from app.middleware.error_handler import register_error_handlers
 from app.middleware.rate_limit import RateLimitMiddleware
@@ -42,6 +42,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     if settings.AUTO_SEED_DEMO:
         await ensure_demo_data()
         await ensure_demo_storefronts()
+        await backfill_storefront_contacts_from_owners()
     log.info("app.startup", env=settings.APP_ENV, version=settings.APP_VERSION)
     yield
     await close_redis()

@@ -3,6 +3,40 @@ import AxeBuilder from '@axe-core/playwright';
 
 const MARKETING_ROUTES = ['/', '/services', '/stores', '/contact'] as const;
 
+test.describe('a11y: homepage stats band', () => {
+  for (const viewport of [
+    { name: 'desktop', size: { width: 1280, height: 800 } },
+    { name: 'mobile', size: { width: 390, height: 844 } },
+  ] as const) {
+    test(`${viewport.name} — stat labels readable on brand gradient`, async ({ page }) => {
+      await page.setViewportSize(viewport.size);
+      await page.goto('/');
+      await page.waitForLoadState('domcontentloaded');
+
+      const statsSection = page.locator('section[aria-labelledby="marketing-stats-title"]');
+      await statsSection.scrollIntoViewIfNeeded();
+      await expect(statsSection).toBeVisible({ timeout: 20_000 });
+
+      const label = statsSection.getByText('Happy Customers');
+      await expect(label).toBeVisible({ timeout: 10_000 });
+
+      const card = statsSection.locator('li > div').first();
+      await expect(card).toHaveClass(/bg-brand-900/);
+
+      const { textColor, cardBg } = await label.evaluate((el) => {
+        const cardEl = el.closest('li')?.querySelector('div');
+        return {
+          textColor: window.getComputedStyle(el).color,
+          cardBg: cardEl ? window.getComputedStyle(cardEl).backgroundColor : '',
+        };
+      });
+
+      expect(textColor).not.toBe(cardBg);
+      expect(cardBg).not.toMatch(/rgb\(255,\s*255,\s*255/);
+    });
+  }
+});
+
 for (const route of MARKETING_ROUTES) {
   test.describe(`a11y: ${route}`, () => {
     test('desktop — no critical or serious violations', async ({ page }) => {

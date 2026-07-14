@@ -25,7 +25,7 @@ export function PartnerCard({ laundry, index }: PartnerCardProps) {
     <motion.article
       className={cn(
         'group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-bg-0 shadow-soft',
-        'transition-shadow hover:border-brand-500/30 hover:shadow-pop',
+        'motion-safe:transition-shadow motion-safe:hover:border-brand-500/30 motion-safe:hover:shadow-pop',
       )}
       whileHover={reduce ? undefined : { y: -4 }}
       transition={{ duration: 0.2 }}
@@ -40,7 +40,7 @@ export function PartnerCard({ laundry, index }: PartnerCardProps) {
             src={image}
             alt=""
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            className="object-cover motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.03]"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
           {laundry.is_verified && (

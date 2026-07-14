@@ -19,6 +19,8 @@ log = structlog.get_logger(__name__)
 LIMITS: dict[str, tuple[int, int]] = {
     "/api/v1/auth": (20, 60),
     "/api/v1/auth/otp": (5, 60),
+    "/api/v1/marketing/contact": (10, 60),
+    "/api/v1/marketing/franchise-inquiries": (10, 60),
 }
 
 

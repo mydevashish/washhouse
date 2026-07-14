@@ -180,11 +180,13 @@ class CustomerExperienceService:
             contact = resolve_guest_contact_fields(sf, laundry_approved=laundry_approved)
             show_call = bool(contact["show_call"])
             show_whatsapp = bool(contact["show_whatsapp"])
+            contact_available = show_call or show_whatsapp
             phone = contact["phone"]
             whatsapp = contact["whatsapp_number"]
             return {
                 "offline_booking_mode": True,
-                "can_contact": show_call or show_whatsapp or bool(location["map_url"]),
+                "contact_available": contact_available,
+                "can_contact": contact_available or bool(location["map_url"]),
                 "requires_login": False,
                 "show_call": show_call,
                 "show_whatsapp": show_whatsapp,
@@ -198,26 +200,20 @@ class CustomerExperienceService:
 
         is_registered = customer_role == "customer"
         requires_login = self.CONTACT_REQUIRES_LOGIN and not is_registered
-        contact = resolve_guest_contact_fields(
-            sf,
-            laundry_approved=laundry_approved,
-        ) if sf and not requires_login else {
-            "phone": None,
-            "whatsapp_number": None,
-            "show_call": False,
-            "show_whatsapp": False,
-        }
+        contact = resolve_guest_contact_fields(sf, laundry_approved=laundry_approved)
         phone = contact["phone"]
         whatsapp = contact["whatsapp_number"]
         show_call = bool(contact["show_call"])
         show_whatsapp = bool(contact["show_whatsapp"])
+        contact_available = show_call or show_whatsapp
         show_callback = bool(sf and sf.show_callback)
         return {
             "offline_booking_mode": False,
+            "contact_available": contact_available,
             "can_contact": is_registered and (show_call or show_whatsapp or show_callback),
             "requires_login": requires_login,
-            "show_call": show_call and is_registered,
-            "show_whatsapp": show_whatsapp and is_registered,
+            "show_call": show_call,
+            "show_whatsapp": show_whatsapp,
             "show_callback": show_callback and is_registered,
             "phone": phone if is_registered and show_call else None,
             "whatsapp_number": whatsapp if is_registered and show_whatsapp else None,

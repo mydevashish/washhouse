@@ -391,3 +391,18 @@ class CustodyActorRole(str, enum.Enum):
     admin = "admin"
     system = "system"
     delivery = "delivery"
+
+
+class MarketingContactSubject(str, enum.Enum):
+    general = "general"
+    order_help = "order-help"
+    franchise = "franchise"
+    partnership = "partnership"
+    legal_privacy = "legal-privacy"
+
+
+class MarketingInvestmentRange(str, enum.Enum):
+    range_10_25 = "10-25"
+    range_25_50 = "25-50"
+    range_50_plus = "50-plus"
+    unsure = "unsure"

@@ -1,6 +1,7 @@
 export * from '@/lib/navigation/back';
 export * from '@/lib/navigation/breadcrumbs';
 export * from '@/lib/navigation/marketing-footer';
+export * from '@/lib/navigation/marketing-nav';
 export * from '@/lib/navigation/search-index';
 export * from '@/lib/navigation/types';
 

@@ -8,16 +8,20 @@ export const HERO_IMAGE = U('photo-1558618666-fcd25c85cd64', 800);
 
 /** Verified IDs for marketing hero carousel (broken legacy URLs returned 404). */
 export const HERO_SLIDE_IMAGES = {
-  primary: HERO_IMAGE,
-  doorstep: U('photo-1517677208171-0bc6725a3e60', 1200),
+  /** Folded fresh laundry — welcome slide */
+  primary: U('photo-1558618666-fcd25c85cd64', 1200),
+  /** Professional laundry facility — services slide */
   compare: U('photo-1571902943202-507ec2618e8f', 1200),
-  partner: U('photo-1558618666-fcd25c85cd64', 1200),
+  /** Small business owner — franchise slide (distinct from facility) */
+  partner: U('photo-1600880292203-757bb62b4baf', 1200),
+  /** Pickup / delivery — delivery slide */
+  doorstep: U('photo-1517677208171-0bc6725a3e60', 1200),
 } as const;
 
 export const LAUNDRY_IMAGES_BY_SLUG: Record<string, string> = {
   'demo-quick-wash-koramangala': U('photo-1558618666-fcd25c85cd64', 800),
-  'demo-sparkle-indiranagar': U('photo-1517677208171-0bc6725a3e60', 800),
-  'demo-freshfold-hsr': U('photo-1558618666-fcd25c85cd64', 800),
+  'demo-sparkle-indiranagar': U('photo-1571902943202-507ec2618e8f', 800),
+  'demo-freshfold-hsr': U('photo-1517677208171-0bc6725a3e60', 800),
 };
 
 const FALLBACK_POOL = [

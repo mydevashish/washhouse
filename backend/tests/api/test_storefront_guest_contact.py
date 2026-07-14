@@ -106,7 +106,39 @@ async def test_offline_contact_hidden_when_storefront_unpublished(
 
 
 @patch.object(settings, "FEATURE_ONLINE_BOOKING", False)
-async def test_offline_contact_auto_creates_storefront_for_approved_laundry(
+async def test_offline_contact_show_call_for_approved_laundry_with_seeded_phone(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    laundry = await _seed_approved_laundry_no_storefront(db_session)
+    db_session.add(
+        LaundryStorefront(
+            laundry_id=laundry.id,
+            template_id="premium",
+            contact_phone=CONTACT_PHONE,
+            whatsapp_number=CONTACT_PHONE,
+            show_call=True,
+            show_whatsapp=True,
+            is_published=True,
+            approval_status="approved",
+        ),
+    )
+    await db_session.flush()
+
+    response = await client.get(f"/api/v1/laundries/{laundry.id}/contact")
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["show_call"] is True
+    assert data["show_whatsapp"] is True
+    assert data["phone"] == CONTACT_PHONE
+    assert data["whatsapp_number"] == CONTACT_PHONE
+    assert data["whatsapp_url"] is not None
+    assert "wa.me" in data["whatsapp_url"]
+
+
+@patch.object(settings, "FEATURE_ONLINE_BOOKING", False)
+async def test_offline_contact_auto_creates_storefront_without_owner_phone(
     client: AsyncClient,
     db_session: AsyncSession,
 ) -> None:
@@ -120,3 +152,26 @@ async def test_offline_contact_auto_creates_storefront_for_approved_laundry(
     assert data["requires_login"] is False
     assert data["show_call"] is False
     assert data["show_whatsapp"] is False
+
+
+@patch.object(settings, "FEATURE_ONLINE_BOOKING", False)
+async def test_offline_contact_auto_creates_storefront_with_owner_phone(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    laundry = await _seed_approved_laundry_no_storefront(db_session)
+    partner = await db_session.get(User, laundry.owner_user_id)
+    assert partner is not None
+    partner.phone = CONTACT_PHONE
+    await db_session.flush()
+
+    response = await client.get(f"/api/v1/laundries/{laundry.id}/contact")
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["offline_booking_mode"] is True
+    assert data["show_call"] is True
+    assert data["show_whatsapp"] is True
+    assert data["phone"] == CONTACT_PHONE
+    assert data["whatsapp_number"] == CONTACT_PHONE
+    assert data["whatsapp_url"] is not None

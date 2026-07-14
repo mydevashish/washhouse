@@ -9,9 +9,14 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
 import { PartnerCard } from '@/features/discover/marketplace/partner-card';
+import {
+  MARKETING_CONTAINER,
+  MARKETING_SECTION_PY,
+} from '@/features/marketing/shared/marketing-layout';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import { listLaundries } from '@/services/laundries';
+import { cn } from '@/lib/utils';
 
 const PREVIEW_COUNT = 3;
 
@@ -27,9 +32,9 @@ export function FeaturedStoresTeaser() {
   return (
     <section
       aria-labelledby="featured-stores-title"
-      className="bg-muted/30 py-12 sm:py-16 lg:py-20"
+      className={cn('bg-muted/30', MARKETING_SECTION_PY)}
     >
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
+      <div className={MARKETING_CONTAINER}>
         <FadeIn>
           <FadeInItem>
             <SectionHeader
@@ -96,7 +101,7 @@ export function FeaturedStoresTeaser() {
 
           <FadeInItem>
             <div className="mt-10 flex justify-center">
-              <Button asChild size="lg" className="rounded-full">
+              <Button asChild size="lg" className="h-11 min-h-11 rounded-full">
                 <Link href="/stores">
                   Browse all stores
                   <ArrowRight className="h-4 w-4" aria-hidden />

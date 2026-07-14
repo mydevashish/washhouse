@@ -2,7 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { Clock, MapPin, Phone, Shield, Truck } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Clock, MapPin, MessageCircle, Phone, Shield, Truck } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { InfoBanner } from '@/components/ui/info-banner';
@@ -37,6 +38,7 @@ function formatWorkingHours(hours: Record<string, string> | null | undefined): s
 }
 
 export function LaundryInformationTab({ laundry }: LaundryInformationTabProps) {
+  const router = useRouter();
   const contactQ = useQuery({
     queryKey: ['contact-info', laundry.id],
     queryFn: () => getContactInfo(laundry.id),
@@ -46,6 +48,11 @@ export function LaundryInformationTab({ laundry }: LaundryInformationTabProps) {
   const contact = contactQ.data;
   const hoursLabel = formatWorkingHours(contact?.working_hours);
   const address = contact?.full_address ?? `${laundry.address_line}, ${laundry.city}`;
+  const loginRedirect = `/login?redirect=${encodeURIComponent(`/discover/${laundry.id}`)}`;
+
+  const requireLogin = () => {
+    router.push(loginRedirect);
+  };
 
   return (
     <div className="space-y-6">
@@ -66,13 +73,61 @@ export function LaundryInformationTab({ laundry }: LaundryInformationTabProps) {
           )}
           {contact?.phone ? (
             <InfoRow icon={Phone} label="Phone" value={contact.phone} />
-          ) : contact?.requires_login ? (
+          ) : contact?.requires_login && contact.show_call ? (
             <InfoRow
               icon={Phone}
               label="Phone"
               value="Sign in to view the shop phone number"
             />
           ) : null}
+
+          {contact?.contact_available && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {contact.show_call && (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => {
+                    if (contact.requires_login) {
+                      requireLogin();
+                      return;
+                    }
+                    if (contact.phone) window.location.href = `tel:${contact.phone}`;
+                  }}
+                >
+                  <Phone className="h-4 w-4" aria-hidden />
+                  {contact.requires_login ? 'Sign in to call' : 'Call shop'}
+                </Button>
+              )}
+              {contact.show_whatsapp && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="gap-2 border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
+                  onClick={() => {
+                    if (contact.requires_login) {
+                      requireLogin();
+                      return;
+                    }
+                    if (contact.whatsapp_url) {
+                      window.open(contact.whatsapp_url, '_blank', 'noopener,noreferrer');
+                    }
+                  }}
+                >
+                  <MessageCircle className="h-4 w-4" aria-hidden />
+                  {contact.requires_login ? 'Sign in for WhatsApp' : 'WhatsApp shop'}
+                </Button>
+              )}
+            </div>
+          )}
+
+          {contact?.requires_login && !contact.contact_available && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={loginRedirect}>Sign in to call or WhatsApp</Link>
+            </Button>
+          )}
         </CardContent>
       </Card>
 
@@ -105,14 +160,6 @@ export function LaundryInformationTab({ laundry }: LaundryInformationTabProps) {
           </ul>
         </CardContent>
       </Card>
-
-      {contact?.requires_login && (
-        <Button asChild variant="outline">
-          <Link href={`/login?redirect=${encodeURIComponent(`/discover/${laundry.id}`)}`}>
-            Sign in to call or WhatsApp
-          </Link>
-        </Button>
-      )}
     </div>
   );
 }

@@ -168,5 +168,35 @@ async def test_guest_contact_requires_login_when_online_booking_enabled(
     data = response.json()["data"]
     assert data["offline_booking_mode"] is False
     assert data["requires_login"] is True
+    assert data["contact_available"] is True
+    assert data["show_call"] is True
+    assert data["show_whatsapp"] is True
+    assert data["show_callback"] is False
     assert data["phone"] is None
+    assert data["whatsapp_number"] is None
     assert data["whatsapp_url"] is None
+
+
+@patch.object(settings, "FEATURE_ONLINE_BOOKING", True)
+async def test_signed_in_customer_contact_when_online_booking_enabled(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    laundry, _ = await _seed_laundry_with_storefront(db_session)
+    _customer, token = await _seed_customer(db_session)
+
+    response = await client.get(
+        f"/api/v1/laundries/{laundry.id}/contact",
+        headers=_customer_headers(token),
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["offline_booking_mode"] is False
+    assert data["requires_login"] is False
+    assert data["contact_available"] is True
+    assert data["show_call"] is True
+    assert data["show_whatsapp"] is True
+    assert data["show_callback"] is True
+    assert data["phone"] == CONTACT_PHONE
+    assert data["whatsapp_url"] is not None

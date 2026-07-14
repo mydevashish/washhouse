@@ -6,11 +6,12 @@ from decimal import Decimal
 from uuid import uuid4
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from app.db.session import AsyncSessionLocal
 from app.models.laundry import Laundry
 from app.models.storefront import LaundryStorefront
+from app.models.user import User
 from app.repositories.storefront import StorefrontRepository
 from app.services.storefront_service import compute_completeness
 
@@ -67,6 +68,46 @@ DEMO_STOREFRONTS: dict[str, dict] = {
                 "issuer": "Government of India",
                 "image_url": None,
             },
+        ],
+    },
+    "demo-sparkle-indiranagar": {
+        "template_id": "premium",
+        "owner_name": "Priya Sharma",
+        "years_in_business": 8,
+        "contact_phone": "+91 98765 43211",
+        "whatsapp_number": "+91 98765 43211",
+        "show_call": True,
+        "show_whatsapp": True,
+        "approval_status": "approved",
+        "tagline": "Premium care for formals and delicate fabrics",
+        "brand_primary": "#1e3a5f",
+        "brand_secondary": "#c9a227",
+        "cover_url": "https://images.unsplash.com/photo-1582735680409-38e523e2aabf?auto=format&fit=crop&w=1200&q=80",
+        "facilities": ["Premium Care", "Dry Cleaning", "Steam Iron", "Stain Removal Specialists"],
+        "highlights": [
+            {"title": "Designer Garment Care", "description": "Specialists in silk, wool, and delicate fabrics."},
+            {"title": "Free Pickup Over ₹500", "description": "Doorstep collection for larger orders."},
+            {"title": "Trusted in Indiranagar", "description": "Serving professionals since 2018."},
+        ],
+    },
+    "demo-freshfold-hsr": {
+        "template_id": "budget",
+        "owner_name": "Amit Verma",
+        "years_in_business": 5,
+        "contact_phone": "+91 98765 43212",
+        "whatsapp_number": "+91 98765 43212",
+        "show_call": True,
+        "show_whatsapp": True,
+        "approval_status": "approved",
+        "tagline": "Budget-friendly laundry for students and families",
+        "brand_primary": "#0f766e",
+        "brand_secondary": "#f59e0b",
+        "cover_url": "https://images.unsplash.com/photo-1582735680409-38e523e2aabf?auto=format&fit=crop&w=1200&q=80",
+        "facilities": ["Wash & Fold", "Eco Friendly Cleaning", "Express Service", "Pickup & Delivery"],
+        "highlights": [
+            {"title": "Student-Friendly Prices", "description": "Affordable rates without cutting corners."},
+            {"title": "Open 7 Days", "description": "Drop off or schedule pickup any day."},
+            {"title": "HSR Layout Favourite", "description": "Trusted by families in Sector 1."},
         ],
     },
 }
@@ -154,3 +195,53 @@ async def ensure_demo_storefronts() -> None:
             log.info("db.seed.storefronts", count=created)
         if updated:
             log.info("db.seed.storefronts.updated", count=updated)
+
+
+async def backfill_storefront_contacts_from_owners() -> None:
+    """Copy laundry owner phone into storefronts missing contact_phone."""
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(LaundryStorefront, User.phone)
+            .join(Laundry, Laundry.id == LaundryStorefront.laundry_id)
+            .join(User, User.id == Laundry.owner_user_id)
+            .where(
+                or_(
+                    LaundryStorefront.contact_phone.is_(None),
+                    LaundryStorefront.contact_phone == "",
+                ),
+                User.phone.isnot(None),
+                User.phone != "",
+            ),
+        )
+        updated = 0
+        for storefront, owner_phone in result.all():
+            phone = owner_phone.strip()
+            if not phone:
+                continue
+            storefront.contact_phone = phone
+            if not (storefront.whatsapp_number or "").strip():
+                storefront.whatsapp_number = phone
+            storefront.completeness_score = compute_completeness(
+                {
+                    "logo_url": storefront.logo_url,
+                    "cover_url": storefront.cover_url,
+                    "tagline": storefront.tagline,
+                    "brand_story": storefront.brand_story,
+                    "gallery": storefront.gallery or [],
+                    "facilities": storefront.facilities or [],
+                    "highlights": storefront.highlights or [],
+                    "machines": storefront.machines or [],
+                    "team": storefront.team or [],
+                    "certifications": storefront.certifications or [],
+                    "videos": storefront.videos or [],
+                    "working_hours": storefront.working_hours,
+                    "contact_phone": phone,
+                    "owner_name": storefront.owner_name,
+                    "years_in_business": storefront.years_in_business,
+                },
+            )
+            updated += 1
+
+        if updated:
+            await session.commit()
+            log.info("db.seed.storefronts.backfill_contacts", count=updated)

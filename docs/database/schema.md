@@ -35,6 +35,10 @@
 | `audit_logs`          | Sensitive operation trail                    | `admin / security`      |
 | `feature_flags`       | Feature flag table                           | `infra`                 |
 | `refresh_tokens`      | Refresh token bookkeeping (jti + used)       | `auth`                  |
+| `marketing_contact_submissions` | Public marketing contact form leads   | `marketing`             |
+| `marketing_franchise_inquiries` | Franchise partnership applications    | `marketing`             |
+| `marketing_site_stats` | Singleton curated stat overrides            | `marketing`             |
+| `marketing_testimonials` | Curated featured testimonials for marketing | `marketing`         |
 
 ## Conventions
 
@@ -62,6 +66,9 @@ See [`erd.md`](erd.md).
 | `laundries`        | `ix_laundries_city_is_approved`             | discovery + admin                  |
 | `laundries`        | GIN on `(name, city)` tsvector              | search                             |
 | `reviews`          | `ix_reviews_laundry_id_created_at`          | latest reviews                     |
+| `marketing_contact_submissions` | `ix_marketing_contact_submissions_phone_created_at` | contact rate limiting   |
+| `marketing_franchise_inquiries` | `ix_marketing_franchise_inquiries_client_ip_created_at` | franchise rate limiting |
+| `marketing_testimonials` | `ix_marketing_testimonials_featured_active_sort` | featured homepage list |
 
 ## Migrations
 

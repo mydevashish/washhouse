@@ -12,15 +12,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { CONTACT_SUBJECTS } from '@/features/marketing/contact/contact-constants';
+import { useSubmitContact } from '@/features/marketing/hooks/use-marketing';
+import { applyApiFieldErrors } from '@/lib/api-field-errors';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 import { cn } from '@/lib/utils';
-
-export const CONTACT_SUBJECTS = [
-  { value: 'general', label: 'General' },
-  { value: 'order-help', label: 'Order help' },
-  { value: 'franchise', label: 'Franchise' },
-  { value: 'partnership', label: 'Partnership' },
-  { value: 'legal-privacy', label: 'Legal / Privacy' },
-] as const;
 
 const contactSubjectValues = CONTACT_SUBJECTS.map((s) => s.value) as [
   (typeof CONTACT_SUBJECTS)[number]['value'],
@@ -99,16 +95,11 @@ function FormField({ id, label, error, required, children, hint }: FieldProps) {
 }
 
 /**
- * v1: client-side validation + success toast (stub). No backend contact endpoint yet.
- * v2: POST /api/v1/contact when the platform ships a contact API.
- * Until then, users can also email {CONTACT_CONFIG.supportEmail} directly.
+ * Public marketing contact form — POST /marketing/contact.
  */
-async function submitContactStub(_values: ContactFormValues): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-}
-
-export function ContactForm() {
+export function ContactForm({ defaultSubject }: { defaultSubject?: ContactFormValues['subject'] }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const submitContact = useSubmitContact();
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -116,7 +107,7 @@ export function ContactForm() {
       name: '',
       phone: '',
       email: '',
-      subject: 'general',
+      subject: defaultSubject ?? 'general',
       message: '',
     },
     mode: 'onBlur',
@@ -124,16 +115,37 @@ export function ContactForm() {
 
   const { errors, isSubmitting } = form.formState;
   const errorCount = Object.keys(errors).length;
+  const isPending = isSubmitting || submitContact.isPending;
 
   const onSubmit = async (values: ContactFormValues) => {
     setSubmitError(null);
     try {
-      await submitContactStub(values);
+      await submitContact.mutateAsync({
+        name: values.name,
+        phone: values.phone,
+        email: values.email?.trim() ? values.email.trim() : undefined,
+        subject: values.subject,
+        message: values.message,
+      });
       toast.success("Message sent — we'll get back to you within one business day.");
-      form.reset({ name: '', phone: '', email: '', subject: 'general', message: '' });
-    } catch {
-      setSubmitError('Something went wrong. Please try again or email us directly.');
-      toast.error('Could not send your message. Try again or email us directly.');
+      form.reset({
+        name: '',
+        phone: '',
+        email: '',
+        subject: defaultSubject ?? 'general',
+        message: '',
+      });
+    } catch (error) {
+      const hasFieldErrors = applyApiFieldErrors(error, form.setError);
+      const message = getApiErrorMessage(error, 'Could not send your message. Try again or email us directly.');
+      setSubmitError(
+        hasFieldErrors
+          ? 'Please fix the highlighted fields and try again.'
+          : message,
+      );
+      toast.error(
+        hasFieldErrors ? 'Please check the highlighted fields.' : message,
+      );
     }
   };
 
@@ -252,9 +264,9 @@ export function ContactForm() {
         type="submit"
         size="lg"
         className="h-11 w-full rounded-full sm:w-auto"
-        disabled={isSubmitting}
+        disabled={isPending}
       >
-        {isSubmitting ? (
+        {isPending ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             Sending…

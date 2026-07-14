@@ -71,7 +71,7 @@ function StorefrontSkeleton() {
 export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
-  const { enabled: onlineBookingEnabled } = useOnlineBookingEnabled();
+  const { enabled: onlineBookingEnabled, isLoading: onlineBookingLoading } = useOnlineBookingEnabled();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
   const storefrontQ = useQuery({
@@ -126,8 +126,10 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
     document.getElementById('storefront-services')?.scrollIntoView({ behavior: 'smooth' });
   }
 
-  const showMobileSummary = selectedCount > 0 && onlineBookingEnabled;
-  const showOfflineMobileBar = !onlineBookingEnabled;
+  const offlineMode = !onlineBookingLoading && !onlineBookingEnabled;
+  const onlineMode = !onlineBookingLoading && onlineBookingEnabled;
+  const showMobileSummary = onlineMode && selectedCount > 0;
+  const showOfflineMobileBar = offlineMode;
 
   return (
     <div
@@ -200,7 +202,7 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
               style={{ background: primary }}
               onClick={scrollToServices}
             >
-              {onlineBookingEnabled ? 'Book now' : 'View prices'}
+              {onlineBookingLoading ? 'View prices' : onlineMode ? 'Book now' : 'View prices'}
             </Button>
           </div>
         </div>
@@ -343,7 +345,7 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
           <h2 id="services-heading" className="mb-4 text-xl font-bold">
             Services & pricing
           </h2>
-          {!onlineBookingEnabled && (
+          {offlineMode && (
             <OfflineBookingContactPanel
               laundryId={laundryId}
               laundryName={laundry.name}
@@ -359,9 +361,9 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
                 onIncrement={(svc) => setQuantity(svc, (quantities[svc.id] ?? 0) + 1)}
                 onDecrement={(svc) => setQuantity(svc, (quantities[svc.id] ?? 0) - 1)}
                 onQuantityChange={setQuantity}
-                browseOnly={!onlineBookingEnabled}
+                browseOnly={onlineBookingLoading || offlineMode}
               />
-              {onlineBookingEnabled && selectedCount > 0 && (
+              {onlineMode && selectedCount > 0 && (
                 <div className="mt-6 hidden lg:block">
                   <Button
                     type="button"
@@ -376,7 +378,7 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
             </div>
             <aside className="mt-8 hidden lg:block">
               <div className="sticky top-24 space-y-4">
-                {!onlineBookingEnabled ? (
+                {offlineMode ? (
                   <OfflineBookingContactPanel
                     laundryId={laundryId}
                     laundryName={laundry.name}
@@ -509,7 +511,7 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
           </section>
         )}
 
-        {onlineBookingEnabled && (
+        {onlineMode && (
           <StorefrontContactSection laundryId={laundryId} laundryName={laundry.name} />
         )}
 

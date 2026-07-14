@@ -1,8 +1,13 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { isOnlineBookingEnabledFromEnv } from '@/lib/online-booking';
+import {
+  isOnlineBookingEnabledFromEnv,
+  resolveOnlineBookingEnabled,
+  warnOnlineBookingFlagMismatch,
+} from '@/lib/online-booking';
 import { queryKeys } from '@/lib/query-keys';
 import { getPublicAppConfig } from '@/services/app-config';
 
@@ -13,16 +18,23 @@ export function offlineBookingBody(laundryName: string): string {
 }
 
 export function useOnlineBookingEnabled() {
-  const envEnabled = isOnlineBookingEnabledFromEnv();
+  const envAllows = isOnlineBookingEnabledFromEnv();
 
   const configQ = useQuery({
     queryKey: queryKeys.appConfig(),
     queryFn: getPublicAppConfig,
     staleTime: 5 * 60_000,
-    enabled: envEnabled,
+    enabled: envAllows,
   });
 
-  if (!envEnabled) {
+  const apiEnabled = configQ.data?.online_booking_enabled;
+
+  useEffect(() => {
+    if (!envAllows || configQ.isLoading || configQ.isError || apiEnabled === undefined) return;
+    warnOnlineBookingFlagMismatch(envAllows, apiEnabled);
+  }, [envAllows, configQ.isLoading, configQ.isError, apiEnabled]);
+
+  if (!envAllows) {
     return { enabled: false, isLoading: false };
   }
 
@@ -30,8 +42,17 @@ export function useOnlineBookingEnabled() {
     return { enabled: false, isLoading: true };
   }
 
+  if (configQ.isError || apiEnabled === undefined) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(
+        '[DLM] Could not load GET /config; using NEXT_PUBLIC_FEATURE_ONLINE_BOOKING as fallback.',
+      );
+    }
+    return { enabled: envAllows, isLoading: false };
+  }
+
   return {
-    enabled: configQ.data?.online_booking_enabled ?? true,
+    enabled: resolveOnlineBookingEnabled(envAllows, apiEnabled),
     isLoading: false,
   };
 }

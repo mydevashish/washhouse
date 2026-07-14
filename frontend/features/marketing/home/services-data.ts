@@ -1,70 +1,70 @@
-import {
-  Droplets,
-  Shirt,
-  ShoppingBasket,
-  Sparkles,
-  Timer,
-  Wind,
-  type LucideIcon,
-} from 'lucide-react';
+const U = (id: string, w: number) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
 
 export type ServicePreviewItem = {
   id: string;
+  slug: string;
   title: string;
   description: string;
-  icon: LucideIcon;
-  accent: string;
-  /** Indicative starting price shown on homepage cards */
-  priceFrom?: string;
+  image: string;
+  imageAlt: string;
 };
 
 export const SERVICE_PREVIEW_ITEMS: ServicePreviewItem[] = [
   {
     id: 'wash-fold',
+    slug: 'wash-fold',
     title: 'Wash & Fold',
-    description: 'Everyday clothes washed, dried, and neatly folded — perfect for weekly laundry.',
-    icon: ShoppingBasket,
-    accent: 'bg-primary/10 text-primary',
-    priceFrom: '₹49/kg',
+    description: 'Everyday clothes washed, dried, and neatly folded for your weekly load.',
+    image: U('photo-1558618666-fcd25c85cd64', 640),
+    imageAlt: 'Neatly folded everyday laundry fresh from the wash',
+  },
+  {
+    id: 'wash-iron',
+    slug: 'wash-iron',
+    title: 'Wash & Iron',
+    description: 'Freshly washed garments pressed and ready to wear straight from the bag.',
+    image: U('photo-1571902943202-507ec2618e8f', 640),
+    imageAlt: 'Clothes being ironed to a crisp finish',
+  },
+  {
+    id: 'premium-laundry',
+    slug: 'premium-laundry',
+    title: 'Premium Laundry',
+    description: 'Extra-care handling for delicate fabrics and designer pieces.',
+    image: U('photo-1600880292203-757bb62b4baf', 640),
+    imageAlt: 'Delicate garments handled with premium laundry care',
   },
   {
     id: 'dry-clean',
+    slug: 'dry-clean',
     title: 'Dry Cleaning',
-    description: 'Premium care for suits, sarees, and delicate fabrics that need specialist handling.',
-    icon: Shirt,
-    accent: 'bg-info-muted text-info',
-    priceFrom: '₹120/piece',
+    description: 'Specialist solvent cleaning for suits, sarees, and formal wear.',
+    image: U('photo-1517677208171-0bc6725a3e60', 640),
+    imageAlt: 'Laundry service vehicle ready for doorstep pickup',
   },
   {
-    id: 'iron',
-    title: 'Iron & Press',
-    description: 'Crisp, wrinkle-free finishes for office wear and formal outfits.',
-    icon: Sparkles,
-    accent: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
-    priceFrom: '₹15/piece',
+    id: 'shoe-cleaning',
+    slug: 'shoe-cleaning',
+    title: 'Shoe Cleaning',
+    description: 'Deep clean, deodorise, and restore sneakers and leather pairs.',
+    image: U('photo-1542291026-7eec264c27ff', 640),
+    imageAlt: 'Pair of clean sneakers after professional shoe care',
   },
   {
-    id: 'express',
-    title: 'Express',
-    description: 'Same-day or next-day turnaround when you are on a tight schedule.',
-    icon: Timer,
-    accent: 'bg-warning-muted text-warning',
-    priceFrom: '₹79/kg',
+    id: 'curtain-cleaning',
+    slug: 'curtain-cleaning',
+    title: 'Curtain Cleaning',
+    description: 'Dust-free, fresh curtains returned ready to rehang at home.',
+    image: U('photo-1586023492125-27b2c045efd7', 640),
+    imageAlt: 'Light-filled room with freshly cleaned curtains',
   },
   {
-    id: 'steam',
-    title: 'Steam Press',
-    description: 'Gentle steam for silks, blazers, and garments that need a polished finish.',
-    icon: Wind,
-    accent: 'bg-success-muted text-success',
-    priceFrom: '₹15/piece',
-  },
-  {
-    id: 'shoe-care',
-    title: 'Shoe Care',
-    description: 'Clean, deodorise, and refresh your favourite pairs — ready to step out.',
-    icon: Droplets,
-    accent: 'bg-sky-100 text-sky-600 dark:bg-sky-950/40 dark:text-sky-400',
-    priceFrom: '₹199/pair',
+    id: 'more-services',
+    slug: 'more-services',
+    title: 'More Services',
+    description: 'Steam press, express turnaround, and monthly plans from partner stores.',
+    image: U('photo-1512941937669-90a1b58e7e9c', 640),
+    imageAlt: 'Laundry bags ready for pickup and delivery',
   },
 ];

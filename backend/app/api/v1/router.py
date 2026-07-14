@@ -35,6 +35,7 @@ from app.api.v1.endpoints import (
     inventory_verification,
     laundries,
     loyalty,
+    marketing,
     orders,
     partner,
     partner_walk_in_orders,
@@ -93,4 +94,5 @@ api_router.include_router(subscriptions.router)
 api_router.include_router(complaints.router)
 api_router.include_router(complaint_photos.router)
 api_router.include_router(loyalty.router)
+api_router.include_router(marketing.router)
 api_router.include_router(ws_orders.router)

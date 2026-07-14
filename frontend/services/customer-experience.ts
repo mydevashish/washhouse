@@ -30,6 +30,7 @@ export interface ServiceCategory {
 
 export interface ContactInfo {
   offline_booking_mode?: boolean;
+  contact_available?: boolean;
   can_contact: boolean;
   requires_login: boolean;
   show_call: boolean;

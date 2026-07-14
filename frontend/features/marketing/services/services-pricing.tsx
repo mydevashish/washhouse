@@ -14,6 +14,7 @@ const PRICING_ICONS = {
 export function ServicesPricing() {
   return (
     <section
+      id="pricing"
       aria-labelledby="services-pricing-title"
       className="border-t border-border bg-card py-12 sm:py-16"
     >

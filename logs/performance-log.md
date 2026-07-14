@@ -48,5 +48,6 @@
 - **Files:** `marketing-homepage.tsx`, `how-it-works-section.tsx`, `hero-carousel.tsx`, `marketing-shell.tsx`, `marketing-shell-chrome.tsx`, `marketing-footer-contact-actions.tsx`, `global-navbar.tsx`, `marketplace-homepage.tsx`, `services-preview.tsx`, `trust-strip.tsx`
 - **Follow-ups:**
   - `/` still **57 kB over** 180 kB landing budget — next Pareto hit: route-specific `Providers` slim shell or defer auth/nav stores on marketing pages
+  - Lighthouse mobile performance **53** (2026-07-13 prod `next start`, simulated throttling) — accessibility 97, best-practices 96, SEO 100; primary drag: TBT 1.6 s + LCP 3.7 s
   - Run Lighthouse mobile on staging for `/` and `/discover` to confirm LCP < 2.5 s
   - `pnpm analyze` diff in CI on PRs touching marketing routes

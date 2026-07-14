@@ -18,7 +18,7 @@ type FloatingContactActionsProps = {
 
 const WHATSAPP_MESSAGE = 'Hi WashHouse — I have a question.';
 
-const BOTTOM_CTA_SELECTOR = '[data-marketing-bottom-cta], [data-marketing-sticky-cta]';
+const BOTTOM_CTA_SELECTOR = '[data-marketing-bottom-cta]';
 
 function useBottomCtaOverlap() {
   const [obscured, setObscured] = useState(false);
@@ -143,7 +143,7 @@ function FloatingContactActionsFab({ className }: { className?: string }) {
       {...(obscured ? { inert: true } : {})}
       className={cn(
         'fixed right-4 z-40 flex flex-col gap-3 lg:hidden',
-        'bottom-[max(1.25rem,calc(1.25rem+env(safe-area-inset-bottom,0px)))]',
+        'bottom-[max(5.25rem,calc(4.75rem+env(safe-area-inset-bottom,0px)))]',
         'transition-[transform,opacity] duration-base ease-out',
         obscured && 'pointer-events-none translate-y-2 opacity-0',
         className,

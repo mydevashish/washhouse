@@ -44,6 +44,7 @@
 ## Phase 6 — Launch
 - Loyalty / referrals: **shipped** (API skeleton)
 - Landing hero: **shipped** (Framer Motion)
+- Marketing homepage v2: **shipped** — hero carousel, glass UI, stats/testimonials APIs, Playwright smoke (`docs/features/marketing-homepage.md`)
 - Runbooks: **shipped**
 - E2E smoke: **shipped**
 - Pickup evidence system: **shipped** (`PICKUP_EVIDENCE.md`)

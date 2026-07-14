@@ -19,19 +19,18 @@ export function MarketingHomeHero() {
   return (
     <section
       aria-labelledby="marketing-hero-title"
-      className="relative overflow-hidden bg-gradient-to-b from-brand-50/60 via-background to-background dark:from-brand-900/10 dark:via-background"
+      className="relative isolate overflow-x-hidden overflow-hidden bg-gradient-to-b from-brand-50/60 via-background to-background pb-6 sm:pb-8 lg:pb-10 dark:from-brand-900/10 dark:via-background"
     >
       <div
-        className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/10 blur-3xl"
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
         aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-sky-500/10 blur-3xl"
-        aria-hidden
-      />
+      >
+        <div className="absolute -right-16 top-16 h-64 w-64 rounded-full bg-primary/8 blur-3xl sm:h-72 sm:w-72" />
+        <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-sky-500/8 blur-3xl" />
+      </div>
 
-      <div className="relative mx-auto max-w-[1440px] px-4 pb-10 pt-8 sm:px-6 sm:pb-12 sm:pt-10 lg:px-8 lg:pb-14 lg:pt-12">
-        <div>
+      <div className="relative z-[1] mx-auto max-w-[1440px] px-4 pb-2 pt-6 sm:px-6 sm:pb-3 sm:pt-8 lg:px-8 lg:pb-3 lg:pt-10">
+        <div className="w-full min-w-0">
           <HeroCarousel />
 
           <div
@@ -58,10 +57,6 @@ export function MarketingHomeHero() {
             </Button>
           </div>
         </div>
-
-        <p className="mt-5 text-center text-xs text-muted-foreground sm:text-sm">
-          Sign in with phone OTP · No account needed to browse stores
-        </p>
       </div>
     </section>
   );

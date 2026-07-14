@@ -14,6 +14,8 @@ Companion to `QA_TESTING_GUIDE.md` §2A (merge there when the root guide is writ
 | Backend | `FEATURE_ONLINE_BOOKING` | `false` in `backend/.env` |
 | Frontend | `NEXT_PUBLIC_FEATURE_ONLINE_BOOKING` | `false` in `frontend/.env` |
 
+**Both flags must match.** When `NEXT_PUBLIC_FEATURE_ONLINE_BOOKING=true`, the UI uses `GET /api/v1/config` → `online_booking_enabled` as the runtime source of truth (so a mismatched backend flag still gates contact/checkout correctly). When the frontend flag is `false`, offline UI is always shown and the API is not consulted.
+
 **Restart** both `uvicorn` and `pnpm dev` after changing flags.
 
 **Redis** (required for walk-in WhatsApp enqueue via Celery): `redis://localhost:6379` must be reachable. Without it, `POST /partner/walk-in-orders` may hang until the broker connection times out.
@@ -30,7 +32,19 @@ curl http://localhost:8000/api/v1/laundries/<laundry-id>/contact
 # guest (no auth) → requires_login: false, show_call/show_whatsapp: true
 ```
 
-**Automated E2E:** `pnpm test:e2e --project=offline-booking` (frontend on port 3001 with flag pre-set; requires API + seed).
+**Automated E2E:**
+
+| Project | Port | Flag | Behavior |
+| ------- | ---- | ---- | -------- |
+| `offline-booking` | 3001 | `NEXT_PUBLIC_FEATURE_ONLINE_BOOKING=false` | Offline UI only (env gate) |
+| `online-booking` / default | 3000 | `true` (default) | UI follows API `online_booking_enabled` |
+
+```bash
+pnpm test:e2e --project=offline-booking   # port 3001, offline env
+pnpm test:e2e --project=online-booking      # port 3000, API truth
+```
+
+Requires API + seed for both.
 
 ---
 

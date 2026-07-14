@@ -26,6 +26,12 @@ from app.models.inventory_verification import (
 from app.models.laundry import Laundry, LaundryService
 from app.models.storefront import LaundryStorefront
 from app.models.loyalty import Coupon, LoyaltyAccount, ReferralCode
+from app.models.marketing import (
+    MarketingContactSubmission,
+    MarketingFranchiseInquiry,
+    MarketingSiteStats,
+    MarketingTestimonial,
+)
 from app.models.notification import Notification
 from app.models.order import Order, OrderInventory, OrderItem, OrderStatusEvent
 from app.models.order_task_assignment import OrderTaskAssignment
@@ -72,6 +78,10 @@ __all__ = [
     "OrderInventoryVerification",
     "LaundryStorefront",
     "LoyaltyAccount",
+    "MarketingContactSubmission",
+    "MarketingFranchiseInquiry",
+    "MarketingSiteStats",
+    "MarketingTestimonial",
     "Notification",
     "Order",
     "OrderInventory",

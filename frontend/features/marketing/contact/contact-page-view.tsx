@@ -200,7 +200,7 @@ function OfficeAddress() {
   );
 }
 
-export function ContactPageView() {
+export function ContactPageView({ defaultSubject }: { defaultSubject?: 'general' | 'order-help' | 'franchise' | 'partnership' | 'legal-privacy' }) {
   return (
     <div className="bg-background">
       <ContactHero />
@@ -210,7 +210,7 @@ export function ContactPageView() {
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-5 lg:gap-12">
             <div className="lg:col-span-3">
-              <ContactForm />
+              <ContactForm defaultSubject={defaultSubject} />
             </div>
 
             <aside className="space-y-10 lg:col-span-2">

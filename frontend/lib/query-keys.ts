@@ -103,4 +103,6 @@ export const queryKeys = {
   adminProfitSharingPayoutHistory: () => ['admin-profit-sharing-payout-history'] as const,
   adminAnnouncements: (status?: string) => ['admin-announcements', status ?? 'all'] as const,
   activeAnnouncements: () => ['active-announcements'] as const,
+  marketingStats: () => ['marketing-stats'] as const,
+  marketingTestimonials: (limit = 6) => ['marketing-testimonials', limit] as const,
 } as const;

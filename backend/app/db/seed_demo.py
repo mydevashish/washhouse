@@ -19,6 +19,12 @@ log = structlog.get_logger(__name__)
 
 DEMO_PARTNER_PASSWORD = "Partner@1234"
 
+DEMO_PARTNER_PHONES: dict[str, str] = {
+    "partner.koramangala@demo.dlm": "+91 98765 43210",
+    "partner.indiranagar@demo.dlm": "+91 98765 43211",
+    "partner.hsr@demo.dlm": "+91 98765 43212",
+}
+
 DEMO_LAUNDRIES: list[dict] = [
     {
         "slug": "demo-quick-wash-koramangala",
@@ -104,10 +110,11 @@ async def ensure_demo_data() -> None:
                 select(User).where(User.email == spec["owner_email"].lower()),
             )
             owner = owner_result.scalar_one_or_none()
+            partner_phone = DEMO_PARTNER_PHONES.get(spec["owner_email"].lower())
             if not owner:
                 owner = User(
                     email=spec["owner_email"].lower(),
-                    phone=None,
+                    phone=partner_phone,
                     password_hash=hash_password(DEMO_PARTNER_PASSWORD),
                     full_name=spec["owner_name"],
                     role=UserRole.partner,
@@ -115,6 +122,8 @@ async def ensure_demo_data() -> None:
                 )
                 session.add(owner)
                 await session.flush()
+            elif partner_phone and not (owner.phone or "").strip():
+                owner.phone = partner_phone
 
             laundry = Laundry(
                 owner_user_id=owner.id,

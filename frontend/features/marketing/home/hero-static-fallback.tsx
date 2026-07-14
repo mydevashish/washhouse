@@ -1,55 +1,121 @@
 'use client';
 
+import { Check, MessageCircle, Sparkles } from 'lucide-react';
 import Image from 'next/image';
-import { Sparkles } from 'lucide-react';
 
 import { WashhouseLogo } from '@/components/brand/washhouse-logo';
+import { Button } from '@/components/ui/button';
 import { GlassSurface } from '@/components/ui/glass-surface';
-import { HERO_IMAGE } from '@/features/discover/marketplace/laundry-images';
+import {
+  buildWhatsAppHref,
+  CONTACT_CONFIG,
+} from '@/features/marketing/contact/contact-constants';
+import {
+  HERO_SLIDES,
+  WHATSAPP_BOOKING_MESSAGE,
+} from '@/features/marketing/home/hero-slides';
+import {
+  GLASS_MOBILE_SOLID_CARD,
+  MARKETING_HERO_GRID,
+  MARKETING_HERO_HEADLINE,
+  MARKETING_HERO_IMAGE_COL,
+  MARKETING_HERO_IMAGE_FRAME,
+  MARKETING_HERO_TEXT_COL,
+} from '@/features/marketing/shared/marketing-layout';
+import { cn } from '@/lib/utils';
+
+const welcomeSlide = HERO_SLIDES[0]!;
+const whatsappHref = buildWhatsAppHref(
+  CONTACT_CONFIG.whatsapp,
+  WHATSAPP_BOOKING_MESSAGE,
+);
 
 /** Server-friendly first slide — paints LCP before the Embla carousel chunk hydrates. */
 export function HeroStaticFallback() {
+  if (welcomeSlide.variant !== 'welcome') return null;
+
   return (
-    <div className="relative overflow-hidden rounded-2xl lg:rounded-3xl">
-      <div className="relative aspect-[4/5] min-h-[22rem] pb-16 sm:aspect-[16/10] sm:min-h-[26rem] sm:pb-0 lg:aspect-[21/9] lg:min-h-[28rem]">
-        <Image
-          src={HERO_IMAGE}
-          alt="Neatly folded fresh laundry prepared for home delivery"
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1280px"
-          priority
-          fetchPriority="high"
-        />
-        <div
-          className="absolute inset-0 bg-gradient-to-br from-brand-500/75 via-brand-600/55 to-sky-500/45 dark:from-brand-900/80 dark:via-brand-600/50 dark:to-sky-500/35"
-          aria-hidden
-        />
-        <div className="absolute inset-0 flex items-end p-4 sm:items-center sm:p-6 lg:p-10">
-          <GlassSurface
-            variant="strong"
-            className="w-full max-w-xl rounded-2xl p-5 shadow-pop sm:p-6 lg:max-w-2xl lg:p-8"
-          >
-            <div className="mb-3 flex flex-col gap-3 sm:mb-4">
-              <div className="inline-flex w-fit overflow-hidden rounded-md p-0.5 dark:bg-white/90">
-                <WashhouseLogo adaptive={false} href="/" priority className="h-9 w-auto sm:h-10" />
-              </div>
-              <p className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-background/60 px-3 py-1 text-xs font-semibold text-primary">
-                <Sparkles className="h-3.5 w-3.5 text-info" aria-hidden />
-                India&apos;s laundry marketplace
-              </p>
-            </div>
-            <h2
-              id="marketing-hero-title"
-              className="text-2xl font-bold leading-tight tracking-tight text-foreground text-balance sm:text-3xl lg:text-4xl"
-            >
-              Fresh clothes. Zero trips.
-            </h2>
-            <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base">
-              The WashHouse connects you with trusted laundries near you — free doorstep pickup, live
-              tracking, and delivery back home.
+    <div className="w-full min-w-0 overflow-hidden rounded-2xl bg-background lg:rounded-3xl">
+      <div className={MARKETING_HERO_GRID}>
+        <div className={MARKETING_HERO_TEXT_COL}>
+          <div className="mb-3 flex flex-col gap-3 sm:mb-4">
+            <WashhouseLogo adaptive={false} href="/" priority className="h-9 w-auto sm:h-10" />
+            <p className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-background/60 px-3 py-1 text-xs font-semibold text-primary">
+              <Sparkles className="h-3.5 w-3.5 text-info" aria-hidden />
+              India&apos;s laundry marketplace
             </p>
-          </GlassSurface>
+          </div>
+
+          <h2 id="marketing-hero-title" className={MARKETING_HERO_HEADLINE}>
+            {welcomeSlide.headline}
+          </h2>
+
+          <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-foreground">
+            {welcomeSlide.pills.map((pill, pillIndex) => (
+              <span key={pill} className="inline-flex items-center gap-2">
+                {pillIndex > 0 ? (
+                  <span className="text-muted-foreground/50" aria-hidden>
+                    |
+                  </span>
+                ) : null}
+                {pill}
+              </span>
+            ))}
+          </div>
+
+          <ul className="mt-4 space-y-2 sm:hidden">
+            {welcomeSlide.trustItems.map(({ label }) => (
+              <li key={label} className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Check className="h-4 w-4 shrink-0 text-success" aria-hidden />
+                {label}
+              </li>
+            ))}
+          </ul>
+
+          <Button
+            asChild
+            size="lg"
+            variant="success"
+            className="mt-5 h-11 rounded-full px-6"
+            data-marketing-sticky-cta
+          >
+            <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+              <MessageCircle className="h-4 w-4" aria-hidden />
+              Book on WhatsApp
+            </a>
+          </Button>
+        </div>
+
+        <div className={MARKETING_HERO_IMAGE_COL}>
+          <div className={MARKETING_HERO_IMAGE_FRAME}>
+            <Image
+              src={welcomeSlide.image}
+              alt={welcomeSlide.imageAlt}
+              fill
+              className="object-cover"
+              sizes="(max-width: 1023px) calc(100vw - 2rem), (max-width: 1280px) 50vw, 720px"
+              priority
+              fetchPriority="high"
+            />
+            <div
+              className={cn('absolute inset-0', welcomeSlide.overlayClassName)}
+              aria-hidden
+            />
+            <GlassSurface
+              variant="strong"
+              className={cn(
+                'absolute bottom-4 right-4 z-10 hidden max-w-[11rem] rounded-xl p-3 shadow-pop sm:block lg:bottom-8 lg:right-8 lg:max-w-[12rem] lg:p-4',
+                GLASS_MOBILE_SOLID_CARD,
+              )}
+            >
+              <p className="text-xs font-bold uppercase tracking-wide text-success sm:text-sm">
+                {welcomeSlide.promo.badge}
+              </p>
+              <p className="mt-1 font-mono text-sm font-bold text-foreground sm:text-base">
+                {welcomeSlide.promo.code}
+              </p>
+            </GlassSurface>
+          </div>
         </div>
       </div>
     </div>

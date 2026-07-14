@@ -26,5 +26,6 @@ Per-feature specs. Template: `.cursor/templates/feature-spec.md`.
 | WhatsApp notifications | planned | [notifications-whatsapp.md](notifications-whatsapp.md) | 5 |
 | Walk-in WhatsApp updates | scaffolded | [offline-booking-whatsapp.md](offline-booking-whatsapp.md) | 5 |
 | Loyalty / referrals | planned | [loyalty-referrals.md](loyalty-referrals.md) | 6 |
+| Marketing homepage v2 | shipped | [marketing-homepage.md](marketing-homepage.md) | 6 |
 
 Product index: [../product/INDEX.md](../product/INDEX.md)

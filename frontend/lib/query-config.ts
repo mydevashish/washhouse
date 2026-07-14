@@ -13,6 +13,9 @@ export const STALE = {
   addresses: 60_000,
   partnerAnalytics: 60_000,
   adminDashboard: 60_000,
+  /** Marketing testimonials change infrequently. */
+  marketingTestimonials: 30 * 60_000,
+  marketingStats: 30 * 60_000,
 } as const;
 
 /** Longer timeout for public discovery lists (Render cold start). */

@@ -25,6 +25,7 @@ import {
   OrderSummarySidebar,
   SignInPrompt,
 } from '@/features/discover/detail/order-summary-sidebar';
+import { StorefrontContactSection } from '@/features/storefront/storefront-contact-section';
 import {
   getLaundryImage,
   getLaundryMeta,
@@ -39,7 +40,7 @@ import { useAuthStore } from '@/store/auth.store';
 export function LaundryDetailView({ laundryId }: { laundryId: string }) {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
-  const { enabled: onlineBookingEnabled } = useOnlineBookingEnabled();
+  const { enabled: onlineBookingEnabled, isLoading: onlineBookingLoading } = useOnlineBookingEnabled();
   const [tab, setTab] = useState<LaundryTabId>('services');
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
@@ -98,8 +99,10 @@ export function LaundryDetailView({ laundryId }: { laundryId: string }) {
     setQuantity(svc, (quantities[svc.id] ?? 0) + delta);
   }
 
-  const showMobileSummary = tab === 'services' && selectedCount > 0 && onlineBookingEnabled;
-  const showOfflineMobileBar = tab === 'services' && !onlineBookingEnabled;
+  const offlineMode = !onlineBookingLoading && !onlineBookingEnabled;
+  const onlineMode = !onlineBookingLoading && onlineBookingEnabled;
+  const showMobileSummary = tab === 'services' && onlineMode && selectedCount > 0;
+  const showOfflineMobileBar = tab === 'services' && offlineMode;
 
   return (
     <div
@@ -117,7 +120,7 @@ export function LaundryDetailView({ laundryId }: { laundryId: string }) {
           startPrice={startPrice}
         />
 
-        {tab === 'services' && onlineBookingEnabled && (
+        {tab === 'services' && onlineMode && (
           <div className="mt-8 rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-5">
             <p className="mb-3 text-sm font-semibold text-foreground">You are on step 2 of 4</p>
             <BookingFlowSteps current={2} compact />
@@ -146,8 +149,15 @@ export function LaundryDetailView({ laundryId }: { laundryId: string }) {
 
             {tab === 'services' && (
               <div id="panel-services" role="tabpanel" aria-labelledby="tab-services">
-                {!onlineBookingEnabled && (
+                {offlineMode && (
                   <OfflineBookingContactPanel
+                    laundryId={laundryId}
+                    laundryName={laundry.name}
+                    className="mb-6 lg:hidden"
+                  />
+                )}
+                {onlineMode && (
+                  <StorefrontContactSection
                     laundryId={laundryId}
                     laundryName={laundry.name}
                     className="mb-6 lg:hidden"
@@ -162,7 +172,7 @@ export function LaundryDetailView({ laundryId }: { laundryId: string }) {
                   onQuantityChange={setQuantity}
                   selectedCount={selectedCount}
                   onCheckout={startCheckout}
-                  browseOnly={!onlineBookingEnabled}
+                  browseOnly={onlineBookingLoading || offlineMode}
                 />
               </div>
             )}
@@ -188,7 +198,7 @@ export function LaundryDetailView({ laundryId }: { laundryId: string }) {
           {tab === 'services' && (
             <aside className="mt-8 hidden lg:block">
               <div className="sticky top-24 space-y-4">
-                {!onlineBookingEnabled ? (
+                {offlineMode ? (
                   <OfflineBookingContactPanel
                     laundryId={laundryId}
                     laundryName={laundry.name}
@@ -199,6 +209,10 @@ export function LaundryDetailView({ laundryId }: { laundryId: string }) {
                     <OrderSummarySidebar services={services} quantities={quantities}>
                       {!accessToken && selectedCount > 0 && <SignInPrompt />}
                     </OrderSummarySidebar>
+                    <StorefrontContactSection
+                      laundryId={laundryId}
+                      laundryName={laundry.name}
+                    />
                     {selectedCount > 0 && (
                       <Button
                         type="button"

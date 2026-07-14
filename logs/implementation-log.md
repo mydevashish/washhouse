@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-07-13 — Finalize marketing homepage v2
+
+- **Type:** docs · test
+- **Scope:** Marketing homepage `/` + contact form `/contact`
+- **Files:** `frontend/tests/e2e/marketing-homepage.spec.ts`, `frontend/tests/e2e/smoke.spec.ts`, `frontend/components/layout/marketing-shell.tsx`, `frontend/components/layout/marketing-shell-overlays.tsx`, `frontend/components/layout/marketing-footer.tsx`, `frontend/features/marketing/contact/contact-constants.ts`, `frontend/app/contact/page.tsx`, `docs/features/marketing-homepage.md`, `docs/features/README.md`, `logs/feature-progress.md`, `logs/performance-log.md`
+- **Summary:** Added Playwright smoke suite — homepage load, hero carousel navigation, contact form client validation, mobile sticky CTA visibility/hide-on-scroll, console-error and dark-mode checks. Fixed stale smoke heading assertion. Fixed production build blockers (`ssr:false` in RSC shell, contact `CONTACT_SUBJECTS` server import, footer a11y lint). Documented section map, API contracts, automated tests, and manual QA checklist (phone/tablet/desktop).
+- **Risks:** Lighthouse mobile **performance 53** on production build (target ≥ 90) — LCP 3.7 s, TBT 1.6 s; `/` first-load JS 237 kB (57 kB over budget).
+- **Tests:** `npm run test:e2e -- marketing-homepage`, `npm run test:e2e -- smoke`, `npm run test:e2e -- marketing-a11y`
+- **Next:** Slim marketing Providers shell; wire or remove `SpecialCareSection`; add Lighthouse mobile to CI on staging URL.
+
+---
+
 ## 2026-07-13 — Fix /discover "0 laundries nearby" with API data
 
 - **Type:** fix

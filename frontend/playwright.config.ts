@@ -25,6 +25,14 @@ export default defineConfig({
         baseURL: 'http://localhost:3001',
       },
     },
+    {
+      name: 'online-booking',
+      testMatch: /online-booking-contact\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:3000',
+      },
+    },
   ],
   webServer: process.env.CI
     ? {

@@ -14,6 +14,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getPostLoginPath } from '@/lib/auth-routing';
+import {
+  getLoginAudienceCopy,
+  parseLoginAudience,
+} from '@/lib/auth-login-audience';
 import { isApiError } from '@/lib/api';
 import { getNetworkErrorMessage, isNetworkError } from '@/lib/api-errors';
 import { login, sendOtp, verifyOtp } from '@/services/auth';
@@ -36,9 +40,16 @@ export default function LoginPage() {
     if (message) toast.message(message);
   }, [searchParams]);
 
+  const audience = parseLoginAudience(searchParams.get('audience'));
+  const audienceCopy = getLoginAudienceCopy(audience);
+
   const [mode, setMode] = useState<'email' | 'otp'>('email');
   const [loading, setLoading] = useState(false);
   const [otpPhone, setOtpPhone] = useState('');
+
+  useEffect(() => {
+    if (!audienceCopy.showOtpTab) setMode('email');
+  }, [audienceCopy.showOtpTab]);
 
   function afterLogin(role: string) {
     const next =
@@ -124,47 +135,61 @@ export default function LoginPage() {
       <PublicShell showBack={false}>
         <div className="mx-auto w-full max-w-md px-4 pt-6 sm:px-0">
           <Link
-            href="/discover"
+            href={audienceCopy.backHref}
             className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-primary hover:underline"
           >
             <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
-            Browse laundries
+            {audienceCopy.backLabel}
           </Link>
         </div>
         <div className="mx-auto flex w-full max-w-md justify-center px-4 pt-4 sm:px-0">
           <div className="inline-flex max-w-full justify-center rounded-md p-1.5 dark:bg-white/90">
-            <WashhouseLogo href="/discover" priority adaptive={false} />
+            <WashhouseLogo href="/" priority adaptive={false} />
           </div>
         </div>
         <AuthFormCard
           className="min-h-0 justify-start pt-4"
-          title="Sign in"
-          description="Book doorstep laundry or manage your shop."
-          footer={<AuthFooterLink prompt="New here?" href="/register" linkText="Create account" />}
+          title={audienceCopy.title}
+          description={audienceCopy.description}
+          footer={
+            audienceCopy.footerPrompt && audienceCopy.footerHref && audienceCopy.footerLinkText ? (
+              <AuthFooterLink
+                prompt={audienceCopy.footerPrompt}
+                href={audienceCopy.footerHref}
+                linkText={audienceCopy.footerLinkText}
+              />
+            ) : undefined
+          }
         >
-          <div
-            className="mb-6 grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted p-1"
-            role="tablist"
-            aria-label="Sign in method"
-          >
-            {(['email', 'otp'] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                role="tab"
-                aria-selected={mode === m}
-                className={cn(
-                  'min-h-[44px] rounded-md text-sm font-semibold transition-colors',
-                  mode === m
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground',
-                )}
-                onClick={() => setMode(m)}
-              >
-                {m === 'email' ? 'Email' : 'Phone OTP'}
-              </button>
-            ))}
-          </div>
+          {audienceCopy.showOtpTab ? (
+            <div
+              className="mb-6 grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted p-1"
+              role="tablist"
+              aria-label="Sign in method"
+            >
+              {(['email', 'otp'] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === m}
+                  className={cn(
+                    'min-h-[44px] rounded-md text-sm font-semibold transition-colors',
+                    mode === m
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                  onClick={() => setMode(m)}
+                >
+                  {m === 'email' ? 'Email' : 'Phone OTP'}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="mb-6 rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">
+              Use your work email and password. Phone OTP is for customer bookings only.
+            </p>
+          )}
 
           {mode === 'email' ? (
             <form onSubmit={onEmailSubmit} className="space-y-4">

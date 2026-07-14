@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { ApiConnectivityDiagnostics } from '@/components/providers/api-connectivity';
@@ -8,7 +8,10 @@ import { AuthBootstrap } from '@/components/auth/auth-bootstrap';
 import { StoreHydration } from '@/components/providers/store-hydration';
 import { AuthSessionMonitor } from '@/components/session/auth-session-monitor';
 import { GlobalIdleManager } from '@/components/session/global-idle-manager';
+import { isOnlineBookingEnabledFromEnv } from '@/lib/online-booking';
+import { queryKeys } from '@/lib/query-keys';
 import { ThemeProvider } from '@/providers/theme-provider';
+import { getPublicAppConfig } from '@/services/app-config';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -25,6 +28,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       }),
   );
+
+  useEffect(() => {
+    if (!isOnlineBookingEnabledFromEnv()) return;
+    void client.prefetchQuery({
+      queryKey: queryKeys.appConfig(),
+      queryFn: getPublicAppConfig,
+      staleTime: 5 * 60_000,
+    });
+  }, [client]);
 
   return (
     <ThemeProvider>

@@ -32,7 +32,7 @@ export function ServicesGrid() {
               ctaHref = '/discover',
               ctaLabel = 'Browse laundries',
             }) => (
-              <li key={id}>
+              <li key={id} id={id}>
                 <Card className="flex h-full flex-col rounded-2xl border-0 shadow-soft ring-1 ring-border/60">
                   <CardContent className="flex flex-1 flex-col p-6">
                     <div className="flex items-start justify-between gap-3">

@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 import {
   getContactInfo,
   requestCallback,
@@ -16,7 +17,15 @@ import {
 } from '@/services/customer-experience';
 import { useAuthStore } from '@/store/auth.store';
 
-export function StorefrontContactSection({ laundryId, laundryName }: { laundryId: string; laundryName: string }) {
+export function StorefrontContactSection({
+  laundryId,
+  laundryName,
+  className,
+}: {
+  laundryId: string;
+  laundryName: string;
+  className?: string;
+}) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const [phone, setPhone] = useState('');
@@ -74,12 +83,15 @@ export function StorefrontContactSection({ laundryId, laundryName }: { laundryId
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  if (!c) return null;
+  if (!c || (!c.contact_available && !c.show_callback)) return null;
 
   return (
     <section
       aria-labelledby="contact-actions-heading"
-      className="rounded-2xl border border-border/60 bg-gradient-to-br from-card to-muted/30 p-6 shadow-soft"
+      className={cn(
+        'rounded-2xl border border-border/60 bg-gradient-to-br from-card to-muted/30 p-6 shadow-soft',
+        className,
+      )}
     >
       <h2 id="contact-actions-heading" className="text-xl font-bold">
         Contact {laundryName}

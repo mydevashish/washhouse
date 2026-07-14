@@ -72,11 +72,12 @@
   .bg-surface-gradient {
     background: var(--gradient-surface);
   }
+  /* Always white on brand-900 surfaces — avoids inheriting dark foreground on stat cards */
   .text-on-hero {
-    color: var(--primary-foreground);
+    color: #ffffff;
   }
   .text-on-hero-muted {
-    color: rgb(255 255 255 / 0.85);
+    color: rgb(255 255 255 / 0.92);
   }
 
   /*

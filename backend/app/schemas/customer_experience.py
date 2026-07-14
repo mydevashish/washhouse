@@ -77,6 +77,7 @@ class ServiceCatalogUpdate(BaseModel):
 
 class ContactInfoResponse(BaseModel):
     offline_booking_mode: bool = False
+    contact_available: bool = False
     can_contact: bool
     requires_login: bool
     show_call: bool
