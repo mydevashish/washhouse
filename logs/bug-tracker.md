@@ -53,13 +53,14 @@
 
 ### BUG-2026-07-14-001 — Backend will not start with default `AUTO_RUN_MIGRATIONS=true`
 
-- **Status:** open
+- **Status:** resolved
 - **Priority:** P0
 - **Severity:** SEV1
 - **Area:** infrastructure / migrations
 - **Environment:** local
 - **Category:** server (root) → **network** (symptom: no HTTP response)
 - **Fix phase:** backend migration repair (`15-database-migrations`) then `fix-api-connectivity-env.md`
+- **Resolved at:** 2026-07-15
 
 **Summary:** Uvicorn never binds to port 8000 on normal dev startup because auto-migration crashes mid-upgrade.
 
@@ -87,17 +88,20 @@
 
 **Hypothesis / fix plan:** Stamp or repair migration state; make enum creation idempotent; run `alembic upgrade head`; verify health 200 on default startup.
 
+**Resolution:** Migration `20260713_0032` made idempotent; `alembic upgrade head` → `20260714_0033 (head)`. Backend starts with `AUTO_RUN_MIGRATIONS=true`; `GET /api/v1/health` → 200; `GET /api/v1/laundries` → 200 (3 items). Env parity confirmed (`PORT=8000`, `NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1`, `CORS_ALLOW_ORIGINS=http://localhost:3000`).
+
 ---
 
 ### BUG-2026-07-14-002 — Admin paginated list APIs return 500
 
-- **Status:** open
+- **Status:** resolved
 - **Priority:** P2
 - **Severity:** SEV2
 - **Area:** admin
 - **Environment:** local (reproduced with API up + `AUTO_RUN_MIGRATIONS=false`)
 - **Category:** server
 - **Fix phase:** backend service fix (admin list query params)
+- **Resolved at:** 2026-07-15
 
 **Summary:** Admin orders, customers, and audit log tables cannot load — list endpoints crash before DB query completes.
 
@@ -111,31 +115,28 @@
 
 **Repro:** Log in as admin → open `/admin/orders` (or curl with admin token + query params above).
 
-**Root cause:** `backend/app/api/admin_list_params.py` — subclasses pass `status` / `role` / `resource_type` into `ListQueryParams.__init__()`, which is a frozen dataclass without those fields:
+**Root cause:** `backend/app/api/admin_list_params.py` and `trust_score_list_params.py` — filter subclasses extended frozen `ListQueryParams` without `@dataclass`, so extra kwargs (`status`, `role`, `resource_type`) were passed to the parent `__init__`.
 
-```
-TypeError: ListQueryParams.__init__() got an unexpected keyword argument 'status'
-TypeError: ListQueryParams.__init__() got an unexpected keyword argument 'role'
-TypeError: ListQueryParams.__init__() got an unexpected keyword argument 'resource_type'
-```
+**Resolution:** Added `@dataclass(frozen=True)` to `AdminUserListParams`, `AdminOrderListParams`, `AdminAuditListParams`, and `TrustScoreListParams`. Regression tests in `tests/unit/test_list_query_params.py`.
 
-(Service layer works when params are constructed directly; failure is in FastAPI dependency wiring.)
-
-**Note:** `/admin/dashboard`, `/admin/laundries`, `/admin/analytics` return **200** — admin role is not globally broken once API is up.
+**Verification (2026-07-15):** `GET /admin/orders`, `/admin/users`, `/admin/audit-logs`, `/admin/trust-scores` → 200 with `{ items, page, page_size, total_records, ... }` envelope matching `frontend/lib/pagination/types.ts`.
 
 ---
 
 ### BUG-2026-07-14-003 — Documented QA admin account cannot log in
 
-- **Status:** open
+- **Status:** resolved
 - **Priority:** P1 (blocks QA/admin testing with documented credentials)
 - **Severity:** SEV2
 - **Area:** auth / seed data
 - **Environment:** local
 - **Category:** auth
 - **Fix phase:** run `backend/scripts/seed_qa.py` or `fix-api-auth-session.md` (seed alignment)
+- **Resolved at:** 2026-07-15
 
 **Summary:** `admin@demo.dlm` / `Admin@1234` (per `DEMO_ACCOUNTS.md`) returns 401; only auto-seed `admin@yopmail.com` works.
+
+**Resolution:** Ran `python backend/scripts/seed_qa.py` — `admin@demo.dlm` login → 200; `GET /users/me` role=admin. Frontend auth hardened: axios 401→refresh retry, RoleGuard expired-token recovery, admin `OptionalAuthRefresh` + query gating.
 
 **Evidence:**
 
@@ -149,13 +150,31 @@ TypeError: ListQueryParams.__init__() got an unexpected keyword argument 'resour
 
 ---
 
+### BUG-2026-07-15-001 — Partner orders 500 when owner has multiple laundries
+
+- **Status:** resolved
+- **Priority:** P2
+- **Severity:** SEV2
+- **Area:** partner
+- **Environment:** local (after `seed_qa.py`)
+- **Category:** server
+- **Resolved at:** 2026-07-15
+
+**Summary:** `GET /partner/orders` returned 500 for `partner.koramangala@demo.dlm` because QA seed assigns multiple laundries to one partner; `LaundryRepository.get_by_owner()` used `scalar_one_or_none()`.
+
+**Resolution:** `get_by_owner()` returns oldest laundry via `limit(1)`; added `list_by_owner()`; `PartnerService.list_orders_for_partner` and `list_customers` aggregate across all partner laundry IDs.
+
+**Verification:** `GET /partner/orders` → 200, 50 orders returned.
+
+---
+
 ## Priority summary
 
 | Priority | Bug ID | Impact | Category | Next prompt |
 | -------- | ------ | ------ | -------- | ----------- |
-| **P0** | BUG-2026-07-14-001 | Blocks **all** API traffic when backend started normally | network / server | Fix migration, then `fix-api-connectivity-env.md` |
-| **P1** | BUG-2026-07-14-003 | Blocks admin QA with documented credentials | auth | `fix-api-auth-session.md` + seed QA data |
-| **P2** | BUG-2026-07-14-002 | Admin orders/customers/audit CRUD views broken | server | Backend patch to `admin_list_params.py` |
+| ~~**P0**~~ | ~~BUG-2026-07-14-001~~ | ~~Blocks **all** API traffic when backend started normally~~ | ~~network / server~~ | **Resolved 2026-07-15** |
+| ~~**P1**~~ | ~~BUG-2026-07-14-003~~ | ~~Blocks admin QA with documented credentials~~ | ~~auth~~ | **Resolved 2026-07-15** (seed_qa + FE auth fixes) |
+| ~~**P2**~~ | ~~BUG-2026-07-14-002~~ | ~~Admin orders/customers/audit CRUD views broken~~ | ~~server~~ | **Resolved 2026-07-15** (`@dataclass` list param subclasses) |
 
 ### Verified OK when API is running (no new bugs filed)
 
@@ -166,7 +185,7 @@ TypeError: ListQueryParams.__init__() got an unexpected keyword argument 'resour
 | customer | `/orders` | `GET /orders` | 200 |
 | customer | `/account` | `GET /users/me`, `GET /users/me/addresses` | 200 |
 | partner | `/partner` | `GET /partner/analytics/summary` | 200 |
-| partner | `/partner/orders` | `GET /partner/orders` | 200 |
+| partner | `/partner/orders` | `GET /partner/orders` | 200 (multi-laundry QA seed; see BUG-2026-07-15-001) |
 | partner | `/partner/operations` | `GET /partner/operations/dashboard` | 200 |
 | admin | `/admin` | `GET /admin/dashboard`, `GET /admin/analytics` | 200 |
 | admin | `/admin/revenue/analytics` | `GET /admin/revenue-analytics/dashboard?period=last_30_days` | 200 |

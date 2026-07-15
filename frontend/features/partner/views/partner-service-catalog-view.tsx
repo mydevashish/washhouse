@@ -1,14 +1,18 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Package } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
+import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
@@ -22,6 +26,7 @@ import {
 
 export function PartnerServiceCatalogView() {
   const qc = useQueryClient();
+  const enabled = usePartnerQueriesEnabled();
   const [name, setName] = useState('');
   const [category, setCategory] = useState('wash');
   const [price, setPrice] = useState('');
@@ -32,6 +37,7 @@ export function PartnerServiceCatalogView() {
   const servicesQ = useQuery({
     queryKey: queryKeys.partnerServiceCatalog(),
     queryFn: listPartnerServices,
+    enabled,
     staleTime: STALE.partnerAnalytics,
   });
 
@@ -111,6 +117,18 @@ export function PartnerServiceCatalogView() {
         </Button>
       </div>
 
+      {servicesQ.isLoading && <Skeleton className="h-48 w-full rounded-2xl" />}
+
+      {servicesQ.isError && (
+        <QueryErrorState
+          title="Could not load services"
+          message={getApiErrorMessage(servicesQ.error)}
+          onRetry={() => void servicesQ.refetch()}
+          isRetrying={servicesQ.isFetching}
+        />
+      )}
+
+      {!servicesQ.isLoading && !servicesQ.isError && (
       <div className="overflow-x-auto rounded-2xl border border-border/60">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-left text-xs uppercase text-muted-foreground">
@@ -171,9 +189,14 @@ export function PartnerServiceCatalogView() {
           </tbody>
         </table>
         {!servicesQ.isLoading && (servicesQ.data?.length ?? 0) === 0 && (
-          <p className="px-4 py-8 text-center text-muted-foreground">No services yet. Add your first offering above.</p>
+          <EmptyState
+            icon={Package}
+            title="No services yet"
+            description="Add your first offering above so customers know what you provide."
+          />
         )}
       </div>
+      )}
     </PartnerContent>
   );
 }

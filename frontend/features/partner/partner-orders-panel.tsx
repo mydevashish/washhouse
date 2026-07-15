@@ -168,19 +168,16 @@ export function PartnerOrdersPanel() {
 
       <div className="flex gap-2 overflow-x-auto pb-1">
         {filters.map((f) => (
-          <button
+          <Button
             key={f.id}
             type="button"
+            variant={filter === f.id ? 'default' : 'secondary'}
+            size="sm"
             onClick={() => setFilter(f.id)}
-            className={cn(
-              'shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors',
-              filter === f.id
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:text-foreground',
-            )}
+            className="shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold"
           >
             {f.label}
-          </button>
+          </Button>
         ))}
       </div>
 

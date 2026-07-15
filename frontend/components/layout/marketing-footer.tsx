@@ -12,7 +12,10 @@ import { MARKETING_FOOTER_GROUPS } from '@/lib/navigation/marketing-footer';
 import { cn } from '@/lib/utils';
 
 const linkClassName =
-  'inline-flex min-h-11 items-center rounded-sm px-0 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+  'inline-flex min-h-11 md:min-h-0 items-center rounded-sm px-0 py-1.5 md:py-0.5 text-sm font-medium text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+
+const contactLinkClassName =
+  'inline-flex min-h-11 md:min-h-0 items-start gap-2 py-1 md:py-0 transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 function XIcon({ className }: { className?: string }) {
   return (
@@ -42,12 +45,12 @@ export function MarketingFooter({ className, desktopContactActions }: MarketingF
 
   return (
     <footer
-      className={cn('border-t border-border/60 bg-card py-10 sm:py-12', className)}
+      className={cn('border-t border-border/60 bg-card py-8 sm:py-9', className)}
       aria-label="Site footer"
     >
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-10 sm:gap-12">
-          <div className="flex flex-col items-center gap-4 text-center lg:items-start lg:text-left">
+        <div className="flex flex-col gap-5 sm:gap-7">
+          <div className="flex flex-col items-center gap-3 text-center lg:items-start lg:text-left">
             <WashhouseLogo href="/" adaptive={false} className="h-10 w-auto sm:h-11 lg:h-12 max-w-full" />
             <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
               {WASHHOUSE_BRAND_NAME} — India&apos;s doorstep laundry marketplace. Pay with UPI or
@@ -55,13 +58,13 @@ export function MarketingFooter({ className, desktopContactActions }: MarketingF
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-5 lg:gap-10">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 lg:gap-8">
             {MARKETING_FOOTER_GROUPS.map((group) => (
               <nav key={group.id} aria-label={`${group.title} links`}>
                 <h2 className="text-sm font-semibold tracking-tight text-foreground">
                   {group.title}
                 </h2>
-                <ul className="mt-3 space-y-1">
+                <ul className="mt-2 space-y-0.5">
                   {group.links.map(({ href, label }) => (
                     <li key={href}>
                       <Link href={href} className={linkClassName}>
@@ -75,11 +78,11 @@ export function MarketingFooter({ className, desktopContactActions }: MarketingF
 
             <div aria-label="Contact information">
               <h2 className="text-sm font-semibold tracking-tight text-foreground">Contact</h2>
-              <ul className="mt-3 space-y-3 text-sm text-muted-foreground">
+              <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
                 <li>
                   <a
                     href={telHref}
-                    className="inline-flex min-h-11 items-start gap-2 transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className={contactLinkClassName}
                   >
                     <Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
                     <span>{CONTACT_CONFIG.phone}</span>
@@ -88,7 +91,7 @@ export function MarketingFooter({ className, desktopContactActions }: MarketingF
                 <li>
                   <a
                     href={`mailto:${CONTACT_CONFIG.supportEmail}`}
-                    className="inline-flex min-h-11 items-start gap-2 transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className={contactLinkClassName}
                   >
                     <Mail className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
                     <span>{CONTACT_CONFIG.supportEmail}</span>
@@ -108,7 +111,7 @@ export function MarketingFooter({ className, desktopContactActions }: MarketingF
             </div>
           </div>
 
-          <div className="flex flex-col items-center gap-4 border-t border-border/60 pt-6 sm:flex-row sm:justify-between">
+          <div className="flex flex-col items-center gap-3 border-t border-border/60 pt-5 sm:flex-row sm:justify-between">
             <p className="text-center text-xs text-muted-foreground sm:text-left">
               &copy; {year} {WASHHOUSE_BRAND_NAME}
             </p>

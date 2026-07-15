@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export type LaundryTabId = 'overview' | 'services' | 'reviews' | 'information';
@@ -26,25 +27,24 @@ export function LaundryDetailTabs({ active, onChange, reviewCount }: LaundryDeta
     >
       <div className="flex gap-1 overflow-x-auto py-2 sm:p-1">
         {TABS.map((t) => (
-          <button
+          <Button
             key={t.id}
             type="button"
             role="tab"
             id={`tab-${t.id}`}
             aria-selected={active === t.id}
             aria-controls={`panel-${t.id}`}
+            variant={active === t.id ? 'default' : 'ghost'}
             onClick={() => onChange(t.id)}
             className={cn(
-              'min-w-[7rem] shrink-0 rounded-lg px-4 py-3 text-left transition-colors sm:min-w-0 sm:flex-1 sm:text-center',
-              active === t.id
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              'min-w-[7rem] h-auto shrink-0 rounded-lg px-4 py-3 text-left sm:min-w-0 sm:flex-1 sm:text-center',
+              active !== t.id && 'text-muted-foreground hover:bg-muted hover:text-foreground',
             )}
           >
             <span className="block text-sm font-semibold">
               {t.label}
               {t.id === 'reviews' && reviewCount > 0 && (
-                <span className={cn('ml-1.5', active === t.id ? 'text-primary-foreground/80' : '')}>
+                <span className={cn('ml-1.5', active === t.id ? 'text-button-foreground/80' : '')}>
                   ({reviewCount})
                 </span>
               )}
@@ -52,12 +52,12 @@ export function LaundryDetailTabs({ active, onChange, reviewCount }: LaundryDeta
             <span
               className={cn(
                 'mt-0.5 hidden text-xs sm:block',
-                active === t.id ? 'text-primary-foreground/80' : 'text-muted-foreground',
+                active === t.id ? 'text-button-foreground/80' : 'text-muted-foreground',
               )}
             >
               {t.hint}
             </span>
-          </button>
+          </Button>
         ))}
       </div>
     </div>

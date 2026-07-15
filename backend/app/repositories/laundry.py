@@ -48,9 +48,20 @@ class LaundryRepository:
 
     async def get_by_owner(self, owner_id: UUID) -> Laundry | None:
         result = await self._session.execute(
-            select(Laundry).where(Laundry.owner_user_id == owner_id, Laundry.deleted_at.is_(None)),
+            select(Laundry)
+            .where(Laundry.owner_user_id == owner_id, Laundry.deleted_at.is_(None))
+            .order_by(Laundry.created_at.asc())
+            .limit(1),
         )
-        return result.scalar_one_or_none()
+        return result.scalars().first()
+
+    async def list_by_owner(self, owner_id: UUID) -> list[Laundry]:
+        result = await self._session.execute(
+            select(Laundry)
+            .where(Laundry.owner_user_id == owner_id, Laundry.deleted_at.is_(None))
+            .order_by(Laundry.created_at.asc()),
+        )
+        return list(result.scalars().all())
 
     async def create(self, laundry: Laundry) -> Laundry:
         self._session.add(laundry)

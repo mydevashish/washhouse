@@ -37,6 +37,28 @@ export function setApiActivityCallback(fn: () => void) {
 }
 
 let handlingSessionInvalidation = false;
+let refreshInFlight: Promise<string | null> | null = null;
+
+const RETRIABLE_AUTH_CODES = new Set(['AUTH_TOKEN_EXPIRED', 'AUTH_FAILED']);
+
+async function refreshAccessTokenOnce(): Promise<string | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const { refreshSession } = await import('@/services/auth');
+        const { useAuthStore } = await import('@/store/auth.store');
+        const tokens = await refreshSession();
+        useAuthStore.getState().setAccessToken(tokens.access_token);
+        return tokens.access_token;
+      } catch {
+        return null;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+  }
+  return refreshInFlight;
+}
 
 function handleResponseHeaders(response: AxiosResponse) {
   const instanceId = extractServerInstanceId(response.headers as Record<string, unknown>);
@@ -81,7 +103,7 @@ api.interceptors.response.use(
     handleResponseHeaders(response);
     return response;
   },
-  (error: AxiosError<{ error: ApiError }>) => {
+  async (error: AxiosError<{ error: ApiError }>) => {
     if (error.response) {
       handleResponseHeaders(error.response);
     }
@@ -107,6 +129,26 @@ api.interceptors.response.use(
       void import('@/lib/session-logout').then((m) =>
         m.performSessionLogout({ reason: 'server_restart', skipServer: true }),
       );
+    }
+
+    const config = error.config;
+    const canRetry =
+      config &&
+      !('_authRetried' in config && (config as { _authRetried?: boolean })._authRetried) &&
+      status === 401 &&
+      code &&
+      RETRIABLE_AUTH_CODES.has(code) &&
+      !url.includes('/auth/login') &&
+      !url.includes('/auth/register') &&
+      !url.includes('/auth/refresh');
+
+    if (canRetry) {
+      const newToken = await refreshAccessTokenOnce();
+      if (newToken) {
+        (config as { _authRetried?: boolean })._authRetried = true;
+        config.headers.Authorization = `Bearer ${newToken}`;
+        return api.request(config);
+      }
     }
 
     if (!isStaleRefresh) {

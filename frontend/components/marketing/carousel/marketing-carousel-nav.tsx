@@ -77,7 +77,7 @@ export function MarketingCarouselNav({
               className={cn(
                 dotIndicatorClassName,
                 selectedIndex === index
-                  ? 'h-2.5 w-8 bg-brand-500'
+                  ? 'h-2.5 w-8 bg-primary'
                   : 'h-2.5 w-2.5 bg-muted-foreground/35 hover:bg-muted-foreground/55',
               )}
             />

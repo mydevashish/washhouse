@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Activity, ClipboardCheck, IndianRupee, Package, Percent, Store, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { InfoBanner } from '@/components/ui/info-banner';
+import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { AdminAnalyticsCharts } from '@/features/admin/charts/admin-analytics-charts';
 import { AdminTopLaundriesWidget } from '@/features/admin/revenue-analytics/admin-top-laundries-widget';
 import { AdminAlertsStrip } from '@/features/admin/components/admin-alerts-strip';
@@ -17,6 +17,7 @@ import { formatCount, formatInrCompact } from '@/features/admin/lib/format-admin
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
+import { useAdminQueriesEnabled } from '@/features/admin/hooks/use-admin-queries';
 import { getAdminAnalytics, getAdminDashboard } from '@/services/admin';
 
 function trendSeries(
@@ -44,14 +45,17 @@ function pctChange(series: number[]): { value: string; positive: boolean } | und
 
 export function AdminOverviewView() {
   const router = useRouter();
+  const queriesEnabled = useAdminQueriesEnabled();
   const dashboardQ = useQuery({
     queryKey: queryKeys.adminDashboard(),
     queryFn: getAdminDashboard,
+    enabled: queriesEnabled,
     staleTime: STALE.adminDashboard,
   });
   const analyticsQ = useQuery({
     queryKey: queryKeys.adminAnalytics(14),
     queryFn: () => getAdminAnalytics(14),
+    enabled: queriesEnabled,
     staleTime: STALE.adminDashboard,
   });
 
@@ -81,14 +85,20 @@ export function AdminOverviewView() {
       </div>
 
       {dashboardQ.isError && (
-        <InfoBanner variant="destructive" title="Could not load dashboard metrics">
-          {getApiErrorMessage(dashboardQ.error, 'GET /admin/dashboard failed')}
-        </InfoBanner>
+        <QueryErrorState
+          title="Could not load dashboard metrics"
+          message={getApiErrorMessage(dashboardQ.error, 'GET /admin/dashboard failed')}
+          onRetry={() => void dashboardQ.refetch()}
+          isRetrying={dashboardQ.isFetching}
+        />
       )}
       {analyticsQ.isError && (
-        <InfoBanner variant="destructive" title="Could not load analytics">
-          {getApiErrorMessage(analyticsQ.error, 'GET /admin/analytics failed')}
-        </InfoBanner>
+        <QueryErrorState
+          title="Could not load analytics"
+          message={getApiErrorMessage(analyticsQ.error, 'GET /admin/analytics failed')}
+          onRetry={() => void analyticsQ.refetch()}
+          isRetrying={analyticsQ.isFetching}
+        />
       )}
 
       <KpiGrid>

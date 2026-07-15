@@ -35,20 +35,27 @@ marketing_investment_range = postgresql.ENUM(
 )
 
 
-def upgrade() -> None:
+def _create_enum_if_not_exists(name: str, values_sql: str) -> None:
+    """Idempotent enum creation — safe when a prior migration attempt partially applied."""
     op.execute(
-        """
-        CREATE TYPE marketing_contact_subject AS ENUM (
-            'general', 'order-help', 'franchise', 'partnership', 'legal-privacy'
-        )
+        f"""
+        DO $$ BEGIN
+            CREATE TYPE {name} AS ENUM ({values_sql});
+        EXCEPTION
+            WHEN duplicate_object THEN NULL;
+        END $$;
         """
     )
-    op.execute(
-        """
-        CREATE TYPE marketing_investment_range AS ENUM (
-            '10-25', '25-50', '50-plus', 'unsure'
-        )
-        """
+
+
+def upgrade() -> None:
+    _create_enum_if_not_exists(
+        "marketing_contact_subject",
+        "'general', 'order-help', 'franchise', 'partnership', 'legal-privacy'",
+    )
+    _create_enum_if_not_exists(
+        "marketing_investment_range",
+        "'10-25', '25-50', '50-plus', 'unsure'",
     )
 
     op.create_table(

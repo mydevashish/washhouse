@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import Query
+from fastapi import Depends, Query
 
 from app.core.pagination import DEFAULT_PAGE_SIZE, ListQueryParams
 
 
+@dataclass(frozen=True)
 class TrustScoreListParams(ListQueryParams):
     role: str | None = None
     risk_level: str | None = None
@@ -58,7 +60,5 @@ def get_trust_score_list_params(
 
 
 TrustScoreListParamsDep = Annotated[TrustScoreListParams, Query()]
-
-from fastapi import Depends  # noqa: E402
 
 TrustScoreListQuery = Annotated[TrustScoreListParams, Depends(get_trust_score_list_params)]

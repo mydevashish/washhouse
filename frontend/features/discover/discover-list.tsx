@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 
+import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
@@ -21,7 +22,7 @@ function DiscoverListSkeleton() {
 }
 
 export function DiscoverList() {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: queryKeys.laundries(),
     queryFn: () => listLaundries(),
     staleTime: STALE.laundries,
@@ -31,11 +32,14 @@ export function DiscoverList() {
     return <DiscoverListSkeleton />;
   }
 
-  if (error) {
+  if (isError) {
     return (
-      <p className="text-fg-1">
-        Could not load laundries. Ensure the API is running on port 8000 and demo data is seeded.
-      </p>
+      <QueryErrorState
+        title="Could not load laundries"
+        message="Ensure the API is running and demo data is seeded."
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
     );
   }
 

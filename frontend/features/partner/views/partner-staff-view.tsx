@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ClientDate } from '@/components/ui/client-date';
 import { EmptyState } from '@/components/ui/empty-state';
+import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
@@ -17,6 +18,7 @@ import { PartnerContent, PartnerPageHeader } from '@/features/partner/components
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { formatCount } from '@/features/admin/lib/format-admin';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import {
@@ -239,6 +241,23 @@ export function PartnerStaffView() {
         description="Create login accounts, assign roles and branches, and track team activity."
       />
 
+      {dashQ.isError && (
+        <QueryErrorState
+          title="Could not load staff dashboard"
+          message={getApiErrorMessage(dashQ.error)}
+          onRetry={() => void dashQ.refetch()}
+          isRetrying={dashQ.isFetching}
+        />
+      )}
+      {staffQ.isError && (
+        <QueryErrorState
+          title="Could not load staff list"
+          message={getApiErrorMessage(staffQ.error)}
+          onRetry={() => void staffQ.refetch()}
+          isRetrying={staffQ.isFetching}
+        />
+      )}
+
       {dashQ.isLoading ? (
         <Skeleton className="h-24 w-full rounded-2xl" />
       ) : dash ? (
@@ -361,6 +380,16 @@ export function PartnerStaffView() {
       )}
 
       <PartnerPanel title="Activity log" bodyClassName="p-0">
+        {activityQ.isError && (
+          <div className="p-4">
+            <QueryErrorState
+              title="Could not load activity"
+              message={getApiErrorMessage(activityQ.error)}
+              onRetry={() => void activityQ.refetch()}
+              isRetrying={activityQ.isFetching}
+            />
+          </div>
+        )}
         {activityQ.isLoading && <Skeleton className="m-4 h-32 w-full" />}
         {!activityQ.isLoading && (activityQ.data ?? []).length === 0 && (
           <p className="px-4 py-6 text-sm text-muted-foreground">No activity recorded yet.</p>

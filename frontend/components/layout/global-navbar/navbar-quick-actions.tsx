@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
+import { Button } from '@/components/ui/button';
 import type { AppContext } from '@/lib/navigation/types';
 import type { UserRole } from '@/types/user';
 
@@ -44,16 +45,17 @@ export function NavbarQuickActions({
 
   return (
     <div ref={ref} className="relative hidden sm:block">
-      <button
+      <Button
         type="button"
-        className="inline-flex h-7 items-center gap-0.5 rounded-md bg-primary px-2 text-xs font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+        size="sm"
+        className="h-7 gap-0.5 px-2 text-xs"
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((o) => !o)}
       >
         <Plus className="h-3.5 w-3.5" aria-hidden />
         <span className="hidden lg:inline">Quick actions</span>
-      </button>
+      </Button>
       {open && (
         <div
           role="menu"

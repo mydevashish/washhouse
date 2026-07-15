@@ -16,12 +16,14 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ClientDate } from '@/components/ui/client-date';
 import { EmptyState } from '@/components/ui/empty-state';
+import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
 import { PartnerKpiCard, PartnerKpiGrid } from '@/features/partner/components/partner-kpi-card';
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import {
@@ -52,18 +54,20 @@ function OpsTabNav({ active, onChange }: { active: OpsTab; onChange: (t: OpsTab)
   return (
     <nav className="flex flex-wrap gap-1.5 rounded-xl border border-border bg-muted/30 p-1.5" aria-label="Operations sections">
       {TABS.map(({ id, label }) => (
-        <button
+        <Button
           key={id}
           type="button"
+          variant={active === id ? 'default' : 'ghost'}
+          size="sm"
           onClick={() => onChange(id)}
           className={cn(
-            'rounded-lg px-3 py-2 text-xs font-semibold transition-colors sm:text-sm',
-            active === id ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background',
+            'rounded-lg px-3 py-2 text-xs font-semibold sm:text-sm',
+            active !== id && 'text-muted-foreground hover:bg-background',
           )}
           aria-current={active === id ? 'page' : undefined}
         >
           {label}
-        </button>
+        </Button>
       ))}
     </nav>
   );
@@ -205,19 +209,16 @@ function QueueSection({
     <div className="space-y-3">
       <div className="flex flex-wrap gap-1.5">
         {buckets.map((b) => (
-          <button
+          <Button
             key={b.status}
             type="button"
+            variant={activeBucket === b.status ? 'default' : 'secondary'}
+            size="sm"
             onClick={() => setActiveBucket(b.status)}
-            className={cn(
-              'rounded-full px-3 py-1 text-xs font-semibold transition-colors',
-              activeBucket === b.status
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:text-foreground',
-            )}
+            className="rounded-full px-3 py-1 text-xs font-semibold"
           >
             {b.label} ({b.count})
-          </button>
+          </Button>
         ))}
       </div>
       <PartnerPanel title={bucket?.label ?? 'Queue'} meta={`${bucket?.count ?? 0} orders`} bodyClassName="divide-y divide-border/50 p-0">
@@ -326,6 +327,15 @@ export function PartnerOperationsView() {
 
       <OpsTabNav active={tab} onChange={setTab} />
 
+      {tab === 'dashboard' && dashQ.isError && (
+        <QueryErrorState
+          title="Could not load operations dashboard"
+          message={getApiErrorMessage(dashQ.error)}
+          onRetry={() => void dashQ.refetch()}
+          isRetrying={dashQ.isFetching}
+        />
+      )}
+
       {tab === 'dashboard' && (
         <>
           <PartnerKpiGrid>
@@ -367,6 +377,14 @@ export function PartnerOperationsView() {
 
       {tab === 'pickups' && (
         <>
+          {pickupQ.isError && (
+            <QueryErrorState
+              title="Could not load pickup queue"
+              message={getApiErrorMessage(pickupQ.error)}
+              onRetry={() => void pickupQ.refetch()}
+              isRetrying={pickupQ.isFetching}
+            />
+          )}
           {pickupQ.isPending && <Skeleton className="h-64 w-full rounded-2xl" />}
           {!pickupQ.isPending && pickupBuckets.every((b) => b.count === 0) && (
             <EmptyState icon={MapPin} title="No pickups" description="Scheduled pickups will appear in the queue." />
@@ -379,6 +397,14 @@ export function PartnerOperationsView() {
 
       {tab === 'deliveries' && (
         <>
+          {deliveryQ.isError && (
+            <QueryErrorState
+              title="Could not load delivery queue"
+              message={getApiErrorMessage(deliveryQ.error)}
+              onRetry={() => void deliveryQ.refetch()}
+              isRetrying={deliveryQ.isFetching}
+            />
+          )}
           {deliveryQ.isPending && <Skeleton className="h-64 w-full rounded-2xl" />}
           {!deliveryQ.isPending && deliveryBuckets.every((b) => b.count === 0) && (
             <EmptyState icon={Truck} title="No deliveries" description="Ready orders will appear in the delivery queue." />
@@ -391,6 +417,14 @@ export function PartnerOperationsView() {
 
       {tab === 'drivers' && (
         <>
+          {driversQ.isError && (
+            <QueryErrorState
+              title="Could not load drivers"
+              message={getApiErrorMessage(driversQ.error)}
+              onRetry={() => void driversQ.refetch()}
+              isRetrying={driversQ.isFetching}
+            />
+          )}
           {driversQ.isPending && <Skeleton className="h-48 w-full rounded-2xl" />}
           {!driversQ.isPending && <DriversPanel drivers={drivers} />}
         </>

@@ -49,6 +49,24 @@ export function RoleGuard({
         }
         setReady(true);
       } catch {
+        const refreshed = await tryRefreshSession();
+        if (cancelled) return;
+        if (refreshed) {
+          setAccessToken(refreshed.access_token);
+          try {
+            const me = await fetchMe();
+            if (cancelled) return;
+            setUser(me);
+            if (!roles.includes(me.role)) {
+              setDenied(true);
+              return;
+            }
+            setReady(true);
+            return;
+          } catch {
+            /* fall through to login */
+          }
+        }
         if (!cancelled) router.replace('/login');
       }
     }

@@ -4,6 +4,48 @@
 
 ---
 
+## 2026-07-15 — Fix API CRUD by role (dashboard states + verification)
+
+- **Type:** fix
+- **Scope:** Role CRUD QA per `fix-api-crud-by-role.md`
+- **Files:** Partner views (`partner-overview-view`, `partner-operations-view`, `partner-staff-view`, `partner-service-catalog-view`, `partner-settlements-view`, `partner-customers-view`), admin views (`admin-overview-view`, `admin-orders-table`, `admin-users-table`, `admin-approval-queue`), `discover-list.tsx`, `backend/scripts/verify_crud_by_role.py`
+- **Summary:** Verified customer/partner/admin read + customer profile/address CRUD via API (all 200/201). Added `QueryErrorState` with retry to partner/admin dashboard views that lacked error UI; added loading skeletons and `EmptyState` where missing. Prior contract fixes (admin lists, partner multi-laundry orders) unblocked paginated admin CRUD and partner order queue.
+- **Tests:** `python scripts/verify_crud_by_role.py` → 0 failures; `pytest tests/unit/test_list_query_params.py` → 4 passed.
+
+---
+
+## 2026-07-15 — Fix API frontend↔backend contracts (list params + partner orders)
+
+- **Type:** fix
+- **Scope:** FE/BE contract audit (`fix-api-frontend-contracts.md`)
+- **Files:** `backend/app/api/admin_list_params.py`, `backend/app/api/trust_score_list_params.py`, `backend/app/repositories/laundry.py`, `backend/app/services/partner_service.py`, `backend/tests/unit/test_list_query_params.py`, `logs/bug-tracker.md`
+- **Summary:** Audited all `frontend/services/*.ts` paths against backend routers — no path/method mismatches. Fixed runtime 500s blocking admin paginated lists: list-param subclasses now use `@dataclass(frozen=True)` so filter fields (`status`, `role`, `resource_type`, trust-score filters) construct correctly. Fixed partner `GET /partner/orders` for multi-laundry QA seed via `list_by_owner` + `laundry_id.in_()` aggregation. FE types (`PaginatedList`, `ApiEnvelope`) already matched backend `{ items, page, page_size, total_records, ... }`.
+- **Risks:** Partner analytics/staff still use primary (oldest) laundry when multiple exist — intentional minimal scope; orders/customers now span all laundries.
+- **Tests:** `pytest tests/unit/test_list_query_params.py` → 4 passed; manual API: admin list endpoints + partner orders → 200.
+
+---
+
+## 2026-07-15 — Fix API auth & session (401/403, refresh)
+
+- **Type:** fix
+- **Scope:** Auth session / role-guarded routes
+- **Files:** `frontend/lib/api.ts`, `frontend/components/auth/role-guard.tsx`, `frontend/app/(admin)/layout.tsx`, `frontend/features/admin/hooks/use-admin-queries.ts`, `frontend/features/admin/views/admin-overview-view.tsx`, `backend/tests/api/test_auth.py`, `logs/bug-tracker.md`
+- **Summary:** Added axios interceptor to refresh on `AUTH_TOKEN_EXPIRED`/`AUTH_FAILED` and retry once; RoleGuard retries `fetchMe` after refresh on failure; admin layout restores sessions via `OptionalAuthRefresh` and gates dashboard queries on `accessToken`. Ran `seed_qa.py` so `admin@demo.dlm` works. Added API tests for missing token (401) and wrong role (403).
+- **Risks:** Concurrent 401s share one refresh promise — intentional dedup.
+- **Tests:** Manual API login sweep customer/partner/admin → 200 on login + `/users/me`; pytest `test_auth.py` blocked on local test DB credentials (`dlm` password).
+
+---
+
+- **Type:** fix
+- **Scope:** Local dev infrastructure / env parity
+- **Files:** `backend/.env`, `frontend/.env.local` (verified, no code changes)
+- **Summary:** Ran `fix-api-connectivity-env.md` checklist. Confirmed env alignment: `PORT=8000`, `NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1`, `NEXT_PUBLIC_APP_URL=http://localhost:3000`, `CORS_ALLOW_ORIGINS=http://localhost:3000`. `alembic upgrade head` → `20260714_0033 (head)`. Backend listening on `:8000`; `GET /api/v1/health` → 200; `GET /api/v1/laundries` → 200 (3 demo laundries). `RATE_LIMIT_ENABLED=false` while Redis is offline (acceptable for local debug). Marked BUG-2026-07-14-001 resolved.
+- **Risks:** Redis not running locally — re-enable `RATE_LIMIT_ENABLED` after `docker compose up -d redis`.
+- **Tests:** Manual `Invoke-WebRequest` health + laundries; `alembic current`; pytest health test blocked on test DB credentials (`dlm` user) — separate from runtime API.
+- **Next:** `fix-api-auth-session.md` for BUG-2026-07-14-003; backend patch for BUG-2026-07-14-002.
+
+---
+
 ## 2026-07-13 — Finalize marketing homepage v2
 
 - **Type:** docs · test

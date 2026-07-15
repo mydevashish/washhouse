@@ -64,3 +64,36 @@ async def test_otp_flow(client: AsyncClient) -> None:
     )
     assert verify.status_code == 200
     assert verify.json()["data"]["user"]["is_phone_verified"] is True
+
+
+async def test_protected_route_requires_token(client: AsyncClient) -> None:
+    me = await client.get("/api/v1/users/me")
+    assert me.status_code == 401
+    assert me.json()["error"]["code"] == "AUTH_FAILED"
+
+
+async def test_wrong_role_gets_403(client: AsyncClient) -> None:
+    reg = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "customer403@dlm.app",
+            "password": "SecurePass123!",
+            "full_name": "Customer Only",
+        },
+    )
+    assert reg.status_code == 201
+    token = reg.json()["data"]["tokens"]["access_token"]
+
+    admin_dashboard = await client.get(
+        "/api/v1/admin/dashboard",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert admin_dashboard.status_code == 403
+    assert admin_dashboard.json()["error"]["code"] == "FORBIDDEN"
+
+    me = await client.get(
+        "/api/v1/users/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert me.status_code == 200
+    assert me.json()["data"]["role"] == "customer"

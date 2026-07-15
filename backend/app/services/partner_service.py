@@ -36,6 +36,12 @@ class PartnerService:
             raise NotFoundError("Partner laundry not found")
         return laundry
 
+    async def _laundry_ids_for_partner(self, partner_user_id: UUID) -> list[UUID]:
+        laundries = await self._laundries.list_by_owner(partner_user_id)
+        if not laundries:
+            raise NotFoundError("Partner laundry not found")
+        return [laundry.id for laundry in laundries]
+
     async def empty_analytics_summary(self, partner_user_id: UUID) -> dict:
         """Dashboard-safe zeros when partner has no laundry yet (e.g. pending onboarding)."""
         from decimal import Decimal
@@ -235,7 +241,7 @@ class PartnerService:
         }
 
     async def list_customers(self, partner_user_id: UUID) -> list[dict]:
-        laundry = await self._laundry_for_partner(partner_user_id)
+        laundry_ids = await self._laundry_ids_for_partner(partner_user_id)
         result = await self._session.execute(
             select(
                 Order.user_id,
@@ -245,7 +251,7 @@ class PartnerService:
                 func.max(Order.created_at).label("last_order_at"),
             )
             .join(User, User.id == Order.user_id)
-            .where(Order.laundry_id == laundry.id, Order.deleted_at.is_(None))
+            .where(Order.laundry_id.in_(laundry_ids), Order.deleted_at.is_(None))
             .group_by(Order.user_id, User.full_name)
             .order_by(func.max(Order.created_at).desc()),
         )
@@ -265,11 +271,11 @@ class PartnerService:
         return rows
 
     async def list_orders_for_partner(self, partner_user_id: UUID) -> list[tuple[Order, str]]:
-        laundry = await self._laundry_for_partner(partner_user_id)
+        laundry_ids = await self._laundry_ids_for_partner(partner_user_id)
         result = await self._session.execute(
             select(Order, User.full_name)
             .outerjoin(User, User.id == Order.user_id)
-            .where(Order.laundry_id == laundry.id, Order.deleted_at.is_(None))
+            .where(Order.laundry_id.in_(laundry_ids), Order.deleted_at.is_(None))
             .options(selectinload(Order.items))
             .order_by(Order.created_at.desc())
             .limit(50),

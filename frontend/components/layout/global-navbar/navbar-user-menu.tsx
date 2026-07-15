@@ -5,6 +5,7 @@ import { HelpCircle, LogOut, Settings, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import { NavbarThemeToggle } from '@/components/layout/global-navbar/navbar-theme-toggle';
+import { Button } from '@/components/ui/button';
 import type { AppContext } from '@/lib/navigation/types';
 import { useMounted } from '@/lib/hooks/use-mounted';
 import { performSessionLogout } from '@/lib/session-logout';
@@ -61,12 +62,9 @@ export function NavbarUserMenu({
 
   if (!user) {
     return (
-      <Link
-        href="/login"
-        className="inline-flex h-7 items-center rounded-md bg-primary px-2 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
-      >
-        Sign in
-      </Link>
+      <Button asChild size="sm" className="h-7 px-2 text-xs">
+        <Link href="/login">Sign in</Link>
+      </Button>
     );
   }
 

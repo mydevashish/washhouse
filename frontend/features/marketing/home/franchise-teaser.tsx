@@ -18,7 +18,7 @@ import { GlassSurface } from '@/components/ui/glass-surface';
 import { HERO_SLIDE_IMAGES } from '@/features/discover/marketplace/laundry-images';
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
 import {
-  GLASS_MOBILE_ON_DARK,
+  GLASS_ON_DARK_GRADIENT,
   MARKETING_CONTAINER,
   MARKETING_SECTION_PY,
 } from '@/features/marketing/shared/marketing-layout';
@@ -57,10 +57,10 @@ export function FranchiseTeaser() {
         <FadeIn>
           <FadeInItem>
             <GlassSurface
-              variant="strong"
+              variant="onDark"
               className={cn(
                 'mx-auto max-w-4xl rounded-2xl px-6 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-12',
-                GLASS_MOBILE_ON_DARK,
+                GLASS_ON_DARK_GRADIENT,
               )}
             >
               <p className="text-xs font-bold uppercase tracking-widest text-on-hero-muted sm:text-sm">

@@ -17,6 +17,7 @@ import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ClientDate } from '@/components/ui/client-date';
 import { EmptyState } from '@/components/ui/empty-state';
+import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatInr } from '@/features/discover/detail/order-pricing';
@@ -190,9 +191,12 @@ export function PartnerCustomersView() {
       />
 
       {dashboardQ.isError && (
-        <p className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {getApiErrorMessage(dashboardQ.error, 'Could not load customer insights')}
-        </p>
+        <QueryErrorState
+          title="Could not load customer insights"
+          message={getApiErrorMessage(dashboardQ.error)}
+          onRetry={() => void dashboardQ.refetch()}
+          isRetrying={dashboardQ.isFetching}
+        />
       )}
 
       <PartnerKpiGrid>
@@ -310,9 +314,12 @@ export function PartnerCustomersView() {
       {(customersQ.isLoading || dashboardQ.isLoading) && <Skeleton className="h-64 w-full rounded-2xl" />}
 
       {customersQ.isError && (
-        <p className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {getApiErrorMessage(customersQ.error, 'Could not load customer list')}
-        </p>
+        <QueryErrorState
+          title="Could not load customer list"
+          message={getApiErrorMessage(customersQ.error)}
+          onRetry={() => void customersQ.refetch()}
+          isRetrying={customersQ.isFetching}
+        />
       )}
 
       {enabled && !customersQ.isPending && customers.length === 0 && (

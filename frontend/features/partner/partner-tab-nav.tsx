@@ -2,6 +2,7 @@
 
 import { IndianRupee, Package, Users } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export type PartnerTab = 'orders' | 'customers' | 'revenue';
@@ -28,15 +29,14 @@ export function PartnerTabNav({ active, onChange, badges }: PartnerTabNavProps) 
         const selected = active === id;
         const badge = badges?.[id];
         return (
-          <button
+          <Button
             key={id}
             type="button"
+            variant={selected ? 'default' : 'ghost'}
             onClick={() => onChange(id)}
             className={cn(
-              'relative flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-xl px-2 py-3 text-sm font-semibold transition-colors',
-              selected
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:bg-background hover:text-foreground',
+              'relative h-auto min-h-[56px] flex-col gap-1 rounded-xl px-2 py-3 text-sm font-semibold',
+              !selected && 'text-muted-foreground hover:bg-background hover:text-foreground',
             )}
             aria-current={selected ? 'page' : undefined}
           >
@@ -52,7 +52,7 @@ export function PartnerTabNav({ active, onChange, badges }: PartnerTabNavProps) 
                 {badge > 99 ? '99+' : badge}
               </span>
             )}
-          </button>
+          </Button>
         );
       })}
     </nav>

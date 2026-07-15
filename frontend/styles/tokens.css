@@ -4,13 +4,13 @@
  * ========================================================================= */
 
 :root {
-  /* Brand — WashHouse navy / royal blue */
-  --brand-50: #eff6ff;
-  --brand-100: #dbeafe;
-  --brand-500: #1d4ed8; /* logo royal — white text ~6.7:1 */
-  --brand-600: #1e40af;
-  --brand-700: #1e3a8a; /* logo deep navy */
-  --brand-900: #172554;
+  /* Brand — WashHouse primary action blue */
+  --brand-50: #e8f4fb;
+  --brand-100: #cce7f5;
+  --brand-500: #1a7ebf; /* primary button fill — white text ~4.6:1 */
+  --brand-600: #1670ab; /* ~12% darker hover */
+  --brand-700: #145f94; /* ~20% darker active/pressed */
+  --brand-900: #0a3d5c;
 
   /* Sky — WashHouse cyan / teal accent */
   --sky-100: #cffafe;
@@ -57,6 +57,9 @@
   --popover-foreground: #0f172a;
   --primary: var(--brand-500);
   --primary-foreground: #ffffff;
+  --button-primary: #1a7ebf;
+  --button-primary-hover: #1670ab;
+  --button-primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
@@ -113,9 +116,9 @@
   --radius: var(--radius-lg);
 
   --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 2px 8px rgb(15 23 42 / 0.05);
-  --shadow-pop: 0 2px 8px rgb(29 78 216 / 0.08), 0 8px 20px rgb(15 23 42 / 0.08);
+  --shadow-pop: 0 2px 8px rgb(26 126 191 / 0.08), 0 8px 20px rgb(15 23 42 / 0.08);
   --shadow-modal: 0 16px 40px rgb(15 23 42 / 0.14);
-  --shadow-card-hover: 0 4px 16px rgb(29 78 216 / 0.1);
+  --shadow-card-hover: 0 4px 16px rgb(26 126 191 / 0.1);
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
@@ -123,7 +126,7 @@
   --dur-base: 180ms;
   --dur-slow: 280ms;
 
-  --gradient-hero: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 42%, #06b6d4 100%);
+  --gradient-hero: linear-gradient(135deg, #145f94 0%, #1a7ebf 42%, #06b6d4 100%);
   --gradient-surface: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
 
   color-scheme: light;
@@ -156,9 +159,12 @@
   --card-foreground: #f8fafc;
   --popover: #111827;
   --popover-foreground: #f8fafc;
-  /* Deeper than blue-500 so white label text stays AA (≥4.5:1) */
-  --primary: #2563eb;
+  /* Same fill as light — white label text ~4.6:1 on #1a7ebf */
+  --primary: #1a7ebf;
   --primary-foreground: #ffffff;
+  --button-primary: #1a7ebf;
+  --button-primary-hover: #1670ab;
+  --button-primary-foreground: #ffffff;
   --secondary: #1f2937;
   --secondary-foreground: #f8fafc;
   --muted: #1f2937;
@@ -168,13 +174,13 @@
   --destructive: #f87171;
   --destructive-foreground: #ffffff;
   --input: var(--border);
-  --ring: #22d3ee;
+  --ring: #2a8fd4;
   --overlay: rgb(0 0 0 / 0.55);
 
   --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.2), 0 2px 8px rgb(0 0 0 / 0.25);
   --shadow-pop: 0 4px 16px rgb(0 0 0 / 0.35);
   --shadow-modal: 0 20px 48px rgb(0 0 0 / 0.5);
-  --gradient-hero: linear-gradient(135deg, #172554 0%, #1d4ed8 48%, #0891b2 100%);
+  --gradient-hero: linear-gradient(135deg, #0a3d5c 0%, #1a7ebf 48%, #0891b2 100%);
 
   color-scheme: dark;
 }

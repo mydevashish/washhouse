@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated
 
@@ -10,14 +11,17 @@ from fastapi import Depends, Query
 from app.core.pagination import DEFAULT_PAGE_SIZE, ListQueryParams
 
 
+@dataclass(frozen=True)
 class AdminUserListParams(ListQueryParams):
     role: str | None = None
 
 
+@dataclass(frozen=True)
 class AdminOrderListParams(ListQueryParams):
     status: str | None = None
 
 
+@dataclass(frozen=True)
 class AdminAuditListParams(ListQueryParams):
     resource_type: str | None = None
     resource_id: str | None = None

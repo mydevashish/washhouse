@@ -12,6 +12,7 @@ import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { GlassSurface } from '@/components/ui/glass-surface';
+import { GLASS_ON_DARK_GRADIENT } from '@/features/marketing/shared/marketing-layout';
 import { HERO_SLIDE_IMAGES } from '@/features/discover/marketplace/laundry-images';
 import { FranchiseApplicationForm } from '@/features/marketing/franchise/franchise-application-form';
 import { MarketingGlassCard } from '@/features/marketing/shared/marketing-glass-card';
@@ -71,8 +72,11 @@ function FranchiseHero() {
 
       <div className="relative mx-auto max-w-[1440px] px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <GlassSurface
-          variant="strong"
-          className="mx-auto max-w-3xl rounded-2xl px-6 py-8 text-center sm:px-10 sm:py-10"
+          variant="onDark"
+          className={cn(
+            'mx-auto max-w-3xl rounded-2xl px-6 py-8 text-center sm:px-10 sm:py-10',
+            GLASS_ON_DARK_GRADIENT,
+          )}
         >
           <p className="text-xs font-bold uppercase tracking-widest text-on-hero-muted sm:text-sm">
             Franchise

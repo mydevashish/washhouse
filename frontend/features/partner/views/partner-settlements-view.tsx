@@ -2,27 +2,33 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { CheckCircle2, Clock, Download, FileSpreadsheet, FileText, Wallet } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { ClientDate } from '@/components/ui/client-date';
+import { EmptyState } from '@/components/ui/empty-state';
+import { QueryErrorState } from '@/components/feedback/query-error-state';
+import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
 import { SettlementStatusBadge } from '@/features/admin/settlements/settlement-badges';
 import { KpiCard, KpiGrid } from '@/features/admin/components/kpi-card';
 import { formatInrCompact } from '@/features/admin/lib/format-admin';
 import { formatInr } from '@/features/discover/detail/order-pricing';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import { downloadPartnerSettlementExport, getPartnerSettlements } from '@/services/settlements';
-import { Wallet, Clock, CheckCircle2 } from 'lucide-react';
+import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 
 export function PartnerSettlementsView() {
   const [page, setPage] = useState(1);
   const [exporting, setExporting] = useState(false);
+  const enabled = usePartnerQueriesEnabled();
 
   const dataQ = useQuery({
     queryKey: queryKeys.partnerSettlements(page),
     queryFn: () => getPartnerSettlements(page),
+    enabled,
     staleTime: STALE.adminDashboard,
   });
 
@@ -60,6 +66,15 @@ export function PartnerSettlementsView() {
         }
       />
 
+      {dataQ.isError && (
+        <QueryErrorState
+          title="Could not load settlements"
+          message={getApiErrorMessage(dataQ.error)}
+          onRetry={() => void dataQ.refetch()}
+          isRetrying={dataQ.isFetching}
+        />
+      )}
+
       <KpiGrid className="sm:grid-cols-3">
         <KpiCard label="Pending earnings" value={d ? formatInrCompact(Number(d.pending_earnings_inr)) : '—'} status="warning" icon={Clock} loading={dataQ.isLoading} />
         <KpiCard label="Available earnings" value={d ? formatInrCompact(Number(d.available_earnings_inr)) : '—'} status="neutral" icon={Wallet} loading={dataQ.isLoading} />
@@ -67,6 +82,8 @@ export function PartnerSettlementsView() {
       </KpiGrid>
 
       <div className="overflow-x-auto rounded-xl border border-border">
+        {dataQ.isLoading && <Skeleton className="m-4 h-48 w-full rounded-lg" />}
+        {!dataQ.isLoading && (
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
@@ -95,13 +112,17 @@ export function PartnerSettlementsView() {
             ))}
             {!d?.items.length && !dataQ.isLoading && (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
-                  No settlements yet. Earnings appear after orders clear the 48-hour dispute window.
+                <td colSpan={7} className="px-3 py-8">
+                  <EmptyState
+                    title="No settlements yet"
+                    description="Earnings appear after orders clear the 48-hour dispute window."
+                  />
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+        )}
       </div>
 
       {(d?.total_pages ?? 1) > 1 && (

@@ -16,9 +16,12 @@ export const GLASS_MOBILE_SOLID_CARD =
 export const GLASS_MOBILE_TRANSPARENT =
   'max-md:border-0 max-md:bg-transparent max-md:p-0 max-md:[backdrop-filter:none] max-md:[-webkit-backdrop-filter:none]';
 
-/** Solid fallback for glass on dark / gradient backgrounds — WCAG AA contrast */
+/** Solid fallback for glass on dark / gradient backgrounds — WCAG AA contrast (mobile only) */
 export const GLASS_MOBILE_ON_DARK =
   'max-md:border max-md:border-white/20 max-md:bg-brand-900/95 max-md:[backdrop-filter:none] max-md:[-webkit-backdrop-filter:none]';
+
+/** Dark glass over photo/gradient sections — use GlassSurface variant="onDark"; children carry text-on-hero */
+export const GLASS_ON_DARK_GRADIENT = 'shadow-none';
 
 /** Stats band glass over brand gradient — solid dark mobile fallback */
 export const GLASS_MOBILE_ON_BRAND =

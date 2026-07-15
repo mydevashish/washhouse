@@ -88,6 +88,11 @@ const config: Config = {
           DEFAULT: 'var(--primary)',
           foreground: 'var(--primary-foreground)',
         },
+        button: {
+          DEFAULT: 'var(--button-primary)',
+          hover: 'var(--button-primary-hover)',
+          foreground: 'var(--button-primary-foreground)',
+        },
         secondary: {
           DEFAULT: 'var(--secondary)',
           foreground: 'var(--secondary-foreground)',

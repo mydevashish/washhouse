@@ -26,6 +26,8 @@ import {
   usePartnerQueriesEnabled,
 } from '@/features/partner/hooks/use-partner-operations';
 import { formatInr } from '@/features/discover/detail/order-pricing';
+import { QueryErrorState } from '@/components/feedback/query-error-state';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 import { useMounted } from '@/lib/hooks/use-mounted';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
@@ -70,6 +72,31 @@ export function PartnerOverviewView() {
           </div>
         }
       />
+
+      {analyticsQ.isError && (
+        <QueryErrorState
+          title="Could not load analytics"
+          message={getApiErrorMessage(analyticsQ.error, 'Partner dashboard metrics failed to load')}
+          onRetry={() => void analyticsQ.refetch()}
+          isRetrying={analyticsQ.isFetching}
+        />
+      )}
+      {opsQ.isError && (
+        <QueryErrorState
+          title="Could not load operations summary"
+          message={getApiErrorMessage(opsQ.error, 'Operations dashboard failed to load')}
+          onRetry={() => void opsQ.refetch()}
+          isRetrying={opsQ.isFetching}
+        />
+      )}
+      {ordersQ.isError && (
+        <QueryErrorState
+          title="Could not load orders"
+          message={getApiErrorMessage(ordersQ.error, 'Order queue failed to load')}
+          onRetry={() => void ordersQ.refetch()}
+          isRetrying={ordersQ.isFetching}
+        />
+      )}
 
       <PartnerKpiGrid>
         <PartnerKpiCard

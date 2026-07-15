@@ -30,3 +30,34 @@
   background: color-mix(in srgb, var(--card) 40%, transparent);
   border-color: color-mix(in srgb, var(--border) 30%, transparent);
 }
+
+/*
+ * Dark glass over photo/gradient sections — all breakpoints.
+ * Use GlassSurface variant="onDark" (not --strong). Children use text-on-hero tokens.
+ */
+.glass-surface--on-dark {
+  background: color-mix(in srgb, var(--brand-900) 95%, transparent);
+  border-color: rgb(255 255 255 / 0.2);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+@media (min-width: 768px) {
+  .glass-surface--on-dark {
+    background: color-mix(in srgb, var(--brand-900) 90%, transparent);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+  }
+}
+
+.dark .glass-surface--on-dark {
+  background: color-mix(in srgb, var(--brand-900) 95%, transparent);
+  border-color: rgb(255 255 255 / 0.2);
+}
+
+@media (min-width: 768px) {
+  .dark .glass-surface--on-dark {
+    background: color-mix(in srgb, var(--brand-900) 90%, transparent);
+  }
+}

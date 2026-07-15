@@ -12,7 +12,7 @@ import {
 } from '@/features/marketing/contact/contact-constants';
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
 import {
-  GLASS_MOBILE_ON_DARK,
+  GLASS_ON_DARK_GRADIENT,
   MARKETING_CONTAINER,
   MARKETING_SECTION_PY,
 } from '@/features/marketing/shared/marketing-layout';
@@ -59,10 +59,10 @@ export function FinalCtaBand() {
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             >
               <GlassSurface
-                variant="strong"
+                variant="onDark"
                 className={cn(
                   'rounded-2xl px-6 py-8 text-center sm:px-10 sm:py-10 lg:px-12 lg:py-12',
-                  GLASS_MOBILE_ON_DARK,
+                  GLASS_ON_DARK_GRADIENT,
                 )}
               >
                 <h2

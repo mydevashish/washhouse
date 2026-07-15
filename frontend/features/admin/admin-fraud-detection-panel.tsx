@@ -184,17 +184,16 @@ export function AdminFraudDetectionPanel() {
         toolbar={
           <div className="flex flex-wrap gap-1">
             {STATUS_FILTERS.map((f) => (
-              <button
+              <Button
                 key={f.id}
                 type="button"
+                variant={statusFilter === f.id ? 'default' : 'secondary'}
+                size="sm"
                 onClick={() => setStatusFilter(f.id)}
-                className={cn(
-                  'rounded-lg px-3 py-1.5 text-xs font-semibold',
-                  statusFilter === f.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
-                )}
+                className="rounded-lg px-3 py-1.5 text-xs font-semibold"
               >
                 {f.label}
-              </button>
+              </Button>
             ))}
           </div>
         }

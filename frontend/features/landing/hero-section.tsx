@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
+import { Button } from '@/components/ui/button';
+
 /** Marketing hero — R3F deferred; Framer Motion for v1 shell. */
 export function HeroSection() {
   return (
@@ -29,12 +31,9 @@ export function HeroSection() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.35 }}
       >
-        <Link
-          href="/discover"
-          className="rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-brand-600"
-        >
-          Find laundries
-        </Link>
+        <Button asChild size="lg">
+          <Link href="/discover">Find laundries</Link>
+        </Button>
         <Link
           href="/register"
           className="rounded-md border border-border px-6 py-3 font-medium hover:bg-bg-1"

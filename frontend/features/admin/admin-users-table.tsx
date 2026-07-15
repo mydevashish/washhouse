@@ -8,7 +8,7 @@ import { VirtualDataTable, type VirtualColumnDef } from '@/components/data-table
 import { ClientDate } from '@/components/ui/client-date';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
-import { InfoBanner } from '@/components/ui/info-banner';
+import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UserRoleBadge } from '@/features/admin/lib/admin-badges';
 import { useServerList } from '@/lib/pagination/use-server-list';
@@ -71,9 +71,11 @@ export function AdminUsersTable() {
 
   if (list.isError) {
     return (
-      <InfoBanner variant="destructive" title="Could not load users">
-        Try refreshing the page.
-      </InfoBanner>
+      <QueryErrorState
+        title="Could not load users"
+        onRetry={() => void list.refetch()}
+        isRetrying={list.isFetching}
+      />
     );
   }
 

@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { InfoBanner } from '@/components/ui/info-banner';
+import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatIndiaDateTime } from '@/lib/datetime';
 import { queryKeys } from '@/lib/query-keys';
@@ -62,9 +62,11 @@ export function AdminApprovalQueue({ compact = false }: { compact?: boolean }) {
 
   if (pendingQ.isError) {
     return (
-      <InfoBanner variant="destructive" title="Could not load approval queue">
-        Refresh the page or try again shortly.
-      </InfoBanner>
+      <QueryErrorState
+        title="Could not load approval queue"
+        onRetry={() => void pendingQ.refetch()}
+        isRetrying={pendingQ.isFetching}
+      />
     );
   }
 

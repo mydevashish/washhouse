@@ -8,7 +8,7 @@ import { VirtualDataTable, type VirtualColumnDef } from '@/components/data-table
 import { Button } from '@/components/ui/button';
 import { ClientDate } from '@/components/ui/client-date';
 import { EmptyState } from '@/components/ui/empty-state';
-import { InfoBanner } from '@/components/ui/info-banner';
+import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AdminPickupEvidenceDialog } from '@/features/admin/admin-pickup-evidence-dialog';
 import { AdminDeliveryProofDialog } from '@/features/admin/admin-delivery-proof-dialog';
@@ -125,9 +125,11 @@ export function AdminOrdersTable() {
 
   if (list.isError) {
     return (
-      <InfoBanner variant="destructive" title="Could not load orders">
-        Try refreshing the page.
-      </InfoBanner>
+      <QueryErrorState
+        title="Could not load orders"
+        onRetry={() => void list.refetch()}
+        isRetrying={list.isFetching}
+      />
     );
   }
 
