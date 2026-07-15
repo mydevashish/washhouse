@@ -114,6 +114,7 @@ export function PartnerSettlementsView() {
               <tr>
                 <td colSpan={7} className="px-3 py-8">
                   <EmptyState
+                    icon={Wallet}
                     title="No settlements yet"
                     description="Earnings appear after orders clear the 48-hour dispute window."
                   />
