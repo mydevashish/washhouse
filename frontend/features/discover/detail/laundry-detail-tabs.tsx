@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
 import { cn } from '@/lib/utils';
 
 export type LaundryTabId = 'overview' | 'services' | 'reviews' | 'information';
@@ -21,11 +22,19 @@ type LaundryDetailTabsProps = {
 export function LaundryDetailTabs({ active, onChange, reviewCount }: LaundryDetailTabsProps) {
   return (
     <div
-      className="sticky top-14 z-20 -mx-4 border-b border-border bg-background/95 px-4 backdrop-blur sm:static sm:mx-0 sm:rounded-xl sm:border sm:shadow-soft sm:backdrop-blur-none"
+      className={cn(
+        'sticky top-14 z-20 -mx-4 border-b border-border bg-background/95 px-4 backdrop-blur sm:static sm:mx-0 sm:rounded-xl sm:border sm:shadow-soft sm:backdrop-blur-none',
+        HORIZONTAL_SCROLL_TOUCH_CLASS,
+      )}
       role="tablist"
       aria-label="Laundry sections"
     >
-      <div className="flex gap-1 overflow-x-auto py-2 sm:p-1">
+      <div
+        className={cn(
+          'flex gap-1 overflow-x-auto py-2 sm:p-1',
+          HORIZONTAL_SCROLL_TOUCH_CLASS,
+        )}
+      >
         {TABS.map((t) => (
           <Button
             key={t.id}

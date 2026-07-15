@@ -11,6 +11,7 @@ import {
 } from '@/features/marketing/home/services-data';
 import { MarketingGlassCard } from '@/features/marketing/shared/marketing-glass-card';
 import { MarketingSection } from '@/features/marketing/shared/marketing-section';
+import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
 import { cn } from '@/lib/utils';
 
 const BOOK_NOW_HREF = '/discover#laundries';
@@ -83,12 +84,15 @@ export function ServicesPreview() {
       <FadeIn>
         {/* Mobile: horizontal scroll-snap carousel (~1.2 cards visible) */}
         <div
-          className="md:hidden -mx-4 min-w-0 w-full overflow-x-auto overscroll-x-contain px-4 pb-2 scrollbar-none snap-x snap-mandatory"
+          className={cn(
+            'md:hidden -mx-4 min-w-0 w-full overflow-x-auto overscroll-x-contain px-4 pb-2 scrollbar-none snap-x snap-mandatory',
+            HORIZONTAL_SCROLL_TOUCH_CLASS,
+          )}
           aria-label="Browse our laundry services — swipe horizontally to see more"
           role="region"
           tabIndex={0}
         >
-          <ul className="flex gap-4">
+          <ul className={cn('flex gap-4', HORIZONTAL_SCROLL_TOUCH_CLASS)}>
             {SERVICE_PREVIEW_ITEMS.map((item) => (
               <li key={item.id} className="w-[83.333%] max-w-sm shrink-0 snap-start">
                 <ServicePreviewCard item={item} />

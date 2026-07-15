@@ -22,7 +22,9 @@ import { StorefrontMachinesSection } from '@/features/partner/storefront/section
 import { StorefrontTeamCertsSection } from '@/features/partner/storefront/sections/team-certs-section';
 import { StorefrontTemplatesSection } from '@/features/partner/storefront/sections/templates-section';
 import { useOnlineBookingEnabled } from '@/lib/hooks/use-online-booking-enabled';
+import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
 import { queryKeys } from '@/lib/query-keys';
+import { cn } from '@/lib/utils';
 import { STALE } from '@/lib/query-config';
 import {
   applyStorefrontTemplate,
@@ -192,7 +194,12 @@ export function PartnerStorefrontBuilderView() {
         </CardContent>
       </Card>
 
-      <div className="flex gap-1 overflow-x-auto border-b border-border/60 pb-px">
+      <div
+        className={cn(
+          'flex gap-1 overflow-x-auto border-b border-border/60 pb-px',
+          HORIZONTAL_SCROLL_TOUCH_CLASS,
+        )}
+      >
         {TABS.map((t) => (
           <button
             key={t.id}

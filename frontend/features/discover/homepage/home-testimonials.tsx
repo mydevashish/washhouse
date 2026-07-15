@@ -5,6 +5,7 @@ import { Quote, Star } from 'lucide-react';
 import { useId } from 'react';
 
 import {
+  MARKETING_CAROUSEL_CONTAINER_CLASS,
   MarketingCarouselNav,
   useMarketingCarousel,
 } from '@/components/marketing/carousel';
@@ -15,6 +16,7 @@ import type { MarketingTestimonial } from '@/features/marketing/testimonials/typ
 import { useMarketingTestimonials } from '@/features/marketing/hooks/use-marketing';
 import { GLASS_MOBILE_SOLID_CARD } from '@/features/marketing/shared/marketing-layout';
 import { MarketingSection } from '@/features/marketing/shared/marketing-section';
+import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
 import { cn } from '@/lib/utils';
 
 function StarRating({ rating }: { rating: number }) {
@@ -101,9 +103,12 @@ function TestimonialsCarousel({ testimonials }: { testimonials: MarketingTestimo
         aria-roledescription="carousel"
         aria-label="Customer reviews"
         tabIndex={0}
-        className="overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        className={cn(
+          'overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          HORIZONTAL_SCROLL_TOUCH_CLASS,
+        )}
       >
-        <div className="-ml-4 flex touch-pan-y">
+        <div className={cn('-ml-4', MARKETING_CAROUSEL_CONTAINER_CLASS)}>
           {testimonials.map((testimonial, index) => (
             <div
               key={testimonial.id}

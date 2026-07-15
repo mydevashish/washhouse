@@ -3,6 +3,7 @@
 import { ClipboardCheck, IndianRupee, LayoutDashboard, Package, Users } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
 
 export type AdminTab = 'overview' | 'approvals' | 'orders' | 'users' | 'revenue';
 
@@ -23,7 +24,10 @@ type AdminTabNavProps = {
 export function AdminTabNav({ active, onChange, badges }: AdminTabNavProps) {
   return (
     <nav
-      className="flex gap-1 overflow-x-auto rounded-xl border border-border bg-muted/40 p-1"
+      className={cn(
+        'flex gap-1 overflow-x-auto rounded-xl border border-border bg-muted/40 p-1',
+        HORIZONTAL_SCROLL_TOUCH_CLASS,
+      )}
       aria-label="Admin sections"
     >
       {TABS.map(({ id, label, icon: Icon }) => {

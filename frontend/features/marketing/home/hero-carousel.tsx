@@ -13,8 +13,11 @@ import Link from 'next/link';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import {
+  MARKETING_CAROUSEL_CONTAINER_CLASS,
   MarketingCarouselNav,
+  shouldResumeCarouselAutoplayOnMouseLeave,
   useMarketingCarousel,
+  useMarketingCarouselVerticalScrollPause,
 } from '@/components/marketing/carousel';
 import { WashhouseLogo } from '@/components/brand/washhouse-logo';
 import { Button } from '@/components/ui/button';
@@ -37,6 +40,7 @@ import {
   MARKETING_HERO_IMAGE_FRAME,
   MARKETING_HERO_TEXT_COL,
 } from '@/features/marketing/shared/marketing-layout';
+import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
 import { usePrefersReducedMotion } from '@/lib/hooks/use-prefers-reduced-motion';
 import { cn } from '@/lib/utils';
 
@@ -412,6 +416,16 @@ export function HeroCarousel() {
     pausedRef.current = true;
   }, []);
 
+  const bindVerticalScrollPause = useMarketingCarouselVerticalScrollPause(pauseAutoplay);
+
+  const setViewportRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      emblaRef(node);
+      bindVerticalScrollPause(node);
+    },
+    [bindVerticalScrollPause, emblaRef],
+  );
+
   const resumeAutoplay = useCallback(() => {
     if (!reduceMotion) {
       pausedRef.current = false;
@@ -475,7 +489,11 @@ export function HeroCarousel() {
       ref={rootRef}
       className="relative w-full min-w-0"
       onMouseEnter={pauseAutoplay}
-      onMouseLeave={resumeAutoplay}
+      onMouseLeave={() => {
+        if (shouldResumeCarouselAutoplayOnMouseLeave()) {
+          resumeAutoplay();
+        }
+      }}
       onFocusCapture={pauseAutoplay}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
@@ -484,14 +502,17 @@ export function HeroCarousel() {
       }}
     >
       <div
-        ref={emblaRef}
+        ref={setViewportRef}
         role="region"
         aria-roledescription="carousel"
         aria-label="Promotional highlights"
         tabIndex={0}
-        className="w-full min-w-0 overflow-hidden rounded-2xl bg-background outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:rounded-3xl"
+        className={cn(
+          'w-full min-w-0 overflow-hidden rounded-2xl bg-background outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:rounded-3xl',
+          HORIZONTAL_SCROLL_TOUCH_CLASS,
+        )}
       >
-        <div className="flex w-full touch-pan-x">
+        <div className={cn('w-full', MARKETING_CAROUSEL_CONTAINER_CLASS)}>
           {HERO_SLIDES.map((slide, index) => {
             const isActive = selectedIndex === index;
 
@@ -501,7 +522,7 @@ export function HeroCarousel() {
                 id={`${carouselId}-slide-${slide.id}`}
                 className={cn(
                   'relative w-full min-w-0 shrink-0 grow-0 basis-full',
-                  !isActive && 'pointer-events-none',
+                  isActive ? HORIZONTAL_SCROLL_TOUCH_CLASS : 'pointer-events-none',
                 )}
                 role="group"
                 aria-roledescription="slide"

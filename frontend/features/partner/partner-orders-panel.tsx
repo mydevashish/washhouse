@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { InfoBanner } from '@/components/ui/info-banner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
 import { PartnerOrderCard } from '@/features/partner/partner-order-card';
 import { getPartnerNextStatus, isOrderNeedsAction } from '@/features/partner/lib/partner-status';
 import {
@@ -166,7 +167,7 @@ export function PartnerOrdersPanel() {
         </Button>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className={cn('flex gap-2 overflow-x-auto pb-1', HORIZONTAL_SCROLL_TOUCH_CLASS)}>
         {filters.map((f) => (
           <Button
             key={f.id}

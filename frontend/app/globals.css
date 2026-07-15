@@ -79,7 +79,16 @@
   .text-on-hero-muted {
     color: rgb(255 255 255 / 0.92);
   }
+}
 
+/* Below lg: vertical page scroll wins over horizontal carousels/strips (see 19-responsive-design.md). */
+@media (max-width: 1023px) {
+  .horizontal-scroll-touch {
+    touch-action: pan-y pinch-zoom;
+  }
+}
+
+@layer utilities {
   /*
    * WashHouse loader — transform/opacity only (GPU-friendly).
    * Mirrored in tailwind.config.ts; defined here so Next CSS always ships them.

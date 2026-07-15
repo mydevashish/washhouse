@@ -110,6 +110,9 @@ For the customer flow, use a **bottom tab bar** on mobile: Discover · Orders ·
 - Hover states must have an equivalent active/focus state.
 - No content reveal that requires hover.
 - Swipe gestures only where they augment, never replace, taps.
+- Vertical page scroll must never be blocked by horizontal UI on touch viewports.
+- **Horizontal carousels (Embla):** viewport/container must use `horizontal-scroll-touch` (`touch-pan-y` + `touch-pinch-zoom` via `HORIZONTAL_SCROLL_TOUCH_CLASS`); never `touch-pan-x`.
+- **`overflow-x-auto` marketing strips:** same — apply `HORIZONTAL_SCROLL_TOUCH_CLASS` on the scroll container.
 
 ## Performance considerations
 
