@@ -16,7 +16,7 @@ export function ServicesPricing() {
     <section
       id="pricing"
       aria-labelledby="services-pricing-title"
-      className="border-t border-border bg-card py-12 sm:py-16"
+      className="scroll-mt-20 border-t border-border bg-card py-12 sm:py-16"
     >
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
         <SectionHeader

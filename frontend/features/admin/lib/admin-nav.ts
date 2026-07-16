@@ -20,6 +20,8 @@ import {
   Star,
 } from 'lucide-react';
 
+import { isPathNavLinkActive } from '@/lib/navigation/nav-active';
+
 export type AdminNavItem = {
   href: string;
   label: string;
@@ -99,8 +101,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
 export const ADMIN_NAV_FLAT = ADMIN_NAV_SECTIONS.flatMap((s) => s.items);
 
 export function isAdminNavActive(pathname: string, href: string): boolean {
-  if (href === '/admin') return pathname === '/admin';
-  return pathname.startsWith(href);
+  return isPathNavLinkActive(pathname, href, ADMIN_NAV_FLAT.map((item) => item.href), ['/admin']);
 }
 
 export function getAdminPageTitle(pathname: string): string {

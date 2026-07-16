@@ -31,12 +31,13 @@ export function NavbarNotifications({
   }, [app, ensureSeeded, mounted]);
 
   useEffect(() => {
+    if (!open) return;
     function onDoc(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
-  }, []);
+  }, [open]);
 
   const unread = mounted ? unreadCount(app) : 0;
   const displayItems = mounted ? items : [];

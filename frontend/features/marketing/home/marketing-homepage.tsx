@@ -93,7 +93,7 @@ const FinalCtaBand = dynamic(
 
 export function MarketingHomepage() {
   return (
-    <div className="overflow-x-hidden bg-background">
+    <div className="min-w-0 max-w-full overflow-x-hidden bg-background">
       <MarketingHomeHero />
       <StatsBand />
       <TrustStrip showOtpSubcopy />

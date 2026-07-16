@@ -17,6 +17,8 @@ import {
   Wallet,
 } from 'lucide-react';
 
+import { isPathNavLinkActive } from '@/lib/navigation/nav-active';
+
 export type PartnerNavItem = {
   href: string;
   label: string;
@@ -85,8 +87,12 @@ export const PARTNER_NAV_SECTIONS: PartnerNavSection[] = [
 export const PARTNER_NAV_FLAT = PARTNER_NAV_SECTIONS.flatMap((s) => s.items);
 
 export function isPartnerNavActive(pathname: string, href: string): boolean {
-  if (href === '/partner') return pathname === '/partner';
-  return pathname.startsWith(href);
+  return isPathNavLinkActive(
+    pathname,
+    href,
+    PARTNER_NAV_FLAT.map((item) => item.href),
+    ['/partner'],
+  );
 }
 
 export function getPartnerPageTitle(pathname: string): string {

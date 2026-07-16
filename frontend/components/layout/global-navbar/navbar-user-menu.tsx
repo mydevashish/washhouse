@@ -23,7 +23,7 @@ function initials(name: string): string {
 function AccountMenuPlaceholder() {
   return (
     <span
-      className="inline-flex h-7 w-[4rem] items-center justify-center rounded-md bg-muted/40 sm:w-20"
+      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted/40"
       aria-hidden
     />
   );
@@ -44,20 +44,17 @@ export function NavbarUserMenu({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!open) return;
     function onDoc(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
-  }, []);
+  }, [open]);
 
   async function handleLogout() {
     setOpen(false);
     await performSessionLogout({ reason: 'manual' });
-  }
-
-  if (!mounted) {
-    return <AccountMenuPlaceholder />;
   }
 
   if (!user) {
@@ -66,6 +63,10 @@ export function NavbarUserMenu({
         <Link href="/login">Sign in</Link>
       </Button>
     );
+  }
+
+  if (!mounted) {
+    return <AccountMenuPlaceholder />;
   }
 
   const roleLabel =

@@ -6,6 +6,7 @@ import { ArrowRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { HeroStaticFallback } from '@/features/marketing/home/hero-static-fallback';
+import { MARKETING_BOOK_NOW_HREF } from '@/lib/navigation/marketing-nav';
 
 const HeroCarousel = dynamic(
   () =>
@@ -19,14 +20,14 @@ export function MarketingHomeHero() {
   return (
     <section
       aria-labelledby="marketing-hero-title"
-      className="relative isolate overflow-x-hidden overflow-hidden bg-gradient-to-b from-brand-50/60 via-background to-background pb-6 sm:pb-8 lg:pb-10 dark:from-brand-900/10 dark:via-background"
+      className="relative isolate max-w-full overflow-x-hidden overflow-hidden bg-gradient-to-b from-brand-50/60 via-background to-background pb-6 sm:pb-8 lg:pb-10 dark:from-brand-900/10 dark:via-background"
     >
       <div
         className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
         aria-hidden
       >
-        <div className="absolute -right-16 top-16 h-64 w-64 rounded-full bg-primary/8 blur-3xl sm:h-72 sm:w-72" />
-        <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-sky-500/8 blur-3xl" />
+        <div className="absolute right-0 top-16 h-64 w-64 translate-x-1/4 rounded-full bg-primary/8 blur-3xl sm:h-72 sm:w-72" />
+        <div className="absolute bottom-0 left-0 h-72 w-72 -translate-x-1/4 translate-y-1/4 rounded-full bg-sky-500/8 blur-3xl" />
       </div>
 
       <div className="relative z-[1] mx-auto max-w-[1440px] px-4 pb-2 pt-6 sm:px-6 sm:pb-3 sm:pt-8 lg:px-8 lg:pb-3 lg:pt-10">
@@ -42,7 +43,7 @@ export function MarketingHomeHero() {
               size="lg"
               className="h-11 w-full rounded-full shadow-pop active:scale-[0.98]"
             >
-              <Link href="/discover#laundries">
+              <Link href={MARKETING_BOOK_NOW_HREF}>
                 Book pickup
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>

@@ -108,8 +108,8 @@ export function LaundryDetailView({ laundryId }: { laundryId: string }) {
     <div
       className={`min-h-screen bg-background ${
         showMobileSummary || showOfflineMobileBar
-          ? 'pb-[max(8rem,calc(7.5rem+env(safe-area-inset-bottom,0px)))]'
-          : 'pb-safe-nav'
+          ? 'pb-[max(4.5rem,calc(4rem+env(safe-area-inset-bottom,0px)))] sm:pb-0'
+          : ''
       } lg:pb-12`}
     >
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">

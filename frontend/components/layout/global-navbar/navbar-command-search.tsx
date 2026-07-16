@@ -2,7 +2,16 @@
 
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import {
   Dialog,
@@ -16,13 +25,75 @@ import { filterSearchItems, getSearchIndex } from '@/lib/navigation/search-index
 import type { AppContext } from '@/lib/navigation/types';
 import { cn } from '@/lib/utils';
 
-export function NavbarCommandSearch({ app }: { app: AppContext }) {
+type SearchContextValue = {
+  openSearch: () => void;
+};
+
+const SearchContext = createContext<SearchContextValue | null>(null);
+
+function useSearchContext(): SearchContextValue {
+  const ctx = useContext(SearchContext);
+  if (!ctx) {
+    throw new Error('NavbarCommandSearch triggers must be used within NavbarCommandSearchRoot');
+  }
+  return ctx;
+}
+
+export function NavbarCommandSearchDesktopTrigger({ className }: { className?: string }) {
+  const { openSearch } = useSearchContext();
+
+  return (
+    <button
+      type="button"
+      onClick={openSearch}
+      className={cn(
+        'hidden h-7 min-w-0 flex-1 items-center gap-1.5 rounded-md border border-border/50 bg-muted/30 px-2 text-xs text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:flex md:max-w-sm',
+        className,
+      )}
+      aria-label="Open search"
+    >
+      <Search className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      <span className="truncate">Search…</span>
+      <kbd className="ml-auto hidden rounded border border-border/50 bg-background/80 px-1 py-px text-[10px] font-medium text-muted-foreground lg:inline">
+        ⌘K
+      </kbd>
+    </button>
+  );
+}
+
+export function NavbarCommandSearchMobileTrigger({ className }: { className?: string }) {
+  const { openSearch } = useSearchContext();
+
+  return (
+    <button
+      type="button"
+      onClick={openSearch}
+      className={cn(
+        'inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden',
+        className,
+      )}
+      aria-label="Search"
+    >
+      <Search className="h-3.5 w-3.5" />
+    </button>
+  );
+}
+
+export function NavbarCommandSearchRoot({
+  app,
+  children,
+}: {
+  app: AppContext;
+  children: ReactNode;
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const items = useMemo(() => getSearchIndex(app), [app]);
   const results = useMemo(() => filterSearchItems(items, query), [items, query]);
+
+  const openSearch = useCallback(() => setOpen(true), []);
 
   const onSelect = useCallback(
     (href: string) => {
@@ -51,30 +122,8 @@ export function NavbarCommandSearch({ app }: { app: AppContext }) {
   }, [open]);
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={cn(
-          'hidden h-7 min-w-0 flex-1 items-center gap-1.5 rounded-md border border-border/50 bg-muted/30 px-2 text-xs text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:flex md:max-w-sm',
-        )}
-        aria-label="Open search"
-      >
-        <Search className="h-3.5 w-3.5 shrink-0" aria-hidden />
-        <span className="truncate">Search…</span>
-        <kbd className="ml-auto hidden rounded border border-border/50 bg-background/80 px-1 py-px text-[10px] font-medium text-muted-foreground lg:inline">
-          ⌘K
-        </kbd>
-      </button>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
-        aria-label="Search"
-      >
-        <Search className="h-3.5 w-3.5" />
-      </button>
-
+    <SearchContext.Provider value={{ openSearch }}>
+      {children}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg gap-0 overflow-hidden p-0 sm:rounded-xl">
           <DialogHeader className="border-b border-border/60 px-4 py-3">
@@ -113,6 +162,16 @@ export function NavbarCommandSearch({ app }: { app: AppContext }) {
           </ul>
         </DialogContent>
       </Dialog>
-    </>
+    </SearchContext.Provider>
+  );
+}
+
+/** @deprecated Use NavbarCommandSearchRoot + split triggers for a single dialog instance. */
+export function NavbarCommandSearch({ app }: { app: AppContext }) {
+  return (
+    <NavbarCommandSearchRoot app={app}>
+      <NavbarCommandSearchDesktopTrigger />
+      <NavbarCommandSearchMobileTrigger />
+    </NavbarCommandSearchRoot>
   );
 }

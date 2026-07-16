@@ -18,7 +18,7 @@ export function DiscoverMarketplace() {
       <MarketplacePageNav />
       <DiscoverHero />
       <MobileCtaBar />
-      <div id="main-content" className="pb-20 sm:pb-0">
+      <div className="pb-20 sm:pb-0">
         <HowItWorks />
         <ServiceCategories />
         <WhyChooseUs />

@@ -133,7 +133,7 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
 
   return (
     <div
-      className={`min-h-screen bg-background ${showMobileSummary || showOfflineMobileBar ? 'pb-[max(8rem,calc(7.5rem+env(safe-area-inset-bottom,0px)))]' : 'pb-safe-nav'}`}
+      className={`min-h-screen bg-background ${showMobileSummary || showOfflineMobileBar ? 'pb-[max(4.5rem,calc(4rem+env(safe-area-inset-bottom,0px)))] sm:pb-0' : ''}`}
       style={
         {
           '--store-primary': primary,

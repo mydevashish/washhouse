@@ -6,12 +6,12 @@ import { MarketingShellOverlays } from '@/components/layout/marketing-shell-over
 
 export function MarketingShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="marketing-readable flex min-h-screen flex-col bg-muted/30">
+    <div className="marketing-readable flex min-h-screen min-w-0 flex-col overflow-x-hidden bg-muted/30">
       <SkipToContent />
       <MarketingShellChrome />
       <main
         id="main-content"
-        className="flex-1 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] focus:outline-none lg:pb-0"
+        className="min-w-0 max-w-full flex-1 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] focus:outline-none lg:pb-0"
         tabIndex={-1}
       >
         {children}

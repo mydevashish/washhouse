@@ -12,9 +12,10 @@ import {
 import { MarketingGlassCard } from '@/features/marketing/shared/marketing-glass-card';
 import { MarketingSection } from '@/features/marketing/shared/marketing-section';
 import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
+import { MARKETING_BOOK_NOW_HREF } from '@/lib/navigation/marketing-nav';
 import { cn } from '@/lib/utils';
 
-const BOOK_NOW_HREF = '/discover#laundries';
+const BOOK_NOW_HREF = MARKETING_BOOK_NOW_HREF;
 
 type ServicePreviewCardProps = {
   item: ServicePreviewItem;
@@ -75,6 +76,7 @@ export function ServicesPreview() {
     <MarketingSection
       aria-labelledby="services-preview-title"
       className="bg-card"
+      containerClassName="min-w-0 max-w-full overflow-x-hidden"
       header={{
         title: 'Our Laundry Services',
         description: 'Professional care for every fabric',
@@ -85,7 +87,7 @@ export function ServicesPreview() {
         {/* Mobile: horizontal scroll-snap carousel (~1.2 cards visible) */}
         <div
           className={cn(
-            'md:hidden -mx-4 min-w-0 w-full overflow-x-auto overscroll-x-contain px-4 pb-2 scrollbar-none snap-x snap-mandatory',
+            'md:hidden -mx-4 min-w-0 w-full max-w-none overflow-x-auto overscroll-x-contain px-4 pb-2 scrollbar-none snap-x snap-mandatory',
             HORIZONTAL_SCROLL_TOUCH_CLASS,
           )}
           aria-label="Browse our laundry services — swipe horizontally to see more"

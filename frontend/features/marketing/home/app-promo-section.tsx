@@ -78,9 +78,9 @@ function AppFeatureRow({
 
 function PhoneMockup() {
   return (
-    <div className="relative mx-auto w-full max-w-[17.5rem] sm:max-w-[19rem] lg:mx-0 lg:max-w-[20rem]">
+    <div className="relative mx-auto w-full max-w-[17.5rem] overflow-hidden sm:max-w-[19rem] lg:mx-0 lg:max-w-[20rem]">
       <div
-        className="pointer-events-none absolute -inset-6 rounded-[3rem] bg-brand-500/15 blur-3xl"
+        className="pointer-events-none absolute inset-0 scale-110 rounded-[3rem] bg-brand-500/15 blur-3xl"
         aria-hidden
       />
       <div className="relative rounded-[2.5rem] border-[10px] border-foreground/90 bg-foreground/90 p-2 shadow-[0_24px_60px_-12px_rgba(0,0,0,0.35)]">

@@ -10,6 +10,35 @@ function isIgnoredConsoleError(text: string): boolean {
   return IGNORED_CONSOLE_PATTERNS.some((pattern) => pattern.test(text));
 }
 
+test.describe('marketing homepage layout', () => {
+  async function expectNoHorizontalOverflow(page: import('@playwright/test').Page) {
+    const metrics = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
+  }
+
+  test('homepage has no horizontal overflow at 1280×800', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    await page.waitForLoadState('load');
+    await expect(page.getByRole('button', { name: /next slide/i })).toBeVisible();
+
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test('homepage has no horizontal overflow at 390×844', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await page.waitForLoadState('load');
+    await expect(page.locator('[data-marketing-sticky-cta].fixed')).toBeVisible();
+
+    await expectNoHorizontalOverflow(page);
+  });
+});
+
 test.describe('marketing homepage smoke', () => {
   test('homepage loads with hero and key sections', async ({ page }) => {
     await page.goto('/');
@@ -81,6 +110,149 @@ test.describe('marketing homepage smoke', () => {
       page.getByRole('heading', { name: /clean clothes\. happy life/i }),
     ).toBeVisible();
     expect(errors, errors.join('\n')).toEqual([]);
+  });
+});
+
+test.describe('marketing navbar', () => {
+  async function expectSingleActiveNavLink(
+    page: import('@playwright/test').Page,
+    navLabel: 'Main navigation' | 'Mobile navigation',
+    linkName: string,
+  ) {
+    const nav = page.getByRole('navigation', { name: navLabel }).first();
+    await expect(nav).toBeVisible();
+    const activeLinks = nav.locator('a[aria-current="page"]');
+    await expect(activeLinks).toHaveCount(1);
+    await expect(activeLinks).toHaveText(linkName);
+  }
+
+  async function expectSectionNearTop(page: import('@playwright/test').Page, selector: string) {
+    const section = page.locator(selector);
+    await expect(section).toBeVisible();
+    await expect
+      .poll(async () => {
+        const box = await section.boundingBox();
+        if (!box) return Number.POSITIVE_INFINITY;
+        return box.y;
+      })
+      .toBeLessThanOrEqual(88);
+  }
+
+  test('desktop nav shows only Services active on /services', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/services');
+    await page.waitForLoadState('domcontentloaded');
+
+    await expectSingleActiveNavLink(page, 'Main navigation', 'Services');
+  });
+
+  test('desktop nav shows only Pricing active on /services#pricing', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/services#pricing');
+    await page.waitForLoadState('domcontentloaded');
+
+    await expectSingleActiveNavLink(page, 'Main navigation', 'Pricing');
+  });
+
+  test('mobile nav shows only Services active on /services', async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await page.goto('/services');
+    await page.waitForLoadState('domcontentloaded');
+
+    await page.getByRole('button', { name: /open menu/i }).click();
+    await expectSingleActiveNavLink(page, 'Mobile navigation', 'Services');
+  });
+
+  test('mobile nav shows only Pricing active on /services#pricing', async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await page.goto('/services#pricing');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.locator('nav[aria-label="Main navigation"] a[aria-current="page"]')).toHaveText(
+      'Pricing',
+    );
+
+    await page.getByRole('button', { name: /open menu/i }).click();
+    await expectSingleActiveNavLink(page, 'Mobile navigation', 'Pricing');
+  });
+
+  test('desktop nav link Services navigates to /services', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    await page
+      .getByRole('navigation', { name: 'Main navigation' })
+      .getByRole('link', { name: 'Services' })
+      .click();
+
+    await expect(page).toHaveURL(/\/services$/);
+    await expect(
+      page.getByRole('heading', { name: /laundry services, explained/i }),
+    ).toBeVisible();
+  });
+
+  test('mobile hamburger Services navigates to /services', async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    await page.getByRole('button', { name: /open menu/i }).click();
+    await page
+      .getByRole('navigation', { name: 'Mobile navigation' })
+      .getByRole('link', { name: 'Services' })
+      .click();
+
+    await expect(page).toHaveURL(/\/services$/);
+  });
+
+  test('Pricing link scrolls #pricing into view', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    await page
+      .getByRole('navigation', { name: 'Main navigation' })
+      .getByRole('link', { name: 'Pricing' })
+      .click();
+
+    await expect(page).toHaveURL(/\/services#pricing/);
+    await expectSectionNearTop(page, '#pricing');
+    await expect(page.getByRole('heading', { name: /how pricing works/i })).toBeVisible();
+  });
+
+  test('same-page Pricing click scrolls when already on /services', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/services');
+    await page.waitForLoadState('domcontentloaded');
+
+    await page.evaluate(() => window.scrollTo(0, 0));
+
+    await page
+      .getByRole('navigation', { name: 'Main navigation' })
+      .getByRole('link', { name: 'Pricing' })
+      .click();
+
+    await expect(page).toHaveURL(/\/services#pricing/);
+    await expectSectionNearTop(page, '#pricing');
+    await expectSingleActiveNavLink(page, 'Main navigation', 'Pricing');
+  });
+
+  test('same-page Pricing click updates mobile nav active state', async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await page.goto('/services');
+    await page.waitForLoadState('domcontentloaded');
+
+    await page.getByRole('button', { name: /open menu/i }).click();
+    await expectSingleActiveNavLink(page, 'Mobile navigation', 'Services');
+
+    await page
+      .getByRole('navigation', { name: 'Mobile navigation' })
+      .getByRole('link', { name: 'Pricing' })
+      .click();
+
+    await expect(page).toHaveURL(/\/services#pricing/);
+    await page.getByRole('button', { name: /open menu/i }).click();
+    await expectSingleActiveNavLink(page, 'Mobile navigation', 'Pricing');
   });
 });
 

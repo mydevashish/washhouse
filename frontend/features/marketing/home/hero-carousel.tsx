@@ -42,6 +42,7 @@ import {
 } from '@/features/marketing/shared/marketing-layout';
 import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
 import { usePrefersReducedMotion } from '@/lib/hooks/use-prefers-reduced-motion';
+import { MARKETING_BOOK_NOW_HREF } from '@/lib/navigation/marketing-nav';
 import { cn } from '@/lib/utils';
 
 const AUTOPLAY_MS = 5000;
@@ -366,7 +367,7 @@ function DeliverySlideContent({
           variant="outline"
           className="h-11 rounded-full border-border/80 bg-background/95 px-6 shadow-soft backdrop-blur-sm active:scale-[0.98]"
         >
-          <Link href="/discover#laundries">
+          <Link href={MARKETING_BOOK_NOW_HREF}>
             Find a store
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
@@ -487,7 +488,7 @@ export function HeroCarousel() {
   return (
     <div
       ref={rootRef}
-      className="relative w-full min-w-0"
+      className="relative w-full min-w-0 max-w-full overflow-x-hidden"
       onMouseEnter={pauseAutoplay}
       onMouseLeave={() => {
         if (shouldResumeCarouselAutoplayOnMouseLeave()) {
@@ -550,7 +551,7 @@ export function HeroCarousel() {
       </div>
 
       <MarketingCarouselNav
-        className="pointer-events-auto absolute inset-x-0 bottom-3 z-20 flex justify-center px-4 sm:bottom-4 lg:inset-x-6 lg:left-1/2 lg:justify-end"
+        className="pointer-events-auto absolute bottom-3 left-0 right-0 z-20 flex max-w-full justify-center px-4 sm:bottom-4 lg:bottom-4 lg:left-1/2 lg:right-6 lg:justify-end lg:px-0"
         selectedIndex={selectedIndex}
         slideCount={HERO_SLIDES.length}
         onPrev={handleScrollPrev}

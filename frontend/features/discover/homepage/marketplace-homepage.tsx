@@ -72,7 +72,7 @@ export function MarketplaceHomepage() {
 
   return (
 
-    <div className="min-h-screen bg-background pb-safe-nav sm:pb-0">
+    <div className="min-h-screen bg-background">
 
       <HomeHero />
 

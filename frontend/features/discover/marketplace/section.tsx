@@ -20,7 +20,12 @@ export function Section({ id, className, children, tone = 'default', ariaLabel }
     <section
       id={id}
       aria-label={ariaLabel}
-      className={cn('py-16 sm:py-20 lg:py-24', tones[tone], className)}
+      className={cn(
+        'py-16 sm:py-20 lg:py-24',
+        id && 'scroll-mt-28',
+        tones[tone],
+        className,
+      )}
     >
       <div className="container">{children}</div>
     </section>

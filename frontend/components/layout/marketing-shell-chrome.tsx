@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 
 import { MarketingNavbar } from '@/components/layout/global-navbar/marketing-navbar';
+import { HashScrollHandler } from '@/components/navigation/hash-scroll-handler';
 
 const FloatingContactActions = dynamic(
   () =>
@@ -16,6 +17,7 @@ const FloatingContactActions = dynamic(
 export function MarketingShellChrome() {
   return (
     <>
+      <HashScrollHandler />
       <MarketingNavbar />
       <FloatingContactActions />
     </>

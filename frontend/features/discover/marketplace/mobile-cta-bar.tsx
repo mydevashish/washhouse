@@ -13,7 +13,7 @@ export function MobileCtaBar() {
 
   return (
     <div
-      className="fixed bottom-14 left-0 right-0 z-30 border-t border-border bg-bg-0/95 p-3 backdrop-blur sm:hidden"
+      className="bottom-above-nav fixed left-0 right-0 z-30 border-t border-border bg-bg-0/95 p-3 backdrop-blur sm:hidden"
       role="region"
       aria-label="Quick action"
     >

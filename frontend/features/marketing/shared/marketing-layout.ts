@@ -40,13 +40,13 @@ export const MARKETING_STATS_SECTION_PY = 'pt-8 pb-8 sm:pt-10 sm:pb-10 lg:pt-12 
 
 /** Hero split layout — shared by carousel + static fallback */
 export const MARKETING_HERO_GRID =
-  'grid min-h-[28rem] w-full grid-cols-1 lg:grid-cols-2 lg:items-stretch';
+  'grid min-h-[28rem] w-full min-w-0 max-w-full grid-cols-1 lg:grid-cols-2 lg:items-stretch';
 
 export const MARKETING_HERO_TEXT_COL =
-  'order-1 flex min-h-0 min-w-0 flex-col justify-center bg-gradient-to-br from-background via-background to-brand-50/40 p-4 pb-16 dark:to-brand-900/10 sm:p-6 sm:pb-16 lg:justify-start lg:overflow-visible lg:p-8 lg:pb-8 xl:p-10';
+  'order-1 flex min-h-0 min-w-0 max-w-full flex-col justify-center overflow-hidden bg-gradient-to-br from-background via-background to-brand-50/40 p-4 pb-16 dark:to-brand-900/10 sm:p-6 sm:pb-16 lg:justify-start lg:p-8 lg:pb-8 xl:p-10';
 
 export const MARKETING_HERO_IMAGE_COL =
-  'relative order-2 min-h-[14rem] w-full overflow-hidden sm:min-h-[18rem] lg:min-h-0 lg:self-stretch';
+  'relative order-2 min-h-[14rem] w-full min-w-0 max-w-full overflow-hidden sm:min-h-[18rem] lg:min-h-0 lg:self-stretch';
 
 /** Fills the image column height without absolute positioning (avoids grid collapse). */
 export const MARKETING_HERO_IMAGE_FRAME =

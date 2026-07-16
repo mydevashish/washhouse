@@ -1,17 +1,23 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, Phone, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { WashhouseLogo } from '@/components/brand/washhouse-logo';
+import {
+  NavbarThemeInline,
+  NavbarThemeToggle,
+} from '@/components/layout/global-navbar/navbar-theme-toggle';
+import { scrollToHash } from '@/components/navigation/hash-scroll-handler';
 import { Button } from '@/components/ui/button';
 import {
   buildTelHref,
   CONTACT_CONFIG,
 } from '@/features/marketing/contact/contact-constants';
 import {
+  getSamePageHash,
+  isMarketingNavLinkActive,
   MARKETING_BOOK_NOW_HREF,
   MARKETING_NAV_LINKS,
   MARKETING_STAFF_HREF,
@@ -20,17 +26,76 @@ import { cn } from '@/lib/utils';
 
 const telHref = buildTelHref(CONTACT_CONFIG.phone);
 
-function isNavLinkActive(pathname: string, href: string): boolean {
-  const [path, hash] = href.split('#');
-  if (hash) return pathname === path;
-  if (path === '/') return pathname === '/';
-  return pathname === path || pathname.startsWith(`${path}/`);
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function useHash(): [string, () => void] {
+  const [hash, setHash] = useState('');
+
+  const readHash = useCallback(() => {
+    const value = window.location.hash.replace(/^#/, '');
+    setHash(value);
+    return value;
+  }, []);
+
+  useEffect(() => {
+    readHash();
+    window.addEventListener('hashchange', readHash);
+    return () => window.removeEventListener('hashchange', readHash);
+  }, [readHash]);
+
+  return [hash, readHash];
+}
+
+function useFocusTrap(containerRef: React.RefObject<HTMLElement | null>, active: boolean) {
+  useEffect(() => {
+    if (!active || !containerRef.current) return;
+
+    const container = containerRef.current;
+    const getFocusable = () =>
+      Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+        (el) => !el.hasAttribute('disabled') && el.offsetParent !== null,
+      );
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    getFocusable()[0]?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') return;
+      if (event.key !== 'Tab') return;
+
+      const focusable = getFocusable();
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    container.addEventListener('keydown', onKeyDown);
+    return () => {
+      container.removeEventListener('keydown', onKeyDown);
+      previouslyFocused?.focus?.();
+    };
+  }, [active, containerRef]);
 }
 
 export function MarketingNavbar() {
   const pathname = usePathname();
+  const [currentHash, readHash] = useHash();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileNavRef = useRef<HTMLElement>(null);
+
+  useFocusTrap(mobileNavRef, mobileOpen);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -44,6 +109,10 @@ export function MarketingNavbar() {
   }, [pathname]);
 
   useEffect(() => {
+    readHash();
+  }, [pathname, readHash]);
+
+  useEffect(() => {
     if (!mobileOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -54,61 +123,109 @@ export function MarketingNavbar() {
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
 
+  /** Same-page hash only — cross-page links use native anchors for reliable navigation. */
+  const handleSamePageHashClick = useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+      const hash = getSamePageHash(pathname, href);
+      if (!hash || !scrollToHash(hash)) return;
+      event.preventDefault();
+      window.history.pushState(null, '', href);
+      readHash();
+    },
+    [pathname, readHash],
+  );
+
+  const navLinkClassName = (active: boolean) =>
+    cn(
+      'shrink-0 rounded-md px-2 py-1.5 text-xs font-medium transition-colors lg:px-2.5 lg:py-2 lg:text-sm xl:px-3',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      active ? 'text-primary' : 'text-foreground hover:text-foreground',
+    );
+
+  const mobileLinkClassName = (active: boolean) =>
+    cn(
+      'flex min-h-11 items-center rounded-md px-3 text-sm font-medium transition-colors',
+      active ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted',
+    );
+
+  const renderNavAnchor = (
+    href: string,
+    label: string,
+    className: string,
+    active: boolean,
+    onAfterSamePageHash?: () => void,
+  ) => {
+    const samePageHash = getSamePageHash(pathname, href);
+    return (
+      <a
+        key={href}
+        href={href}
+        onClick={
+          samePageHash
+            ? (event) => {
+                handleSamePageHashClick(event, href);
+                onAfterSamePageHash?.();
+              }
+            : undefined
+        }
+        className={className}
+        aria-current={active ? 'page' : undefined}
+      >
+        {label}
+      </a>
+    );
+  };
+
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 isolate w-full border-b bg-background transition-[box-shadow,border-color] duration-base',
-        scrolled
-          ? 'border-border shadow-md'
-          : 'border-border/60 shadow-sm',
+        'sticky top-0 z-50 isolate w-full min-w-0 max-w-full border-b bg-background transition-[box-shadow,border-color] duration-base',
+        scrolled ? 'border-border shadow-md' : 'border-border/60 shadow-sm',
       )}
     >
-      <div className="mx-auto flex h-nav max-w-[1440px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-nav w-full min-w-0 max-w-[1440px] items-center gap-2 px-4 sm:gap-2.5 sm:px-6 lg:gap-3 lg:px-8">
         <WashhouseLogo href="/" priority compact className="shrink-0" />
 
         <nav
-          className="hidden flex-1 items-center justify-center gap-1 lg:flex"
+          className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 lg:flex xl:gap-1"
           aria-label="Main navigation"
         >
           {MARKETING_NAV_LINKS.map(({ href, label }) => {
-            const active = isNavLinkActive(pathname, href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  'rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                  active
-                    ? 'text-primary'
-                    : 'text-foreground hover:text-foreground',
-                )}
-                aria-current={active ? 'page' : undefined}
-              >
-                {label}
-              </Link>
-            );
+            const active = isMarketingNavLinkActive(pathname, href, currentHash);
+            return renderNavAnchor(href, label, navLinkClassName(active), active);
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
-          <div className="hidden items-center gap-2 sm:flex">
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
+          <div className="hidden lg:block">
+            <NavbarThemeToggle />
+          </div>
+          <div className="hidden shrink-0 items-center gap-1 sm:flex sm:gap-1.5">
             <Button
               asChild
               variant="ghost"
               size="sm"
               className="rounded-full px-3 font-medium text-foreground hover:text-foreground"
             >
-              <Link href={MARKETING_STAFF_HREF}>Staff login</Link>
+              <a href={MARKETING_STAFF_HREF}>Staff login</a>
             </Button>
             <Button asChild size="sm" className="rounded-full px-4 font-semibold">
-              <Link href={MARKETING_BOOK_NOW_HREF}>Book Now</Link>
+              <a
+                href={MARKETING_BOOK_NOW_HREF}
+                onClick={
+                  getSamePageHash(pathname, MARKETING_BOOK_NOW_HREF)
+                    ? (event) => handleSamePageHashClick(event, MARKETING_BOOK_NOW_HREF)
+                    : undefined
+                }
+              >
+                Book Now
+              </a>
             </Button>
             <Button
               asChild
               variant="outline"
               size="sm"
-              className="rounded-full border-success/60 px-4 font-semibold text-success hover:bg-success/10 hover:text-success"
+              className="hidden rounded-full border-success/60 px-4 font-semibold text-success hover:bg-success/10 hover:text-success xl:inline-flex"
             >
               <a href={telHref}>
                 <Phone className="h-3.5 w-3.5" aria-hidden />
@@ -119,7 +236,7 @@ export function MarketingNavbar() {
 
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
             onClick={() => setMobileOpen((open) => !open)}
             aria-expanded={mobileOpen}
             aria-controls="marketing-mobile-nav"
@@ -132,48 +249,56 @@ export function MarketingNavbar() {
 
       {mobileOpen ? (
         <nav
+          ref={mobileNavRef}
           id="marketing-mobile-nav"
           className="border-t border-border/60 bg-background px-4 py-4 lg:hidden"
           aria-label="Mobile navigation"
         >
           <ul className="space-y-1">
             {MARKETING_NAV_LINKS.map(({ href, label }) => {
-              const active = isNavLinkActive(pathname, href);
+              const active = isMarketingNavLinkActive(pathname, href, currentHash);
               return (
                 <li key={href}>
-                  <Link
-                    href={href}
-                    onClick={closeMobile}
-                    className={cn(
-                      'flex min-h-11 items-center rounded-md px-3 text-sm font-medium transition-colors',
-                      active
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-foreground hover:bg-muted',
-                    )}
-                    aria-current={active ? 'page' : undefined}
-                  >
-                    {label}
-                  </Link>
+                  {renderNavAnchor(
+                    href,
+                    label,
+                    mobileLinkClassName(active),
+                    active,
+                    getSamePageHash(pathname, href) ? closeMobile : undefined,
+                  )}
                 </li>
               );
             })}
           </ul>
 
+          <div className="mt-4 border-t border-border/60 px-1 pt-4">
+            <NavbarThemeInline />
+          </div>
+
           <div className="mt-4 border-t border-border/60 pt-4">
-            <Link
+            <a
               href={MARKETING_STAFF_HREF}
-              onClick={closeMobile}
               className="flex min-h-11 items-center rounded-md px-3 text-sm font-semibold text-primary hover:bg-primary/10"
             >
               Staff login
-            </Link>
+            </a>
           </div>
 
           <div className="mt-4 flex flex-col gap-2 border-t border-border/60 pt-4 sm:hidden">
             <Button asChild className="w-full rounded-full font-semibold">
-              <Link href={MARKETING_BOOK_NOW_HREF} onClick={closeMobile}>
+              <a
+                href={MARKETING_BOOK_NOW_HREF}
+                onClick={
+                  getSamePageHash(pathname, MARKETING_BOOK_NOW_HREF)
+                    ? (event) => {
+                        handleSamePageHashClick(event, MARKETING_BOOK_NOW_HREF);
+                        closeMobile();
+                      }
+                    : undefined
+                }
+              >
                 Book Now
-              </Link>
+              </a>
             </Button>
             <Button
               asChild

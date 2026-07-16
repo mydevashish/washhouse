@@ -5,9 +5,10 @@ import { Clock, Zap } from 'lucide-react';
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
 import { MarketingGlassCard } from '@/features/marketing/shared/marketing-glass-card';
 import { MarketingSection } from '@/features/marketing/shared/marketing-section';
+import { MARKETING_BOOK_NOW_HREF } from '@/lib/navigation/marketing-nav';
 import { cn } from '@/lib/utils';
 
-const BOOK_NOW_HREF = '/discover#laundries';
+const BOOK_NOW_HREF = MARKETING_BOOK_NOW_HREF;
 
 const DELIVERY_OPTIONS = [
   {

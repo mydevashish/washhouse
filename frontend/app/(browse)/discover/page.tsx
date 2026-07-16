@@ -1,4 +1,4 @@
-import { MarketplaceHomepage } from '@/features/discover/homepage/marketplace-homepage';
+import { DiscoverMarketplace } from '@/features/discover/marketplace/discover-marketplace';
 
 export const metadata = {
   title: 'Laundry service at your doorstep',
@@ -7,5 +7,5 @@ export const metadata = {
 };
 
 export default function DiscoverPage() {
-  return <MarketplaceHomepage />;
+  return <DiscoverMarketplace />;
 }
