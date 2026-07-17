@@ -100,6 +100,7 @@ export function useActiveRackItem({
 
     for (let index = 0; index < items.length; index += 1) {
       const el = items[index];
+      if (!el) continue;
       const centerX = el.offsetLeft + el.offsetWidth / 2;
       const distance = Math.abs(centerX - focusX);
       if (distance < bestDistance) {
