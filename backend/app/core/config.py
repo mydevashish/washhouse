@@ -113,6 +113,8 @@ class Settings(BaseSettings):
     CACHE_ENABLED: bool = True
     CACHE_LAUNDRIES_LIST_TTL_SEC: int = 60
     CACHE_LAUNDRIES_SEARCH_TTL_SEC: int = 30
+    CACHE_LAUNDRY_PRICE_LIST_TTL_SEC: int = 120
+    CACHE_MARKETPLACE_FROM_TTL_SEC: int = 600
 
     # Observability
     SENTRY_DSN: str | None = None

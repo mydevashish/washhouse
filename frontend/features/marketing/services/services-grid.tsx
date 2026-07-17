@@ -2,9 +2,10 @@ import Link from 'next/link';
 import { ArrowRight, Clock } from 'lucide-react';
 
 import { SectionHeader } from '@/components/marketplace/section-header';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { SERVICE_CATEGORIES } from '@/features/marketing/services/services-data';
+import { cn } from '@/lib/utils';
 
 export function ServicesGrid() {
   return (
@@ -29,7 +30,7 @@ export function ServicesGrid() {
               turnaround,
               priceFrom,
               optional,
-              ctaHref = '/discover',
+              ctaHref = '/stores',
               ctaLabel = 'Browse laundries',
             }) => (
               <li key={id} id={id}>
@@ -67,12 +68,17 @@ export function ServicesGrid() {
                       </div>
                     </dl>
 
-                    <Button asChild variant="outline" size="default" className="mt-5 w-full rounded-full">
-                      <Link href={ctaHref}>
-                        {ctaLabel}
-                        <ArrowRight className="h-4 w-4" aria-hidden />
-                      </Link>
-                    </Button>
+                    {/* Link + buttonVariants avoids Slot/asChild hydration mismatch on this RSC page */}
+                    <Link
+                      href={ctaHref}
+                      className={cn(
+                        buttonVariants({ variant: 'outline', size: 'default' }),
+                        'mt-5 w-full rounded-full',
+                      )}
+                    >
+                      {ctaLabel}
+                      <ArrowRight className="h-4 w-4" aria-hidden />
+                    </Link>
                   </CardContent>
                 </Card>
               </li>

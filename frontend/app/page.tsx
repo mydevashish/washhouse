@@ -6,7 +6,7 @@ import { MarketingHomepage } from '@/features/marketing/home';
 
 const title = `${WASHHOUSE_BRAND_NAME} — Doorstep laundry pickup & delivery`;
 const description =
-  'Discover trusted laundries near you. Free doorstep pickup, live order tracking, and delivery home. Pay with UPI or COD — GST on every order.';
+  'Discover trusted laundries near you. Free doorstep pickup, live order tracking, and delivery home. Pay with UPI or COD.';
 
 export const metadata: Metadata = {
   title,

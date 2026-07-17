@@ -4,6 +4,7 @@ import {
   Bell,
   ClipboardList,
   FileText,
+  IndianRupee,
   LayoutDashboard,
   Package,
   Radio,
@@ -56,6 +57,7 @@ export const PARTNER_NAV_SECTIONS: PartnerNavSection[] = [
     items: [
       { href: '/partner/storefront', label: 'Storefront builder', icon: Sparkles },
       { href: '/partner/services', label: 'Service catalog', icon: ClipboardList },
+      { href: '/partner/pricing', label: 'Garment prices', icon: IndianRupee },
       { href: '/partner/reviews', label: 'Reviews', icon: Star },
     ],
   },

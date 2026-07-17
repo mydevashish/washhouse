@@ -10,6 +10,15 @@ export interface LaundryListItem {
   review_count: number;
   is_verified: boolean;
   rank_score?: number | null;
+  /** Owner-set Wash & Fold (kg) when offered — discovery compare hint */
+  wash_fold_from_inr?: string | null;
+  wash_fold_from_paise?: number | null;
+  /** Owner-set Shirt / T-shirt dry-clean when offered */
+  shirt_dry_clean_from_inr?: string | null;
+  shirt_dry_clean_from_paise?: number | null;
+  /** MIN of available compare hints — for filter/sort */
+  start_price_inr?: string | null;
+  start_price_paise?: number | null;
 }
 
 export interface LaundrySearchResponse {

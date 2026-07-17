@@ -35,6 +35,22 @@
 
 ## Open
 
+### BUG-2026-07-17-001 — Contact & Franchise forms show network error on submit
+
+- **Status:** resolved
+- **Priority:** P1
+- **Severity:** SEV2
+- **Area:** marketing / public forms
+- **Environment:** local (`frontend/.env.local` → `localhost:8000/api/v1`)
+- **Category:** A — Network (backend down) + P3 error UX (bare axios “Network Error”)
+- **Root cause:** uvicorn not listening; FE env/CORS/path/schema already matched. Migrations already at head (`20260714_0033` includes marketing tables).
+- **Fix:** Restart backend; improve `getApiErrorMessage` + marketing submit error helper so unreachable API shows actionable copy (email support) instead of “Network Error”; validation/rate-limit messages preserved.
+- **Verification:** `POST /api/v1/marketing/contact` + `/franchise-inquiries` → 201; browser Contact form reset after success; GET stats/testimonials OK; Home/Services/Stores/Franchise/Contact/Pricing → 200.
+
+**Resolved at:** 2026-07-17
+
+---
+
 ### BUG-2026-07-14-004 — Guest Call / WhatsApp missing on discover & storefront (online booking mode)
 
 - **Status:** resolved

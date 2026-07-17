@@ -6,7 +6,7 @@ import { MarketingShellOverlays } from '@/components/layout/marketing-shell-over
 
 export function MarketingShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="marketing-readable flex min-h-screen min-w-0 flex-col overflow-x-hidden bg-muted/30">
+    <div className="marketing-readable flex min-h-screen min-w-0 flex-col overflow-x-clip bg-muted/30">
       <SkipToContent />
       <MarketingShellChrome />
       <main

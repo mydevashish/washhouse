@@ -95,9 +95,9 @@ export function LaundryFiltersBar({
               onChange={(e) => onChange({ ...filters, maxPrice: Number(e.target.value) })}
               aria-label="Maximum starting price"
             >
-              <option value={100}>Under ₹100/kg</option>
-              <option value={150}>Under ₹150/kg</option>
-              <option value={250}>Under ₹250/kg</option>
+              <option value={100}>Under ₹100</option>
+              <option value={150}>Under ₹150</option>
+              <option value={250}>Under ₹250</option>
               <option value={500}>Any price</option>
             </Select>
           </div>

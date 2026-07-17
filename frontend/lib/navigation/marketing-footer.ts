@@ -16,7 +16,7 @@ export const MARKETING_FOOTER_GROUPS: readonly MarketingFooterGroup[] = [
     links: [
       { href: '/', label: 'Home' },
       { href: '/services', label: 'Services' },
-      { href: '/services#pricing', label: 'Pricing' },
+      { href: '/pricing', label: 'Pricing' },
       { href: '/about', label: 'About' },
       { href: '/franchise', label: 'Franchise' },
       { href: '/contact', label: 'Contact' },

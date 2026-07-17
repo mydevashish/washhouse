@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     admin,
     auth,
+    catalog,
     revenue_analytics,
     dispute_analytics,
     settlements,
@@ -23,6 +24,7 @@ from app.api.v1.endpoints import (
     announcements,
     customer_experience,
     partner_service_catalog,
+    partner_price_list,
     platform_config,
     platform_partner_dashboard,
     platform_partner_profit_sharing,
@@ -56,6 +58,7 @@ api_router.include_router(health.router)
 api_router.include_router(auth.router)
 api_router.include_router(users.router)
 api_router.include_router(laundries.router)
+api_router.include_router(catalog.router)
 api_router.include_router(orders.router)
 api_router.include_router(inventory_verification.router)
 api_router.include_router(delivery_otp.router)
@@ -83,6 +86,7 @@ api_router.include_router(admin_profit_sharing.router)
 api_router.include_router(admin_customer_experience.router)
 api_router.include_router(customer_experience.router)
 api_router.include_router(partner_service_catalog.router)
+api_router.include_router(partner_price_list.router)
 api_router.include_router(announcements.router)
 api_router.include_router(platform_partner_dashboard.router)
 api_router.include_router(platform_partner_profit_sharing.router)

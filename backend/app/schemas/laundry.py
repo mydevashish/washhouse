@@ -29,6 +29,12 @@ class LaundryServiceResponse(BaseModel):
 
 
 class LaundryListItem(BaseModel):
+    """Public laundry card fields.
+
+    Compare hints (Slice 5) are optional owner-set catalog prices for discovery cards
+    and client-side price filter/sort — never invent suggested defaults here.
+    """
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -38,6 +44,15 @@ class LaundryListItem(BaseModel):
     avg_rating: Decimal
     review_count: int
     is_verified: bool
+    # Wash & Fold (kg-wash-fold) when this laundry offers it
+    wash_fold_from_inr: str | None = None
+    wash_fold_from_paise: int | None = None
+    # Men Shirt / T-shirt dry-clean when offered
+    shirt_dry_clean_from_inr: str | None = None
+    shirt_dry_clean_from_paise: int | None = None
+    # MIN of available compare hints — for filter/sort; null if neither priced
+    start_price_inr: str | None = None
+    start_price_paise: int | None = None
 
 
 class LaundrySearchItem(LaundryListItem):

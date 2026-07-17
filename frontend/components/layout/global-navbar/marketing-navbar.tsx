@@ -47,7 +47,11 @@ function useHash(): [string, () => void] {
   return [hash, readHash];
 }
 
-function useFocusTrap(containerRef: React.RefObject<HTMLElement | null>, active: boolean) {
+function useFocusTrap(
+  containerRef: React.RefObject<HTMLElement | null>,
+  active: boolean,
+  onEscape?: () => void,
+) {
   useEffect(() => {
     if (!active || !containerRef.current) return;
 
@@ -61,7 +65,10 @@ function useFocusTrap(containerRef: React.RefObject<HTMLElement | null>, active:
     getFocusable()[0]?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') return;
+      if (event.key === 'Escape') {
+        onEscape?.();
+        return;
+      }
       if (event.key !== 'Tab') return;
 
       const focusable = getFocusable();
@@ -85,7 +92,7 @@ function useFocusTrap(containerRef: React.RefObject<HTMLElement | null>, active:
       container.removeEventListener('keydown', onKeyDown);
       previouslyFocused?.focus?.();
     };
-  }, [active, containerRef]);
+  }, [active, containerRef, onEscape]);
 }
 
 export function MarketingNavbar() {
@@ -94,8 +101,9 @@ export function MarketingNavbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const mobileNavRef = useRef<HTMLElement>(null);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
 
-  useFocusTrap(mobileNavRef, mobileOpen);
+  useFocusTrap(mobileNavRef, mobileOpen, closeMobile);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -106,6 +114,8 @@ export function MarketingNavbar() {
 
   useEffect(() => {
     setMobileOpen(false);
+    // Soft-nav / bfcache can leave a stuck body lock if menu was open mid-navigation.
+    document.body.style.overflow = '';
   }, [pathname]);
 
   useEffect(() => {
@@ -114,14 +124,11 @@ export function MarketingNavbar() {
 
   useEffect(() => {
     if (!mobileOpen) return;
-    const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = '';
     };
   }, [mobileOpen]);
-
-  const closeMobile = useCallback(() => setMobileOpen(false), []);
 
   /** Same-page hash only — cross-page links use native anchors for reliable navigation. */
   const handleSamePageHashClick = useCallback(
@@ -153,18 +160,23 @@ export function MarketingNavbar() {
     label: string,
     className: string,
     active: boolean,
-    onAfterSamePageHash?: () => void,
+    options?: { closeOnNavigate?: boolean },
   ) => {
     const samePageHash = getSamePageHash(pathname, href);
+    const closeOnNavigate = options?.closeOnNavigate ?? false;
     return (
       <a
         key={href}
         href={href}
         onClick={
-          samePageHash
+          samePageHash || closeOnNavigate
             ? (event) => {
-                handleSamePageHashClick(event, href);
-                onAfterSamePageHash?.();
+                if (samePageHash) {
+                  handleSamePageHashClick(event, href);
+                }
+                if (closeOnNavigate) {
+                  closeMobile();
+                }
               }
             : undefined
         }
@@ -259,13 +271,9 @@ export function MarketingNavbar() {
               const active = isMarketingNavLinkActive(pathname, href, currentHash);
               return (
                 <li key={href}>
-                  {renderNavAnchor(
-                    href,
-                    label,
-                    mobileLinkClassName(active),
-                    active,
-                    getSamePageHash(pathname, href) ? closeMobile : undefined,
-                  )}
+                  {renderNavAnchor(href, label, mobileLinkClassName(active), active, {
+                    closeOnNavigate: true,
+                  })}
                 </li>
               );
             })}
@@ -278,6 +286,7 @@ export function MarketingNavbar() {
           <div className="mt-4 border-t border-border/60 pt-4">
             <a
               href={MARKETING_STAFF_HREF}
+              onClick={closeMobile}
               className="flex min-h-11 items-center rounded-md px-3 text-sm font-semibold text-primary hover:bg-primary/10"
             >
               Staff login
@@ -288,14 +297,12 @@ export function MarketingNavbar() {
             <Button asChild className="w-full rounded-full font-semibold">
               <a
                 href={MARKETING_BOOK_NOW_HREF}
-                onClick={
-                  getSamePageHash(pathname, MARKETING_BOOK_NOW_HREF)
-                    ? (event) => {
-                        handleSamePageHashClick(event, MARKETING_BOOK_NOW_HREF);
-                        closeMobile();
-                      }
-                    : undefined
-                }
+                onClick={(event) => {
+                  if (getSamePageHash(pathname, MARKETING_BOOK_NOW_HREF)) {
+                    handleSamePageHashClick(event, MARKETING_BOOK_NOW_HREF);
+                  }
+                  closeMobile();
+                }}
               >
                 Book Now
               </a>

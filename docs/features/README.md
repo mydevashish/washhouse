@@ -18,7 +18,9 @@ Per-feature specs. Template: `.cursor/templates/feature-spec.md`.
 | Partner inventory | shipped | [partner-inventory.md](partner-inventory.md) | 3 |
 | Partner QR tracking | shipped | [partner-qr-tracking.md](partner-qr-tracking.md) | 3 |
 | Partner staff | shipped | [partner-staff.md](partner-staff.md) | 3 |
+| Partner garment price list | shipped | [partner-price-list.md](partner-price-list.md) | Slices A–D (marketplace-from + `/pricing` tables) |
 | Admin approvals | shipped | [admin-approvals.md](admin-approvals.md) | 4 |
+| Marketing Pricing page | shipped | [marketing-pricing.md](marketing-pricing.md) | 6 |
 | Commission | shipped | [commission.md](commission.md) | 4 |
 | Complaints | in-progress | [complaints.md](complaints.md) | 4 |
 | Subscriptions | planned | [subscriptions.md](subscriptions.md) | 5 |

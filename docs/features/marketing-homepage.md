@@ -24,7 +24,7 @@ Render order from `frontend/features/marketing/home/marketing-homepage.tsx`:
 
 | # | Section | Component | Data source | Notes |
 | - | ------- | --------- | ----------- | ----- |
-| Shell | Sticky navbar | `MarketingNavbar` | static nav config | Home, Services, Pricing, About, Franchise, Contact + Book Now / Call |
+| Shell | Sticky navbar | `MarketingNavbar` | static nav config | Home, Services, Pricing (`/pricing`), About, Franchise, Contact + Book Now / Call |
 | 1 | Hero + carousel | `MarketingHomeHero` → `HeroCarousel` | `hero-slides.ts` | 4 slides; Embla autoplay 5 s; glass promo badge |
 | 1b | Hero mobile CTAs | `home-hero.tsx` | static | In-flow below carousel (`sm:hidden`): Book pickup, Become a partner |
 | 2 | Stats band | `StatsBand` | `GET /marketing/stats` + fallback | 5 KPIs (customers, cities, pickup points, garments, rating) |
@@ -34,7 +34,7 @@ Render order from `frontend/features/marketing/home/marketing-homepage.tsx`:
 | 6 | Services preview | `ServicesPreview` | `services-data.ts` | 6 service cards → `/services` |
 | 7 | Delivery options | `DeliveryOptionsBand` | static | Regular vs Express |
 | 8 | Featured stores | `FeaturedStoresTeaser` | `GET /laundries` (top 3) | Links to discover / store detail |
-| 9 | Franchise teaser | `FranchiseTeaser` | static | Apply + brochure CTAs |
+| 9 | Franchise teaser | `FranchiseTeaser` | static | Apply → `/franchise#apply`; brochure → `/contact?subject=franchise#contact-form`. Content wrapper must be `relative` so glass panel sits above absolute photo/gradient (same as FranchiseHero / FinalCtaBand). |
 | 10 | Testimonials | `HomeTestimonials` | `GET /marketing/testimonials` + fallback | Mobile carousel + desktop 3-col grid |
 | 11 | App promo | `AppPromoSection` | static | Web-first; no store links yet |
 | 12 | Final CTA band | `FinalCtaBand` | static | WhatsApp + Call; `data-marketing-bottom-cta` |
@@ -103,6 +103,8 @@ Used on `/franchise#apply`.
 
 **Rate limits:** 3 per IP per hour → `429`.
 
+**Client error UX (contact + franchise):** Unreachable API shows actionable “couldn’t reach servers / email support” copy (not bare axios “Network Error”). Field validation and `429` map to toast + inline alert. Success toast + form reset unchanged. Local smoke requires backend on `NEXT_PUBLIC_API_URL` (default `http://localhost:8000/api/v1`).
+
 ### `GET /stats`
 
 Public marketing KPIs for stats band.
@@ -164,7 +166,7 @@ Frontend falls back to static testimonials when API errors or returns empty.
 | Suite | Path | Coverage |
 | ----- | ---- | -------- |
 | Playwright smoke | `frontend/tests/e2e/marketing-homepage.spec.ts` | Load, carousel nav, contact validation, sticky CTA |
-| Playwright a11y | `frontend/tests/e2e/marketing-a11y.spec.ts` | Axe on `/`, `/services`, `/stores`, `/contact` |
+| Playwright a11y | `frontend/tests/e2e/marketing-a11y.spec.ts` | Axe on `/`, `/services`, `/pricing`, `/stores`, `/contact` |
 | Playwright smoke (legacy) | `frontend/tests/e2e/smoke.spec.ts` | Homepage heading assertion |
 | Jest unit | `frontend/features/marketing/home/home-hero.test.tsx` | Mobile CTA placement |
 | Backend API | `backend/tests/api/test_marketing.py` | Contact, franchise, stats, testimonials |
@@ -204,7 +206,8 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 - [ ] WELCOME20 promo badge visible on welcome slide
 - [ ] Stats band shows 5 KPIs (API or fallback)
 - [ ] Mobile sticky CTA (WhatsApp + Call) visible at top; hides when scrolling to final CTA band
-- [ ] Floating FAB does not overlap sticky CTA or hero CTAs
+- [ ] Floating FAB does not overlap sticky CTA, hero CTAs, or footer social icons
+- [ ] Footer social (Facebook/Instagram/etc.) fully visible & tappable above sticky CTA on mobile
 - [ ] Navbar hamburger opens/closes; links navigate; body scroll locked when open
 - [ ] All section headings visible; no horizontal scroll
 - [ ] `/contact`: empty submit shows field errors; invalid phone rejected; valid submit shows success toast
@@ -216,8 +219,8 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 - [ ] Hero carousel two-column layout; images load on active + next slide only
 - [ ] Sticky CTA hidden (`lg:hidden`); footer contact actions visible
 - [ ] Testimonials: carousel or grid renders without overflow
-- [ ] Featured stores cards tappable; link to store/discover works
-- [ ] Franchise teaser CTAs navigate to `/franchise` and brochure contact link
+- [ ] Featured stores cards tappable; link to `/stores` (and laundry detail `/discover/[id]`) works
+- [ ] Franchise teaser CTAs navigate to `/franchise` and brochure → `/contact?subject=franchise#contact-form` (Franchise pre-selected)
 
 ### Desktop
 
@@ -226,7 +229,7 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 - [ ] How it works / Why choose grids align; glass cards readable
 - [ ] Services preview hover states; links to `/services` and individual service anchors
 - [ ] Final CTA band WhatsApp + Call links open correctly
-- [ ] Footer four-column layout; all links 44px tap target
+- [ ] Footer link groups side-by-side: 2 cols (mobile+), 3 cols (md), 5 cols (lg); all links 44px tap target; no horizontal overflow
 - [ ] Keyboard: carousel focusable; tab order logical; skip-to-content works
 
 ### Cross-cutting

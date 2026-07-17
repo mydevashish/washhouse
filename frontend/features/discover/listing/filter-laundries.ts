@@ -78,8 +78,13 @@ export function applyClientFilters(
       return false;
     }
 
-    const price = Number(l.startPrice);
-    if (Number.isFinite(price) && f.maxPrice < ANY_PRICE_INR && price > f.maxPrice) {
+    const price = l.startPrice;
+    if (
+      price != null &&
+      Number.isFinite(price) &&
+      f.maxPrice < ANY_PRICE_INR &&
+      price > f.maxPrice
+    ) {
       return false;
     }
 
@@ -90,8 +95,14 @@ export function applyClientFilters(
     switch (f.sort) {
       case 'nearest':
         return Number(a.distanceKm) - Number(b.distanceKm);
-      case 'lowest_price':
-        return Number(a.startPrice) - Number(b.startPrice);
+      case 'lowest_price': {
+        const pa = a.startPrice;
+        const pb = b.startPrice;
+        if (pa == null && pb == null) return 0;
+        if (pa == null) return 1;
+        if (pb == null) return -1;
+        return pa - pb;
+      }
       case 'fastest':
         return Number(a.deliveryHours) - Number(b.deliveryHours);
       case 'top_rated':

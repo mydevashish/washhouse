@@ -12,6 +12,7 @@ import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { GlassSurface } from '@/components/ui/glass-surface';
+import { CONTACT_FRANCHISE_BROCHURE_HREF } from '@/features/marketing/contact/contact-constants';
 import { GLASS_ON_DARK_GRADIENT } from '@/features/marketing/shared/marketing-layout';
 import { HERO_SLIDE_IMAGES } from '@/features/discover/marketplace/laundry-images';
 import { FranchiseApplicationForm } from '@/features/marketing/franchise/franchise-application-form';
@@ -101,7 +102,7 @@ function FranchiseHero() {
                 'hover:bg-white/15 hover:text-on-hero',
               )}
             >
-              <Link href="/contact?subject=franchise">
+              <Link href={CONTACT_FRANCHISE_BROCHURE_HREF}>
                 <Mail className="h-4 w-4" aria-hidden />
                 Request brochure
               </Link>

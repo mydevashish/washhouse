@@ -20,6 +20,7 @@ import { LaundryInformationTab } from '@/features/discover/detail/laundry-inform
 import { LaundryOverviewTab } from '@/features/discover/detail/laundry-overview-tab';
 import { LaundryReviewsTab } from '@/features/discover/detail/laundry-reviews-tab';
 import { LaundryServicesTab } from '@/features/discover/detail/laundry-services-tab';
+import { LaundryPriceListSection } from '@/features/laundry-price-list';
 import { OrderSummaryMobile } from '@/features/discover/detail/order-summary-mobile';
 import {
   OrderSummarySidebar,
@@ -143,6 +144,19 @@ export function LaundryDetailView({ laundryId }: { laundryId: string }) {
                   laundry={laundry}
                   startPrice={startPrice}
                   onSelectServices={() => setTab('services')}
+                />
+              </div>
+            )}
+
+            {tab === 'prices' && (
+              <div id="panel-prices" role="tabpanel" aria-labelledby="tab-prices">
+                <LaundryPriceListSection
+                  laundryId={laundryId}
+                  services={services}
+                  onBook={() => setTab('services')}
+                  bookLabel={
+                    onlineMode ? 'Schedule pickup' : offlineMode ? 'Book pickup' : 'View services'
+                  }
                 />
               </div>
             )}

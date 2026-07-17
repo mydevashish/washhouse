@@ -9,19 +9,20 @@ describe('isMarketingNavLinkActive', () => {
     expect(isMarketingNavLinkActive('/services', '/', '')).toBe(false);
   });
 
-  it('activates Services on /services without hash', () => {
+  it('activates Services on /services', () => {
     expect(isMarketingNavLinkActive('/services', '/services', '')).toBe(true);
-    expect(isMarketingNavLinkActive('/services', '/services#pricing', '')).toBe(false);
+    expect(isMarketingNavLinkActive('/services', '/pricing', '')).toBe(false);
   });
 
-  it('activates Pricing on /services#pricing', () => {
-    expect(isMarketingNavLinkActive('/services', '/services#pricing', 'pricing')).toBe(true);
-    expect(isMarketingNavLinkActive('/services', '/services', 'pricing')).toBe(false);
+  it('activates Pricing on /pricing', () => {
+    expect(isMarketingNavLinkActive('/pricing', '/pricing', '')).toBe(true);
+    expect(isMarketingNavLinkActive('/services', '/pricing', '')).toBe(false);
+    expect(isMarketingNavLinkActive('/pricing', '/services', '')).toBe(false);
   });
 
-  it('keeps Services active for unknown hashes on /services', () => {
-    expect(isMarketingNavLinkActive('/services', '/services', 'unknown')).toBe(true);
-    expect(isMarketingNavLinkActive('/services', '/services#pricing', 'unknown')).toBe(false);
+  it('keeps Services active for hashes on /services', () => {
+    expect(isMarketingNavLinkActive('/services', '/services', 'pricing')).toBe(true);
+    expect(isMarketingNavLinkActive('/services', '/pricing', 'pricing')).toBe(false);
   });
 
   it('never marks more than one MARKETING_NAV_LINKS item active at once', () => {
@@ -29,6 +30,7 @@ describe('isMarketingNavLinkActive', () => {
       { pathname: '/', currentHash: '' },
       { pathname: '/services', currentHash: '' },
       { pathname: '/services', currentHash: 'pricing' },
+      { pathname: '/pricing', currentHash: '' },
       { pathname: '/about', currentHash: '' },
     ];
 

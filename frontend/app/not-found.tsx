@@ -15,7 +15,7 @@ export default function NotFound() {
           The link may be broken or the page may have moved.
         </p>
         <Button asChild size="lg" className="mt-8">
-          <Link href="/discover">Browse laundries</Link>
+          <Link href="/stores">Browse laundries</Link>
         </Button>
       </main>
     </PublicShell>

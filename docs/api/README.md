@@ -52,6 +52,10 @@ Per-resource pages (filled in as endpoints are implemented):
 - `endpoints/subscriptions.md`
 - `endpoints/notifications.md`
 - `endpoints/admin.md`
+- `endpoints/partner-price-list.md` — partner garment catalog prices (Slice B)
+- `endpoints/laundry-price-list.md` — public per-laundry garment prices (Slice C)
+- `endpoints/marketplace-from.md` — marketplace “from ₹” aggregates for `/pricing` (Slice D)
+- `endpoints/laundry-compare-hints.md` — list/search compare price hints for store cards (Slice 5)
 
 ## Deprecations
 

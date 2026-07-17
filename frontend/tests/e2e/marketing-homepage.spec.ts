@@ -126,18 +126,6 @@ test.describe('marketing navbar', () => {
     await expect(activeLinks).toHaveText(linkName);
   }
 
-  async function expectSectionNearTop(page: import('@playwright/test').Page, selector: string) {
-    const section = page.locator(selector);
-    await expect(section).toBeVisible();
-    await expect
-      .poll(async () => {
-        const box = await section.boundingBox();
-        if (!box) return Number.POSITIVE_INFINITY;
-        return box.y;
-      })
-      .toBeLessThanOrEqual(88);
-  }
-
   test('desktop nav shows only Services active on /services', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/services');
@@ -146,9 +134,9 @@ test.describe('marketing navbar', () => {
     await expectSingleActiveNavLink(page, 'Main navigation', 'Services');
   });
 
-  test('desktop nav shows only Pricing active on /services#pricing', async ({ page }) => {
+  test('desktop nav shows only Pricing active on /pricing', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/services#pricing');
+    await page.goto('/pricing');
     await page.waitForLoadState('domcontentloaded');
 
     await expectSingleActiveNavLink(page, 'Main navigation', 'Pricing');
@@ -163,9 +151,9 @@ test.describe('marketing navbar', () => {
     await expectSingleActiveNavLink(page, 'Mobile navigation', 'Services');
   });
 
-  test('mobile nav shows only Pricing active on /services#pricing', async ({ page }) => {
+  test('mobile nav shows only Pricing active on /pricing', async ({ page }) => {
     await page.setViewportSize({ width: 412, height: 915 });
-    await page.goto('/services#pricing');
+    await page.goto('/pricing');
     await page.waitForLoadState('domcontentloaded');
     await expect(page.locator('nav[aria-label="Main navigation"] a[aria-current="page"]')).toHaveText(
       'Pricing',
@@ -205,7 +193,7 @@ test.describe('marketing navbar', () => {
     await expect(page).toHaveURL(/\/services$/);
   });
 
-  test('Pricing link scrolls #pricing into view', async ({ page }) => {
+  test('Pricing link navigates to /pricing', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
@@ -215,29 +203,45 @@ test.describe('marketing navbar', () => {
       .getByRole('link', { name: 'Pricing' })
       .click();
 
-    await expect(page).toHaveURL(/\/services#pricing/);
-    await expectSectionNearTop(page, '#pricing');
-    await expect(page.getByRole('heading', { name: /how pricing works/i })).toBeVisible();
+    await expect(page).toHaveURL(/\/pricing$/);
+    await expect(
+      page.getByRole('heading', {
+        name: /transparent pricing\. every laundry sets their own rates/i,
+      }),
+    ).toBeVisible();
+    await expect(page.getByText(/starting from/i).first()).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /price guide by category/i }),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^men$/i })).toBeVisible();
+    // Hanging tags (default motion) or reduced-motion tables both expose “from ₹”
+    await expect(page.getByText(/from ₹/i).first()).toBeVisible();
+    const firstTag = page.locator('.pricing-price-tag').first();
+    if (await firstTag.count()) {
+      await expect(firstTag).toBeVisible();
+      await expect(firstTag).toHaveAttribute('tabindex', '0');
+      await expect(firstTag).toHaveAttribute('aria-label', /starting from/i);
+    }
+    await expect(
+      page.getByRole('link', { name: /browse stores/i }).first(),
+    ).toBeVisible();
   });
 
-  test('same-page Pricing click scrolls when already on /services', async ({ page }) => {
+  test('Pricing from Services navigates to /pricing', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/services');
     await page.waitForLoadState('domcontentloaded');
-
-    await page.evaluate(() => window.scrollTo(0, 0));
 
     await page
       .getByRole('navigation', { name: 'Main navigation' })
       .getByRole('link', { name: 'Pricing' })
       .click();
 
-    await expect(page).toHaveURL(/\/services#pricing/);
-    await expectSectionNearTop(page, '#pricing');
+    await expect(page).toHaveURL(/\/pricing$/);
     await expectSingleActiveNavLink(page, 'Main navigation', 'Pricing');
   });
 
-  test('same-page Pricing click updates mobile nav active state', async ({ page }) => {
+  test('mobile Pricing navigates to /pricing and marks active', async ({ page }) => {
     await page.setViewportSize({ width: 412, height: 915 });
     await page.goto('/services');
     await page.waitForLoadState('domcontentloaded');
@@ -250,7 +254,7 @@ test.describe('marketing navbar', () => {
       .getByRole('link', { name: 'Pricing' })
       .click();
 
-    await expect(page).toHaveURL(/\/services#pricing/);
+    await expect(page).toHaveURL(/\/pricing$/);
     await page.getByRole('button', { name: /open menu/i }).click();
     await expectSingleActiveNavLink(page, 'Mobile navigation', 'Pricing');
   });
@@ -317,6 +321,43 @@ test.describe('marketing contact form', () => {
     await page.getByRole('button', { name: /send message/i }).click();
 
     await expect(page.getByText(/valid mobile number/i)).toBeVisible();
+  });
+
+  test('Request brochure from home franchise teaser opens Contact with Franchise subject', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    const teaser = page.getByRole('region', { name: /become a the washhouse partner/i });
+    await teaser.scrollIntoViewIfNeeded();
+    await teaser.getByRole('link', { name: /request brochure/i }).click();
+
+    await expect(page).toHaveURL(/\/contact\?subject=franchise/);
+    await expect(page.locator('#contact-form')).toBeVisible();
+    await expect(page.locator('#contact-subject')).toHaveValue('franchise');
+  });
+
+  test('Request brochure from franchise page opens Contact with Franchise subject', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/franchise');
+    await page.waitForLoadState('domcontentloaded');
+
+    await page.getByRole('link', { name: /request brochure/i }).first().click();
+
+    await expect(page).toHaveURL(/\/contact\?subject=franchise/);
+    await expect(page.locator('#contact-form')).toBeVisible();
+    await expect(page.locator('#contact-subject')).toHaveValue('franchise');
+  });
+
+  test('direct /contact?subject=franchise pre-selects Franchise', async ({ page }) => {
+    await page.goto('/contact?subject=franchise#contact-form');
+    await page.waitForLoadState('domcontentloaded');
+
+    await expect(page.locator('#contact-subject')).toHaveValue('franchise');
   });
 });
 

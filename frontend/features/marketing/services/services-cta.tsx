@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export function ServicesCta() {
   return (
@@ -14,19 +15,19 @@ export function ServicesCta() {
           Ready to book your first pickup?
         </h2>
         <p className="mt-3 text-base leading-relaxed text-primary-foreground sm:text-lg">
-          Discover verified laundries near you, compare services, and schedule pickup in minutes.
+          Browse verified laundries near you, compare services, and schedule pickup in minutes.
         </p>
         <div className="mt-8">
-          <Button
-            asChild
-            size="lg"
-            className="h-11 w-full rounded-full bg-card text-primary hover:bg-card/95 sm:w-auto"
+          <Link
+            href="/stores"
+            className={cn(
+              buttonVariants({ size: 'lg' }),
+              'h-11 w-full rounded-full bg-card text-primary hover:bg-card/95 sm:w-auto',
+            )}
           >
-            <Link href="/discover">
-              Browse laundries
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
-          </Button>
+            Browse laundries
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </Link>
         </div>
       </div>
     </section>

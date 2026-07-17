@@ -7,7 +7,7 @@ import {
 const MARKETING_HREFS = [
   '/',
   '/services',
-  '/services#pricing',
+  '/pricing',
   '/about',
   '/franchise',
   '/contact',
@@ -32,21 +32,19 @@ describe('isHashNavLinkActive', () => {
 
   it('activates Services on /services without hash', () => {
     expect(isHashNavLinkActive('/services', '/services', '', MARKETING_HREFS)).toBe(true);
-    expect(isHashNavLinkActive('/services', '/services', 'pricing', MARKETING_HREFS)).toBe(false);
+    expect(isHashNavLinkActive('/pricing', '/services', '', MARKETING_HREFS)).toBe(false);
   });
 
-  it('activates Pricing on /services#pricing', () => {
-    expect(
-      isHashNavLinkActive('/services', '/services#pricing', 'pricing', MARKETING_HREFS),
-    ).toBe(true);
-    expect(isHashNavLinkActive('/services', '/services', 'pricing', MARKETING_HREFS)).toBe(false);
+  it('activates Pricing on /pricing', () => {
+    expect(isHashNavLinkActive('/pricing', '/pricing', '', MARKETING_HREFS)).toBe(true);
+    expect(isHashNavLinkActive('/services', '/pricing', '', MARKETING_HREFS)).toBe(false);
   });
 
   it('never marks more than one marketing href active at once', () => {
     const scenarios: Array<{ pathname: string; currentHash: string }> = [
       { pathname: '/', currentHash: '' },
       { pathname: '/services', currentHash: '' },
-      { pathname: '/services', currentHash: 'pricing' },
+      { pathname: '/pricing', currentHash: '' },
       { pathname: '/about', currentHash: '' },
     ];
 
@@ -105,7 +103,8 @@ describe('isPathNavLinkActive', () => {
 
 describe('getSamePageHash', () => {
   it('returns hash only when already on the target path', () => {
-    expect(getSamePageHash('/services', '/services#pricing')).toBe('pricing');
-    expect(getSamePageHash('/about', '/services#pricing')).toBeNull();
+    expect(getSamePageHash('/services', '/services#faq')).toBe('faq');
+    expect(getSamePageHash('/about', '/services#faq')).toBeNull();
+    expect(getSamePageHash('/pricing', '/pricing')).toBeNull();
   });
 });

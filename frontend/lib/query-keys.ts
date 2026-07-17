@@ -9,6 +9,7 @@ export const queryKeys = {
     city?: string;
   }) => ['laundries', 'search', params] as const,
   laundry: (id: string) => ['laundry', id] as const,
+  laundryPriceList: (id: string) => ['laundry-price-list', id] as const,
   reviews: (laundryId: string) => ['reviews', laundryId] as const,
   orders: (limit = 50, offset = 0) => ['orders', { limit, offset }] as const,
   order: (id: string) => ['order', id] as const,
@@ -60,6 +61,7 @@ export const queryKeys = {
   partnerOperationsDrivers: () => ['partner-operations-drivers'] as const,
   partnerStorefront: () => ['partner-storefront'] as const,
   partnerServiceCatalog: () => ['partner-service-catalog'] as const,
+  partnerPriceList: () => ['partner-price-list'] as const,
   partnerStorefrontTemplates: () => ['partner-storefront-templates'] as const,
   laundryStorefront: (id: string) => ['laundry-storefront', id] as const,
   adminDashboard: () => ['admin-dashboard'] as const,

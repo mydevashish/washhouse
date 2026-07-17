@@ -23,6 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { LaundryDetailView } from '@/features/discover/detail/laundry-detail-view';
 import { LaundryReviewsTab } from '@/features/discover/detail/laundry-reviews-tab';
 import { ServiceCatalogBrowser } from '@/features/discover/detail/service-catalog-browser';
+import { LaundryPriceListSection } from '@/features/laundry-price-list';
 import { StorefrontContactSection } from '@/features/storefront/storefront-contact-section';
 import { StorefrontQuestionsSection } from '@/features/storefront/storefront-questions-section';
 import { OrderSummaryMobile } from '@/features/discover/detail/order-summary-mobile';
@@ -340,10 +341,27 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
           </section>
         )}
 
+        {/* Garment price list */}
+        <section id="storefront-prices" aria-labelledby="prices-heading">
+          <LaundryPriceListSection
+            laundryId={laundryId}
+            services={services}
+            headingId="prices-heading"
+            onBook={scrollToServices}
+            bookLabel={
+              onlineBookingLoading
+                ? 'View services'
+                : onlineMode
+                  ? 'Schedule pickup'
+                  : 'Book pickup'
+            }
+          />
+        </section>
+
         {/* Services */}
         <section id="storefront-services" aria-labelledby="services-heading">
           <h2 id="services-heading" className="mb-4 text-xl font-bold">
-            Services & pricing
+            Services & booking
           </h2>
           {offlineMode && (
             <OfflineBookingContactPanel

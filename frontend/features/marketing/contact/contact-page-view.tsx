@@ -210,7 +210,10 @@ export function ContactPageView({ defaultSubject }: { defaultSubject?: 'general'
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-5 lg:gap-12">
             <div className="lg:col-span-3">
-              <ContactForm defaultSubject={defaultSubject} />
+              <ContactForm
+                key={defaultSubject ?? 'general'}
+                defaultSubject={defaultSubject}
+              />
             </div>
 
             <aside className="space-y-10 lg:col-span-2">
@@ -223,7 +226,7 @@ export function ContactPageView({ defaultSubject }: { defaultSubject?: 'general'
                   Find a verified laundry near you and schedule pickup in minutes.
                 </p>
                 <Button asChild className="mt-4 h-11 w-full rounded-full sm:w-auto">
-                  <Link href="/discover">
+                  <Link href="/stores">
                     Book a pickup
                     <ArrowRight className="h-4 w-4" aria-hidden />
                   </Link>

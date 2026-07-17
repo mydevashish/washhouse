@@ -4,6 +4,256 @@
 
 ---
 
+## 2026-07-17 — `/pricing` neighbor product-photo prefetch
+
+- **Type:** perf / ui
+- **Scope:** Marketing pricing category racks
+- **Files:** `pricing-category-rack.tsx`, `pricing-category-photo.tsx`, `use-prefetch-rack-photos.ts`, `lib/prefetch-pricing-product-image.ts`, `lib/neighbor-rack-indexes.ts`, `docs/features/marketing-pricing.md`
+- **Summary:** Prefetch next/image optimizer URLs for `activeIndex ± 1` so dual-buffer crossfades do not flash empty muted; page-wide concurrency capped at 2; skip when `prefers-reduced-motion` or the rack section is off-screen. Shared `sizes` constant keeps prefetch candidates aligned with the visible frame.
+- **Risks:** Extra bandwidth while scrolling an in-view rack; wrong srcSet width still possible on extreme viewports.
+- **Mitigation:** Cap + IO/reduced-motion gates; prefer ≥1080w srcSet candidate matching the photo slot.
+- **Next:** Thumb through Men/Women rails on mid Android and confirm no empty-frame flash.
+
+## 2026-07-17 — `/pricing` regression review fixes
+
+- **Type:** fix / ui / perf
+- **Scope:** Marketing pricing tickets + women/kids ambient
+- **Files:** `pricing-atelier.css`, `pricing-category-photo.tsx`, `pricing-category-ambient.tsx`
+- **Summary:** Strengthened ticket stub-band fill so the top band reads as a laundry stub (not empty padding); biased rich women/kids veils toward the rates column and slightly dialed ambient opacity so “from ₹” stays crisp; dropped non-default `next/image` quality props and tightened ambient `sizes` to avoid oversized blurred downloads / Next quality warnings.
+- **Risks:** Stub band may read slightly heavier on very light tickets; rich ambient slightly softer than uniqueness-pass peak.
+- **Mitigation:** Verified stub luminance delta ~0.18, mobile photo-above-rates, no page overflow-x, reduced-motion static tables, focusable tags + aria-labels still present.
+- **Next:** None for this pass.
+
+## 2026-07-17 — `/pricing` visual uniqueness pass
+
+- **Type:** ui
+- **Scope:** Marketing pricing page atmosphere + tickets
+- **Files:** `pricing-atelier.css`, `pricing-hero.tsx`, `pricing-how-it-works.tsx`, `pricing-price-guide.tsx`, `pricing-price-tag.tsx`, `docs/features/marketing-pricing.md`
+- **Summary:** Tightened brand-forward hero steam/fabric wash; denser screw-hook tickets (larger type, compressed stub); stronger women/kids ambient depth; stations→guide handoff rail+drop with reduced gallery gap. Refined existing spindle/rail/ambient motions only — no new motion systems.
+- **Risks:** Richer ambient opacity could soften ticket contrast in dark mode on low-end screens.
+- **Mitigation:** Veil still biases toward rates column; prices use `--atelier-price`; reduced-motion path unchanged (static photo + table).
+- **Next:** Visual QA light/dark at 375 / 768 / 1280; confirm women/kids depth vs men/household.
+
+## 2026-07-17 — `/pricing` rate-card photo + peg layout
+
+- **Type:** feat / ui
+- **Scope:** Marketing pricing price guide redesign
+- **Files:** `pricing-category-images.ts`, `pricing-category-photo.tsx`, `pricing-category-rack.tsx`, `pricing-atelier-guide.tsx`, `pricing-price-guide.tsx`, `pricing-atelier.css`, `docs/features/marketing-pricing.md`
+- **Summary:** Each category is a full-bleed rate card: Unsplash editorial photo (next/image) + peg-rail tags. Desktop 12-col (5+7) alternating L↔R, section max-width 1280px; tablet/mobile stack photo above rates with horizontal tag scroller. Reduced-motion keeps tables with matching photos above. Atmosphere/`data-atmosphere` + marketplace-from grouping unchanged.
+- **Risks:** Extra Unsplash image weight on `/pricing`; mid-Android scroll with photos + tag 3D.
+- **Mitigation:** Lazy-load after first category; accurate `sizes`; transform/opacity motion only; photo height capped 280–420px on desktop.
+- **Next:** Visual QA at 375 / 768 / 1280; confirm dark atelier tokens + reduced-motion path.
+
+## 2026-07-17 — Fix marketing FAB webpack `.call` crash
+
+- **Type:** fix
+- **Scope:** Marketing shell chrome / contact FAB overlays
+- **Files:** `marketing-shell-chrome.tsx`, `marketing-footer-contact-actions.tsx`, `marketing-shell-overlays.tsx`, `floating-contact-actions.tsx`
+- **Summary:** Replaced `next/dynamic` + `ssr: false` for FAB/sticky contact overlays with static client imports. Async chunks were failing to resolve `lucide-react` modules under `optimizePackageImports` (`Cannot read properties of undefined (reading 'call')` on `/pricing`). Parents are already `'use client'`; IntersectionObserver stays in `useEffect`.
+- **Risks:** Slightly larger initial marketing client JS (tiny icon + contact UI already used elsewhere).
+- **Next:** Hard-refresh open tabs after pull; watch for same pattern on other lucide + dynamic chunks.
+
+## 2026-07-17 — `/pricing` screw-hook conveyor metaphor
+
+- **Type:** feat / perf
+- **Scope:** Marketing pricing atelier visual metaphor
+- **Files:** `pricing-peg-rail.tsx`, `pricing-price-tag.tsx`, `pricing-category-rack.tsx`, `pricing-atelier-guide.tsx`, `pricing-atelier.css`, `docs/features/marketing-pricing.md`
+- **Summary:** Pushed hanging tags to commercial laundry conveyor: Phillips screw heads + short wire hooks, stronger `rotateY` spindle flip, alternating rod-slide between categories. CSS 3D only (no audio, no Three.js); data model + a11y path unchanged.
+- **Risks:** Stronger perspective/`rotateY` on mid Android; decorative rail screw pattern + extra transforms.
+- **Mitigation:** Transform/opacity only; no blend modes on rail accents; motion budget + `useInView` pause; reduced-motion still uses tables.
+- **Next:** Device FPS check on mid Android; simplify further to static hooks if scroll scrub janks.
+
+## 2026-07-17 — `/pricing` hanging-tag hardening
+
+- **Type:** fix / a11y / perf
+- **Scope:** Marketing pricing atelier UX hardening
+- **Files:** `use-pricing-section-active.ts`, `pricing-atelier.css`, `pricing-price-tag.tsx`, `pricing-category-rack.tsx`, `pricing-category-table.tsx`, `pricing-atelier-guide.tsx`, `pricing-price-guide.tsx`, `pricing-hero.tsx`, `pricing-how-it-works.tsx`, `pricing-variety-note.tsx`, `pricing-cta.tsx`, `pricing-rail-reveal.tsx`, `api/marketplace-from.ts`, e2e `marketing-homepage.spec.ts`, `docs/features/marketing-pricing.md` (removed unused `pricing-accessible-list.tsx`)
+- **Summary:** Viewport-pause steam/wave/mist via `data-atmosphere`; tags keyboard-focusable with aria-labels + focus scroll-into-view; reduced-motion tables use atelier tokens; mobile overflow-x clip + tag max-width; logo/tag CLS reserves; API fallback clarified; e2e selectors extended without weakening coverage.
+- **Risks:** Long tab sequences on large categories; partial live API payloads still replace full fallback (fail/empty only).
+- **Next:** Device QA at 375px + reduced-motion; optional skip-link past price racks.
+
+## 2026-07-17 — `/pricing` hanging screw-peg atelier
+
+- **Type:** feat
+- **Scope:** Marketing pricing price guide UX
+- **Files:** `frontend/features/marketing/pricing/pricing-atelier.css`, `pricing-atelier-guide.tsx`, `pricing-atelier-atmosphere.tsx`, `pricing-category-rack.tsx`, `pricing-price-tag.tsx`, `pricing-peg-rail.tsx`, `pricing-accessible-list.tsx`, `pricing-motion-budget.tsx`, `pricing-price-guide.tsx`, `pricing-hero.tsx`, `lib/tag-price-lines.ts` (+ test), `docs/features/marketing-pricing.md`
+- **Summary:** Replaced plain category tables with laundry atelier: horizontal screw-peg rails, scroll-scrubbed tag tumble/settle, capped idle sway, mist atmosphere. `prefers-reduced-motion` keeps `PricingCategoryTable`; sr-only list for screen readers. Data/formatters unchanged.
+- **Risks:** Many tags + scroll listeners on low-end phones — mitigated by motion budget + `useInView` pause.
+- **Next:** Visual QA on real devices; optional hero polish if product wants stronger atelier cue above the fold.
+
+## 2026-07-17 — Slice 5: discovery compare price hints
+
+- **Type:** feat
+- **Scope:** Partner garment price list (Slice 5) + customer discovery cards
+- **Files:** `backend/app/schemas/laundry.py`, `repositories/catalog.py` (`compare_price_hints_for_laundries`), `services/laundry_service.py` (list/search v2 cache + hints), `partner_price_list_service.py` + `admin.py` (invalidate discovery cache), `tests/unit/test_compare_price_hints.py`, `tests/api/test_laundry_compare_hints.py`, `docs/api/endpoints/laundry-compare-hints.md`; `frontend/services/laundries.ts`, `features/discover/lib/{laundry-meta,compare-price-lines}.ts`, listing card + filters, marketplace `partner-card`, pricing CTA; docs/features + logs
+- **Summary:** Public laundry list/search now return owner-set Wash & Fold + shirt dry-clean “from” hints (no suggested invent). `/stores` and discover cards show those lines when present; price filter/sort uses real `start_price_inr` (unpriced last). Pricing CTA copy “See prices near you” → `/stores`. No comparison matrix.
+- **Risks:** Cards stay empty-priced until partners offer those two SKUs; distance/delivery still pseudo until geo.
+- **Next:** Slice E booking bridge (optional); geo distance when product prioritizes it.
+
+## 2026-07-17 — Slice D: marketplace-from + `/pricing` category tables
+
+- **Type:** feat
+- **Scope:** Partner garment price list (Slice D) + marketing pricing upgrade
+- **Files:** `backend/app/schemas/marketplace_from.py`, `services/marketplace_from_service.py`, `repositories/catalog.py` (MIN aggregate), `api/v1/endpoints/catalog.py`, `router.py`, `partner_price_list_service.py` (cache invalidate), `tests/unit/test_marketplace_from.py`, `tests/api/test_marketplace_from.py`, `docs/api/endpoints/marketplace-from.md`; `frontend/features/marketing/pricing/*` (hero, how-it-works + compare, price guide tables, variety note, WashHouse fallback), `app/pricing/page.tsx`, e2e heading assertions, `docs/features/marketing-pricing.md`, `partner-price-list.md`
+- **Summary:** Public `GET /catalog/marketplace-from` returns per-item MIN across approved offered prices with suggested fallback (`source` aggregate|suggested; deferred omitted). Marketing `/pricing` upgraded to FebriWash-style WashHouse category tables labeled “Starting from · indicative” + brand hero CTA → `/stores`. Static WashHouse suggested mirror used when API empty/unavailable.
+- **Risks:** Local API tests need Postgres; empty partner pricing still shows suggested guide (honestly labeled).
+- **Next:** Slice E booking bridge (optional); production catalog seed if not already applied.
+
+## 2026-07-17 — Slice C: public laundry price-list + store detail
+
+- **Type:** feat
+- **Scope:** Partner garment price list (Slice C — public API + customer UI)
+- **Files:** `backend/app/schemas/laundry_price_list.py`, `services/laundry_price_list_service.py`, `repositories/catalog.py`, `api/v1/endpoints/laundries.py`, `services/partner_price_list_service.py` (cache invalidate), `tests/api/test_laundry_price_list.py`, `frontend/features/laundry-price-list/`, discover Prices tab + storefront section, `tests/e2e/laundry-price-list.spec.ts`, `docs/api/endpoints/laundry-price-list.md`, docs/logs
+- **Summary:** Public `GET /laundries/{id}/price-list` returns offered partner prices only (no suggested/partner fields). Redis + `Cache-Control`. FE FebriWash category tables with hidden empty columns, empty state + `laundry_services` fallback, Book/Schedule CTA. Playwright smoke for category headings + ₹ prices.
+- **Risks:** Empty until partner applies suggested/edits prices; booking still uses `laundry_services` until Slice E.
+- **Next:** Slice D — marketplace-from aggregates + marketing `/pricing` tables.
+
+## 2026-07-17 — Slice B FE: partner price-list editor UI
+
+- **Type:** feat
+- **Scope:** Partner garment price list (Slice B — frontend editor)
+- **Files:** `frontend/features/partner-price-list/` (api, schemas, components, tests), `app/(partner)/partner/pricing/page.tsx`, `features/partner/lib/partner-nav.ts`, `lib/query-keys.ts`, `docs/features/partner-price-list.md`, `docs/features/README.md`, logs
+- **Summary:** FebriWash-style partner editor at `/partner/pricing` with category tabs (Wash rates / Men / Women / Kids / Winter / Household), inline INR edits + offered toggle, sticky save bar, confirm dialog for apply-suggested WashHouse prices. Wired to Slice B partner APIs. Jest covers row validation + save/apply success toasts.
+- **Risks:** Dual catalogs vs service offerings until Slice E; partners must apply suggested or enter prices before public list shows items (Slice C).
+- **Next:** Slice C — public laundry price-list + store-detail tables.
+
+## 2026-07-17 — Slice B: partner price-list APIs
+
+- **Type:** feat
+- **Scope:** Partner price list (Slice B — API only; FE editor still pending)
+- **Files:** `backend/app/schemas/partner_price_list.py`, `utils/money.py`, `repositories/catalog.py`, `services/partner_price_list_service.py`, `api/v1/endpoints/partner_price_list.py`, `router.py`, `tests/api/test_partner_price_list.py`, `tests/unit/test_money.py`, `docs/api/endpoints/partner-price-list.md`, `docs/database/schema.md` (compatibility note), `docs/features/partner-price-list.md`, logs
+- **Summary:** Partner GET/PUT/PATCH price-list + idempotent apply-suggested. Laundry scoped from JWT owner (IDOR-safe). Validation: ≥0, max 99999.99, press only when catalog allows, offered requires a price. No dual-write to `laundry_services`.
+- **Risks:** Dual catalogs until Slice E; partners with zero offered items still allowed.
+- **Next:** Partner pricing editor UI; Slice C public laundry price-list.
+
+## 2026-07-17 — Slice A: platform catalog + laundry_item_prices (DB)
+
+- **Type:** feat
+- **Scope:** Partner price list / platform catalog (Slice A — DB only)
+- **Files:** `backend/app/models/catalog.py`, `enums.py`, `repositories/catalog.py`, `db/seed_washhouse_catalog.py`, `scripts/seed_washhouse_catalog.py`, `alembic/versions/20260717_0034_platform_catalog_and_laundry_item_prices.py`, `tests/unit/test_catalog_prices.py`, `docs/database/schema.md`, `erd.md`, `docs/features/partner-price-list.md`, `logs/decisions-log.md`, `logs/feature-progress.md`
+- **Summary:** Added `platform_catalog_items` + `laundry_item_prices` (dual XOR `price_inr`, soft-delete, partial unique override). WashHouse seed is suggested-only; partners start empty (Apply suggested deferred to Slice B). Migration `20260717_0034` is reversible.
+- **Risks:** Tests need Postgres (`dlm_test`); create_all must pick up new enums. Dual systems with `laundry_services` until Slice E.
+- **Next:** Slice B — partner price-list API + Apply suggested + editor UI.
+
+## 2026-07-17 — Spec partner garment price-list system
+
+- **Type:** docs
+- **Scope:** Partner price list / platform catalog (marketplace)
+- **Files:** `docs/features/partner-price-list.md`, `docs/features/README.md`, `logs/feature-progress.md`
+- **Summary:** Drafted feature spec for platform-owned WashHouse catalog + per-laundry prices, public “from ₹X” aggregates, partner editor, and store tables. Chose new `platform_catalog_items` / `laundry_item_prices` over extending `laundry_services`; booking bridge deferred.
+- **Risks:** Dual catalogs until Slice E; partners may need clear UI copy distinguishing garment list vs service offerings.
+- **Next:** Slice A — models, migration, WashHouse seed (no production UI yet).
+
+## 2026-07-17 — Update public support phone & email
+
+- **Type:** chore
+- **Scope:** Marketing contact config (footer, contact page, Call/WhatsApp CTAs)
+- **Files:** `frontend/features/marketing/contact/contact-constants.ts`, `frontend/.env.example`, `frontend/.env.local`, `infrastructure/vercel/env.md`
+- **Summary:** Set default/public support email to `thewashhousesolutions@gmail.com` and phone/WhatsApp to `+91 99777 51122` (`9977751122`). All `CONTACT_CONFIG` consumers pick this up.
+- **Risks:** Vercel/production must set matching `NEXT_PUBLIC_SUPPORT_*` / `NEXT_PUBLIC_WHATSAPP_NUMBER` if env overrides are already configured there.
+- **Next:** Restart frontend dev server; update Vercel env if deployed.
+
+---
+
+## 2026-07-17 — Fix marketing Contact/Franchise form network errors
+
+- **Type:** fix
+- **Scope:** Marketing contact + franchise submit UX / local API connectivity
+- **Files:** `frontend/lib/api-error-message.ts`, `frontend/lib/api-error-message.test.ts`, `frontend/features/marketing/lib/marketing-form-errors.ts`, `contact-form.tsx`, `franchise-application-form.tsx`, `logs/bug-tracker.md`
+- **Summary:** Root cause was Category A — backend not running (env/CORS/contracts already correct; Alembic at `20260714_0033`). Started local API; POST `/marketing/contact` and `/marketing/franchise-inquiries` return 201. Stopped leaking axios bare “Network Error”; marketing forms now show actionable unavailable copy vs validation/rate-limit messages. Rate limits and auth unchanged.
+- **Risks:** Forms still fail if uvicorn is down — now with clearer messaging. Local debug: keep `RATE_LIMIT_ENABLED=false` only in local `.env`.
+- **Next:** Keep backend running alongside `npm run dev` when testing marketing submits.
+
+---
+
+## 2026-07-17 — Dedicated marketing Pricing page
+
+- **Type:** feat
+- **Scope:** Marketing `/pricing` + nav/footer
+- **Files:** `frontend/app/pricing/page.tsx`, `frontend/features/marketing/pricing/*`, `frontend/features/marketing/services/services-pricing.tsx`, `services-data.ts`, `frontend/lib/navigation/marketing-nav.ts`, `marketing-footer.ts`, nav/e2e tests, `docs/features/marketing-pricing.md`
+- **Summary:** Added a MarketingShell Pricing page (how it works, indicative rates from services data, CTA to `/stores`). Nav/footer Pricing now points to `/pricing`; Services keeps a short `#pricing` teaser. No GST claim; checkout tax math untouched.
+- **Risks:** Old `/services#pricing` bookmarks still land on the teaser. Discover/partner Pricing nav unchanged.
+- **Next:** Smoke `/pricing`, header/footer Pricing, Services teaser, mobile FAB/footer.
+
+---
+
+## 2026-07-17 — Remove GST marketing claim from Services pricing
+
+- **Type:** fix
+- **Scope:** Marketing Services pricing + soft marketing copy (footer/home meta)
+- **Files:** `frontend/features/marketing/services/services-data.ts`, `services-pricing.tsx`, `frontend/components/layout/marketing-footer.tsx`, `frontend/app/page.tsx`
+- **Summary:** Removed the “GST on every order” pricing card from `/services#pricing`. Remaining points (delivery, UPI, COD) keep a balanced 1/2/3-column grid. Softened footer tagline and Home meta description that claimed GST on every order. Legal/About pages and checkout GST calculation unchanged.
+- **Risks:** None for booking/auth/checkout tax math — marketing copy only.
+- **Next:** Smoke `/services#pricing` (no GST card); footer + Home meta; confirm checkout still shows tax if applicable.
+
+---
+
+## 2026-07-17 — Marketing browse/book CTAs → `/stores`
+
+- **Type:** fix
+- **Scope:** Marketing Services + Book Now CTAs; Discover→Stores directory links
+- **Files:** `frontend/features/marketing/services/services-grid.tsx`, `services-data.ts`, `services-cta.tsx`, `frontend/lib/navigation/marketing-nav.ts`, `contact-page-view.tsx`, `featured-stores-teaser.tsx`, `frontend/app/error.tsx`, `frontend/app/not-found.tsx`, `docs/features/marketing-homepage.md`
+- **Summary:** Customer-facing marketing “browse laundries / browse plans / book pickup / Book Now” CTAs now target `/stores` instead of `/discover`. FAQ copy updated Discover→Stores. Authenticated app `/discover`, laundry detail `/discover/[id]`, checkout, partner, and admin routes untouched.
+- **Risks:** None for booking/auth/checkout pricing. Public error/404 recovery links now go to Stores (marketing-aligned).
+- **Next:** Smoke Services card + bottom CTA, Home Book Now, Contact “Book a pickup”, featured stores empty-state; confirm laundry cards still open `/discover/[id]`.
+
+---
+
+## 2026-07-17 — Fix mobile footer social covered by FAB/sticky CTA
+
+- **Type:** fix
+- **Scope:** Marketing footer + floating contact FABs
+- **Files:** `frontend/components/layout/marketing-footer.tsx`, `frontend/components/marketing/floating-contact-actions.tsx`, `docs/features/marketing-homepage.md`
+- **Summary:** Footer now has mobile-only bottom safe padding so copyright/social clear the sticky WhatsApp/Call bar. FABs also yield (`inert` + fade) when `[data-marketing-footer-social]` enters the sticky/FAB zone, matching existing bottom-CTA overlap behavior. Desktop inline footer contact actions unchanged.
+- **Risks:** None for booking/auth/checkout; shell chrome only. If IntersectionObserver fails, padding still keeps social above the sticky CTA.
+- **Next:** Smoke 360–414px: scroll to footer → social tappable; FABs still work mid-page; sticky CTA WhatsApp/Call still work at bottom.
+
+---
+
+## 2026-07-17 — Marketing footer link groups side-by-side earlier
+
+- **Type:** ui
+- **Scope:** Marketing footer column layout
+- **Files:** `frontend/components/layout/marketing-footer.tsx`
+- **Summary:** Link groups (Quick Links / Our Services / Support / Partners & Staff + Contact) now use `grid-cols-2` from the base breakpoint, `md:grid-cols-3`, and `lg:grid-cols-5` so columns sit side-by-side on phone landscape/tablet sooner. Added `min-w-0` + word-break on Contact fields to avoid horizontal overflow. Brand blurb, copyright/social row, hrefs, and labeled `<nav>` groups unchanged. Tap targets still `min-h-11` on mobile.
+- **Risks:** None for booking/auth/checkout; layout-only.
+- **Next:** Smoke footer on 375 / landscape phone / 768 / 1280; confirm no page overflow.
+
+---
+
+## 2026-07-17 — Fix Home Franchise teaser invisible content
+
+- **Type:** fix
+- **Scope:** Marketing homepage Franchise teaser stacking
+- **Files:** `frontend/features/marketing/home/franchise-teaser.tsx`
+- **Summary:** Absolute photo + gradient painted over the glass panel because the content wrapper lacked `position: relative` (unlike Franchise page hero and Final CTA band). Added `relative` to the marketing container so eyebrow, title, benefits, and CTAs sit above the background. Links unchanged: Apply → `/franchise#apply`, brochure → `/contact?subject=franchise#contact-form`.
+- **Risks:** None for booking/auth/checkout; stacking-only change.
+- **Next:** Smoke Home Franchise section in light + dark; confirm mobile FAB still clear of teaser CTAs.
+
+---
+
+## 2026-07-17 — Fix `/services` page scroll lock
+
+- **Type:** fix
+- **Scope:** Marketing shell scroll + mobile nav body lock
+- **Files:** `marketing-shell.tsx`, `marketing-navbar.tsx`, `services-grid.tsx`, `services-cta.tsx`
+- **Summary:** Root causes: (1) `overflow-x-hidden` on MarketingShell forced `overflow-y: auto` (scrollport that could eat wheel/touch); switched to `overflow-x-clip` so vertical document scroll stays `visible`. (2) Mobile menu set `body.style.overflow = hidden` but cross-page nav links did not always close/clear the lock — now always close on navigate, clear overflow on pathname change, Escape closes menu. (3) ServicesGrid `Button asChild`+`Link` hydration mismatch could open the Next.js error overlay (dev scroll lock) — CTAs use `Link` + `buttonVariants` instead. Services copy unchanged.
+- **Risks:** `overflow-x-clip` unsupported only on very old browsers (falls back gracefully). Body unlock is intentional and stronger than restoring prior inline overflow.
+- **Next:** Hard-refresh `/services` on mobile + desktop; confirm menu open/close still locks/unlocks; smoke Home/Stores/Franchise/Contact.
+
+---
+
+## 2026-07-17 — Make Request brochure CTAs reliable
+
+- **Type:** fix
+- **Scope:** Marketing franchise brochure → contact
+- **Files:** `contact-constants.ts`, `contact-form.tsx`, `contact-page-view.tsx`, `franchise-teaser.tsx`, `franchise-page-view.tsx`, `hero-slides.ts`, `marketing-homepage.spec.ts`, `docs/features/marketing-homepage.md`
+- **Summary:** Centralized `CONTACT_FRANCHISE_BROCHURE_HREF` (`/contact?subject=franchise#contact-form`). Hardened ContactForm to remount/sync Franchise subject from searchParams and scroll to the form. All Request brochure CTAs (home teaser, franchise page, hero slide) use the shared href.
+- **Risks:** None for booking/auth; contact submit unchanged. No PDF asset in repo — brochure remains a contact request.
+- **Next:** Smoke Home/Franchise → Contact subject=franchise; run marketing e2e brochure tests.
+
+---
+
 ## 2026-07-15 — Fix API CRUD by role (dashboard states + verification)
 
 - **Type:** fix

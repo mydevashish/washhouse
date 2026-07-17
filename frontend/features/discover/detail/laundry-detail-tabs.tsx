@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
 import { cn } from '@/lib/utils';
 
-export type LaundryTabId = 'overview' | 'services' | 'reviews' | 'information';
+export type LaundryTabId = 'overview' | 'prices' | 'services' | 'reviews' | 'information';
 
 const TABS: { id: LaundryTabId; label: string; hint: string }[] = [
   { id: 'overview', label: 'Overview', hint: 'About this store' },
-  { id: 'services', label: 'Services', hint: 'Prices & booking' },
+  { id: 'prices', label: 'Prices', hint: 'Garment rates' },
+  { id: 'services', label: 'Services', hint: 'Book pickup' },
   { id: 'reviews', label: 'Reviews', hint: 'Customer feedback' },
   { id: 'information', label: 'Information', hint: 'Hours & policies' },
 ];

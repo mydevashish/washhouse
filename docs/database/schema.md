@@ -9,8 +9,10 @@
 | `users`               | Customer / partner / admin accounts          | `auth`                  |
 | `user_addresses`      | Customer addresses                           | `users`                 |
 | `laundries`           | Partner-owned laundry businesses             | `laundries`             |
-| `laundry_services`    | Services offered (wash, dry-clean, iron, …)  | `laundries`             |
-| `laundry_pricing`     | Pricing per service                          | `laundries`             |
+| `laundry_services`    | Coarse services offered (wash, dry-clean, …) | `laundries`             |
+| `platform_catalog_items` | Platform master garment/kg catalog (WashHouse suggested defaults) | `laundries` / admin |
+| `laundry_item_prices` | Per-laundry prices + `is_offered` for catalog items | `laundries`      |
+| `laundry_pricing`     | *(superseded)* use `laundry_item_prices` — see [partner-price-list.md](../features/partner-price-list.md) | `laundries` |
 | `orders`              | Customer orders                              | `orders`                |
 | `order_items`         | Line items per order                         | `orders`                |
 | `order_status_events` | Append-only state changes                    | `orders`                |
@@ -66,12 +68,49 @@ See [`erd.md`](erd.md).
 | `laundries`        | `ix_laundries_city_is_approved`             | discovery + admin                  |
 | `laundries`        | GIN on `(name, city)` tsvector              | search                             |
 | `reviews`          | `ix_reviews_laundry_id_created_at`          | latest reviews                     |
+| `platform_catalog_items` | `uq_platform_catalog_items_slug`      | stable seed key                    |
+| `platform_catalog_items` | `ix_platform_catalog_items_category_sort` (partial, active) | category tables      |
+| `laundry_item_prices` | `uq_laundry_item_prices_laundry_catalog_active` (partial unique) | one override per item |
+| `laundry_item_prices` | `ix_laundry_item_prices_laundry_id` / `ix_laundry_item_prices_catalog_item_id` | FK lookups |
 | `marketing_contact_submissions` | `ix_marketing_contact_submissions_phone_created_at` | contact rate limiting   |
 | `marketing_franchise_inquiries` | `ix_marketing_franchise_inquiries_client_ip_created_at` | franchise rate limiting |
 | `marketing_testimonials` | `ix_marketing_testimonials_featured_active_sort` | featured homepage list |
+
+## Platform catalog price shape (chosen)
+
+Money is always `NUMERIC(12,2)` + `currency` (`INR`). Two mutually exclusive modes per row
+(`ck_*_price_shape`); all money columns may be null for deferred items (e.g. curtain).
+
+| Mode | Columns | Used for |
+| ---- | ------- | -------- |
+| **Dual process** | `dry_clean_inr` + `press_inr` (`press` nullable when N/A / “—”) | `men`, `women`, `kids`, `winter`, and household rows with a press split (e.g. bedsheet) |
+| **Single rate** | `price_inr` only (`dry_clean`/`press` null) | `laundry_by_kg` (per-kg), and household items without a press column (blanket, shoes, …) |
+
+On `platform_catalog_items` the same shape uses `suggested_*` prefixes. Suggested defaults are
+**not** live partner prices — partners start with **no** `laundry_item_prices` rows until they
+explicitly apply/edit (see [partner-price-list.md](../features/partner-price-list.md)).
+
+Categories enum: `laundry_by_kg` \| `men` \| `women` \| `kids` \| `winter` \| `household`.  
+Units enum: `piece` \| `kg` \| `panel` \| `set` \| `pair`.
+
+Seed: `python scripts/seed_washhouse_catalog.py` (idempotent by `slug`).
+
+### Compatibility with `laundry_services` / order line items (Slice E plan)
+
+`laundry_services` remains the booking / walk-in catalog. Partner garment price-list APIs
+(`GET|PUT|PATCH /partner/price-list`, `POST .../apply-suggested`) only read/write
+`platform_catalog_items` + `laundry_item_prices`.
+
+| Phase | Approach |
+| ----- | -------- |
+| **Now (B–D)** | No dual-write. Display + partner editor only. |
+| **Slice E (when product requires booking from this list)** | Prefer dual-write or `catalog_item_id` FK on `laundry_services` / order lines — **do not** silently replace existing services. Map `laundry_by_kg` rows first if online booking needs kg rates from the shared catalog. |
+
+Until Slice E ships, regression: walk-in + `/partner/services` paths must stay green.
 
 ## Migrations
 
 - All schema changes via Alembic
 - Reversible by default
+- Latest catalog migration: `20260717_0034_platform_catalog_and_laundry_item_prices`
 - See `.cursor/checklists/new-migration.md`

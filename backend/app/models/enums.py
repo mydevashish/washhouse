@@ -406,3 +406,22 @@ class MarketingInvestmentRange(str, enum.Enum):
     range_25_50 = "25-50"
     range_50_plus = "50-plus"
     unsure = "unsure"
+
+
+class CatalogCategory(str, enum.Enum):
+    """Platform garment/service catalog groupings."""
+
+    laundry_by_kg = "laundry_by_kg"
+    men = "men"
+    women = "women"
+    kids = "kids"
+    winter = "winter"
+    household = "household"
+
+
+class CatalogUnit(str, enum.Enum):
+    piece = "piece"
+    kg = "kg"
+    panel = "panel"
+    set = "set"
+    pair = "pair"

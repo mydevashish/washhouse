@@ -1,4 +1,4 @@
-import { enrichLaundry } from '@/features/discover/lib/laundry-meta';
+import { enrichLaundry, resolveStartPrice } from '@/features/discover/lib/laundry-meta';
 import type { LaundryListItem } from '@/services/laundries';
 
 import {
@@ -18,6 +18,9 @@ const DEMO_LAUNDRIES: LaundryListItem[] = [
     avg_rating: '4.60',
     review_count: 128,
     is_verified: true,
+    wash_fold_from_inr: '89.00',
+    shirt_dry_clean_from_inr: '69.00',
+    start_price_inr: '69.00',
   },
   {
     id: 'b',
@@ -27,6 +30,8 @@ const DEMO_LAUNDRIES: LaundryListItem[] = [
     avg_rating: '4.80',
     review_count: 256,
     is_verified: true,
+    wash_fold_from_inr: '79.00',
+    start_price_inr: '79.00',
   },
   {
     id: 'c',
@@ -36,12 +41,23 @@ const DEMO_LAUNDRIES: LaundryListItem[] = [
     avg_rating: '4.40',
     review_count: 89,
     is_verified: true,
+    // no owner compare prices yet
   },
 ];
 
 function demoEnriched() {
   return DEMO_LAUNDRIES.map((laundry, index) => enrichLaundry(laundry, index));
 }
+
+describe('resolveStartPrice', () => {
+  it('uses API start_price_inr when present', () => {
+    expect(resolveStartPrice(DEMO_LAUNDRIES[0]!)).toBe(69);
+  });
+
+  it('returns null when laundry has no compare hints', () => {
+    expect(resolveStartPrice(DEMO_LAUNDRIES[2]!)).toBeNull();
+  });
+});
 
 describe('applyClientFilters', () => {
   it('keeps all demo laundries with default filters', () => {
@@ -88,6 +104,23 @@ describe('applyClientFilters', () => {
     expect(filters.maxDeliveryHours).toBe(ANY_DELIVERY_HOURS);
     expect(filters.maxPrice).toBe(ANY_PRICE_INR);
     expect(applyClientFilters(demoEnriched(), filters)).toHaveLength(3);
+  });
+
+  it('filters by real owner start prices', () => {
+    const result = applyClientFilters(demoEnriched(), {
+      ...DEFAULT_FILTERS,
+      maxPrice: 70,
+    });
+    // a starts at 69; b at 79 filtered out; c has no price (kept)
+    expect(result.map((l) => l.id).sort()).toEqual(['a', 'c']);
+  });
+
+  it('sorts by lowest real price and puts unpriced last', () => {
+    const result = applyClientFilters(demoEnriched(), {
+      ...DEFAULT_FILTERS,
+      sort: 'lowest_price',
+    });
+    expect(result.map((l) => l.id)).toEqual(['a', 'b', 'c']);
   });
 });
 

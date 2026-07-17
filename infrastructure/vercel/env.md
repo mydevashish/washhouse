@@ -36,9 +36,9 @@ Omit entirely if unset — do **not** set empty strings.
 
 | Variable | Example |
 | -------- | ------- |
-| `NEXT_PUBLIC_SUPPORT_EMAIL` | `support@washhouse.in` |
-| `NEXT_PUBLIC_SUPPORT_PHONE` | `+91 98765 43210` |
-| `NEXT_PUBLIC_WHATSAPP_NUMBER` | `+91 98765 43210` |
+| `NEXT_PUBLIC_SUPPORT_EMAIL` | `thewashhousesolutions@gmail.com` |
+| `NEXT_PUBLIC_SUPPORT_PHONE` | `+91 99777 51122` |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | `+91 99777 51122` |
 | `NEXT_PUBLIC_BUSINESS_HOURS` | `Mon–Sat, 9:00 AM – 7:00 PM IST` |
 | `NEXT_PUBLIC_OFFICE_ADDRESS` | Multi-line address (use `\n`) |
 

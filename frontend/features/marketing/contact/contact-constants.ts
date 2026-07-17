@@ -10,15 +10,35 @@ export const CONTACT_SUBJECTS = [
 
 export type ContactSubject = (typeof CONTACT_SUBJECTS)[number]['value'];
 
+/** Anchor for the public contact message form (sticky-nav aware via scroll-mt). */
+export const CONTACT_FORM_ANCHOR = 'contact-form';
+
+/**
+ * Build a contact URL with optional subject pre-select and form hash.
+ * Used by “Request brochure” and other marketing CTAs.
+ */
+export function buildContactHref(
+  subject?: ContactSubject,
+  options?: { hash?: string | false },
+): string {
+  const path = subject ? `/contact?subject=${subject}` : '/contact';
+  if (options?.hash === false) return path;
+  const hash = options?.hash === undefined ? CONTACT_FORM_ANCHOR : options.hash;
+  return hash ? `${path}#${hash}` : path;
+}
+
+/** Franchise brochure CTA — opens Contact with Franchise subject + scrolls to form. */
+export const CONTACT_FRANCHISE_BROCHURE_HREF = buildContactHref('franchise');
+
 function envOrDefault(key: string, fallback: string): string {
   const value = process.env[key]?.trim();
   return value || fallback;
 }
 
 export const CONTACT_CONFIG = {
-  supportEmail: envOrDefault('NEXT_PUBLIC_SUPPORT_EMAIL', 'support@washhouse.in'),
-  phone: envOrDefault('NEXT_PUBLIC_SUPPORT_PHONE', '+91 80 4567 8901'),
-  whatsapp: envOrDefault('NEXT_PUBLIC_WHATSAPP_NUMBER', '+91 80 4567 8901'),
+  supportEmail: envOrDefault('NEXT_PUBLIC_SUPPORT_EMAIL', 'thewashhousesolutions@gmail.com'),
+  phone: envOrDefault('NEXT_PUBLIC_SUPPORT_PHONE', '+91 99777 51122'),
+  whatsapp: envOrDefault('NEXT_PUBLIC_WHATSAPP_NUMBER', '+91 99777 51122'),
   businessHours: envOrDefault('NEXT_PUBLIC_BUSINESS_HOURS', 'Mon–Sat, 9:00 AM – 7:00 PM IST'),
   officeAddress: envOrDefault(
     'NEXT_PUBLIC_OFFICE_ADDRESS',

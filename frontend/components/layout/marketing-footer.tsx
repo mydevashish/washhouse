@@ -45,7 +45,12 @@ export function MarketingFooter({ className, desktopContactActions }: MarketingF
 
   return (
     <footer
-      className={cn('border-t border-border/60 bg-card py-8 sm:py-9', className)}
+      className={cn(
+        'border-t border-border/60 bg-card pt-8 sm:pt-9',
+        /* Mobile: clear sticky CTA so copyright/social stay above the bar */
+        'pb-[max(6.75rem,calc(6rem+env(safe-area-inset-bottom,0px)))] lg:pb-9',
+        className,
+      )}
       aria-label="Site footer"
     >
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
@@ -54,13 +59,13 @@ export function MarketingFooter({ className, desktopContactActions }: MarketingF
             <WashhouseLogo href="/" adaptive={false} className="h-10 w-auto sm:h-11 lg:h-12 max-w-full" />
             <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
               {WASHHOUSE_BRAND_NAME} — India&apos;s doorstep laundry marketplace. Pay with UPI or
-              COD. GST shown on every order.
+              COD.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 lg:gap-8">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:gap-x-6 sm:gap-y-6 md:grid-cols-3 lg:grid-cols-5 lg:gap-8">
             {MARKETING_FOOTER_GROUPS.map((group) => (
-              <nav key={group.id} aria-label={`${group.title} links`}>
+              <nav key={group.id} className="min-w-0" aria-label={`${group.title} links`}>
                 <h2 className="text-sm font-semibold tracking-tight text-foreground">
                   {group.title}
                 </h2>
@@ -76,7 +81,7 @@ export function MarketingFooter({ className, desktopContactActions }: MarketingF
               </nav>
             ))}
 
-            <div aria-label="Contact information">
+            <div className="min-w-0" aria-label="Contact information">
               <h2 className="text-sm font-semibold tracking-tight text-foreground">Contact</h2>
               <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
                 <li>
@@ -85,7 +90,7 @@ export function MarketingFooter({ className, desktopContactActions }: MarketingF
                     className={contactLinkClassName}
                   >
                     <Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-                    <span>{CONTACT_CONFIG.phone}</span>
+                    <span className="break-words">{CONTACT_CONFIG.phone}</span>
                   </a>
                 </li>
                 <li>
@@ -94,12 +99,12 @@ export function MarketingFooter({ className, desktopContactActions }: MarketingF
                     className={contactLinkClassName}
                   >
                     <Mail className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-                    <span>{CONTACT_CONFIG.supportEmail}</span>
+                    <span className="break-all">{CONTACT_CONFIG.supportEmail}</span>
                   </a>
                 </li>
                 <li className="flex gap-2">
                   <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-                  <address className="not-italic leading-relaxed">
+                  <address className="min-w-0 break-words not-italic leading-relaxed">
                     {addressLines.map((line) => (
                       <span key={line} className="block">
                         {line}
@@ -111,7 +116,10 @@ export function MarketingFooter({ className, desktopContactActions }: MarketingF
             </div>
           </div>
 
-          <div className="flex flex-col items-center gap-3 border-t border-border/60 pt-5 sm:flex-row sm:justify-between">
+          <div
+            data-marketing-footer-social
+            className="flex flex-col items-center gap-3 border-t border-border/60 pt-5 sm:flex-row sm:justify-between"
+          >
             <p className="text-center text-xs text-muted-foreground sm:text-left">
               &copy; {year} {WASHHOUSE_BRAND_NAME}
             </p>

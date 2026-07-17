@@ -19,7 +19,8 @@ const FALLBACK_POOL = [
 export type LaundryMeta = {
   distanceKm: number;
   deliveryHours: number;
-  startPrice: number;
+  /** Real owner-set start price (INR), or null when no compare hints published */
+  startPrice: number | null;
 };
 
 export type EnrichedLaundry = LaundryListItem & LaundryMeta & { image: string };
@@ -34,19 +35,33 @@ export function getLaundryImage(slug: string, index: number): string {
   return LAUNDRY_IMAGES_BY_SLUG[slug] ?? FALLBACK_POOL[index % FALLBACK_POOL.length]!;
 }
 
-export function getLaundryMeta(slug: string): LaundryMeta {
+/** Pseudo distance/delivery until geo APIs ship — prices come from the API. */
+export function getLaundryMeta(slug: string): Pick<LaundryMeta, 'distanceKm' | 'deliveryHours'> {
   const hash = hashSlug(slug);
   return {
     distanceKm: Number((1.2 + (hash % 28) / 10).toFixed(1)),
     deliveryHours: 24 + (hash % 3) * 12,
-    startPrice: 69 + (hash % 4) * 10,
   };
+}
+
+/** Parse API compare start price for filter/sort; null when laundry has no hints. */
+export function resolveStartPrice(laundry: LaundryListItem): number | null {
+  if (laundry.start_price_inr != null && laundry.start_price_inr !== '') {
+    const n = Number(laundry.start_price_inr);
+    return Number.isFinite(n) ? n : null;
+  }
+  const candidates = [laundry.wash_fold_from_inr, laundry.shirt_dry_clean_from_inr]
+    .map((v) => (v != null && v !== '' ? Number(v) : NaN))
+    .filter((n) => Number.isFinite(n));
+  if (!candidates.length) return null;
+  return Math.min(...candidates);
 }
 
 export function enrichLaundry(laundry: LaundryListItem, index: number): EnrichedLaundry {
   return {
     ...laundry,
     ...getLaundryMeta(laundry.slug),
+    startPrice: resolveStartPrice(laundry),
     image: getLaundryImage(laundry.slug, index),
   };
 }

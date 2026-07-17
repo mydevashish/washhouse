@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import { HERO_SLIDE_IMAGES } from '@/features/discover/marketplace/laundry-images';
+import { CONTACT_FRANCHISE_BROCHURE_HREF } from '@/features/marketing/contact/contact-constants';
 
 const U = (id: string, w: number) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
@@ -114,7 +115,7 @@ export const HERO_SLIDES: readonly HeroSlide[] = [
       { label: 'Growth dashboard', icon: TrendingUp },
     ],
     applyHref: '/franchise#apply',
-    brochureHref: '/contact?subject=franchise',
+    brochureHref: CONTACT_FRANCHISE_BROCHURE_HREF,
     image: HERO_SLIDE_IMAGES.partner,
     imageAlt: 'Laundry business owner reviewing orders on a tablet',
     overlayClassName:

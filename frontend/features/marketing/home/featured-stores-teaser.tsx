@@ -85,7 +85,7 @@ export function FeaturedStoresTeaser() {
               icon={MapPin}
               title="Stores coming to your area soon"
               description="We are onboarding laundries in more neighbourhoods across India."
-              action={{ label: 'Check discover', href: '/discover' }}
+              action={{ label: 'Check stores', href: '/stores' }}
             />
           )}
 

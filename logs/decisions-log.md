@@ -17,6 +17,21 @@
 
 ## History
 
+### 2026-07-17 — Partner price-list bootstrap (empty + Apply suggested)
+- **Context:** Platform WashHouse catalog needs suggested defaults, but partners must not be silently locked to WashHouse live rates.
+- **Options considered:** (A) auto-seed overrides on laundry approve, (B) empty overrides + explicit “Apply suggested prices”, (C) implicit fallthrough to suggested as live price.
+- **Decision:** (B) — partners start with zero `laundry_item_prices`; Apply suggested is Slice B UI/API.
+- **Why:** Suggested ≠ live; marketplace “from” can still fall back to suggested when no partner priced an item.
+- **Consequences:** Public laundry list empty until partner opts in; Slice B must ship Apply + editor.
+- **Revisit if:** Partner activation lag hurts discovery density.
+- **ADR:** documented in `docs/features/partner-price-list.md` Decision defaults (no separate ADR).
+
+### 2026-07-17 — Catalog money columns (dual XOR single `price_inr`)
+- **Context:** WashHouse tables mix dry-clean/press pairs with by-kg and household single rates.
+- **Decision:** Dual `dry_clean_inr`+`press_inr` (press nullable) XOR single `price_inr`; CHECK enforces shape.
+- **Why:** Avoid overloading dry-clean semantics for kg rates; keep press N/A as null.
+- **Consequences:** Schema/docs in `docs/database/schema.md`; UI labels by category/mode in Slice B+.
+
 ### 2026-05-25 — Monorepo over polyrepo
 - **Context:** Two services (FastAPI + Next.js) plus shared docs/logs.
 - **Decision:** Monorepo (single `git` root).

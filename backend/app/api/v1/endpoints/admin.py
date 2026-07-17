@@ -10,10 +10,10 @@ from fastapi import APIRouter, Depends, Query, Request
 from app.api.admin_list_params import AdminAuditListQuery, AdminOrderListQuery, AdminUserListQuery
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_admin
-from app.core.cache import cache_delete_pattern
 from app.core.exceptions import NotFoundError
 from app.repositories.laundry import LaundryRepository
 from app.models.enums import LaundryStatus
+from app.services.laundry_service import invalidate_laundry_discovery_cache
 from app.schemas.admin import (
     AdminAnalyticsResponse,
     AdminAuditLogRow,
@@ -43,7 +43,7 @@ async def create_laundry(
 ) -> dict:
     result = await AdminService(session).create_laundry_with_partner(body)
     if result.get("status") == "approved":
-        await cache_delete_pattern("laundries:list:")
+        await invalidate_laundry_discovery_cache()
     return success_envelope(AdminCreateLaundryResponse.model_validate(result), request)
 
 
@@ -92,8 +92,7 @@ async def approve_laundry(
     laundry.status = LaundryStatus.approved
     laundry.is_verified = True
     await session.flush()
-    await cache_delete_pattern("laundries:list:")
-    await cache_delete_pattern("laundries:search:")
+    await invalidate_laundry_discovery_cache()
     return success_envelope({"id": str(laundry.id), "status": laundry.status.value}, request)
 
 
@@ -105,8 +104,7 @@ async def reject_laundry(
     _: Annotated[dict, Depends(get_current_admin)],
 ) -> dict:
     result = await AdminService(session).reject_laundry(laundry_id)
-    await cache_delete_pattern("laundries:list:")
-    await cache_delete_pattern("laundries:search:")
+    await invalidate_laundry_discovery_cache()
     return success_envelope(result, request)
 
 

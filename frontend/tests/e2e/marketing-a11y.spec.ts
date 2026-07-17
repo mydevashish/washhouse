@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
-const MARKETING_ROUTES = ['/', '/services', '/stores', '/contact'] as const;
+const MARKETING_ROUTES = ['/', '/services', '/pricing', '/stores', '/contact'] as const;
 
 test.describe('a11y: homepage stats band', () => {
   for (const viewport of [

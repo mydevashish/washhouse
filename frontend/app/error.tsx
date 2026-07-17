@@ -38,7 +38,7 @@ export default function RouteError({
             Try again
           </Button>
           <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
-            <Link href="/discover">Go to Discover</Link>
+            <Link href="/stores">Go to Stores</Link>
           </Button>
         </div>
       </main>

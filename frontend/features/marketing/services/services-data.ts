@@ -88,37 +88,10 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     accent: 'bg-success-muted text-success',
     turnaround: 'Weekly pickups',
     priceFrom: 'from ₹799/month',
-    ctaHref: '/discover',
+    ctaHref: '/stores',
     ctaLabel: 'Browse plans',
   },
 ];
-
-export const PRICING_POINTS = [
-  {
-    id: 'gst',
-    title: 'GST on every order',
-    description:
-      'Applicable GST is calculated and shown in your order summary before you confirm. No surprises at delivery.',
-  },
-  {
-    id: 'delivery',
-    title: 'Delivery fee at checkout',
-    description:
-      'Pickup and delivery charges depend on distance and the laundry you choose. You see the full breakdown before paying.',
-  },
-  {
-    id: 'upi',
-    title: 'Pay with UPI',
-    description:
-      'Instant UPI payment at checkout — fast, secure, and what most of our users prefer.',
-  },
-  {
-    id: 'cod',
-    title: 'Cash on delivery (COD)',
-    description:
-      'Prefer paying when your clothes arrive? COD is available at many partner stores — check at checkout.',
-  },
-] as const;
 
 export const SERVICES_FAQ: ServicesFaqItem[] = [
   {
@@ -143,7 +116,7 @@ export const SERVICES_FAQ: ServicesFaqItem[] = [
     id: 'phone-booking',
     question: 'Can I book by phone instead of the app?',
     answer:
-      'Many partner stores accept phone orders for regular customers. You\'ll still need to sign in with OTP for tracking and payments on the platform. Search a laundry on Discover and use their listed contact if you prefer calling first.',
+      'Many partner stores accept phone orders for regular customers. You\'ll still need to sign in with OTP for tracking and payments on the platform. Search a laundry on Stores and use their listed contact if you prefer calling first.',
   },
   {
     id: 'pricing-final',
@@ -155,6 +128,6 @@ export const SERVICES_FAQ: ServicesFaqItem[] = [
     id: 'express-availability',
     question: 'Is express service available everywhere?',
     answer:
-      'Express and same-day turnaround depend on the partner\'s capacity and your location. Filter or look for express badges on laundry listings in Discover — not every store offers it every day.',
+      'Express and same-day turnaround depend on the partner\'s capacity and your location. Filter or look for express badges on laundry listings in Stores — not every store offers it every day.',
   },
 ];

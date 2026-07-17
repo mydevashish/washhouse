@@ -18,6 +18,14 @@
 
 ## History
 
+### 2026-07-17 — `/pricing` rack neighbor photo prefetch
+
+- **Area:** frontend marketing pricing
+- **Symptom:** Product crossfades can flash empty muted while next garment image loads
+- **Hypothesis:** Warming next/image optimizer URLs for `activeIndex ± 1` before settle keeps the dual buffer painted
+- **Change:** Page-wide concurrency cap 2; skip when reduced-motion or rack off-screen; shared `sizes` with visible frame
+- **Result:** Expected fewer empty-frame flashes on tag scroll without stampeding Unsplash/next image on a long page
+
 ### 2026-07-13 — Homepage `/` + Discover `/discover` bundle trim
 
 - **Area:** frontend

@@ -5,13 +5,16 @@ from __future__ import annotations
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, Response
 
 from app.api.utils import pagination_meta, success_envelope
 from app.api.v1.deps import SessionDep, get_current_user_payload
+from app.core.config import settings
 from app.schemas.laundry import LaundryDetailResponse, LaundryListItem, LaundryServiceResponse
+from app.schemas.laundry_price_list import PublicLaundryPriceListResponse
 from app.schemas.review import ReviewCreateRequest, ReviewResponse
 from app.schemas.storefront import PublicStorefrontResponse, StorefrontResponse
+from app.services.laundry_price_list_service import LaundryPriceListService
 from app.services.laundry_service import LaundryService
 from app.services.review_service import ReviewService
 from app.services.storefront_service import StorefrontService
@@ -65,6 +68,21 @@ async def get_laundry(
 ) -> dict:
     row = await LaundryService(session).get_public(laundry_id)
     return success_envelope(LaundryDetailResponse.model_validate(row), request)
+
+
+@router.get("/{laundry_id}/price-list")
+async def get_laundry_price_list(
+    laundry_id: UUID,
+    request: Request,
+    response: Response,
+    session: SessionDep,
+) -> dict:
+    """Public garment price list for an approved laundry (active offered items only)."""
+    data = await LaundryPriceListService(session).get_public_price_list(laundry_id)
+    response.headers["Cache-Control"] = (
+        f"public, max-age={settings.CACHE_LAUNDRY_PRICE_LIST_TTL_SEC}"
+    )
+    return success_envelope(PublicLaundryPriceListResponse.model_validate(data), request)
 
 
 @router.get("/{laundry_id}/storefront")

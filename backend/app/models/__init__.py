@@ -23,6 +23,7 @@ from app.models.inventory_verification import (
     OrderInventoryItem,
     OrderInventoryVerification,
 )
+from app.models.catalog import LaundryItemPrice, PlatformCatalogItem
 from app.models.laundry import Laundry, LaundryService
 from app.models.storefront import LaundryStorefront
 from app.models.loyalty import Coupon, LoyaltyAccount, ReferralCode
@@ -68,7 +69,9 @@ __all__ = [
     "ComplaintStatusEvent",
     "Coupon",
     "Laundry",
+    "LaundryItemPrice",
     "LaundryService",
+    "PlatformCatalogItem",
     "DeliveryProofPhoto",
     "OrderCustodyEvent",
     "OrderDeliveryOtp",

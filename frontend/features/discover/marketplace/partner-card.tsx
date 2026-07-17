@@ -6,8 +6,12 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, BadgeCheck, Clock, MapPin, Star } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
-import type { LaundryListItem } from '@/services/laundries';
+import {
+  comparePriceAriaSummary,
+  getComparePriceLines,
+} from '@/features/discover/lib/compare-price-lines';
 import { getLaundryImage, getPartnerMeta } from '@/features/discover/marketplace/laundry-images';
+import type { LaundryListItem } from '@/services/laundries';
 import { cn } from '@/lib/utils';
 
 type PartnerCardProps = {
@@ -18,8 +22,11 @@ type PartnerCardProps = {
 export function PartnerCard({ laundry, index }: PartnerCardProps) {
   const reduce = useReducedMotion();
   const image = getLaundryImage(laundry.slug, index);
-  const { distanceKm, deliveryMin, startPrice } = getPartnerMeta(laundry.slug);
+  const { distanceKm, deliveryMin } = getPartnerMeta(laundry.slug);
   const rating = Number(laundry.avg_rating);
+  const priceLines = getComparePriceLines(laundry);
+  const priceAria = comparePriceAriaSummary(laundry);
+  const ariaPrice = priceAria ? `, ${priceAria}` : '';
 
   return (
     <motion.article
@@ -33,7 +40,7 @@ export function PartnerCard({ laundry, index }: PartnerCardProps) {
       <Link
         href={`/discover/${laundry.id}`}
         className="flex h-full flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500"
-        aria-label={`View ${laundry.name}, rated ${rating.toFixed(1)} stars, from ₹${startPrice}`}
+        aria-label={`View ${laundry.name}, rated ${rating.toFixed(1)} stars${ariaPrice}`}
       >
         <div className="relative aspect-[16/10] overflow-hidden bg-bg-2">
           <Image
@@ -80,11 +87,23 @@ export function PartnerCard({ laundry, index }: PartnerCardProps) {
             </div>
           </dl>
 
-          <div className="mt-auto flex items-center justify-between gap-3 pt-5">
-            <p className="text-sm font-semibold text-success">
-              From <span className="text-base">₹{startPrice}</span>
-            </p>
-            <span className="inline-flex items-center gap-1 text-sm font-semibold text-brand-500">
+          <div className="mt-auto flex items-end justify-between gap-3 pt-5">
+            <div className="min-w-0 text-sm">
+              {priceLines.length > 0 ? (
+                <ul className="space-y-0.5 font-semibold text-success">
+                  {priceLines.map((line) => (
+                    <li key={line.key}>
+                      from {line.amountLabel}
+                      {line.unitSuffix ?? ''}{' '}
+                      <span className="font-normal text-fg-2">{line.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="font-medium text-fg-2">See prices on store</p>
+              )}
+            </div>
+            <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-500">
               View & book
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
             </span>

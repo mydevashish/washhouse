@@ -1,0 +1,2084 @@
+/* Page-local laundry atelier atmosphere for /pricing price guide */
+
+.pricing-atelier {
+  --atelier-bg-top: #f4faff;
+  --atelier-bg-bottom: #e8f3fb;
+  --atelier-mist: rgb(255 255 255 / 0.55);
+  --atelier-mist-sky: rgb(186 220 242 / 0.35);
+  --atelier-rail: #8aa3b8;
+  --atelier-rail-deep: #6b8499;
+  --atelier-peg: #c5d4e0;
+  --atelier-peg-shine: #eef4f8;
+  --atelier-tag: #ffffff;
+  --atelier-tag-edge: #d5dee7;
+  --atelier-ink: #0f2744;
+  --atelier-muted: #5a6f84;
+  --atelier-price: #1a7ebf;
+  --atelier-string: #9aafc0;
+  --atelier-shadow: rgb(15 39 68 / 0.12);
+  --atelier-grain: rgb(15 39 68 / 0.035);
+
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  overflow-y: hidden;
+  background: linear-gradient(
+    180deg,
+    var(--atelier-bg-top) 0%,
+    var(--atelier-bg-bottom) 100%
+  );
+}
+
+.dark .pricing-atelier {
+  --atelier-bg-top: #0c1522;
+  --atelier-bg-bottom: #111c2b;
+  --atelier-mist: rgb(40 70 100 / 0.25);
+  --atelier-mist-sky: rgb(60 110 150 / 0.2);
+  --atelier-rail: #6a8398;
+  --atelier-rail-deep: #4a6175;
+  --atelier-peg: #8aa0b4;
+  --atelier-peg-shine: #b8cad8;
+  --atelier-tag: #1a2b3d;
+  --atelier-tag-edge: #3d556c;
+  --atelier-ink: #f2f6fb;
+  --atelier-muted: #b4c7d8;
+  --atelier-price: #7ec8f0;
+  --atelier-string: #7a92a6;
+  --atelier-shadow: rgb(0 0 0 / 0.45);
+  --atelier-grain: rgb(255 255 255 / 0.03);
+}
+
+.pricing-atelier__grain {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.7;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: multiply;
+}
+
+.dark .pricing-atelier__grain {
+  mix-blend-mode: soft-light;
+  opacity: 0.4;
+}
+
+.pricing-atelier__mist {
+  pointer-events: none;
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(48px);
+  background: var(--atelier-mist);
+  z-index: 0;
+}
+
+.pricing-atelier__mist--a {
+  top: 8%;
+  left: -8%;
+  width: min(55vw, 28rem);
+  height: 12rem;
+  background: var(--atelier-mist);
+}
+
+.pricing-atelier__mist--b {
+  top: 40%;
+  right: -10%;
+  width: min(50vw, 24rem);
+  height: 14rem;
+  background: var(--atelier-mist-sky);
+}
+
+.pricing-atelier__mist--c {
+  bottom: 6%;
+  left: 20%;
+  width: min(45vw, 22rem);
+  height: 10rem;
+  background: var(--atelier-mist);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pricing-atelier[data-mist='on'][data-atmosphere='on'] .pricing-atelier__mist--a {
+    animation: atelier-mist-pulse 9s ease-in-out infinite;
+  }
+
+  .pricing-atelier[data-mist='on'][data-atmosphere='on'] .pricing-atelier__mist--b {
+    animation: atelier-mist-pulse 11s ease-in-out infinite reverse;
+  }
+
+  .pricing-atelier[data-mist='on'][data-atmosphere='on'] .pricing-atelier__mist--c {
+    animation: atelier-mist-pulse 10s ease-in-out infinite 1.5s;
+  }
+}
+
+@keyframes atelier-mist-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 0.75;
+    transform: translate3d(1.5%, -2%, 0);
+  }
+}
+
+.pricing-atelier__content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Category stack: dense laundry-floor rhythm (not sparse gallery gaps) */
+.pricing-atelier-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem; /* 32px mobile */
+}
+
+@media (min-width: 640px) {
+  .pricing-atelier-guide {
+    gap: 2.25rem; /* 36px */
+  }
+}
+
+@media (min-width: 768px) {
+  .pricing-atelier-guide {
+    gap: 2.5rem; /* 40px */
+  }
+}
+
+@media (min-width: 1024px) {
+  .pricing-atelier-guide {
+    gap: 3rem; /* 48px desktop */
+  }
+}
+
+@media (min-width: 1280px) {
+  .pricing-atelier-guide {
+    gap: 3.5rem; /* 56px wide desktop */
+  }
+}
+
+.pricing-atelier-guide__unit {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  /* Static reduced-motion: match motion rack 5/7 photo+rates rhythm */
+  .pricing-atelier-guide--static .pricing-atelier-guide__unit {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1.75rem;
+    align-items: start;
+  }
+
+  .pricing-atelier-guide--static .pricing-atelier-guide__unit > .pricing-category-photo {
+    grid-column: span 5;
+  }
+
+  .pricing-atelier-guide--static .pricing-atelier-guide__unit > section {
+    grid-column: span 7;
+  }
+
+  .pricing-atelier-guide--static .pricing-atelier-guide__unit > .pricing-category-rack__conveyor {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Photo+rates unit — clips misted category ambient; tickets stay above */
+.pricing-category-rack__unit {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  overflow-y: hidden;
+  border-radius: 1rem;
+  /* Soft inset so ambient tint washes the edges (not a card chrome) */
+  padding: 0.65rem 0.55rem 0.35rem;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.pricing-category-rack {
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .pricing-category-rack__unit {
+    padding: 0.85rem 0.75rem 0.45rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pricing-category-rack__unit {
+    padding: 1rem 1rem 0.5rem;
+  }
+}
+
+/*
+ * Soft ambient imagery behind the entire photo+rates composition.
+ * Very low opacity + blur; veil restores atelier wash so prices stay crisp.
+ * Gated by `.pricing-atelier[data-atmosphere]` (same pause pattern as mist).
+ */
+.pricing-category-rack__ambient {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.pricing-category-rack__ambient-frame {
+  position: absolute;
+  /* Overscan so blur edges don’t hard-clip inside the unit */
+  inset: -12% -8%;
+}
+
+.pricing-category-rack__ambient-media {
+  object-fit: cover;
+  object-position: 30% 40%;
+  transform: scale(1.12);
+  filter: blur(36px) saturate(0.82);
+  opacity: 0.18;
+}
+
+.pricing-category-rack__ambient[data-anchor='end'] .pricing-category-rack__ambient-media {
+  object-position: 72% 40%;
+}
+
+/* Women / kids — richer fabric read (still misted; prices stay crisp above) */
+.pricing-category-rack__ambient[data-strength='rich'] .pricing-category-rack__ambient-media {
+  opacity: 0.36;
+  filter: blur(24px) saturate(1.12);
+  transform: scale(1.18);
+}
+
+.dark .pricing-category-rack__ambient-media {
+  opacity: 0.11;
+  filter: blur(36px) saturate(0.7) brightness(0.72);
+}
+
+.dark .pricing-category-rack__ambient[data-strength='rich'] .pricing-category-rack__ambient-media {
+  opacity: 0.24;
+  filter: blur(26px) saturate(0.95) brightness(0.72);
+}
+
+/* Soft category tint — distinctive without becoming a second photo */
+.pricing-category-rack__ambient-tint {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pricing-category-rack__ambient[data-category='women'] .pricing-category-rack__ambient-tint {
+  opacity: 1;
+  background:
+    radial-gradient(
+      ellipse 85% 75% at 14% 28%,
+      color-mix(in srgb, #c45a7a 42%, transparent) 0%,
+      transparent 66%
+    ),
+    radial-gradient(
+      ellipse 62% 55% at 92% 74%,
+      color-mix(in srgb, #d4a574 28%, transparent) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 48% 40% at 58% 12%,
+      color-mix(in srgb, #e8c4d4 18%, transparent) 0%,
+      transparent 72%
+    );
+}
+
+.pricing-category-rack__ambient[data-category='kids'] .pricing-category-rack__ambient-tint {
+  opacity: 1;
+  background:
+    radial-gradient(
+      ellipse 80% 68% at 18% 34%,
+      color-mix(in srgb, #5eb3e8 38%, transparent) 0%,
+      transparent 64%
+    ),
+    radial-gradient(
+      ellipse 58% 52% at 88% 70%,
+      color-mix(in srgb, #7bc47d 26%, transparent) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 42% 36% at 64% 12%,
+      color-mix(in srgb, #f0d46a 14%, transparent) 0%,
+      transparent 70%
+    );
+}
+
+.dark .pricing-category-rack__ambient[data-category='women'] .pricing-category-rack__ambient-tint {
+  background:
+    radial-gradient(
+      ellipse 78% 68% at 16% 32%,
+      color-mix(in srgb, #c45a7a 20%, transparent) 0%,
+      transparent 64%
+    ),
+    radial-gradient(
+      ellipse 58% 52% at 90% 72%,
+      color-mix(in srgb, #d4a574 14%, transparent) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 40% 35% at 55% 18%,
+      color-mix(in srgb, #e8c4d4 8%, transparent) 0%,
+      transparent 70%
+    );
+}
+
+.dark .pricing-category-rack__ambient[data-category='kids'] .pricing-category-rack__ambient-tint {
+  background:
+    radial-gradient(
+      ellipse 72% 60% at 20% 38%,
+      color-mix(in srgb, #5eb3e8 18%, transparent) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 54% 48% at 86% 68%,
+      color-mix(in srgb, #7bc47d 14%, transparent) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 36% 32% at 62% 14%,
+      color-mix(in srgb, #f0d46a 7%, transparent) 0%,
+      transparent 68%
+    );
+}
+
+/* Atelier wash — stronger toward the rates column so tickets stay high-contrast */
+.pricing-category-rack__ambient-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--atelier-bg-top) 42%, transparent) 0%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 58%, transparent) 38%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 88%, transparent) 100%
+    ),
+    color-mix(in srgb, var(--atelier-bg-bottom) 55%, transparent);
+}
+
+.pricing-category-rack__ambient[data-anchor='end'] .pricing-category-rack__ambient-veil {
+  background:
+    linear-gradient(
+      255deg,
+      color-mix(in srgb, var(--atelier-bg-top) 42%, transparent) 0%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 58%, transparent) 38%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 88%, transparent) 100%
+    ),
+    color-mix(in srgb, var(--atelier-bg-bottom) 55%, transparent);
+}
+
+/* Rich categories: fabric depth on the photo side; rates side stays opaque enough
+ * that ticket prices never wash out under women/kids tint washes. */
+.pricing-category-rack__ambient[data-strength='rich'] .pricing-category-rack__ambient-veil {
+  background:
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--atelier-bg-top) 14%, transparent) 0%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 36%, transparent) 42%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 90%, transparent) 100%
+    ),
+    color-mix(in srgb, var(--atelier-bg-bottom) 42%, transparent);
+}
+
+.pricing-category-rack__ambient[data-strength='rich'][data-anchor='end']
+  .pricing-category-rack__ambient-veil {
+  background:
+    linear-gradient(
+      255deg,
+      color-mix(in srgb, var(--atelier-bg-top) 14%, transparent) 0%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 36%, transparent) 42%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 90%, transparent) 100%
+    ),
+    color-mix(in srgb, var(--atelier-bg-bottom) 42%, transparent);
+}
+
+.dark .pricing-category-rack__ambient-veil {
+  background:
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--atelier-bg-top) 55%, transparent) 0%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 70%, transparent) 40%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 92%, transparent) 100%
+    ),
+    color-mix(in srgb, var(--atelier-bg-bottom) 68%, transparent);
+}
+
+.dark .pricing-category-rack__ambient[data-anchor='end'] .pricing-category-rack__ambient-veil {
+  background:
+    linear-gradient(
+      255deg,
+      color-mix(in srgb, var(--atelier-bg-top) 55%, transparent) 0%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 70%, transparent) 40%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 92%, transparent) 100%
+    ),
+    color-mix(in srgb, var(--atelier-bg-bottom) 68%, transparent);
+}
+
+.dark .pricing-category-rack__ambient[data-strength='rich'] .pricing-category-rack__ambient-veil {
+  background:
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--atelier-bg-top) 22%, transparent) 0%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 48%, transparent) 42%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 92%, transparent) 100%
+    ),
+    color-mix(in srgb, var(--atelier-bg-bottom) 48%, transparent);
+}
+
+.dark
+  .pricing-category-rack__ambient[data-strength='rich'][data-anchor='end']
+  .pricing-category-rack__ambient-veil {
+  background:
+    linear-gradient(
+      255deg,
+      color-mix(in srgb, var(--atelier-bg-top) 22%, transparent) 0%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 48%, transparent) 42%,
+      color-mix(in srgb, var(--atelier-bg-bottom) 92%, transparent) 100%
+    ),
+    color-mix(in srgb, var(--atelier-bg-bottom) 48%, transparent);
+}
+
+/* Drop expensive blur when the price-guide leaves the viewport (motion path only).
+ * Reduced-motion sets data-mist=off and keeps a static misted ambient. */
+.pricing-atelier[data-mist='on'][data-atmosphere='off'] .pricing-category-rack__ambient-media {
+  filter: none;
+  opacity: 0.06;
+  transform: scale(1.06);
+}
+
+.dark .pricing-atelier[data-mist='on'][data-atmosphere='off'] .pricing-category-rack__ambient-media {
+  opacity: 0.04;
+}
+
+.pricing-atelier[data-mist='on'][data-atmosphere='off']
+  .pricing-category-rack__ambient[data-strength='rich']
+  .pricing-category-rack__ambient-media {
+  opacity: 0.14;
+}
+
+.dark .pricing-atelier[data-mist='on'][data-atmosphere='off']
+  .pricing-category-rack__ambient[data-strength='rich']
+  .pricing-category-rack__ambient-media {
+  opacity: 0.1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pricing-atelier[data-atmosphere='on'] .pricing-category-rack__ambient-media {
+    will-change: transform;
+    animation: atelier-ambient-drift 22s ease-in-out infinite;
+  }
+
+  .pricing-atelier[data-atmosphere='on']
+    .pricing-category-rack__ambient[data-anchor='end']
+    .pricing-category-rack__ambient-media {
+    animation-direction: reverse;
+    animation-duration: 26s;
+  }
+}
+
+@keyframes atelier-ambient-drift {
+  0%,
+  100% {
+    transform: scale(1.12) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.14) translate3d(1.2%, -0.8%, 0);
+  }
+}
+
+/* Rich ambient: slightly fuller drift so fabric depth feels alive (still CSS-only) */
+@media (prefers-reduced-motion: no-preference) {
+  .pricing-atelier[data-atmosphere='on']
+    .pricing-category-rack__ambient[data-strength='rich']
+    .pricing-category-rack__ambient-media {
+    animation-name: atelier-ambient-drift-rich;
+    animation-duration: 24s;
+  }
+}
+
+@keyframes atelier-ambient-drift-rich {
+  0%,
+  100% {
+    transform: scale(1.18) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.21) translate3d(1.5%, -1%, 0);
+  }
+}
+
+/* Thin conveyor accent under each photo+rack unit */
+.pricing-category-rack__conveyor {
+  margin-top: 1.25rem;
+  height: 1.5px;
+  width: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--atelier-rail) 12%,
+    var(--atelier-peg-shine) 50%,
+    var(--atelier-rail-deep) 88%,
+    transparent 100%
+  );
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.dark .pricing-category-rack__conveyor {
+  opacity: 0.45;
+}
+
+@media (min-width: 1024px) {
+  .pricing-category-rack__conveyor {
+    margin-top: 1.5rem;
+    height: 2px;
+  }
+}
+
+.pricing-peg-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* Match scroller padding-top so screw heads sit on the rod */
+  top: 0.55rem;
+  height: 0.6rem;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.pricing-peg-rail__rod {
+  position: absolute;
+  left: 0.15rem;
+  right: 0.15rem;
+  top: 50%;
+  height: 0.32rem;
+  translate: 0 -50%;
+  border-radius: 9999px;
+  background: linear-gradient(
+    180deg,
+    var(--atelier-peg-shine) 0%,
+    var(--atelier-rail) 42%,
+    var(--atelier-rail-deep) 100%
+  );
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.4) inset,
+    0 2px 5px var(--atelier-shadow);
+}
+
+/* Conveyor collar rings at rod ends */
+.pricing-peg-rail__collar {
+  position: absolute;
+  top: 50%;
+  width: 0.42rem;
+  height: 0.52rem;
+  translate: 0 -50%;
+  border-radius: 0.12rem;
+  background: linear-gradient(
+    180deg,
+    var(--atelier-peg-shine) 0%,
+    var(--atelier-rail) 40%,
+    var(--atelier-rail-deep) 100%
+  );
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.35) inset,
+    0 1px 3px var(--atelier-shadow);
+}
+
+.pricing-peg-rail__collar--start {
+  left: -0.05rem;
+}
+
+.pricing-peg-rail__collar--end {
+  right: -0.05rem;
+}
+
+/* Tiny decorative screw heads along the rod (CSS only — no extra DOM cost) */
+.pricing-peg-rail__screws {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: radial-gradient(
+    circle at center,
+    var(--atelier-peg-shine) 0 22%,
+    var(--atelier-peg) 28% 48%,
+    var(--atelier-rail-deep) 55% 62%,
+    transparent 64%
+  );
+  background-size: 1.9rem 100%;
+  background-position: 0.6rem 50%;
+  background-repeat: repeat-x;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Editorial category photo — subtle atelier shadow, 16px radius */
+.pricing-category-photo {
+  border-radius: 16px;
+  box-shadow:
+    0 14px 32px var(--atelier-shadow),
+    0 2px 8px rgb(15 39 68 / 0.06);
+}
+
+/* Scroll-synced product frame: stacked crossfade layers + soft plate */
+.pricing-category-photo-sync {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  /* Isolate paint so tag flings don’t invalidate the whole rack */
+  contain: layout paint;
+}
+
+.pricing-category-photo__layer {
+  transform-origin: 50% 42%;
+}
+
+.pricing-category-photo__layer img {
+  transform: scale(1.001); /* kill subpixel seam on crossfade */
+}
+
+/* Dual-buffer crossfade — opacity + scale only (~420ms), never fights tag sway */
+.pricing-category-photo__layer--back {
+  z-index: 0;
+  opacity: 1;
+  transform: scale(1);
+}
+
+.pricing-category-photo__layer--back[data-fading='true'] {
+  opacity: 0;
+  transform: scale(1.015);
+}
+
+.pricing-category-photo__layer--back[data-animating='true'] {
+  transition:
+    opacity 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pricing-category-photo__layer--front {
+  z-index: 1;
+  opacity: 0;
+  transform: scale(1.04);
+}
+
+.pricing-category-photo__layer--front[data-visible='true'] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.pricing-category-photo__layer--front[data-animating='true'] {
+  transition:
+    opacity 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pricing-category-photo__layer--front[data-reduce='true'] {
+  opacity: 1;
+  transform: scale(1);
+  transition: none;
+}
+
+.pricing-category-photo__plate {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  /* One-line plate — reserved height prevents CLS when the label swaps */
+  min-height: 1.25rem;
+  max-height: 1.25rem;
+  padding-inline: 0.15rem;
+  color: var(--atelier-muted);
+}
+
+.pricing-category-photo__plate-mark {
+  flex: 0 0 auto;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--atelier-price) 72%, white);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--atelier-price) 18%, transparent);
+}
+
+.pricing-category-photo__plate-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.25rem;
+  color: var(--atelier-ink);
+  opacity: 0.82;
+  /* Single truncated line — never mid-word wrap on narrow Android widths */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  hyphens: none;
+  /* Opacity-only swap — no translate that reads as layout motion */
+  animation: atelier-plate-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes atelier-plate-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.82;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-category-photo__plate-name {
+    animation: none;
+  }
+
+  .pricing-category-photo__layer--back,
+  .pricing-category-photo__layer--front {
+    transition: none !important;
+  }
+}
+
+/*
+ * Per-category photo-edge mood (CSS/SVG only — no Lottie/video).
+ * One loop per visible rack; paused via data-mood + section data-atmosphere.
+ * Sits above the photo pixels but below rates (photo is in its own column).
+ */
+.pricing-category-mood {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: inherit;
+  color: rgb(244 250 255);
+  /* Soft edge veil so loops read as atmosphere, not a sticker on fabric */
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 42%,
+    rgb(0 0 0 / 0.55) 72%,
+    rgb(0 0 0 / 0.9) 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 42%,
+    rgb(0 0 0 / 0.55) 72%,
+    rgb(0 0 0 / 0.9) 100%
+  );
+}
+
+.pricing-category-mood::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 42%;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--atelier-bg-top, #f4faff) 28%, transparent) 100%
+  );
+  opacity: 0.55;
+}
+
+.pricing-category-mood[data-variant='hang']::before {
+  inset: 0 0 auto auto;
+  width: 45%;
+  height: 70%;
+  background: linear-gradient(
+    225deg,
+    color-mix(in srgb, var(--atelier-bg-top, #f4faff) 22%, transparent) 0%,
+    transparent 70%
+  );
+  opacity: 0.5;
+}
+
+.dark .pricing-category-mood::before {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--atelier-bg-bottom, #111c2b) 45%, transparent) 100%
+  );
+  opacity: 0.65;
+}
+
+.dark .pricing-category-mood[data-variant='hang']::before {
+  background: linear-gradient(
+    225deg,
+    color-mix(in srgb, var(--atelier-bg-bottom, #111c2b) 40%, transparent) 0%,
+    transparent 70%
+  );
+}
+
+.pricing-category-mood[data-variant='hang'] {
+  mask-image: linear-gradient(
+    225deg,
+    transparent 0%,
+    transparent 48%,
+    rgb(0 0 0 / 0.4) 70%,
+    rgb(0 0 0 / 0.85) 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    225deg,
+    transparent 0%,
+    transparent 48%,
+    rgb(0 0 0 / 0.4) 70%,
+    rgb(0 0 0 / 0.85) 100%
+  );
+}
+
+.dark .pricing-category-mood {
+  color: rgb(180 210 235);
+}
+
+.pricing-category-mood__canvas {
+  position: absolute;
+  inset: auto 0 0;
+  height: 48%;
+  width: 100%;
+  z-index: 1;
+  /* Mobile: smaller canvas so price LCP / paint stay free */
+  contain: layout paint;
+}
+
+.pricing-category-mood[data-variant='hang'] .pricing-category-mood__canvas {
+  inset: 0 0 auto auto;
+  width: min(42%, 9.5rem);
+  height: min(72%, 12rem);
+}
+
+@media (min-width: 768px) {
+  .pricing-category-mood__canvas {
+    height: 52%;
+  }
+
+  .pricing-category-mood[data-variant='hang'] .pricing-category-mood__canvas {
+    width: min(38%, 11rem);
+    height: min(78%, 14rem);
+  }
+}
+
+.pricing-category-mood__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: blur(0.6px);
+  opacity: 0.85;
+}
+
+@media (max-width: 767px) {
+  .pricing-category-mood__svg {
+    filter: blur(0.35px);
+    opacity: 0.7;
+  }
+}
+
+/* Hard-stop when rack leaves view or section atmosphere pauses */
+.pricing-category-mood[data-mood='off'] .pricing-category-mood__steam,
+.pricing-category-mood[data-mood='off'] .pricing-category-mood__fabric-sheet,
+.pricing-category-mood[data-mood='off'] .pricing-category-mood__fabric-hem,
+.pricing-category-mood[data-mood='off'] .pricing-category-mood__hang {
+  animation: none !important;
+}
+
+.pricing-atelier[data-atmosphere='off'] .pricing-category-mood .pricing-category-mood__steam,
+.pricing-atelier[data-atmosphere='off'] .pricing-category-mood .pricing-category-mood__fabric-sheet,
+.pricing-atelier[data-atmosphere='off'] .pricing-category-mood .pricing-category-mood__fabric-hem,
+.pricing-atelier[data-atmosphere='off'] .pricing-category-mood .pricing-category-mood__hang {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pricing-atelier[data-atmosphere='on']
+    .pricing-category-mood[data-mood='on']
+    .pricing-category-mood__steam--a {
+    animation: pricing-mood-steam 9.5s ease-in-out infinite;
+    transform-origin: 50% 100%;
+  }
+
+  .pricing-atelier[data-atmosphere='on']
+    .pricing-category-mood[data-mood='on']
+    .pricing-category-mood__steam--b {
+    animation: pricing-mood-steam 12s ease-in-out infinite 0.8s reverse;
+    transform-origin: 50% 100%;
+  }
+
+  .pricing-atelier[data-atmosphere='on']
+    .pricing-category-mood[data-mood='on']
+    .pricing-category-mood__steam--c {
+    animation: pricing-mood-steam 10.5s ease-in-out infinite 1.6s;
+    transform-origin: 50% 100%;
+  }
+
+  .pricing-atelier[data-atmosphere='on']
+    .pricing-category-mood[data-mood='on']
+    .pricing-category-mood__fabric-sheet {
+    animation: pricing-mood-fabric 16s ease-in-out infinite;
+    transform-origin: 50% 100%;
+  }
+
+  .pricing-atelier[data-atmosphere='on']
+    .pricing-category-mood[data-mood='on']
+    .pricing-category-mood__fabric-hem {
+    animation: pricing-mood-fabric 19s ease-in-out infinite reverse;
+    transform-origin: 50% 100%;
+  }
+
+  .pricing-atelier[data-atmosphere='on']
+    .pricing-category-mood[data-mood='on']
+    .pricing-category-mood__hang {
+    animation: pricing-mood-hang 7.5s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: 70% 0%;
+  }
+}
+
+@keyframes pricing-mood-steam {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate3d(0, 6%, 0) scaleY(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(1.5%, -10%, 0) scaleY(1.04);
+  }
+}
+
+@keyframes pricing-mood-fabric {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) skewX(0deg);
+  }
+  50% {
+    transform: translate3d(2.2%, -1.5%, 0) skewX(0.6deg);
+  }
+}
+
+@keyframes pricing-mood-hang {
+  0%,
+  100% {
+    transform: rotate(-1.1deg);
+  }
+  50% {
+    transform: rotate(1.25deg);
+  }
+}
+
+.dark .pricing-category-photo {
+  /* Edge definition + slight lift so photos don’t sink into dark atelier bg */
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.1),
+    0 14px 32px var(--atelier-shadow),
+    0 2px 8px rgb(0 0 0 / 0.35);
+}
+
+.dark .pricing-category-photo img {
+  filter: brightness(1.06) contrast(1.04);
+}
+
+.pricing-category-rack__rod-mark {
+  flex-shrink: 0;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at 32% 28%,
+    var(--atelier-peg-shine),
+    var(--atelier-peg) 50%,
+    var(--atelier-rail-deep)
+  );
+  box-shadow:
+    0 1px 2px var(--atelier-shadow),
+    0 0 0 1px rgb(255 255 255 / 0.25) inset;
+  position: relative;
+}
+
+.pricing-category-rack__rod-mark::before,
+.pricing-category-rack__rod-mark::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: rgb(15 39 68 / 0.35);
+  border-radius: 1px;
+}
+
+.dark .pricing-category-rack__rod-mark::before,
+.dark .pricing-category-rack__rod-mark::after {
+  background: rgb(0 0 0 / 0.45);
+}
+
+.pricing-category-rack__rod-mark::before {
+  width: 55%;
+  height: 1.5px;
+  translate: -50% -50%;
+}
+
+.pricing-category-rack__rod-mark::after {
+  width: 1.5px;
+  height: 55%;
+  translate: -50% -50%;
+}
+
+.pricing-price-tag {
+  --tag-sway-amp: 1deg;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 10.75rem;
+  min-width: 10rem;
+  max-width: min(10.75rem, 72vw);
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: center;
+  perspective: 720px;
+  perspective-origin: 50% 0%;
+  transform-style: preserve-3d;
+  /* Snap lives on __item — duplicate align here fights mandatory snap on Android */
+  touch-action: manipulation;
+  outline: none;
+}
+
+.pricing-price-tag:focus-visible .pricing-price-tag__face {
+  outline: 2px solid var(--atelier-price);
+  outline-offset: 3px;
+  box-shadow:
+    0 6px 14px var(--atelier-shadow),
+    0 1px 0 rgb(255 255 255 / 0.5) inset,
+    0 0 0 3px color-mix(in srgb, var(--atelier-price) 35%, transparent);
+}
+
+.dark .pricing-price-tag:focus-visible .pricing-price-tag__face {
+  box-shadow:
+    0 6px 14px var(--atelier-shadow),
+    0 1px 0 rgb(255 255 255 / 0.08) inset,
+    0 0 0 3px color-mix(in srgb, var(--atelier-price) 45%, transparent);
+}
+
+/* Metallic Phillips screw head sitting on the conveyor rod */
+.pricing-price-tag__screw {
+  position: relative;
+  z-index: 2;
+  width: 0.52rem;
+  height: 0.52rem;
+  margin-top: 0.02rem;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at 30% 25%,
+    #f2f6fa 0%,
+    var(--atelier-peg-shine) 22%,
+    var(--atelier-peg) 55%,
+    var(--atelier-rail-deep) 100%
+  );
+  box-shadow:
+    0 1px 2px var(--atelier-shadow),
+    0 0 0 1px rgb(255 255 255 / 0.35) inset,
+    0 -1px 1px rgb(15 39 68 / 0.2) inset;
+  flex-shrink: 0;
+}
+
+.pricing-price-tag__screw-cross {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pricing-price-tag__screw-cross::before,
+.pricing-price-tag__screw-cross::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: rgb(15 39 68 / 0.4);
+  border-radius: 1px;
+  box-shadow: 0 0.5px 0 rgb(255 255 255 / 0.25);
+}
+
+.dark .pricing-price-tag__screw-cross::before,
+.dark .pricing-price-tag__screw-cross::after {
+  background: rgb(0 0 0 / 0.5);
+}
+
+.pricing-price-tag__screw-cross::before {
+  width: 58%;
+  height: 1.5px;
+  translate: -50% -50%;
+}
+
+.pricing-price-tag__screw-cross::after {
+  width: 1.5px;
+  height: 58%;
+  translate: -50% -50%;
+}
+
+@media (min-width: 640px) {
+  .pricing-price-tag {
+    width: 12.25rem;
+    min-width: 11.5rem;
+    max-width: 12.25rem;
+  }
+}
+
+/* Short wire hook from screw → ticket (CSS shape, no SVG/WebGL) */
+.pricing-price-tag__hook {
+  position: relative;
+  z-index: 1;
+  width: 0.58rem;
+  height: 0.52rem;
+  flex-shrink: 0;
+  margin-bottom: 0;
+}
+
+.pricing-price-tag__hook::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1.5px;
+  height: 0.28rem;
+  translate: -50% 0;
+  background: linear-gradient(
+    180deg,
+    var(--atelier-rail-deep),
+    var(--atelier-string)
+  );
+  border-radius: 1px;
+}
+
+.pricing-price-tag__hook::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0.38rem;
+  height: 0.3rem;
+  translate: -50% 0;
+  border: 1.5px solid var(--atelier-string);
+  border-top: none;
+  border-radius: 0 0 0.24rem 0.24rem;
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.15) inset;
+}
+
+.pricing-price-tag__spindle {
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.pricing-price-tag__face {
+  position: relative;
+  width: 100%;
+  /* Content-sized — no empty min-height void above the price */
+  min-height: 0;
+  padding: 0.2rem 0.55rem 0.5rem;
+  border-radius: 0.28rem 0.28rem 0.5rem 0.5rem;
+  border: 1px solid var(--atelier-tag-edge);
+  background: var(--atelier-tag);
+  color: var(--atelier-ink);
+  box-shadow:
+    0 6px 14px var(--atelier-shadow),
+    0 1px 0 rgb(255 255 255 / 0.5) inset;
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+
+.dark .pricing-price-tag__face {
+  box-shadow:
+    0 6px 16px var(--atelier-shadow),
+    0 1px 0 rgb(255 255 255 / 0.08) inset;
+}
+
+/* Eyelet punched through the stub header (hangs on the wire hook) */
+.pricing-price-tag__face::before {
+  content: '';
+  position: absolute;
+  top: 0.12rem;
+  left: 50%;
+  z-index: 1;
+  width: 0.34rem;
+  height: 0.34rem;
+  translate: -50% 0;
+  border-radius: 9999px;
+  border: 1px solid var(--atelier-tag-edge);
+  background: radial-gradient(circle at 40% 35%, rgb(255 255 255 / 0.7), transparent 65%),
+    var(--atelier-tag);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.04) inset;
+}
+
+@media (min-width: 640px) {
+  .pricing-price-tag__face {
+    padding: 0.24rem 0.68rem 0.58rem;
+  }
+}
+
+/* Dry-cleaning stub: ticket # · care mark · unit — filled band, not empty padding */
+.pricing-price-tag__stub {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.12rem;
+  min-height: 0.62rem;
+  margin-top: 0.28rem; /* clears the eyelet */
+  margin-inline: -0.2rem;
+  padding: 0.16rem 0.3rem;
+  border-radius: 0.12rem;
+  /* Stronger fill so the stub reads as a ticket header, not empty top padding */
+  background: color-mix(in srgb, var(--atelier-peg) 46%, var(--atelier-tag));
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--atelier-tag-edge) 70%, transparent);
+  font-size: 0.5rem; /* 8px */
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--atelier-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.dark .pricing-price-tag__stub {
+  background: color-mix(in srgb, var(--atelier-rail-deep) 52%, var(--atelier-tag));
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--atelier-tag-edge) 55%, transparent);
+}
+
+.pricing-price-tag__stub-no {
+  justify-self: start;
+  opacity: 0.9;
+}
+
+.pricing-price-tag__stub-unit {
+  justify-self: end;
+  opacity: 0.9;
+}
+
+/* Tiny ISO-style care glyph (wash tub) — CSS only, no emoji */
+.pricing-price-tag__care {
+  position: relative;
+  width: 0.58rem;
+  height: 0.5rem;
+  justify-self: center;
+  border: 1.25px solid color-mix(in srgb, var(--atelier-muted) 85%, transparent);
+  border-radius: 0.08rem 0.08rem 0.18rem 0.18rem;
+  border-top: none;
+  opacity: 0.9;
+}
+
+.pricing-price-tag__care::before {
+  content: '';
+  position: absolute;
+  top: -0.12rem;
+  left: 50%;
+  width: 0.42rem;
+  height: 0.12rem;
+  translate: -50% 0;
+  border: 1.25px solid color-mix(in srgb, var(--atelier-muted) 70%, transparent);
+  border-bottom: none;
+  border-radius: 0.1rem 0.1rem 0 0;
+}
+
+.pricing-price-tag__care::after {
+  content: '';
+  position: absolute;
+  bottom: 0.1rem;
+  left: 50%;
+  width: 0.28rem;
+  height: 0.14rem;
+  translate: -50% 0;
+  border-bottom: 1.25px solid color-mix(in srgb, var(--atelier-muted) 70%, transparent);
+  border-radius: 50%;
+}
+
+/* Perforated tear line under the stub header */
+.pricing-price-tag__perf {
+  position: relative;
+  height: 0.26rem;
+  margin: 0.02rem -0.15rem 0.1rem;
+  flex-shrink: 0;
+}
+
+.pricing-price-tag__perf::before {
+  content: '';
+  position: absolute;
+  inset: 50% 0.15rem auto;
+  height: 1px;
+  translate: 0 -50%;
+  background-image: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--atelier-tag-edge) 88%, var(--atelier-muted)) 0 2px,
+    transparent 2px 5px
+  );
+}
+
+/* Side punch holes — classic tear-off stub cue */
+.pricing-price-tag__perf::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 0.28rem;
+  translate: 0 -50%;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at left center,
+      transparent 0.12rem,
+      color-mix(in srgb, var(--atelier-tag-edge) 75%, transparent) 0.13rem 0.14rem,
+      transparent 0.15rem
+    ),
+    radial-gradient(
+      circle at right center,
+      transparent 0.12rem,
+      color-mix(in srgb, var(--atelier-tag-edge) 75%, transparent) 0.13rem 0.14rem,
+      transparent 0.15rem
+    );
+}
+
+.pricing-price-tag__name {
+  margin: 0;
+  font-size: 1.125rem; /* 18px */
+  font-weight: 600;
+  line-height: 1.18;
+  text-align: center;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  color: var(--atelier-ink);
+}
+
+@media (min-width: 640px) {
+  .pricing-price-tag__name {
+    font-size: 1.25rem; /* 20px */
+  }
+}
+
+.pricing-price-tag__lines {
+  margin-top: 0.28rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  align-items: center;
+  /* No flex-grow — prices sit tight under the name, not at the bottom of a void */
+  flex: 0 0 auto;
+  justify-content: flex-start;
+}
+
+.pricing-price-tag__service {
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--atelier-muted);
+}
+
+.pricing-price-tag__price {
+  font-size: 1.5rem; /* 24px — clearest element on the ticket */
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--atelier-price);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 640px) {
+  .pricing-price-tag__price {
+    font-size: 1.625rem; /* 26px */
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pricing-price-tag[data-sway='on'] .pricing-price-tag__face {
+    animation: atelier-tag-sway 4.2s ease-in-out infinite;
+  }
+
+  .pricing-price-tag[data-sway='on']:nth-child(even) .pricing-price-tag__face {
+    animation-duration: 4.8s;
+    animation-direction: reverse;
+  }
+}
+
+@keyframes atelier-tag-sway {
+  0%,
+  100% {
+    transform: rotateZ(calc(var(--tag-sway-amp) * -1));
+  }
+  50% {
+    transform: rotateZ(var(--tag-sway-amp));
+  }
+}
+
+.pricing-category-rack__rail-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  /* Contain the horizontal scroller so the page never gains x overflow */
+  overflow-x: clip;
+}
+
+.pricing-rack-scroller {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-start; /* few tags stay left on the rail — no centered void */
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  /* Keep y clipped but pad enough for focus rings + dual-line tickets + sway */
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
+  scroll-snap-type: x proximity;
+  /* Focus outline (~5px) + screw clearance; never pad-left:0 (clips first tag ring) */
+  padding: 0.4rem 0.45rem 1rem;
+  scroll-padding-inline: 0.45rem;
+  /* Dense ticket height — screw + short hook + stub + rates */
+  min-height: 9rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.pricing-rack-scroller__item {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+  /* Opacity only — never translateY (fights tag sway rotateZ) */
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pricing-rack-scroller__item[data-active='false'] {
+  opacity: 0.72;
+}
+
+.pricing-rack-scroller__item[data-active='true'] {
+  opacity: 1;
+  z-index: 2;
+}
+
+/* Mid-fling: skip opacity transitions so Android doesn’t paint every tick */
+.pricing-rack-scroller[data-scrolling='true'] .pricing-rack-scroller__item {
+  transition: none;
+}
+
+.pricing-price-tag[data-spotlight='on'] .pricing-price-tag__face {
+  box-shadow:
+    0 10px 22px rgb(15 39 68 / 0.14),
+    0 0 0 1px color-mix(in srgb, var(--atelier-price) 28%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-rack-scroller__item {
+    transition: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .pricing-rack-scroller {
+    /* Premium one-tag settle on phones */
+    scroll-snap-type: x mandatory;
+    gap: 0.7rem;
+    min-height: 9.5rem;
+  }
+
+  .pricing-rack-scroller__item {
+    scroll-snap-stop: always;
+  }
+
+  /* Lighter crossfade on mobile — less compositor work mid-gesture */
+  .pricing-category-photo__layer--back[data-animating='true'],
+  .pricing-category-photo__layer--front[data-animating='true'] {
+    transition-duration: 280ms;
+  }
+}
+
+@media (min-width: 640px) {
+  .pricing-rack-scroller {
+    gap: 0.9rem;
+    padding: 0.4rem 0.5rem 1rem;
+    min-height: 9.75rem;
+  }
+}
+
+.pricing-rack-scroller::-webkit-scrollbar {
+  height: 4px;
+}
+
+.pricing-rack-scroller::-webkit-scrollbar-thumb {
+  background: var(--atelier-rail);
+  border-radius: 9999px;
+}
+
+/* ── Page-wide laundry motion shell (hero → CTA) ─────────────────────────── */
+
+.pricing-page {
+  --atelier-bg-top: #f4faff;
+  --atelier-bg-bottom: #e8f3fb;
+  --atelier-mist: rgb(255 255 255 / 0.55);
+  --atelier-mist-sky: rgb(186 220 242 / 0.35);
+  --atelier-rail: #8aa3b8;
+  --atelier-rail-deep: #6b8499;
+  --atelier-peg: #c5d4e0;
+  --atelier-peg-shine: #eef4f8;
+  --atelier-ink: #0f2744;
+  --atelier-muted: #5a6f84;
+  --atelier-price: #1a7ebf;
+  --atelier-string: #9aafc0;
+  --atelier-shadow: rgb(15 39 68 / 0.12);
+  --atelier-grain: rgb(15 39 68 / 0.035);
+  --atelier-wave: rgb(26 126 191 / 0.08);
+  --atelier-wave-deep: rgb(15 39 68 / 0.06);
+  --atelier-station: #ffffff;
+  --atelier-station-edge: #d5dee7;
+  --atelier-cta-top: #0f2744;
+  --atelier-cta-bottom: #1a4a6e;
+  --atelier-on-cta: #f4faff;
+  --atelier-on-cta-muted: rgb(244 250 255 / 0.78);
+
+  background: var(--atelier-bg-bottom);
+  color: var(--atelier-ink);
+  overflow-x: clip;
+}
+
+.dark .pricing-page {
+  --atelier-bg-top: #0c1522;
+  --atelier-bg-bottom: #111c2b;
+  --atelier-mist: rgb(40 70 100 / 0.25);
+  --atelier-mist-sky: rgb(60 110 150 / 0.2);
+  --atelier-rail: #5a7388;
+  --atelier-rail-deep: #3d5468;
+  --atelier-peg: #7a92a6;
+  --atelier-peg-shine: #a8bccb;
+  --atelier-ink: #e8eef5;
+  --atelier-muted: #9aafc0;
+  --atelier-price: #5eb3e8;
+  --atelier-string: #6b8499;
+  --atelier-shadow: rgb(0 0 0 / 0.35);
+  --atelier-grain: rgb(255 255 255 / 0.03);
+  --atelier-wave: rgb(94 179 232 / 0.1);
+  --atelier-wave-deep: rgb(94 179 232 / 0.06);
+  --atelier-station: #162333;
+  --atelier-station-edge: #2a3d52;
+  --atelier-cta-top: #081018;
+  --atelier-cta-bottom: #0f2744;
+  --atelier-on-cta: #e8eef5;
+  --atelier-on-cta-muted: rgb(232 238 245 / 0.75);
+}
+
+.pricing-page-section {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  overflow-y: hidden;
+}
+
+.pricing-page-section__content {
+  position: relative;
+  z-index: 1;
+}
+
+.pricing-page-section--hero {
+  /* Content-sized hero — no full-viewport min-height (avoids sparse empty bands) */
+  display: flex;
+  flex-direction: column;
+  /* Soft steam-sky wash — laundry atelier, not purple SaaS */
+  background:
+    radial-gradient(
+      ellipse 90% 55% at 12% 18%,
+      color-mix(in srgb, var(--atelier-mist-sky) 70%, transparent) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 70% 45% at 88% 8%,
+      color-mix(in srgb, #ffffff 55%, transparent) 0%,
+      transparent 52%
+    ),
+    linear-gradient(
+      168deg,
+      var(--atelier-bg-top) 0%,
+      var(--atelier-bg-bottom) 52%,
+      #d4e6f4 100%
+    );
+}
+
+.dark .pricing-page-section--hero {
+  background:
+    radial-gradient(
+      ellipse 85% 50% at 10% 20%,
+      color-mix(in srgb, var(--atelier-mist-sky) 55%, transparent) 0%,
+      transparent 55%
+    ),
+    linear-gradient(
+      168deg,
+      var(--atelier-bg-top) 0%,
+      var(--atelier-bg-bottom) 58%,
+      #0a121c 100%
+    );
+}
+
+/* Brand-forward hero type — logo leads; headline supports without overpowering */
+.pricing-hero__rail {
+  margin-inline: 0;
+  width: min(100%, 10.5rem);
+}
+
+.pricing-hero__title {
+  font-size: 1.4375rem; /* 23px */
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.22;
+}
+
+@media (min-width: 640px) {
+  .pricing-hero__title {
+    font-size: 1.8125rem; /* 29px */
+  }
+}
+
+@media (min-width: 1024px) {
+  .pricing-hero__title {
+    font-size: 2.1875rem; /* 35px — still below logo visual weight */
+  }
+}
+
+.pricing-hero__support {
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+@media (min-width: 640px) {
+  .pricing-hero__support {
+    font-size: 1.125rem;
+    line-height: 1.55;
+  }
+}
+
+/* Hero steam + fabric more present — laundry atelier atmosphere */
+.pricing-page-section--hero .pricing-page__steam {
+  opacity: 0.58;
+}
+
+.pricing-page-section--hero .pricing-page__steam--a {
+  width: min(22vw, 9rem);
+  height: min(62%, 22rem);
+  filter: blur(40px);
+}
+
+.pricing-page-section--hero .pricing-page__steam--b {
+  width: min(26vw, 11rem);
+  height: min(55%, 18rem);
+}
+
+.pricing-page-section--hero .pricing-page__wave {
+  opacity: 1;
+  /* Shorter fabric wash so the hero stays compact */
+  height: min(72%, 9.5rem);
+}
+
+.pricing-page-section--stations {
+  background: linear-gradient(
+    180deg,
+    var(--atelier-bg-bottom) 0%,
+    var(--atelier-bg-top) 48%,
+    var(--atelier-bg-bottom) 100%
+  );
+}
+
+/* Continuity: stations rail → price-guide peg rail (one atelier floor) */
+.pricing-stations__handoff {
+  margin-top: 0.85rem;
+  padding-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.pricing-stations__handoff-rail {
+  height: 2.5px;
+  width: min(100%, 36rem);
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--atelier-rail) 10%,
+    var(--atelier-peg-shine) 50%,
+    var(--atelier-rail-deep) 90%,
+    transparent 100%
+  );
+  opacity: 0.78;
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.35) inset;
+}
+
+.pricing-stations__handoff-drop {
+  width: 2px;
+  height: 1.35rem;
+  margin-top: -1px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    180deg,
+    var(--atelier-peg-shine) 0%,
+    var(--atelier-rail) 55%,
+    transparent 100%
+  );
+  opacity: 0.55;
+}
+
+.dark .pricing-stations__handoff-rail {
+  opacity: 0.62;
+}
+
+.dark .pricing-stations__handoff-drop {
+  opacity: 0.4;
+}
+
+/* Price guide blends up from stations (shared atelier wash — no hard gallery break) */
+.pricing-atelier--from-stations {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--atelier-bg-bottom) 85%, var(--atelier-bg-top)) 0%,
+    var(--atelier-bg-top) 8%,
+    var(--atelier-bg-bottom) 100%
+  );
+  border-top-color: transparent;
+}
+
+.pricing-page-section--note {
+  background: linear-gradient(
+    180deg,
+    var(--atelier-bg-top) 0%,
+    var(--atelier-bg-bottom) 100%
+  );
+}
+
+.pricing-page-section--cta {
+  background: linear-gradient(
+    160deg,
+    var(--atelier-cta-top) 0%,
+    var(--atelier-cta-bottom) 100%
+  );
+  color: var(--atelier-on-cta);
+}
+
+/* Soft fabric-wave SVG layer (CSS mask + animated translate) */
+.pricing-page__wave {
+  pointer-events: none;
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 0;
+  height: min(42%, 16rem);
+  width: 200%;
+  left: -25%;
+  opacity: 0.9;
+  background-repeat: no-repeat;
+  background-size: 50% 100%;
+  background-position: 0 100%, 50% 100%;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 160' preserveAspectRatio='none'%3E%3Cpath fill='%231a7ebf' fill-opacity='0.09' d='M0 80 Q100 40 200 80 T400 80 T600 80 T800 80 V160 H0 Z'/%3E%3Cpath fill='%230f2744' fill-opacity='0.05' d='M0 100 Q100 70 200 100 T400 100 T600 100 T800 100 V160 H0 Z'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 160' preserveAspectRatio='none'%3E%3Cpath fill='%231a7ebf' fill-opacity='0.07' d='M0 90 Q100 55 200 90 T400 90 T600 90 T800 90 V160 H0 Z'/%3E%3C/svg%3E");
+}
+
+.dark .pricing-page__wave {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 160' preserveAspectRatio='none'%3E%3Cpath fill='%235eb3e8' fill-opacity='0.12' d='M0 80 Q100 40 200 80 T400 80 T600 80 T800 80 V160 H0 Z'/%3E%3Cpath fill='%235eb3e8' fill-opacity='0.06' d='M0 100 Q100 70 200 100 T400 100 T600 100 T800 100 V160 H0 Z'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 160' preserveAspectRatio='none'%3E%3Cpath fill='%235eb3e8' fill-opacity='0.08' d='M0 90 Q100 55 200 90 T400 90 T600 90 T800 90 V160 H0 Z'/%3E%3C/svg%3E");
+}
+
+.pricing-page__wave--mid {
+  inset: 35% 0 auto;
+  height: min(28%, 10rem);
+  opacity: 0.55;
+}
+
+.pricing-page__wave--cta {
+  opacity: 0.35;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 160' preserveAspectRatio='none'%3E%3Cpath fill='%23ffffff' fill-opacity='0.08' d='M0 80 Q100 40 200 80 T400 80 T600 80 T800 80 V160 H0 Z'/%3E%3Cpath fill='%23ffffff' fill-opacity='0.04' d='M0 100 Q100 70 200 100 T400 100 T600 100 T800 100 V160 H0 Z'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 160' preserveAspectRatio='none'%3E%3Cpath fill='%23ffffff' fill-opacity='0.05' d='M0 90 Q100 55 200 90 T400 90 T600 90 T800 90 V160 H0 Z'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pricing-page[data-wave='on']
+    .pricing-page-section[data-atmosphere='on']
+    .pricing-page__wave {
+    animation: pricing-fabric-wave 18s ease-in-out infinite;
+  }
+
+  .pricing-page[data-wave='on']
+    .pricing-page-section[data-atmosphere='on']
+    .pricing-page__wave--mid {
+    animation-duration: 22s;
+    animation-direction: reverse;
+  }
+}
+
+@keyframes pricing-fabric-wave {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(4%, -1.5%, 0);
+  }
+}
+
+/* Steam columns — soft rise (transform + opacity only) */
+.pricing-page__steam {
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+  width: min(18vw, 7rem);
+  height: min(55%, 18rem);
+  border-radius: 9999px;
+  filter: blur(36px);
+  background: var(--atelier-mist);
+  opacity: 0.35;
+}
+
+.pricing-page__steam--a {
+  left: 8%;
+  bottom: 5%;
+  background: var(--atelier-mist);
+}
+
+.pricing-page__steam--b {
+  right: 12%;
+  bottom: 10%;
+  width: min(22vw, 9rem);
+  height: min(48%, 15rem);
+  background: var(--atelier-mist-sky);
+}
+
+.pricing-page__steam--c {
+  left: 42%;
+  bottom: -5%;
+  width: min(16vw, 6rem);
+  height: min(40%, 12rem);
+  background: var(--atelier-mist);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pricing-page[data-steam='on']
+    .pricing-page-section[data-atmosphere='on']
+    .pricing-page__steam--a {
+    animation: pricing-steam-rise 11s ease-in-out infinite;
+  }
+
+  .pricing-page[data-steam='on']
+    .pricing-page-section[data-atmosphere='on']
+    .pricing-page__steam--b {
+    animation: pricing-steam-rise 13s ease-in-out infinite 1.2s reverse;
+  }
+
+  .pricing-page[data-steam='on']
+    .pricing-page-section[data-atmosphere='on']
+    .pricing-page__steam--c {
+    animation: pricing-steam-rise 10s ease-in-out infinite 2s;
+  }
+}
+
+@keyframes pricing-steam-rise {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: translate3d(0, 8%, 0);
+  }
+  50% {
+    opacity: 0.55;
+    transform: translate3d(2%, -12%, 0);
+  }
+}
+
+/* Hanging rail accent under section headers */
+.pricing-page__rail-line {
+  position: relative;
+  height: 0.28rem;
+  width: min(100%, 12rem);
+  margin-inline: auto;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--atelier-rail) 20%,
+    var(--atelier-peg-shine) 50%,
+    var(--atelier-rail-deep) 80%,
+    transparent 100%
+  );
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.35) inset;
+}
+
+.pricing-page-section--cta .pricing-page__rail-line {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.25) 20%,
+    rgb(255 255 255 / 0.55) 50%,
+    rgb(255 255 255 / 0.25) 80%,
+    transparent 100%
+  );
+  box-shadow: none;
+}
+
+/* Stations: sequential pegs on a hanging rail */
+.pricing-stations {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pricing-stations__rail {
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+  border-radius: 9999px;
+  background: linear-gradient(
+    180deg,
+    var(--atelier-peg-shine) 0%,
+    var(--atelier-rail) 45%,
+    var(--atelier-rail-deep) 100%
+  );
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.3) inset,
+    0 2px 6px var(--atelier-shadow);
+}
+
+/* Mobile: vertical rail */
+.pricing-stations__rail--vertical {
+  left: 1.15rem;
+  top: 0.75rem;
+  bottom: 0.75rem;
+  width: 0.28rem;
+}
+
+@media (min-width: 768px) {
+  .pricing-stations__rail--vertical {
+    display: none;
+  }
+
+  .pricing-stations__rail--horizontal {
+    display: block;
+    left: 4%;
+    right: 4%;
+    top: 1.35rem;
+    height: 0.28rem;
+  }
+}
+
+.pricing-stations__rail--horizontal {
+  display: none;
+}
+
+.pricing-stations__list {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .pricing-stations__list {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0;
+  }
+}
+
+.pricing-station {
+  position: relative;
+  padding: 0.4rem 0 1rem;
+}
+
+.pricing-station:last-child {
+  padding-bottom: 0.35rem;
+}
+
+@media (min-width: 768px) {
+  .pricing-station {
+    flex: 1;
+    min-width: 0;
+    padding: 0 0.5rem;
+  }
+}
+
+.pricing-station__peg {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid var(--atelier-station-edge);
+  background: var(--atelier-station);
+  color: var(--atelier-price);
+  box-shadow:
+    0 4px 10px var(--atelier-shadow),
+    0 1px 0 rgb(255 255 255 / 0.45) inset;
+}
+
+.pricing-station__body {
+  min-width: 0;
+  flex: 1;
+  padding-top: 0.2rem;
+}
+
+@media (min-width: 768px) {
+  .pricing-station__body {
+    padding-top: 0;
+  }
+}
+
+.pricing-station__label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--atelier-price);
+}
+
+.pricing-station__title {
+  margin-top: 0.28rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.28;
+  color: var(--atelier-ink);
+}
+
+.pricing-station__desc {
+  margin-top: 0.3rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--atelier-muted);
+}

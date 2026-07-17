@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { MessageCircle, Phone } from 'lucide-react';
 
 import {
@@ -18,29 +18,60 @@ type FloatingContactActionsProps = {
 
 const WHATSAPP_MESSAGE = 'Hi WashHouse — I have a question.';
 
+/** Hide FABs when these regions would sit under the floating stack. */
 const BOTTOM_CTA_SELECTOR = '[data-marketing-bottom-cta]';
+const FOOTER_SOCIAL_SELECTOR = '[data-marketing-footer-social]';
 
-function useBottomCtaOverlap() {
+function useFabOverlap() {
   const [obscured, setObscured] = useState(false);
 
   useEffect(() => {
-    const targets = Array.from(document.querySelectorAll(BOTTOM_CTA_SELECTOR));
-    if (targets.length === 0) return;
+    const bottomCtas = Array.from(document.querySelectorAll(BOTTOM_CTA_SELECTOR));
+    const footerSocial = Array.from(document.querySelectorAll(FOOTER_SOCIAL_SELECTOR));
+    if (bottomCtas.length === 0 && footerSocial.length === 0) return;
 
-    let observer: IntersectionObserver | undefined;
+    const visible = new Set<Element>();
+    const sync = () => setObscured(visible.size > 0);
+
+    const onEntries = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && entry.intersectionRatio > 0.05) {
+          visible.add(entry.target);
+        } else {
+          visible.delete(entry.target);
+        }
+      });
+      sync();
+    };
+
+    let ctaObserver: IntersectionObserver | undefined;
+    let footerObserver: IntersectionObserver | undefined;
+
     try {
-      observer = new IntersectionObserver(
-        (entries) => {
-          setObscured(entries.some((entry) => entry.isIntersecting && entry.intersectionRatio > 0.05));
-        },
-        { threshold: [0, 0.05, 0.15], rootMargin: '0px 0px -80px 0px' },
-      );
-      targets.forEach((target) => observer!.observe(target));
+      if (bottomCtas.length > 0) {
+        ctaObserver = new IntersectionObserver(onEntries, {
+          threshold: [0, 0.05, 0.15],
+          rootMargin: '0px 0px -80px 0px',
+        });
+        bottomCtas.forEach((target) => ctaObserver!.observe(target));
+      }
+
+      if (footerSocial.length > 0) {
+        // Expand downward so FABs yield as social enters the sticky/FAB zone
+        footerObserver = new IntersectionObserver(onEntries, {
+          threshold: [0, 0.05, 0.15],
+          rootMargin: '0px 0px 140px 0px',
+        });
+        footerSocial.forEach((target) => footerObserver!.observe(target));
+      }
     } catch {
       return;
     }
 
-    return () => observer?.disconnect();
+    return () => {
+      ctaObserver?.disconnect();
+      footerObserver?.disconnect();
+    };
   }, []);
 
   return obscured;
@@ -51,7 +82,7 @@ type ContactActionButtonProps = {
   label: string;
   external?: boolean;
   size: 'fab' | 'inline';
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 };
 
@@ -133,7 +164,7 @@ function FloatingContactActionsInline({ className }: { className?: string }) {
 }
 
 function FloatingContactActionsFab({ className }: { className?: string }) {
-  const obscured = useBottomCtaOverlap();
+  const obscured = useFabOverlap();
 
   return (
     <div

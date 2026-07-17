@@ -12,7 +12,8 @@ erDiagram
   USERS ||--o{ REFRESH_TOKENS : owns
 
   LAUNDRIES ||--o{ LAUNDRY_SERVICES : offers
-  LAUNDRY_SERVICES ||--o{ LAUNDRY_PRICING : priced
+  LAUNDRIES ||--o{ LAUNDRY_ITEM_PRICES : sets
+  PLATFORM_CATALOG_ITEMS ||--o{ LAUNDRY_ITEM_PRICES : priced_as
   LAUNDRIES ||--o{ ORDERS : fulfills
   LAUNDRIES ||--o{ REVIEWS : receives
 
@@ -41,6 +42,34 @@ erDiagram
     int rating_count
     bool is_approved
     timestamptz created_at
+  }
+
+  PLATFORM_CATALOG_ITEMS {
+    UUID id PK
+    string slug UK
+    string name
+    enum category
+    enum unit
+    numeric suggested_dry_clean_inr
+    numeric suggested_press_inr
+    numeric suggested_price_inr
+    string currency
+    int sort_order
+    bool is_active
+    timestamptz deleted_at
+  }
+
+  LAUNDRY_ITEM_PRICES {
+    UUID id PK
+    UUID laundry_id FK
+    UUID catalog_item_id FK
+    numeric dry_clean_inr
+    numeric press_inr
+    numeric price_inr
+    string currency
+    bool is_offered
+    int sort_order
+    timestamptz deleted_at
   }
 
   ORDERS {

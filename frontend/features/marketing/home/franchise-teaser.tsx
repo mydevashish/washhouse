@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { GlassSurface } from '@/components/ui/glass-surface';
 import { HERO_SLIDE_IMAGES } from '@/features/discover/marketplace/laundry-images';
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
+import { CONTACT_FRANCHISE_BROCHURE_HREF } from '@/features/marketing/contact/contact-constants';
 import {
   GLASS_ON_DARK_GRADIENT,
   MARKETING_CONTAINER,
@@ -53,7 +54,7 @@ export function FranchiseTeaser() {
         aria-hidden
       />
 
-      <div className={MARKETING_CONTAINER}>
+      <div className={cn('relative', MARKETING_CONTAINER)}>
         <FadeIn>
           <FadeInItem>
             <GlassSurface
@@ -113,7 +114,7 @@ export function FranchiseTeaser() {
                     'hover:bg-white/15 hover:text-on-hero active:scale-[0.98] md:backdrop-blur-sm',
                   )}
                 >
-                  <Link href="/contact?subject=franchise">
+                  <Link href={CONTACT_FRANCHISE_BROCHURE_HREF}>
                     <Mail className="h-4 w-4" aria-hidden />
                     Request brochure
                   </Link>

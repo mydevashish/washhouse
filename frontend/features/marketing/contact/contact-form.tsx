@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -12,10 +12,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { CONTACT_SUBJECTS } from '@/features/marketing/contact/contact-constants';
+import {
+  CONTACT_FORM_ANCHOR,
+  CONTACT_SUBJECTS,
+} from '@/features/marketing/contact/contact-constants';
 import { useSubmitContact } from '@/features/marketing/hooks/use-marketing';
+import { getMarketingSubmitErrorMessage } from '@/features/marketing/lib/marketing-form-errors';
 import { applyApiFieldErrors } from '@/lib/api-field-errors';
-import { getApiErrorMessage } from '@/lib/api-error-message';
 import { cn } from '@/lib/utils';
 
 const contactSubjectValues = CONTACT_SUBJECTS.map((s) => s.value) as [
@@ -96,10 +99,12 @@ function FormField({ id, label, error, required, children, hint }: FieldProps) {
 
 /**
  * Public marketing contact form — POST /marketing/contact.
+ * `defaultSubject` comes from `/contact?subject=…` (e.g. franchise brochure CTAs).
  */
 export function ContactForm({ defaultSubject }: { defaultSubject?: ContactFormValues['subject'] }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const submitContact = useSubmitContact();
+  const resolvedSubject = defaultSubject ?? 'general';
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -107,15 +112,21 @@ export function ContactForm({ defaultSubject }: { defaultSubject?: ContactFormVa
       name: '',
       phone: '',
       email: '',
-      subject: defaultSubject ?? 'general',
+      subject: resolvedSubject,
       message: '',
     },
     mode: 'onBlur',
   });
 
   const { errors, isSubmitting } = form.formState;
+  const { setValue } = form;
   const errorCount = Object.keys(errors).length;
   const isPending = isSubmitting || submitContact.isPending;
+
+  // Soft-nav can reuse this client tree; keep subject in sync with the URL prop.
+  useEffect(() => {
+    setValue('subject', resolvedSubject, { shouldDirty: false, shouldValidate: false });
+  }, [setValue, resolvedSubject]);
 
   const onSubmit = async (values: ContactFormValues) => {
     setSubmitError(null);
@@ -132,12 +143,15 @@ export function ContactForm({ defaultSubject }: { defaultSubject?: ContactFormVa
         name: '',
         phone: '',
         email: '',
-        subject: defaultSubject ?? 'general',
+        subject: resolvedSubject,
         message: '',
       });
     } catch (error) {
       const hasFieldErrors = applyApiFieldErrors(error, form.setError);
-      const message = getApiErrorMessage(error, 'Could not send your message. Try again or email us directly.');
+      const message = getMarketingSubmitErrorMessage(
+        error,
+        'Could not send your message. Try again or email us directly.',
+      );
       setSubmitError(
         hasFieldErrors
           ? 'Please fix the highlighted fields and try again.'
@@ -155,7 +169,8 @@ export function ContactForm({ defaultSubject }: { defaultSubject?: ContactFormVa
 
   return (
     <form
-      className="space-y-5"
+      id={CONTACT_FORM_ANCHOR}
+      className="scroll-mt-20 space-y-5"
       onSubmit={form.handleSubmit(onSubmit, onInvalid)}
       noValidate
       aria-labelledby="contact-form-title"

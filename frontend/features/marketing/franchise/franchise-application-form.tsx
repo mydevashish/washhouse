@@ -13,8 +13,8 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useSubmitFranchiseInquiry } from '@/features/marketing/hooks/use-marketing';
+import { getMarketingSubmitErrorMessage } from '@/features/marketing/lib/marketing-form-errors';
 import { applyApiFieldErrors } from '@/lib/api-field-errors';
-import { getApiErrorMessage } from '@/lib/api-error-message';
 import { cn } from '@/lib/utils';
 
 export const FRANCHISE_INVESTMENT_RANGES = [
@@ -144,7 +144,7 @@ export function FranchiseApplicationForm() {
       });
     } catch (error) {
       const hasFieldErrors = applyApiFieldErrors(error, form.setError);
-      const message = getApiErrorMessage(
+      const message = getMarketingSubmitErrorMessage(
         error,
         'Could not submit your application. Try again or email us directly.',
       );
