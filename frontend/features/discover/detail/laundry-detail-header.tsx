@@ -13,7 +13,7 @@ import type { LaundryMeta } from '@/features/discover/lib/laundry-meta';
 type LaundryDetailHeaderProps = {
   laundry: LaundryDetail;
   coverImage: string;
-  meta: LaundryMeta;
+  meta: Pick<LaundryMeta, 'distanceKm' | 'deliveryHours'>;
   startPrice: number;
 };
 
