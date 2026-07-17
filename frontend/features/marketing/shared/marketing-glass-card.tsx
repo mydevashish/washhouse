@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { GlassSurface } from '@/components/ui/glass-surface';
@@ -10,11 +10,14 @@ import { usePrefersReducedMotion } from '@/lib/hooks/use-prefers-reduced-motion'
 import { cn } from '@/lib/utils';
 
 export type MarketingGlassCardCta = {
-  href: string;
   label: string;
   className?: string;
   /** Use `success` for WhatsApp / positive outbound actions */
   tone?: 'brand' | 'success';
+  /** Navigate — omit when using `onClick` (e.g. Book Now dialog). */
+  href?: string;
+  /** Button action — preferred for Book Now (opens shared dialog). */
+  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
 };
 
 export type MarketingGlassCardProps = {
@@ -93,17 +96,32 @@ export function MarketingGlassCard({
         {children}
 
         {cta ? (
-          <Button
-            asChild
-            size="default"
-            className={cn(
-              'mt-5 h-11 min-h-11 w-full rounded-full',
-              cta.tone === 'success' && ctaToneClass.success,
-              cta.className,
-            )}
-          >
-            <Link href={cta.href}>{cta.label}</Link>
-          </Button>
+          cta.onClick ? (
+            <Button
+              type="button"
+              size="default"
+              className={cn(
+                'mt-5 h-11 min-h-11 w-full rounded-full',
+                cta.tone === 'success' && ctaToneClass.success,
+                cta.className,
+              )}
+              onClick={cta.onClick}
+            >
+              {cta.label}
+            </Button>
+          ) : cta.href ? (
+            <Button
+              asChild
+              size="default"
+              className={cn(
+                'mt-5 h-11 min-h-11 w-full rounded-full',
+                cta.tone === 'success' && ctaToneClass.success,
+                cta.className,
+              )}
+            >
+              <Link href={cta.href}>{cta.label}</Link>
+            </Button>
+          ) : null
         ) : null}
       </GlassSurface>
     </article>

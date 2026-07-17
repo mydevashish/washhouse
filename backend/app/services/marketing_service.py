@@ -7,7 +7,8 @@ from datetime import UTC, datetime, timedelta
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import RateLimitError
+from app.core.config import settings
+from app.core.exceptions import EmailDeliveryError, EmailNotConfiguredError, RateLimitError
 from app.models.marketing import MarketingContactSubmission, MarketingFranchiseInquiry
 from app.repositories.marketing_repository import MarketingRepository
 from app.schemas.marketing import (
@@ -17,6 +18,7 @@ from app.schemas.marketing import (
     MarketingSubmissionResponse,
     MarketingTestimonialResponse,
 )
+from app.services.email_service import EmailService
 
 log = structlog.get_logger(__name__)
 
@@ -28,9 +30,10 @@ FRANCHISE_WINDOW = timedelta(hours=1)
 
 
 class MarketingService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession, email: EmailService | None = None) -> None:
         self._session = session
         self._repo = MarketingRepository(session)
+        self._email = email or EmailService()
 
     async def submit_contact(
         self,
@@ -50,6 +53,7 @@ class MarketingService:
         )
         saved = await self._repo.save_contact(row)
         log.info("marketing.contact_submitted", submission_id=str(saved.id))
+        await self._notify_support_contact(saved)
         return MarketingSubmissionResponse(id=saved.id)
 
     async def submit_franchise_inquiry(
@@ -75,6 +79,7 @@ class MarketingService:
         )
         saved = await self._repo.save_franchise_inquiry(row)
         log.info("marketing.franchise_inquiry_submitted", inquiry_id=str(saved.id))
+        await self._notify_support_franchise(saved)
         return MarketingSubmissionResponse(id=saved.id)
 
     async def get_public_stats(self) -> MarketingPublicStatsResponse:
@@ -122,3 +127,75 @@ class MarketingService:
             ip_count = await self._repo.count_recent_contact_by_ip(client_ip, since)
             if ip_count >= CONTACT_IP_LIMIT:
                 raise RateLimitError("Too many contact requests from this network. Please try again later.")
+
+    async def _notify_support_contact(self, row: MarketingContactSubmission) -> None:
+        subject = f"[WashHouse Contact] {row.subject.value}: {row.name}"
+        text = (
+            f"New contact form submission\n"
+            f"---------------------------\n"
+            f"ID: {row.id}\n"
+            f"Name: {row.name}\n"
+            f"Phone: {row.phone}\n"
+            f"Email: {row.email or '(none)'}\n"
+            f"Subject: {row.subject.value}\n"
+            f"\n{row.message}\n"
+        )
+        await self._send_support_notification(
+            event="marketing.contact_email",
+            subject=subject,
+            text=text,
+            reply_to=row.email,
+            entity_id=str(row.id),
+        )
+
+    async def _notify_support_franchise(self, row: MarketingFranchiseInquiry) -> None:
+        subject = f"[WashHouse Franchise] {row.city}: {row.name}"
+        text = (
+            f"New franchise inquiry\n"
+            f"---------------------\n"
+            f"ID: {row.id}\n"
+            f"Name: {row.name}\n"
+            f"Phone: {row.phone}\n"
+            f"Email: {row.email}\n"
+            f"City: {row.city}\n"
+            f"Investment: {row.investment_range.value}\n"
+            f"\n{row.message}\n"
+        )
+        await self._send_support_notification(
+            event="marketing.franchise_email",
+            subject=subject,
+            text=text,
+            reply_to=row.email,
+            entity_id=str(row.id),
+        )
+
+    async def _send_support_notification(
+        self,
+        *,
+        event: str,
+        subject: str,
+        text: str,
+        reply_to: str | None,
+        entity_id: str,
+    ) -> None:
+        """Best-effort support email after DB persist. Never raises — lead stays saved."""
+        try:
+            await self._email.send(
+                to=settings.support_inbox,
+                subject=subject,
+                text=text,
+                reply_to=reply_to,
+            )
+            log.info(f"{event}.ok", entity_id=entity_id)
+        except EmailNotConfiguredError:
+            log.warning(
+                f"{event}.skipped_not_configured",
+                entity_id=entity_id,
+                hint="Set SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, SMTP_FROM_EMAIL",
+            )
+        except EmailDeliveryError as exc:
+            log.error(
+                f"{event}.failed",
+                entity_id=entity_id,
+                error=exc.message,
+            )

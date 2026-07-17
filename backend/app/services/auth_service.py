@@ -8,9 +8,13 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import structlog
+
 from app.core.config import settings
 from app.core.exceptions import (
     EmailAlreadyRegisteredError,
+    EmailDeliveryError,
+    EmailNotConfiguredError,
     InvalidCredentialsError,
     TokenReuseError,
     ValidationError,
@@ -38,16 +42,20 @@ from app.schemas.auth import (
     RegisterRequest,
     TokenPairResponse,
 )
+from app.services.email_service import EmailService
 from app.services.notifications.sms import send_sms
 from app.services.notifications.whatsapp import get_whatsapp_provider
 from app.schemas.user import UserResponse
 
+log = structlog.get_logger(__name__)
+
 
 class AuthService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession, email: EmailService | None = None) -> None:
         self._session = session
         self._users = UserRepository(session)
         self._refresh = RefreshTokenRepository(session)
+        self._email = email or EmailService()
         self._otp = OtpRepository(session)
         self._audit = AuditRepository(session)
 
@@ -137,6 +145,10 @@ class AuthService:
         return None
 
     async def forgot_password(self, payload: PasswordForgotRequest) -> str | None:
+        # Fail fast with a clear 503 when mail is required (non-debug) and SMTP unset.
+        if not self._email.is_configured and not settings.OTP_DEBUG:
+            raise EmailNotConfiguredError()
+
         user = await self._users.get_by_email(payload.email)
         if not user:
             return None
@@ -150,6 +162,29 @@ class AuthService:
             expires_at=expires,
             user_id=user.id,
         )
+
+        if self._email.is_configured:
+            try:
+                await self._email.send(
+                    to=str(user.email),
+                    subject="WashHouse password reset code",
+                    text=(
+                        f"Your password reset code is {code}.\n"
+                        f"It expires in 15 minutes.\n\n"
+                        f"If you did not request this, ignore this email.\n"
+                    ),
+                )
+                log.info("auth.password_reset_email.ok")
+            except EmailDeliveryError as exc:
+                log.error("auth.password_reset_email.failed", error=exc.message)
+                if not settings.OTP_DEBUG:
+                    raise
+        else:
+            log.warning(
+                "auth.password_reset_email.skipped_not_configured",
+                hint="OTP_DEBUG enabled — code returned in API response only",
+            )
+
         if settings.OTP_DEBUG:
             return code
         return None

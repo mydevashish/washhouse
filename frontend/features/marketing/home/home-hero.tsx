@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { BookNowCta } from '@/features/marketing/book-now';
 import { HeroStaticFallback } from '@/features/marketing/home/hero-static-fallback';
-import { MARKETING_BOOK_NOW_HREF } from '@/lib/navigation/marketing-nav';
 
 const HeroCarousel = dynamic(
   () =>
@@ -38,16 +38,13 @@ export function MarketingHomeHero() {
             className="mx-auto mt-4 flex max-w-lg flex-col gap-3 sm:hidden"
             data-marketing-sticky-cta
           >
-            <Button
-              asChild
+            <BookNowCta
               size="lg"
               className="h-11 w-full rounded-full shadow-pop active:scale-[0.98]"
             >
-              <Link href={MARKETING_BOOK_NOW_HREF}>
-                Book pickup
-                <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
-            </Button>
+              Book pickup
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </BookNowCta>
             <Button
               asChild
               size="lg"

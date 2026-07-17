@@ -99,7 +99,7 @@ function FormField({ id, label, error, required, children, hint }: FieldProps) {
 
 /**
  * Public marketing contact form — POST /marketing/contact.
- * `defaultSubject` comes from `/contact?subject=…` (e.g. franchise brochure CTAs).
+ * `defaultSubject` comes from `/contact?subject=…` deep links.
  */
 export function ContactForm({ defaultSubject }: { defaultSubject?: ContactFormValues['subject'] }) {
   const [submitError, setSubmitError] = useState<string | null>(null);

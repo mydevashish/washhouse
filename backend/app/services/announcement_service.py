@@ -20,6 +20,7 @@ from app.models.notification import Notification
 from app.repositories.announcement import AnnouncementRepository
 from app.repositories.audit import AuditRepository
 from app.repositories.user import UserRepository
+from app.services.email_service import EmailService
 from app.services.notifications.dispatch import is_channel_enabled
 
 log = structlog.get_logger(__name__)
@@ -75,7 +76,16 @@ class AnnouncementService:
     async def _dispatch_channels(self, announcement: Announcement) -> None:
         user_ids = await self._repo.resolve_targeted_user_ids(announcement)
         if announcement.channel_email and await is_channel_enabled(self._session, "email"):
-            log.info("announcement.email_dispatch", announcement_id=str(announcement.id), recipients=len(user_ids))
+            # Bulk announcement email needs per-user addresses + templates (Phase 5+).
+            # Log clearly so ops do not confuse this with SMTP contact/franchise mail.
+            email = EmailService()
+            log.info(
+                "announcement.email_dispatch",
+                announcement_id=str(announcement.id),
+                recipients=len(user_ids),
+                smtp_configured=email.is_configured,
+                status="stub_pending_bulk_sender",
+            )
         if announcement.channel_push and await is_channel_enabled(self._session, "push"):
             log.info("announcement.push_dispatch", announcement_id=str(announcement.id), recipients=len(user_ids))
         if announcement.channel_in_app and await is_channel_enabled(self._session, "in_app"):

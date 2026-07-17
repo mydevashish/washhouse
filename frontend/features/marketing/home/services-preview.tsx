@@ -5,17 +5,16 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
+import { BookNowLink } from '@/features/marketing/book-now';
+import type { BookNowServiceId } from '@/features/marketing/book-now';
 import {
   SERVICE_PREVIEW_ITEMS,
   type ServicePreviewItem,
 } from '@/features/marketing/home/services-data';
 import { MarketingGlassCard } from '@/features/marketing/shared/marketing-glass-card';
 import { MarketingSection } from '@/features/marketing/shared/marketing-section';
-import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
-import { MARKETING_BOOK_NOW_HREF } from '@/lib/navigation/marketing-nav';
+import { HORIZONTAL_SCROLL_NATIVE_CLASS } from '@/lib/horizontal-scroll-touch';
 import { cn } from '@/lib/utils';
-
-const BOOK_NOW_HREF = MARKETING_BOOK_NOW_HREF;
 
 type ServicePreviewCardProps = {
   item: ServicePreviewItem;
@@ -28,7 +27,8 @@ function ServicePreviewCard({
   enableHoverLift = false,
   solidOnMobile = true,
 }: ServicePreviewCardProps) {
-  const { title, description, image, imageAlt } = item;
+  const { id, title, description, image, imageAlt } = item;
+  const isMoreServices = id === 'more-services';
 
   return (
     <MarketingGlassCard
@@ -52,13 +52,23 @@ function ServicePreviewCard({
           {description}
         </p>
 
-        <Link
-          href={BOOK_NOW_HREF}
-          className="mt-4 inline-flex min-h-11 items-center gap-1.5 py-2 text-sm font-semibold text-brand-500 transition-colors hover:text-brand-600"
-        >
-          Book Now
-          <ArrowRight className="h-4 w-4" aria-hidden />
-        </Link>
+        {isMoreServices ? (
+          <Link
+            href="/services"
+            className="mt-4 inline-flex min-h-11 items-center gap-1.5 py-2 text-sm font-semibold text-brand-500 transition-colors hover:text-brand-600"
+          >
+            View services
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </Link>
+        ) : (
+          <BookNowLink
+            service={id as BookNowServiceId}
+            className="mt-4 inline-flex min-h-11 items-center gap-1.5 py-2 text-sm font-semibold text-brand-500 transition-colors hover:text-brand-600"
+          >
+            Book Now
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </BookNowLink>
+        )}
       </div>
     </MarketingGlassCard>
   );
@@ -88,13 +98,13 @@ export function ServicesPreview() {
         <div
           className={cn(
             'md:hidden -mx-4 min-w-0 w-full max-w-none overflow-x-auto overscroll-x-contain px-4 pb-2 scrollbar-none snap-x snap-mandatory',
-            HORIZONTAL_SCROLL_TOUCH_CLASS,
+            HORIZONTAL_SCROLL_NATIVE_CLASS,
           )}
           aria-label="Browse our laundry services — swipe horizontally to see more"
           role="region"
           tabIndex={0}
         >
-          <ul className={cn('flex gap-4', HORIZONTAL_SCROLL_TOUCH_CLASS)}>
+          <ul className="flex gap-4">
             {SERVICE_PREVIEW_ITEMS.map((item) => (
               <li key={item.id} className="w-[83.333%] max-w-sm shrink-0 snap-start">
                 <ServicePreviewCard item={item} />

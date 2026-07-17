@@ -6,7 +6,7 @@
 ## Channels
 
 - In-app (`notifications` table)
-- Email (Resend)
+- Email (`EmailService` / SMTP — see `docs/runbooks/email-smtp.md`; Resend optional future)
 - SMS (Twilio fallback)
 
 ## Events
@@ -15,6 +15,8 @@
 - Partner approval
 - Payment success/failure
 - Subscription renewal
+- Marketing contact / franchise → support inbox (wired)
+- Password reset OTP (wired when SMTP configured)
 
 ## Celery tasks
 

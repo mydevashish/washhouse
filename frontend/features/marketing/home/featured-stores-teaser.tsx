@@ -8,7 +8,8 @@ import { SectionHeader } from '@/components/marketplace/section-header';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
-import { PartnerCard } from '@/features/discover/marketplace/partner-card';
+import { StoresCard } from '@/features/marketing/stores/stores-card';
+import { StoresCardSkeleton } from '@/features/marketing/stores/stores-card-skeleton';
 import {
   MARKETING_CONTAINER,
   MARKETING_SECTION_PY,
@@ -40,30 +41,17 @@ export function FeaturedStoresTeaser() {
             <SectionHeader
               eyebrow="Stores"
               title="Premium laundries near you"
-              description="Every partner is verified before going live. Compare ratings, pricing, and book pickup in minutes."
+              description="Every partner is verified before going live. Find a store by neighbourhood and book pickup in minutes."
               align="center"
               className="mb-10"
             />
           </FadeInItem>
 
           {isLoading && (
-            <div
-              className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-              role="status"
-              aria-busy="true"
-            >
+            <div className="mx-auto max-w-3xl space-y-3" role="status" aria-busy="true">
               <span className="sr-only">Loading featured stores</span>
               {Array.from({ length: PREVIEW_COUNT }).map((_, i) => (
-                <div
-                  key={i}
-                  className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft"
-                >
-                  <div className="aspect-[16/10] animate-pulse bg-muted" />
-                  <div className="space-y-3 p-6">
-                    <div className="h-5 w-2/3 animate-pulse rounded bg-muted" />
-                    <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
-                  </div>
-                </div>
+                <StoresCardSkeleton key={i} />
               ))}
             </div>
           )}
@@ -90,13 +78,15 @@ export function FeaturedStoresTeaser() {
           )}
 
           {preview.length > 0 && (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {preview.map((laundry, index) => (
-                <FadeInItem key={laundry.id}>
-                  <PartnerCard laundry={laundry} index={index} />
-                </FadeInItem>
+            <ul className="mx-auto max-w-3xl space-y-3">
+              {preview.map((laundry) => (
+                <li key={laundry.id}>
+                  <FadeInItem>
+                    <StoresCard laundry={laundry} />
+                  </FadeInItem>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
 
           <FadeInItem>

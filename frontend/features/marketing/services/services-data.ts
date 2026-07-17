@@ -122,12 +122,12 @@ export const SERVICES_FAQ: ServicesFaqItem[] = [
     id: 'pricing-final',
     question: 'Why does my final bill differ from the "starting from" price?',
     answer:
-      'Prices on this page are indicative ranges across India. Each laundry sets their own rates based on fabric, weight, and service level. Always check the store\'s detail page for exact pricing before you book.',
+      'Starting-from prices on this page are indicative by category. Final bills can vary with fabric, weight, and add-ons — you see the full breakdown before you pay.',
   },
   {
     id: 'express-availability',
     question: 'Is express service available everywhere?',
     answer:
-      'Express and same-day turnaround depend on the partner\'s capacity and your location. Filter or look for express badges on laundry listings in Stores — not every store offers it every day.',
+      'Express and same-day turnaround depend on partner capacity and your location. Ask when you book — availability can vary by day.',
   },
 ];

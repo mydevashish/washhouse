@@ -3,7 +3,7 @@
 import {
   ArrowRight,
   BadgeCheck,
-  Mail,
+  FileDown,
   GraduationCap,
   Headphones,
   IndianRupee,
@@ -17,7 +17,10 @@ import { Button } from '@/components/ui/button';
 import { GlassSurface } from '@/components/ui/glass-surface';
 import { HERO_SLIDE_IMAGES } from '@/features/discover/marketplace/laundry-images';
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
-import { CONTACT_FRANCHISE_BROCHURE_HREF } from '@/features/marketing/contact/contact-constants';
+import {
+  FRANCHISE_BROCHURE_PDF_FILENAME,
+  FRANCHISE_BROCHURE_PDF_HREF,
+} from '@/features/marketing/franchise/franchise-constants';
 import {
   GLASS_ON_DARK_GRADIENT,
   MARKETING_CONTAINER,
@@ -114,10 +117,13 @@ export function FranchiseTeaser() {
                     'hover:bg-white/15 hover:text-on-hero active:scale-[0.98] md:backdrop-blur-sm',
                   )}
                 >
-                  <Link href={CONTACT_FRANCHISE_BROCHURE_HREF}>
-                    <Mail className="h-4 w-4" aria-hidden />
+                  <a
+                    href={FRANCHISE_BROCHURE_PDF_HREF}
+                    download={FRANCHISE_BROCHURE_PDF_FILENAME}
+                  >
+                    <FileDown className="h-4 w-4" aria-hidden />
                     Request brochure
-                  </Link>
+                  </a>
                 </Button>
               </div>
             </GlassSurface>

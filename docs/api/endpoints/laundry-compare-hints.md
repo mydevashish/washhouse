@@ -22,7 +22,8 @@ Rules:
 
 ## Frontend
 
-- `/stores` + discover cards: `frontend/features/discover/lib/compare-price-lines.ts`
-- Filter/sort: `startPrice` from `start_price_inr` in `filter-laundries.ts`
+- Discover cards (`/discover`): `frontend/features/discover/lib/compare-price-lines.ts`
+- Marketing `/stores` uses slim `StoresCard` (name + city) and does **not** render compare hints
+- Filter/sort on discover: `startPrice` from `start_price_inr` in `filter-laundries.ts`
 
 See [partner-price-list.md](../../features/partner-price-list.md) Slice 5.

@@ -17,7 +17,7 @@ export const MARKETING_TESTIMONIALS_FALLBACK: MarketingTestimonial[] = [
     name: 'Rahul Menon',
     location: 'Indiranagar, Bengaluru',
     rating: 5,
-    text: 'Love that I compare stores first. Found a partner with great ratings and transparent pricing.',
+    text: 'Easy to find a WashHouse store near me. Transparent pricing and pickup on time every week.',
     avatarUrl:
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
     isFeatured: true,

@@ -31,13 +31,13 @@ export function PricingCta() {
             className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl"
             style={{ color: 'var(--atelier-on-cta)' }}
           >
-            See prices near you
+            Find a store near you
           </h2>
           <p
             className="mt-3 text-base leading-relaxed sm:text-lg"
             style={{ color: 'var(--atelier-on-cta-muted)' }}
           >
-            Browse verified laundries, compare their rates, and book pickup when you&apos;re ready.
+            Browse verified laundries in your neighbourhood and book pickup when you&apos;re ready.
           </p>
           <div className="mt-8">
             <Link
@@ -47,7 +47,7 @@ export function PricingCta() {
                 'h-11 w-full rounded-full bg-[var(--atelier-on-cta)] text-[var(--atelier-cta-top)] hover:bg-[var(--atelier-on-cta)]/95 sm:w-auto',
               )}
             >
-              See prices near you
+              Browse stores
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           </div>

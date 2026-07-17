@@ -3,12 +3,10 @@
 import { Clock, Zap } from 'lucide-react';
 
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
+import { useBookNowStore } from '@/features/marketing/book-now';
 import { MarketingGlassCard } from '@/features/marketing/shared/marketing-glass-card';
 import { MarketingSection } from '@/features/marketing/shared/marketing-section';
-import { MARKETING_BOOK_NOW_HREF } from '@/lib/navigation/marketing-nav';
 import { cn } from '@/lib/utils';
-
-const BOOK_NOW_HREF = MARKETING_BOOK_NOW_HREF;
 
 const DELIVERY_OPTIONS = [
   {
@@ -55,6 +53,7 @@ function DeliveryOptionCard({
   option: DeliveryOption;
   titleId?: string;
 }) {
+  const openBookNow = useBookNowStore((s) => s.open);
   const {
     title,
     turnaround,
@@ -69,7 +68,7 @@ function DeliveryOptionCard({
     <MarketingGlassCard
       solidOnMobile
       titleId={titleId}
-      cta={{ href: BOOK_NOW_HREF, label: 'Book Now' }}
+      cta={{ label: 'Book Now', onClick: () => openBookNow() }}
       className={cn(
         'relative h-full overflow-hidden',
         desktopPosition === 'left' && 'md:rounded-r-none',

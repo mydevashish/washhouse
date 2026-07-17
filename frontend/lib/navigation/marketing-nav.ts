@@ -30,7 +30,14 @@ export const MARKETING_NAV_LINKS: readonly MarketingNavLink[] = [
   { href: '/contact', label: 'Contact' },
 ] as const;
 
-export const MARKETING_BOOK_NOW_HREF = '/stores';
+/**
+ * Deep-link that opens the Book Now dialog (`BookNowDialog` watches `?book=1`).
+ * Prefer `BookNowCta` / `BookNowLink` for in-app clicks (no full-page navigation).
+ */
+export const MARKETING_BOOK_NOW_HREF = '/?book=1';
+
+/** Full-page laundry directory — use when browsing stores is the primary action. */
+export const MARKETING_STORES_HREF = '/stores';
 
 /** Laundry partners and platform admins — staff portal chooser */
 export const MARKETING_STAFF_HREF = '/staff';

@@ -35,6 +35,49 @@
 
 ## Open
 
+### BUG-2026-07-17-003 — Outbound email never sent (contact / franchise / forgot-password)
+
+- **Status:** resolved
+- **Priority:** P1
+- **Severity:** SEV2
+- **Area:** backend / SMTP / marketing + auth
+- **Environment:** local (`SMTP_*` mostly unset; only `SMTP_FROM_EMAIL` set)
+- **Category:** missing sender + config (C) — not opaque 500s; silent no-op
+- **Repro (2026-07-17):**
+  - `POST /api/v1/marketing/contact` → **201** `{status:"received"}` — lead persisted; **no email module existed**
+  - `POST /api/v1/auth/password/forgot` → **200** “reset code was sent” — OTP stored; **never emailed**
+  - Announcement `channel_email` → log-only stub
+  - Env check (no secrets): `SMTP_HOST/PORT/USERNAME/PASSWORD=UNSET`, `SMTP_FROM_EMAIL=SET`
+- **Root cause:** SMTP settings existed in config/`.env.example` but there was no `EmailService` / `aiosmtplib` (or Resend) wiring. Marketing only wrote DB; forgot-password never called a mailer.
+- **Fix:**
+  - Added `EmailService` (`aiosmtplib`) with `EMAIL_NOT_CONFIGURED` (503) / `EMAIL_DELIVERY_FAILED` (502)
+  - Config: empty `SMTP_PORT` → None; TLS/SSL by port (465 SSL / 587 STARTTLS); `SUPPORT_EMAIL`; username requires password
+  - Contact/franchise: DB persist + best-effort support notify
+  - Forgot-password: send reset code when SMTP set; clear 503 when SMTP unset and `OTP_DEBUG=false`
+  - Docs: `.env.example`, `docs/runbooks/email-smtp.md`; unit tests for missing SMTP + mocked send
+- **Verification:** unit `tests/unit/test_email_service.py` 8 passed; contact still **201** with SMTP unset (lead saved + warning log); with valid SMTP, mail sends to `SUPPORT_EMAIL` / user inbox.
+
+**Resolved at:** 2026-07-17
+
+---
+
+### BUG-2026-07-17-002 — Home “Our Laundry Services” mobile carousel does not scroll
+
+- **Status:** resolved
+- **Priority:** P1
+- **Severity:** SEV2
+- **Area:** marketing homepage / services preview
+- **Environment:** local (`http://localhost:3000`, mobile ≤768 / 390×844)
+- **Category:** frontend CSS (touch-action)
+- **Repro:** Open `/` at ≤768px → “Our Laundry Services” → swipe/scroll cards horizontally → stuck.
+- **Root cause:** Strip used `HORIZONTAL_SCROLL_TOUCH_CLASS` (`.horizontal-scroll-touch` → `touch-action: pan-y`), which is correct for Embla JS drag but **blocks native** `overflow-x-auto` horizontal pan. Geometry was fine (`scrollWidth` ≫ `clientWidth`); parent `overflow-x-hidden` was not the blocker.
+- **Fix:** Introduced `HORIZONTAL_SCROLL_NATIVE_CLASS` (`touch-action: manipulation`) for CSS scroll strips; services preview uses it. Embla keeps `HORIZONTAL_SCROLL_TOUCH_CLASS`. Updated e2e + `19-responsive-design.md`.
+- **Verification:** Playwright chromium + mobile-chrome — scrollWidth overflow + scrollLeft advances + vertical wheel still works; browser CDP at 390×844 confirms `touch-action: manipulation`. Manual: swipe horizontal on strip, then vertical page scroll at 390×844; tablet (≥md) still shows 2-col grid.
+
+**Resolved at:** 2026-07-17
+
+---
+
 ### BUG-2026-07-17-001 — Contact & Franchise forms show network error on submit
 
 - **Status:** resolved

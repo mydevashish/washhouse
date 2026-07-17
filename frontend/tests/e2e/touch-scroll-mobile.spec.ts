@@ -76,8 +76,10 @@ test.describe('touch scroll — testimonials carousel', () => {
 });
 
 test.describe('touch scroll — services preview strip', () => {
-  test('mobile services strip is touch-scroll friendly', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
+  test('mobile services strip scrolls horizontally without blocking vertical page scroll', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
@@ -87,16 +89,47 @@ test.describe('touch scroll — services preview strip', () => {
     await strip.scrollIntoViewIfNeeded();
     await expect(strip).toBeVisible();
 
-    await assertTouchFriendlyHorizontalRegion(strip);
+    await expect(strip).toHaveClass(/horizontal-scroll-native/);
+    await expect(strip).not.toHaveClass(/horizontal-scroll-touch/);
+
+    const touchAction = await strip.evaluate((el) => getComputedStyle(el).touchAction);
+    // Browsers may serialize `pan-x pan-y pinch-zoom` as the `manipulation` keyword.
+    expect(
+      /pan-x|manipulation/i.test(touchAction),
+      `native overflow-x strips must allow horizontal pan (got: ${touchAction})`,
+    ).toBe(true);
+    expect(touchAction).not.toMatch(/^pan-y(\s|$)/);
+
+    const metrics = await strip.evaluate((el) => {
+      el.scrollLeft = 0;
+      const scrollLeftBefore = el.scrollLeft;
+      el.scrollLeft = 160;
+      return {
+        clientWidth: el.clientWidth,
+        scrollWidth: el.scrollWidth,
+        scrollLeftBefore,
+        scrollLeftAfter: el.scrollLeft,
+      };
+    });
+
+    expect(
+      metrics.scrollWidth,
+      'carousel content must overflow so swipe/keyboard can scroll',
+    ).toBeGreaterThan(metrics.clientWidth + 8);
+    expect(
+      metrics.scrollLeftAfter,
+      'horizontal scrollLeft must advance (programmatic proxy for swipe/keyboard)',
+    ).toBeGreaterThan(8);
+
     await assertVerticalScrollOverTarget(page, strip);
   });
 });
 
 /**
  * Manual QA — required for real touch devices (Playwright touch synthesis is unreliable):
- * 1. DevTools device toolbar → 375, 414, 768 widths.
- * 2. Visit /, /discover, /discover/[id], /services, /stores, /franchise, /partner/orders.
- * 3. Touch hero carousel / testimonials / tab bar / filter chips; swipe vertically.
- * 4. Page must scroll; horizontal swipe may move carousel/tabs only when clearly horizontal.
+ * 1. DevTools device toolbar → 390×844, 375, 414, 768 widths.
+ * 2. Visit /, scroll to “Our Laundry Services”; swipe cards horizontally; then swipe vertically.
+ * 3. Also touch hero carousel / testimonials / tab bar / filter chips; swipe vertically.
+ * 4. Page must scroll; horizontal swipe moves services strip / carousel when clearly horizontal.
  * 5. No stuck scroll on nested overflow-x regions.
  */

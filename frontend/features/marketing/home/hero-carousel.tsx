@@ -3,7 +3,7 @@
 import {
   ArrowRight,
   Check,
-  Mail,
+  FileDown,
   MessageCircle,
   Phone,
   Sparkles,
@@ -27,6 +27,7 @@ import {
   buildWhatsAppHref,
   CONTACT_CONFIG,
 } from '@/features/marketing/contact/contact-constants';
+import { FRANCHISE_BROCHURE_PDF_FILENAME } from '@/features/marketing/franchise/franchise-constants';
 import {
   HERO_SLIDES,
   WHATSAPP_BOOKING_MESSAGE,
@@ -42,7 +43,7 @@ import {
 } from '@/features/marketing/shared/marketing-layout';
 import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
 import { usePrefersReducedMotion } from '@/lib/hooks/use-prefers-reduced-motion';
-import { MARKETING_BOOK_NOW_HREF } from '@/lib/navigation/marketing-nav';
+import { MARKETING_STORES_HREF } from '@/lib/navigation/marketing-nav';
 import { cn } from '@/lib/utils';
 
 const AUTOPLAY_MS = 5000;
@@ -321,10 +322,13 @@ function FranchiseSlideContent({
           variant="outline"
           className="h-11 rounded-full border-border/80 bg-background/95 px-6 shadow-soft backdrop-blur-sm active:scale-[0.98]"
         >
-          <Link href={slide.brochureHref}>
-            <Mail className="h-4 w-4" aria-hidden />
+          <a
+            href={slide.brochureHref}
+            download={FRANCHISE_BROCHURE_PDF_FILENAME}
+          >
+            <FileDown className="h-4 w-4" aria-hidden />
             Request brochure
-          </Link>
+          </a>
         </Button>
       </div>
     </>
@@ -367,7 +371,7 @@ function DeliverySlideContent({
           variant="outline"
           className="h-11 rounded-full border-border/80 bg-background/95 px-6 shadow-soft backdrop-blur-sm active:scale-[0.98]"
         >
-          <Link href={MARKETING_BOOK_NOW_HREF}>
+          <Link href={MARKETING_STORES_HREF}>
             Find a store
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>

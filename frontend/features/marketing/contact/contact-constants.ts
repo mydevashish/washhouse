@@ -15,7 +15,7 @@ export const CONTACT_FORM_ANCHOR = 'contact-form';
 
 /**
  * Build a contact URL with optional subject pre-select and form hash.
- * Used by “Request brochure” and other marketing CTAs.
+ * Used by marketing CTAs that deep-link into the contact form.
  */
 export function buildContactHref(
   subject?: ContactSubject,
@@ -26,10 +26,6 @@ export function buildContactHref(
   const hash = options?.hash === undefined ? CONTACT_FORM_ANCHOR : options.hash;
   return hash ? `${path}#${hash}` : path;
 }
-
-/** Franchise brochure CTA — opens Contact with Franchise subject + scrolls to form. */
-export const CONTACT_FRANCHISE_BROCHURE_HREF = buildContactHref('franchise');
-
 function envOrDefault(key: string, fallback: string): string {
   const value = process.env[key]?.trim();
   return value || fallback;

@@ -3,7 +3,6 @@ export { ContactForm } from '@/features/marketing/contact/contact-form';
 export {
   CONTACT_CONFIG,
   CONTACT_FORM_ANCHOR,
-  CONTACT_FRANCHISE_BROCHURE_HREF,
   CONTACT_SUBJECTS,
   buildContactHref,
 } from '@/features/marketing/contact/contact-constants';

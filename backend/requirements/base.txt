@@ -37,5 +37,7 @@ python-json-logger>=2.0,<3
 # Observability
 sentry-sdk[fastapi]>=2.15,<3
 
-# Email / SMS (lazy imported in tasks)
-# resend, twilio etc. — pinned in prod.txt when wired
+# Email (SMTP). Resend remains optional in prod.txt for future provider swap.
+aiosmtplib>=3.0,<4
+
+# SMS (lazy imported; Twilio pinned in prod.txt / dev.txt)

@@ -21,7 +21,8 @@ Set per environment (production / staging):
 - `CORS_ALLOW_ORIGINS=https://dlm.app,https://www.dlm.app`
 - `SENTRY_DSN`
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
-- `TWILIO_*`, `SMTP_*`
+- `TWILIO_*`, `SMTP_*` (see [email SMTP runbook](../runbooks/email-smtp.md))
+- `SUPPORT_EMAIL` (contact/franchise notify inbox; optional, defaults to `SMTP_FROM_EMAIL`)
 
 ## Release command (migrations)
 

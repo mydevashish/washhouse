@@ -8,8 +8,8 @@ export function ServicesHero() {
         </h1>
         <p className="mt-6 text-base leading-relaxed text-muted-foreground sm:text-lg">
           From everyday wash &amp; fold to express dry cleaning — here&apos;s what you can book through
-          The WashHouse. Every partner sets their own rates; browse a store to see exact prices before
-          you schedule pickup.
+          The WashHouse. Services and pricing are shared across stores; pick a location near you and
+          schedule pickup.
         </p>
       </div>
     </header>

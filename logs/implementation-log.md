@@ -4,6 +4,76 @@
 
 ---
 
+## 2026-07-17 — SEV2: Wire SMTP EmailService (contact / franchise / forgot-password)
+
+- **Type:** fix
+- **Scope:** Backend outbound email
+- **Files:** `email_service.py`, `notifications/email.py`, `marketing_service.py`, `auth_service.py`, `announcement_service.py`, `config.py`, `exceptions.py`, `requirements/base.txt`, `.env.example`, `docs/runbooks/email-smtp.md`, `docs/deployment/railway.md`, `tests/unit/test_email_service.py`, `logs/bug-tracker.md`
+- **Summary:** Diagnosed silent no-send (no EmailService; marketing DB-only; forgot-password OTP never mailed). Implemented `EmailService` via `aiosmtplib`, clear 503/502 domain errors, SMTP port/TLS/FROM/auth validation, support notify on contact/franchise (persist first), password-reset email when SMTP configured. Announcement email remains stub with clearer logs.
+- **Risks:** Local without SMTP still accepts contact (best-effort); staging forgot-password requires SMTP or returns 503. Operators must set SMTP on Railway.
+- **Mitigation:** Runbook + structured logs (masked recipients, no password); unit tests for missing SMTP and mocked success.
+- **Next:** Optional Mailtrap smoke on staging; bulk announcement email sender.
+
+---
+
+## 2026-07-17 — Remove compare-stores UX from marketing /stores
+
+- **Type:** feat
+- **Scope:** Marketing stores directory + pricing/services copy
+- **Files:** `stores-page-view.tsx`, `stores-card.tsx`, `stores-hero.tsx`, `featured-stores-teaser.tsx`, `pricing-cta.tsx`, `pricing-variety-note.tsx`, `pricing-data.ts`, `pricing-hero.tsx`, `services-cta.tsx`, `services-hero.tsx`, `testimonials-fallback.ts`, `marketing-homepage.spec.ts`, `docs/features/*`, `docs/api/endpoints/laundry-compare-hints.md`, `logs/feature-progress.md`
+- **Summary:** Marketing `/stores` is now a slim name+city directory (`StoresCard`) with search only — no rating/price/compare filters or LaundryCard chrome. Pricing/services/home copy no longer promises per-store comparison; authenticated `/discover` still uses compare hints.
+- **Risks:** Featured homepage teaser is slimmer (less visual weight than PartnerCard). List API still lacks `address_line` so city stands in for address.
+- **Mitigation:** Playwright asserts no compare chrome on `/stores` and updated pricing hero; discovery cards untouched.
+- **Next:** Optional: expose `address_line` on laundry list for fuller directory rows.
+
+---
+
+## 2026-07-17 — Marketing Book Now opens pickup dialog
+
+- **Type:** feat
+- **Scope:** Marketing CTAs / lead capture
+- **Files:** `frontend/features/marketing/book-now/*`, `marketing-shell-overlays.tsx`, `marketing-navbar.tsx`, `home-hero.tsx`, `services-preview.tsx`, `delivery-options-band.tsx`, `contact-page-view.tsx`, `marketing-glass-card.tsx`, `marketing-nav.ts`, `hero-carousel.tsx`, `marketing-homepage.spec.ts`, `docs/features/marketing-homepage.md`, `logs/feature-progress.md`
+- **Summary:** Book Now / Book pickup CTAs open a shared Radix Dialog (`BookPickupForm`) instead of navigating to `/stores`. Form POSTs to existing `POST /marketing/contact` with subject `order-help` (service + preferred time + notes in message). Deep link `?book=1` opens the same modal. `/stores` kept for Find a store / browse CTAs.
+- **Risks:** Slight marketing client JS increase (dialog + form). Contact rate limits apply to book leads.
+- **Mitigation:** Playwright covers dialog open, deep link, and mocked submit happy path; reuse contact schemas/API.
+- **Next:** Smoke on phone — full-screen dialog, Esc close, focus restore.
+
+---
+
+## 2026-07-17 — Home More Services CTA → /services
+
+- **Type:** fix
+- **Scope:** Marketing homepage services preview
+- **Files:** `services-preview.tsx`, `marketing-homepage.spec.ts`, `docs/features/marketing-homepage.md`, `logs/implementation-log.md`
+- **Summary:** More Services (`more-services`) no longer shows Book Now; single “View services” link goes to `/services`. Other service cards keep Book Now → `/stores`. One CTA link per card (no nested whole-card + link).
+- **Risks:** Low — CTA label/href branch only.
+- **Mitigation:** Playwright asserts More Services → `/services` and Wash & Fold Book Now → `/stores`.
+- **Next:** None.
+
+---
+
+## 2026-07-17 — Fix services preview mobile horizontal scroll (SEV2)
+
+- **Type:** fix
+- **Scope:** Marketing homepage services carousel
+- **Files:** `services-preview.tsx`, `horizontal-scroll-touch.ts`, `globals.css`, `touch-scroll-mobile.spec.ts`, `19-responsive-design.md`, `logs/bug-tracker.md`
+- **Summary:** Native `overflow-x-auto` strip was using Embla’s `horizontal-scroll-touch` (`touch-action: pan-y`), which blocked horizontal swipe. Added `HORIZONTAL_SCROLL_NATIVE_CLASS` (`manipulation`) for CSS carousels; desktop/tablet grids unchanged. E2E asserts overflow + scrollLeft + vertical wheel.
+- **Risks:** Other `overflow-x-auto` callers still on pan-y class may have the same latent bug (admin tabs, partner chips).
+- **Next:** Audit remaining `HORIZONTAL_SCROLL_TOUCH_CLASS` + `overflow-x-auto` pairs; optional real-device swipe QA at 390×844.
+
+---
+
+## 2026-07-17 — Request brochure CTAs download PDF
+
+- **Type:** feat
+- **Scope:** Marketing franchise brochure CTAs
+- **Files:** `franchise-constants.ts`, `franchise-teaser.tsx`, `franchise-page-view.tsx`, `hero-slides.ts`, `hero-carousel.tsx`, `contact-constants.ts`, `contact/index.ts`, `franchise/index.ts`, `frontend/public/brochures/*`, `marketing-homepage.spec.ts`, `docs/features/marketing-homepage.md`
+- **Summary:** Replaced `CONTACT_FRANCHISE_BROCHURE_HREF` (Contact subject=franchise) with shared `FRANCHISE_BROCHURE_PDF_HREF` (`/brochures/washhouse-franchise.pdf`). All Request brochure links (home teaser, franchise page, hero slide) use `download`. Placeholder PDF + README document where to drop the official asset; Contact form/`?subject=franchise` deep links unchanged.
+- **Risks:** Placeholder PDF ships until marketing replaces the file in place (same path).
+- **Next:** Drop official brochure into `frontend/public/brochures/washhouse-franchise.pdf`; smoke e2e brochure download tests.
+
+---
+
 ## 2026-07-17 — `/pricing` neighbor product-photo prefetch
 
 - **Type:** perf / ui

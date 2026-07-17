@@ -206,7 +206,7 @@ test.describe('marketing navbar', () => {
     await expect(page).toHaveURL(/\/pricing$/);
     await expect(
       page.getByRole('heading', {
-        name: /transparent pricing\. every laundry sets their own rates/i,
+        name: /transparent pricing\. same rates at every store/i,
       }),
     ).toBeVisible();
     await expect(page.getByText(/starting from/i).first()).toBeVisible();
@@ -225,7 +225,7 @@ test.describe('marketing navbar', () => {
     await expect(
       page.getByRole('link', { name: /browse stores/i }).first(),
     ).toBeVisible();
-  });
+    await expect(page.getByText(/compare stores/i)).toHaveCount(0);  });
 
   test('Pricing from Services navigates to /pricing', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -323,7 +323,7 @@ test.describe('marketing contact form', () => {
     await expect(page.getByText(/valid mobile number/i)).toBeVisible();
   });
 
-  test('Request brochure from home franchise teaser opens Contact with Franchise subject', async ({
+  test('Request brochure from home franchise teaser downloads franchise PDF', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -332,25 +332,32 @@ test.describe('marketing contact form', () => {
 
     const teaser = page.getByRole('region', { name: /become a the washhouse partner/i });
     await teaser.scrollIntoViewIfNeeded();
-    await teaser.getByRole('link', { name: /request brochure/i }).click();
 
-    await expect(page).toHaveURL(/\/contact\?subject=franchise/);
-    await expect(page.locator('#contact-form')).toBeVisible();
-    await expect(page.locator('#contact-subject')).toHaveValue('franchise');
+    const brochureLink = teaser.getByRole('link', { name: /request brochure/i });
+    await expect(brochureLink).toHaveAttribute('href', '/brochures/washhouse-franchise.pdf');
+    await expect(brochureLink).toHaveAttribute('download', 'washhouse-franchise.pdf');
+
+    const downloadPromise = page.waitForEvent('download');
+    await brochureLink.click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/washhouse-franchise\.pdf/i);
   });
 
-  test('Request brochure from franchise page opens Contact with Franchise subject', async ({
+  test('Request brochure from franchise page downloads franchise PDF', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/franchise');
     await page.waitForLoadState('domcontentloaded');
 
-    await page.getByRole('link', { name: /request brochure/i }).first().click();
+    const brochureLink = page.getByRole('link', { name: /request brochure/i }).first();
+    await expect(brochureLink).toHaveAttribute('href', '/brochures/washhouse-franchise.pdf');
+    await expect(brochureLink).toHaveAttribute('download', 'washhouse-franchise.pdf');
 
-    await expect(page).toHaveURL(/\/contact\?subject=franchise/);
-    await expect(page.locator('#contact-form')).toBeVisible();
-    await expect(page.locator('#contact-subject')).toHaveValue('franchise');
+    const downloadPromise = page.waitForEvent('download');
+    await brochureLink.click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/washhouse-franchise\.pdf/i);
   });
 
   test('direct /contact?subject=franchise pre-selects Franchise', async ({ page }) => {
@@ -384,5 +391,165 @@ test.describe('mobile sticky CTA', () => {
 
     await page.locator('[data-marketing-bottom-cta]').scrollIntoViewIfNeeded();
     await expect(stickyCta).toHaveClass(/opacity-0/);
+  });
+});
+
+test.describe('marketing homepage services preview', () => {
+  function servicesSection(page: import('@playwright/test').Page) {
+    return page
+      .locator('section')
+      .filter({ has: page.getByRole('heading', { name: /our laundry services/i }) });
+  }
+
+  function visibleServiceCard(
+    page: import('@playwright/test').Page,
+    title: RegExp,
+  ) {
+    return servicesSection(page)
+      .locator('li')
+      .filter({ has: page.getByRole('heading', { name: title }) })
+      .filter({ visible: true });
+  }
+
+  test('More Services has View services CTA to /services, not Book Now', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    const moreCard = visibleServiceCard(page, /^more services$/i);
+    await expect(moreCard).toHaveCount(1);
+    await expect(moreCard.getByRole('link', { name: /book now/i })).toHaveCount(0);
+
+    const viewServices = moreCard.getByRole('link', { name: /view services/i });
+    await expect(viewServices).toBeVisible();
+    await expect(viewServices).toHaveAttribute('href', '/services');
+  });
+
+  test('Wash & Fold Book Now opens pickup dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    const washCard = visibleServiceCard(page, /^wash & fold$/i);
+    await expect(washCard).toHaveCount(1);
+
+    const bookNow = washCard.getByRole('link', { name: /book now/i });
+    await expect(bookNow).toBeVisible();
+    await bookNow.click();
+
+    const dialog = page.getByTestId('book-now-dialog');
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+    await expect(dialog.getByLabel(/^service/i)).toHaveValue('wash-fold');
+  });
+});
+
+test.describe('marketing Book Now dialog', () => {
+  test('navbar Book Now opens dialog without leaving the page', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    await page.getByRole('banner').getByRole('button', { name: /^book now$/i }).click();
+
+    const dialog = page.getByTestId('book-now-dialog');
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveURL(/\/(\?|$)/);
+  });
+
+  test('?book=1 deep link opens the dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/?book=1');
+    await page.waitForLoadState('domcontentloaded');
+
+    const dialog = page.getByTestId('book-now-dialog');
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+    await expect(dialog.getByRole('heading', { name: /schedule a pickup/i })).toBeVisible();
+  });
+
+  test('Book Now submit happy path posts contact lead and closes dialog', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+
+    await page.route('**/api/v1/marketing/contact', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: { id: '11111111-1111-4111-8111-111111111111', status: 'received' },
+          meta: {},
+        }),
+      });
+    });
+
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    await page.getByRole('banner').getByRole('button', { name: /^book now$/i }).click();
+
+    const dialog = page.getByTestId('book-now-dialog');
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+
+    await dialog.getByLabel(/your name/i).fill('Playwright Tester');
+    await dialog.getByLabel(/^phone/i).fill('+919876543210');
+    await dialog.getByLabel(/^service/i).selectOption('wash-fold');
+    await dialog.getByLabel(/preferred pickup time/i).selectOption('morning');
+    await dialog.getByLabel(/notes/i).fill('Near metro, doorbell works.');
+
+    const requestPromise = page.waitForRequest(
+      (req) =>
+        req.url().includes('/api/v1/marketing/contact') && req.method() === 'POST',
+    );
+
+    await dialog.getByRole('button', { name: /schedule pickup/i }).click();
+
+    const request = await requestPromise;
+    const body = request.postDataJSON() as {
+      name: string;
+      phone: string;
+      subject: string;
+      message: string;
+    };
+    expect(body.name).toBe('Playwright Tester');
+    expect(body.subject).toBe('order-help');
+    expect(body.message).toMatch(/Wash & Fold/i);
+    expect(body.message).toMatch(/Morning/i);
+
+    await expect(dialog).toBeHidden({ timeout: 10_000 });
+  });
+});
+
+test.describe('marketing stores directory', () => {
+  test('/stores is a simple name + city directory without compare chrome', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/stores');
+    await page.waitForLoadState('domcontentloaded');
+
+    await expect(
+      page.getByRole('heading', { name: /find a washhouse store near you/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/services and pricing are shared across stores/i).first(),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: /washhouse stores/i })).toBeVisible();
+
+    // No compare / filter / price chrome from the old discovery-style stores UI
+    await expect(page.getByText(/compare/i)).toHaveCount(0);
+    await expect(page.getByText(/from ₹/i)).toHaveCount(0);
+    await expect(page.getByText(/free pickup/i)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /filters/i })).toHaveCount(0);
+    await expect(page.getByLabel(/min rating|max distance|sort by/i)).toHaveCount(0);
+
+    await expect(page.getByLabel(/search laundries/i)).toBeVisible();
+
+    const directory = page.getByRole('list', { name: /washhouse partner stores/i });
+    const empty = page.getByRole('heading', { name: /no stores/i });
+    await expect(directory.or(empty)).toBeVisible({ timeout: 15_000 });
   });
 });

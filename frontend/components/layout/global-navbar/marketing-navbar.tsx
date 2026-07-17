@@ -11,6 +11,7 @@ import {
 } from '@/components/layout/global-navbar/navbar-theme-toggle';
 import { scrollToHash } from '@/components/navigation/hash-scroll-handler';
 import { Button } from '@/components/ui/button';
+import { BookNowCta } from '@/features/marketing/book-now';
 import {
   buildTelHref,
   CONTACT_CONFIG,
@@ -18,7 +19,6 @@ import {
 import {
   getSamePageHash,
   isMarketingNavLinkActive,
-  MARKETING_BOOK_NOW_HREF,
   MARKETING_NAV_LINKS,
   MARKETING_STAFF_HREF,
 } from '@/lib/navigation/marketing-nav';
@@ -221,18 +221,9 @@ export function MarketingNavbar() {
             >
               <a href={MARKETING_STAFF_HREF}>Staff login</a>
             </Button>
-            <Button asChild size="sm" className="rounded-full px-4 font-semibold">
-              <a
-                href={MARKETING_BOOK_NOW_HREF}
-                onClick={
-                  getSamePageHash(pathname, MARKETING_BOOK_NOW_HREF)
-                    ? (event) => handleSamePageHashClick(event, MARKETING_BOOK_NOW_HREF)
-                    : undefined
-                }
-              >
-                Book Now
-              </a>
-            </Button>
+            <BookNowCta size="sm" className="rounded-full px-4 font-semibold">
+              Book Now
+            </BookNowCta>
             <Button
               asChild
               variant="outline"
@@ -294,19 +285,12 @@ export function MarketingNavbar() {
           </div>
 
           <div className="mt-4 flex flex-col gap-2 border-t border-border/60 pt-4 sm:hidden">
-            <Button asChild className="w-full rounded-full font-semibold">
-              <a
-                href={MARKETING_BOOK_NOW_HREF}
-                onClick={(event) => {
-                  if (getSamePageHash(pathname, MARKETING_BOOK_NOW_HREF)) {
-                    handleSamePageHashClick(event, MARKETING_BOOK_NOW_HREF);
-                  }
-                  closeMobile();
-                }}
-              >
-                Book Now
-              </a>
-            </Button>
+            <BookNowCta
+              className="w-full rounded-full font-semibold"
+              onClick={() => closeMobile()}
+            >
+              Book Now
+            </BookNowCta>
             <Button
               asChild
               variant="outline"

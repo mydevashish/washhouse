@@ -48,14 +48,14 @@ export function PricingHero() {
             className="pricing-hero__title mt-3 sm:mt-3.5 text-balance"
             style={{ color: 'var(--atelier-ink)' }}
           >
-            Transparent pricing. Every laundry sets their own rates.
+            Transparent pricing. Same rates at every store.
           </h1>
           <p
             className="pricing-hero__support mt-2.5 max-w-xl"
             style={{ color: 'var(--atelier-muted)' }}
           >
-            Starting-from rates below are indicative — always check a store&apos;s list before you
-            book.
+            Starting-from rates below are indicative by category — find a nearby store when
+            you&apos;re ready to book.
           </p>
           <div className="mt-5 sm:mt-6">
             <Link

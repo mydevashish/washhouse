@@ -81,10 +81,15 @@
   }
 }
 
-/* Below lg: vertical page scroll wins over horizontal carousels/strips (see 19-responsive-design.md). */
+/* Below lg: see 19-responsive-design.md — Embla vs native overflow-x strips. */
 @media (max-width: 1023px) {
+  /* Embla / JS drag: browser owns vertical pan; horizontal stays with JS. */
   .horizontal-scroll-touch {
     touch-action: pan-y pinch-zoom;
+  }
+  /* Native overflow-x-auto: both axes (`manipulation` ≡ pan-x pan-y pinch-zoom). */
+  .horizontal-scroll-native {
+    touch-action: manipulation;
   }
 }
 

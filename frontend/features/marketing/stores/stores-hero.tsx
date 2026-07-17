@@ -7,8 +7,8 @@ export function StoresHero() {
           Find a WashHouse store near you
         </h1>
         <p className="mt-6 text-base leading-relaxed text-muted-foreground sm:text-lg">
-          Browse verified partner laundries in your neighbourhood. Compare ratings, delivery times,
-          and starting prices — then book pickup with UPI or COD when you&apos;re ready.
+          Browse verified partner laundries in your neighbourhood. Services and pricing are shared
+          across stores — choose a location, then book pickup with UPI or COD when you&apos;re ready.
         </p>
       </div>
     </header>

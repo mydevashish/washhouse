@@ -1,7 +1,7 @@
 # Feature: Marketing homepage v2
 
 > Status: shipped  
-> Last updated: 2026-07-13  
+> Last updated: 2026-07-17  
 > Route: `/`  
 > Related: [offline-booking-whatsapp.md](offline-booking-whatsapp.md), [customer-discovery.md](customer-discovery.md)
 
@@ -24,23 +24,39 @@ Render order from `frontend/features/marketing/home/marketing-homepage.tsx`:
 
 | # | Section | Component | Data source | Notes |
 | - | ------- | --------- | ----------- | ----- |
-| Shell | Sticky navbar | `MarketingNavbar` | static nav config | Home, Services, Pricing (`/pricing`), About, Franchise, Contact + Book Now / Call |
+| Shell | Sticky navbar | `MarketingNavbar` | static nav config | Home, Services, Pricing (`/pricing`), About, Franchise, Contact + Book Now (dialog) / Call |
 | 1 | Hero + carousel | `MarketingHomeHero` → `HeroCarousel` | `hero-slides.ts` | 4 slides; Embla autoplay 5 s; glass promo badge |
-| 1b | Hero mobile CTAs | `home-hero.tsx` | static | In-flow below carousel (`sm:hidden`): Book pickup, Become a partner |
+| 1b | Hero mobile CTAs | `home-hero.tsx` | static | In-flow below carousel (`sm:hidden`): Book pickup (dialog), Become a partner |
 | 2 | Stats band | `StatsBand` | `GET /marketing/stats` + fallback | 5 KPIs (customers, cities, pickup points, garments, rating) |
 | 3 | Trust strip | `TrustStrip` | static | Verified / pickup / express badges |
 | 4 | How it works | `HowItWorksSection` | static steps | 5-step process in glass card |
 | 5 | Why choose us | `WhyChooseSection` | static | 6 benefit blocks |
-| 6 | Services preview | `ServicesPreview` | `services-data.ts` | 6 service cards → `/services` |
-| 7 | Delivery options | `DeliveryOptionsBand` | static | Regular vs Express |
+| 6 | Services preview | `ServicesPreview` | `services-data.ts` | 7 cards; Book Now → pickup dialog (pre-selects service) except More Services → `/services` (“View services”) |
+| 7 | Delivery options | `DeliveryOptionsBand` | static | Regular vs Express; Book Now → pickup dialog |
 | 8 | Featured stores | `FeaturedStoresTeaser` | `GET /laundries` (top 3) | Links to discover / store detail |
-| 9 | Franchise teaser | `FranchiseTeaser` | static | Apply → `/franchise#apply`; brochure → `/contact?subject=franchise#contact-form`. Content wrapper must be `relative` so glass panel sits above absolute photo/gradient (same as FranchiseHero / FinalCtaBand). |
+| 9 | Franchise teaser | `FranchiseTeaser` | static | Apply → `/franchise#apply`; brochure → `/brochures/washhouse-franchise.pdf` (`FRANCHISE_BROCHURE_PDF_HREF`, `download`). Content wrapper must be `relative` so glass panel sits above absolute photo/gradient (same as FranchiseHero / FinalCtaBand). |
 | 10 | Testimonials | `HomeTestimonials` | `GET /marketing/testimonials` + fallback | Mobile carousel + desktop 3-col grid |
 | 11 | App promo | `AppPromoSection` | static | Web-first; no store links yet |
 | 12 | Final CTA band | `FinalCtaBand` | static | WhatsApp + Call; `data-marketing-bottom-cta` |
 | Shell | Mobile sticky CTA | `MobileStickyCta` | env contact config | Fixed bottom WhatsApp/Call; hides when final CTA in view |
 | Shell | Floating FAB | `FloatingContactActions` | env contact config | Bottom-right on mobile/tablet; overlap-aware |
+| Shell | Book Now dialog | `BookNowDialog` | `POST /marketing/contact` | Shared modal; `?book=1` deep link; name/phone/service/time → `order-help` lead |
 | Shell | Footer | `MarketingFooter` | static groups | Company, Partner, Legal, Support links |
+
+### Book Now dialog
+
+Primary marketing **Book Now** / **Book pickup** CTAs open a shared Radix Dialog (`features/marketing/book-now/`) instead of navigating to `/stores`.
+
+| Piece | Role |
+| ----- | ---- |
+| `useBookNowStore` | Zustand open/close + optional service pre-select |
+| `BookNowCta` / `BookNowLink` | Buttons/links that open the dialog (no full-page nav) |
+| `BookPickupForm` | RHF + Zod; POSTs via `useSubmitContact()` with subject `order-help` |
+| `BookNowDialog` | Focus trap, Esc, `aria-labelledby`, mobile full-viewport, mounted in `MarketingShellOverlays` |
+| `/?book=1` | Deep link opens the same dialog; closing strips the query param |
+| `/stores` | Slim partner directory (name + city); no per-store price/rating compare UX. Used by “Find a store” / browse CTAs (`MARKETING_STORES_HREF`) |
+
+Form fields map into the existing contact API message body (service + preferred time + notes). No parallel book endpoint.
 
 ### Hero carousel slides
 
@@ -48,7 +64,7 @@ Render order from `frontend/features/marketing/home/marketing-homepage.tsx`:
 | ----- | -------- | ------- |
 | 1 | CLEAN CLOTHES. HAPPY LIFE. | welcome (WELCOME20 promo) |
 | 2 | EXPERT CARE FOR EVERY FABRIC | services |
-| 3 | START YOUR OWN LAUNDRY BUSINESS | franchise |
+| 3 | START YOUR OWN LAUNDRY BUSINESS | franchise — Apply → `/franchise#apply`; brochure → `/brochures/washhouse-franchise.pdf` |
 | 4 | WE PICK. WE CLEAN. WE DELIVER. | delivery |
 
 ## API contracts
@@ -165,7 +181,7 @@ Frontend falls back to static testimonials when API errors or returns empty.
 
 | Suite | Path | Coverage |
 | ----- | ---- | -------- |
-| Playwright smoke | `frontend/tests/e2e/marketing-homepage.spec.ts` | Load, carousel nav, contact validation, sticky CTA |
+| Playwright smoke | `frontend/tests/e2e/marketing-homepage.spec.ts` | Load, carousel nav, contact validation, Book Now dialog + submit, sticky CTA |
 | Playwright a11y | `frontend/tests/e2e/marketing-a11y.spec.ts` | Axe on `/`, `/services`, `/pricing`, `/stores`, `/contact` |
 | Playwright smoke (legacy) | `frontend/tests/e2e/smoke.spec.ts` | Homepage heading assertion |
 | Jest unit | `frontend/features/marketing/home/home-hero.test.tsx` | Mobile CTA placement |
@@ -210,7 +226,10 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 - [ ] Footer social (Facebook/Instagram/etc.) fully visible & tappable above sticky CTA on mobile
 - [ ] Navbar hamburger opens/closes; links navigate; body scroll locked when open
 - [ ] All section headings visible; no horizontal scroll
+- [ ] Navbar **Book Now** opens pickup dialog (no `/stores` navigation); Esc / close restores focus
+- [ ] `/?book=1` deep-links the same dialog; submit success toast + dialog closes
 - [ ] `/contact`: empty submit shows field errors; invalid phone rejected; valid submit shows success toast
+- [ ] Contact aside **Book a pickup** opens the same dialog
 - [ ] No console errors on `/` and `/contact`
 - [ ] Dark mode: glass surfaces readable; no invisible text on gradients
 
@@ -220,14 +239,14 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 - [ ] Sticky CTA hidden (`lg:hidden`); footer contact actions visible
 - [ ] Testimonials: carousel or grid renders without overflow
 - [ ] Featured stores cards tappable; link to `/stores` (and laundry detail `/discover/[id]`) works
-- [ ] Franchise teaser CTAs navigate to `/franchise` and brochure → `/contact?subject=franchise#contact-form` (Franchise pre-selected)
+- [ ] Franchise teaser CTAs navigate to `/franchise` and brochure → `/brochures/washhouse-franchise.pdf` (download)
 
 ### Desktop
 
 - [ ] Navbar inline links + Book Now / Call Now visible (no hamburger)
 - [ ] Hero per-slide CTAs inside carousel (no duplicate global mobile CTAs)
 - [ ] How it works / Why choose grids align; glass cards readable
-- [ ] Services preview hover states; links to `/services` and individual service anchors
+- [ ] Services preview hover states; More Services → `/services` (View services); other cards Book Now → `/stores`
 - [ ] Final CTA band WhatsApp + Call links open correctly
 - [ ] Footer link groups side-by-side: 2 cols (mobile+), 3 cols (md), 5 cols (lg); all links 44px tap target; no horizontal overflow
 - [ ] Keyboard: carousel focusable; tab order logical; skip-to-content works

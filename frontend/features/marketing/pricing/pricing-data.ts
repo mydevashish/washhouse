@@ -9,16 +9,16 @@ export const PRICING_STATIONS = [
   {
     id: 'wash',
     station: 'Wash',
-    title: 'Partners set their own rates',
+    title: 'Shared catalogue across partners',
     description:
-      'Independent neighbourhood laundries handle your load — there is no fixed city-wide price list on The WashHouse.',
+      'Verified neighbourhood laundries on The WashHouse offer the same service menu and starting rates — pick a store by location.',
   },
   {
     id: 'tag',
     station: 'Price tag',
-    title: 'Compare hanging rates',
+    title: 'Clear starting-from rates',
     description:
-      'Browse nearby stores, compare their lists, and pick the deal that fits your load — rates vary by partner.',
+      'Browse the price guide for indicative “from ₹” rates by category, then open a nearby store to book pickup.',
   },
   {
     id: 'pay',

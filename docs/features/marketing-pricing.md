@@ -14,9 +14,9 @@ Nav/footer “Pricing” previously scrolled to `/services#pricing`, mixing serv
 | In scope | Out of scope |
 | -------- | ------------ |
 | Public `/pricing` in `MarketingShell` | Checkout tax/GST calculation |
-| How pricing works (delivery / UPI / COD / compare stores) | Partner revenue or admin pricing tools |
+| How pricing works (delivery / UPI / COD / shared catalogue) | Partner revenue or admin pricing tools |
 | Category “from ₹” guide (screw-hook laundry tickets + reduced-motion tables) | Claiming GST on every order (deferred) |
-| CTA → `/stores` | Discover marketplace pricing section |
+| CTA → `/stores` (find a location; not compare rates) | Discover marketplace pricing section |
 | Nav + footer Pricing → `/pricing` | Booking bridge to catalog SKUs |
 
 ## Structure
@@ -26,8 +26,8 @@ Nav/footer “Pricing” previously scrolled to `/services#pricing`, mixing serv
 | Hero | `PricingHero` | Brand-forward full-bleed (logo hero-level); rail accent; one headline, one support line, CTA → `/stores`; steam + fabric-wave atmosphere (steam-sky wash, not SaaS purple) |
 | How it works | `PricingHowItWorks` | Sequential stations (`PRICING_STATIONS`: pickup → wash → price tag → pay); hanging-rail scroll reveals; handoff rail + drop into price guide; tight station spacing; no card grid |
 | Price guide | `PricingPriceGuide` + `PricingAtelierGuide` | Dense photo+rate composition (see below); `prefers-reduced-motion` → fixed-aspect photo + `PricingCategoryTable`; tags keyboard-focusable (`tabIndex` + aria-label) |
-| Variety note | `PricingVarietyNote` | Independent owners set rates + link `/stores`; shared rail reveal + atmosphere |
-| CTA | `PricingCta` | “See prices near you” → `/stores`; dark atelier band + steam/wave |
+| Variety note | `PricingVarietyNote` | Shared rates + link `/stores` to find a location; shared rail reveal + atmosphere |
+| CTA | `PricingCta` | “Browse stores” → `/stores`; dark atelier band + steam/wave |
 
 ### Price guide — photo + rate composition
 

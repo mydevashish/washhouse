@@ -224,7 +224,7 @@ Migration: `20260717_0034_platform_catalog_and_laundry_item_prices` (Alembic; re
 | Partner price editor | `/partner/pricing` | `frontend/features/partner-price-list/` — category tabs, table/stacked rows, bulk save, apply suggested |
 | Store price list | Laundry detail **Prices** tab + storefront section | FebriWash-style tables; partner prices only; empty state + `laundry_services` fallback |
 | Marketing upgrade | `/pricing` | Replace coarse `SERVICE_CATEGORIES` bands with catalog “from” tables + keep how-it-works + CTA `/stores` |
-| Discovery compare (Slice 5) | `/stores`, discover cards | `wash_fold_from_*` + `shirt_dry_clean_from_*` on list/search; no heavy matrix |
+| Discovery compare (Slice 5) | `/discover` cards | `wash_fold_from_*` + `shirt_dry_clean_from_*` on list/search; marketing `/stores` is name+city only |
 | Types / API | `features/partner-price-list/api/`, `features/laundries/` | TanStack Query |
 
 UI rules: one job per section; tables not hero cards; copy must say **prices vary by laundry**; never present aggregate as the user’s checkout price.
@@ -242,7 +242,7 @@ UI rules: one job per section; tables not hero cards; copy must say **prices var
 | **B — Partner CRUD** | Partner GET/PUT/PATCH price-list, “Apply suggested prices”, partner editor UI | Partner can edit & toggle `is_offered`; persisted *(API + FE editor done 2026-07-17)* |
 | **C — Public laundry list** | `GET .../price-list`, store-detail tables | Customer sees partner-specific tables *(done 2026-07-17)* |
 | **D — Marketplace “from” + `/pricing`** | Aggregate endpoint; marketing tables upgrade | `/pricing` shows from-prices + CTA; no fixed-price claim *(done 2026-07-17)* |
-| **5 — Discovery compare affordances** | List/search price hints; store cards “from ₹”; filter/sort real prices; pricing CTA → `/stores` | Cards show Wash & Fold and/or shirt dry-clean when offered; no fake hash prices *(done 2026-07-17)* |
+| **5 — Discovery compare affordances** | List/search price hints; discover cards “from ₹”; filter/sort real prices; pricing CTA → `/stores` | Cards on `/discover` show Wash & Fold and/or shirt dry-clean when offered; marketing `/stores` is directory-only *(updated 2026-07-17)* |
 | **E — Booking bridge (optional follow-up)** | Map `laundry_by_kg` items and/or garment lines into order flow | Only after product confirms booking UX |
 
 ## Acceptance criteria
@@ -254,8 +254,9 @@ UI rules: one job per section; tables not hero cards; copy must say **prices var
 - [x] Given no partner has priced an item, When marketplace-from is requested, Then suggested default is used and `source=suggested`.
 - [x] Given `/pricing`, When rendered, Then copy + CTA make clear rates are not city-wide fixed prices.
 - [x] Given store detail, When price list loads, Then only that laundry’s enabled prices appear. *(Slice C)*
-- [x] Given `/stores` or discover cards, When a laundry offers Wash & Fold and/or Shirt dry-clean, Then the card shows “from ₹X” for those items only (no suggested invent). *(Slice 5)*
-- [x] Given price filter/sort on `/stores`, When applied, Then it uses `start_price_inr` from owner compare hints (unpriced last on lowest-price sort). *(Slice 5)*
+- [x] Given discover cards, When a laundry offers Wash & Fold and/or Shirt dry-clean, Then the card shows “from ₹X” for those items only (no suggested invent). *(Slice 5)*
+- [x] Given price filter/sort on `/discover`, When applied, Then it uses `start_price_inr` from owner compare hints (unpriced last on lowest-price sort). *(Slice 5)*
+- [x] Given marketing `/stores`, When listed, Then each row shows name + city only (no compare prices, rating filters, or “compare stores” copy). *(2026-07-17)*
 - [x] Money stored as `NUMERIC(12,2)` INR; API documents paise + INR string fields. *(partner API)*
 - [x] Curtain items may exist with null suggested prices and are hidden from “from” until priced (or shown as “Ask store”).
 - [x] Tests: seed idempotency; partner authz (cannot edit another laundry); public list omits disabled *(Slice C)*; marketplace-from MIN + suggested fallback *(Slice D)*

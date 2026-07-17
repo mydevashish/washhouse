@@ -119,12 +119,18 @@ class Settings(BaseSettings):
     # Observability
     SENTRY_DSN: str | None = None
 
-    # Email
+    # Email (SMTP). Leave SMTP_HOST unset to disable outbound mail.
     SMTP_HOST: str | None = None
     SMTP_PORT: int | None = None
     SMTP_USERNAME: str | None = None
     SMTP_PASSWORD: str | None = None
     SMTP_FROM_EMAIL: str = "noreply@dlm.app"
+    # TLS (STARTTLS, typical port 587) vs SSL (implicit TLS, typical port 465).
+    # When both unset, port 465 → SSL; otherwise → STARTTLS.
+    SMTP_USE_TLS: bool | None = None
+    SMTP_USE_SSL: bool | None = None
+    # Inbox for marketing contact / franchise notifications
+    SUPPORT_EMAIL: str | None = None
 
     # SMS
     TWILIO_ACCOUNT_SID: str | None = None
@@ -182,6 +188,33 @@ class Settings(BaseSettings):
         backend_root = Path(__file__).resolve().parents[2]
         return backend_root / self.DISPUTE_UPLOAD_DIR
 
+    @property
+    def smtp_is_configured(self) -> bool:
+        """True when host, port, and from-address are set (auth optional for open relays)."""
+        return bool(self.SMTP_HOST and self.SMTP_PORT and self.SMTP_FROM_EMAIL)
+
+    @property
+    def support_inbox(self) -> str:
+        """Destination for ops notifications (contact / franchise)."""
+        return (self.SUPPORT_EMAIL or self.SMTP_FROM_EMAIL).strip()
+
+    @property
+    def smtp_use_ssl(self) -> bool:
+        if self.SMTP_USE_SSL is not None:
+            return self.SMTP_USE_SSL
+        if self.SMTP_USE_TLS is not None:
+            return False
+        return self.SMTP_PORT == 465
+
+    @property
+    def smtp_use_tls(self) -> bool:
+        """STARTTLS after connect (not used when implicit SSL is on)."""
+        if self.smtp_use_ssl:
+            return False
+        if self.SMTP_USE_TLS is not None:
+            return self.SMTP_USE_TLS
+        return True
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def _normalize_database_url(cls, value: object) -> object:
@@ -229,10 +262,18 @@ class Settings(BaseSettings):
             return None
         return value
 
+    @field_validator("SMTP_USE_TLS", "SMTP_USE_SSL", mode="before")
+    @classmethod
+    def _empty_optional_bool(cls, value: object) -> object:
+        if value == "" or value is None:
+            return None
+        return value
+
     @field_validator(
         "SMTP_HOST",
         "SMTP_USERNAME",
         "SMTP_PASSWORD",
+        "SUPPORT_EMAIL",
         "SENTRY_DSN",
         "TWILIO_ACCOUNT_SID",
         "TWILIO_AUTH_TOKEN",
@@ -253,6 +294,23 @@ class Settings(BaseSettings):
         if value == "":
             return None
         return value
+
+    @model_validator(mode="after")
+    def _validate_smtp_settings(self) -> Settings:
+        if self.SMTP_HOST and self.SMTP_PORT is None:
+            raise ValueError(
+                "SMTP_PORT is required when SMTP_HOST is set "
+                "(use 587 for STARTTLS or 465 for SSL)"
+            )
+        if self.SMTP_PORT is not None and not (1 <= self.SMTP_PORT <= 65535):
+            raise ValueError("SMTP_PORT must be between 1 and 65535")
+        if self.SMTP_USE_TLS is True and self.SMTP_USE_SSL is True:
+            raise ValueError("Set only one of SMTP_USE_TLS or SMTP_USE_SSL (not both true)")
+        if self.SMTP_FROM_EMAIL is not None and not str(self.SMTP_FROM_EMAIL).strip():
+            raise ValueError("SMTP_FROM_EMAIL must not be empty")
+        if self.smtp_is_configured and self.SMTP_USERNAME and not self.SMTP_PASSWORD:
+            raise ValueError("SMTP_PASSWORD is required when SMTP_USERNAME is set")
+        return self
 
 
 def alembic_sqlalchemy_url_option(url: str | None = None) -> str:

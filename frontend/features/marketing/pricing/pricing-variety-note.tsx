@@ -31,15 +31,15 @@ export function PricingVarietyNote() {
             className="mt-5 text-xl font-bold tracking-tight sm:text-2xl"
             style={{ color: 'var(--atelier-ink)' }}
           >
-            Variety comes from independent laundry owners
+            Same rates. Pick a store nearby.
           </h2>
           <p
             className="mt-3 text-sm leading-relaxed sm:text-base"
             style={{ color: 'var(--atelier-muted)' }}
           >
-            The WashHouse connects you with verified neighbourhood partners — each sets their own
-            rates. That&apos;s why you&apos;ll see different prices across stores, and why browsing
-            nearby listings is the best way to find a deal.
+            The WashHouse connects you with verified neighbourhood partners. Services and starting
+            rates are shared across stores — choose the location that fits your day, then book
+            pickup.
           </p>
           <div className="mt-7">
             <Link
@@ -49,7 +49,7 @@ export function PricingVarietyNote() {
                 'h-11 w-full rounded-full border-[var(--atelier-rail)] bg-[var(--atelier-station)] text-[var(--atelier-ink)] hover:bg-[var(--atelier-peg-shine)] sm:w-auto',
               )}
             >
-              Compare stores near you
+              Find stores near you
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           </div>

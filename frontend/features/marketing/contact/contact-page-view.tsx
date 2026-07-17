@@ -12,8 +12,8 @@ import {
 } from 'lucide-react';
 
 import { SectionHeader } from '@/components/marketplace/section-header';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { BookNowCta } from '@/features/marketing/book-now';
 import { ContactForm } from '@/features/marketing/contact/contact-form';
 import {
   buildTelHref,
@@ -225,12 +225,10 @@ export function ContactPageView({ defaultSubject }: { defaultSubject?: 'general'
                 <p className="mt-1 text-sm text-muted-foreground">
                   Find a verified laundry near you and schedule pickup in minutes.
                 </p>
-                <Button asChild className="mt-4 h-11 w-full rounded-full sm:w-auto">
-                  <Link href="/stores">
-                    Book a pickup
-                    <ArrowRight className="h-4 w-4" aria-hidden />
-                  </Link>
-                </Button>
+                <BookNowCta className="mt-4 h-11 w-full rounded-full sm:w-auto">
+                  Book a pickup
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </BookNowCta>
               </div>
             </aside>
           </div>

@@ -6,7 +6,7 @@ import { PricingPageView } from '@/features/marketing/pricing';
 
 const title = `Pricing — ${WASHHOUSE_BRAND_NAME}`;
 const description =
-  'Transparent pricing on The WashHouse — indicative starting-from rates by category. Every laundry sets their own rates; browse stores for exact prices.';
+  'Transparent pricing on The WashHouse — indicative starting-from rates by category, shared across partner stores. Find a location near you when you are ready to book.';
 
 export const metadata: Metadata = {
   title,

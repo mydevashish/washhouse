@@ -130,3 +130,19 @@ class OrderCancellationWindowClosedError(ConflictError):
 class PaymentDeclinedError(ConflictError):
     code = "PAYMENT_DECLINED"
     message = "Payment was declined"
+
+
+# ---------- Email ----------
+class EmailNotConfiguredError(DomainError):
+    code = "EMAIL_NOT_CONFIGURED"
+    status_code = 503
+    message = (
+        "Email delivery is not configured. Set SMTP_HOST, SMTP_PORT, "
+        "SMTP_USERNAME, SMTP_PASSWORD, and SMTP_FROM_EMAIL."
+    )
+
+
+class EmailDeliveryError(DomainError):
+    code = "EMAIL_DELIVERY_FAILED"
+    status_code = 502
+    message = "Failed to send email. Check SMTP settings and try again."

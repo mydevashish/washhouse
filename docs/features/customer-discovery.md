@@ -34,13 +34,15 @@ List/search items may include `wash_fold_from_*`, `shirt_dry_clean_from_*`, and 
 
 ## Frontend surface
 
-- Route: `/stores`, `/discover`, `/discover/[id]`
-- `frontend/features/discover/`
+- Route: `/stores` — marketing directory (`StoresCard`: name + city; search only; no compare filters/prices)
+- Route: `/discover`, `/discover/[id]` — authenticated discovery keeps richer cards + compare hints
+- `frontend/features/discover/` (list/detail); `frontend/features/marketing/stores/` (public directory)
 
 ## Acceptance criteria
 
 - [x] Debounced search 300ms
 - [x] Server pagination default 20
 - [x] Only approved laundries in public list
-- [x] Store cards show owner-set “from ₹” compare hints when published (Slice 5)
-- [x] Price filter/sort uses real `start_price_inr` (not pseudo hash prices)
+- [x] Discover store cards show owner-set “from ₹” compare hints when published (Slice 5)
+- [x] Price filter/sort on `/discover` uses real `start_price_inr` (not pseudo hash prices)
+- [x] Marketing `/stores` shows name + city only (no compare / rating / price chrome)
