@@ -1,12 +1,5 @@
 import type { CatalogCategory } from '@/features/laundry-price-list/types';
-
-/** Request wide enough for 5/12 of 1440 @2x (~1160px) without soft upscales. */
-const U = (id: string, w = 1600) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
-
-/** Softer / smaller source for blurred section ambient (not the editorial photo). */
-const A = (id: string, w = 1200) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=70`;
+import { WASHHOUSE_CATALOG_CATEGORY_HEROES } from '@/features/marketing/catalog/washhouse-catalog-photos';
 
 export type PricingCategoryImage = {
   src: string;
@@ -24,63 +17,43 @@ export type PricingCategoryAmbient = {
   strength: PricingAmbientStrength;
 };
 
-/** Editorial garment photos for each price-guide category (Unsplash). */
+/** Catalog category heroes for each price-guide section. */
 export const PRICING_CATEGORY_IMAGES: Record<CatalogCategory, PricingCategoryImage> = {
-  laundry_by_kg: {
-    src: U('photo-1558618666-fcd25c85cd64'),
-    alt: 'Neatly folded laundry stacks ready after wash and fold',
-  },
-  men: {
-    src: U('photo-1489987707025-afc232f7ea96'),
-    alt: 'Pressed dress shirts hanging on a clean laundry rail',
-  },
-  women: {
-    src: U('photo-1610030469983-98e550d6193c'),
-    alt: 'Bright saree fabric draped with soft studio light',
-  },
-  kids: {
-    src: U('photo-1519238263530-99bdd11df2ea'),
-    alt: 'Colourful kids clothes folded and ready to wear',
-  },
-  winter: {
-    src: U('photo-1544923246-77307dd654cb'),
-    alt: 'Winter coats and outerwear hung after professional care',
-  },
-  household: {
-    src: U('photo-1631049307264-da0ec9d70304'),
-    alt: 'Fresh bed linen stacked neatly after laundry service',
-  },
+  laundry_by_kg: WASHHOUSE_CATALOG_CATEGORY_HEROES.laundry_by_kg,
+  men: WASHHOUSE_CATALOG_CATEGORY_HEROES.men,
+  women: WASHHOUSE_CATALOG_CATEGORY_HEROES.women,
+  kids: WASHHOUSE_CATALOG_CATEGORY_HEROES.kids,
+  winter: WASHHOUSE_CATALOG_CATEGORY_HEROES.winter,
+  household: WASHHOUSE_CATALOG_CATEGORY_HEROES.household,
 };
 
 /**
  * Ambient depth behind each photo+rates unit (decorative, aria-hidden).
- * Women / kids use distinct fabric lifestyle frames; others reuse category mood at soft strength.
+ * Reuses category heroes — blur + tint handle softness; women / kids stay richer.
  */
 export const PRICING_CATEGORY_AMBIENT: Record<CatalogCategory, PricingCategoryAmbient> = {
   laundry_by_kg: {
-    src: A('photo-1558618666-fcd25c85cd64'),
+    src: WASHHOUSE_CATALOG_CATEGORY_HEROES.laundry_by_kg.src,
     strength: 'soft',
   },
   men: {
-    src: A('photo-1489987707025-afc232f7ea96'),
+    src: WASHHOUSE_CATALOG_CATEGORY_HEROES.men.src,
     strength: 'soft',
   },
   women: {
-    /* Draped silk / saree fabric — atelier depth, not a second editorial hero */
-    src: A('photo-1617627143750-d86bc21e42bb'),
+    src: WASHHOUSE_CATALOG_CATEGORY_HEROES.women.src,
     strength: 'rich',
   },
   kids: {
-    /* Soft colourful kids garments — tasteful folded stack, not cartoonish */
-    src: A('photo-1519238263530-99bdd11df2ea'),
+    src: WASHHOUSE_CATALOG_CATEGORY_HEROES.kids.src,
     strength: 'rich',
   },
   winter: {
-    src: A('photo-1544923246-77307dd654cb'),
+    src: WASHHOUSE_CATALOG_CATEGORY_HEROES.winter.src,
     strength: 'soft',
   },
   household: {
-    src: A('photo-1631049307264-da0ec9d70304'),
+    src: WASHHOUSE_CATALOG_CATEGORY_HEROES.household.src,
     strength: 'soft',
   },
 };

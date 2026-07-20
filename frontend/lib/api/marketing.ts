@@ -22,7 +22,7 @@ const marketingTestimonialSchema = z.object({
   location: z.string(),
   rating: z.number().int().min(1).max(5),
   text: z.string(),
-  avatarUrl: z.string(),
+  avatarUrl: z.string().optional(),
   isFeatured: z.boolean(),
 });
 

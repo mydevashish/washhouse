@@ -2,7 +2,7 @@
 
 > Status: shipped (Slice D + Slice 5 discovery compare)  
 > Owner: product-manager + backend-architect + frontend-architect  
-> Last updated: 2026-07-17  
+> Last updated: 2026-07-20  
 > Related: [marketing-pricing.md](marketing-pricing.md), [pricing-model.md](../business/pricing-model.md), [customer-discovery.md](customer-discovery.md)
 ## Problem
 
@@ -228,6 +228,20 @@ Migration: `20260717_0034_platform_catalog_and_laundry_item_prices` (Alembic; re
 | Types / API | `features/partner-price-list/api/`, `features/laundries/` | TanStack Query |
 
 UI rules: one job per section; tables not hero cards; copy must say **prices vary by laundry**; never present aggregate as the user’s checkout price.
+
+## Imagery
+
+`/pricing` rack photos and category heroes use the same WashHouse catalog collage tiles as the homepage.
+
+| Piece | Path |
+| ----- | ---- |
+| Assets | `frontend/public/catalog/` |
+| Registry | `frontend/features/marketing/catalog/washhouse-catalog-photos.ts` |
+| Pricing resolver | `frontend/features/marketing/pricing/pricing-product-images.ts` → `resolvePricingProductImage(slug, name, category)` |
+
+Resolver maps catalog `slug` + `name` via `resolve-catalog-photo-key.ts`; unknown garments fall back to the category hero (`pricing-category-images.ts`).
+
+**New catalog SKU (backend seed):** (1) add row in `seed_washhouse_catalog.py` with a stable `slug`; (2) crop WebP → `public/catalog/<category>/`, entry in `manifest.json`, run `frontend/scripts/extract-catalog-photos.py`; (3) if a new garment family, add a `CatalogPhotoKey`, slug rule in `resolve-catalog-photo-key.ts`, and path + alt in `washhouse-catalog-photos.ts`; (4) size/weight variants can share an existing key (e.g. both saree weights → `saree`). Details: `frontend/public/catalog/README.md`.
 
 ## Background work
 

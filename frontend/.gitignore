@@ -53,3 +53,7 @@ storybook-static/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local image imports (processed by npm run catalog:optimize)
+public/catalog/_imports/
+public/marketing/_imports/

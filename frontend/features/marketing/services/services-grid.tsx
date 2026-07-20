@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Clock } from 'lucide-react';
 
@@ -14,7 +15,7 @@ export function ServicesGrid() {
         <SectionHeader
           eyebrow="What we offer"
           title="Pick a service, pick a laundry"
-          description="These are platform-wide service types. Final pricing and turnaround come from each store's listing."
+          description="Platform-wide service types with indicative starting-from rates. Final pricing and turnaround come from each store's listing."
           align="center"
           className="mb-10"
         />
@@ -29,12 +30,26 @@ export function ServicesGrid() {
               accent,
               turnaround,
               priceFrom,
+              image,
+              imageAlt,
               optional,
               ctaHref = '/stores',
               ctaLabel = 'Browse laundries',
             }) => (
               <li key={id} id={id}>
-                <Card className="flex h-full flex-col rounded-2xl border-0 shadow-soft ring-1 ring-border/60">
+                <Card className="flex h-full flex-col overflow-hidden rounded-2xl border-0 shadow-soft ring-1 ring-border/60">
+                  {image && imageAlt ? (
+                    <div className="relative aspect-[4/3] w-full bg-muted">
+                      <Image
+                        src={image}
+                        alt={imageAlt}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                    </div>
+                  ) : null}
+
                   <CardContent className="flex flex-1 flex-col p-6">
                     <div className="flex items-start justify-between gap-3">
                       <div
@@ -87,8 +102,9 @@ export function ServicesGrid() {
         </ul>
 
         <p className="mx-auto mt-8 max-w-prose text-center text-xs leading-relaxed text-muted-foreground sm:text-sm">
-          <strong className="font-medium text-foreground">Indicative pricing only.</strong> Final
-          rates are set by each laundry partner and shown on their store page before you book.
+          <strong className="font-medium text-foreground">Indicative pricing only.</strong> Starting-from
+          rates are by category; final bills are set by each laundry partner and shown on their store
+          page before you book.
         </p>
       </div>
     </section>

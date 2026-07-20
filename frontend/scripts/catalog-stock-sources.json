@@ -1,0 +1,474 @@
+{
+  "version": 1,
+  "notes": "Curated free-licensed sources for catalog stock tiles. Run: python scripts/download-catalog-stock.py",
+  "assets": [
+    {
+      "slug": "men-shirt-tshirt",
+      "file": "men/shirt.webp",
+      "url": "https://images.unsplash.com/photo-1603252109303-2751441dd157?w=1600&q=85",
+      "source": "Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/white-button-up-shirt-on-clothes-hanger-hMMXhKSZk7k",
+      "photographer": "Nimble Made",
+      "description": "White dress shirt on clothes hanger"
+    },
+    {
+      "slug": "women-saree-normal",
+      "file": "women/saree-normal.webp",
+      "url": "https://images.pexels.com/photos/8750018/pexels-photo-8750018.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/woman-in-red-and-gold-sari-dress-8750018/",
+      "photographer": "Anastasia Shuraeva",
+      "description": "Women in traditional red and gold sarees"
+    },
+    {
+      "slug": "men-trouser-jeans",
+      "file": "men/trouser.webp",
+      "url": "https://images.pexels.com/photos/8613309/pexels-photo-8613309.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/blue-denim-jeans-on-white-surface-8613309/",
+      "photographer": "cottonbro studio",
+      "description": "Blue denim jeans flat lay on white surface"
+    },
+    {
+      "slug": "men-kurta",
+      "file": "men/kurta.webp",
+      "url": "https://images.pexels.com/photos/13222257/pexels-photo-13222257.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/handsome-man-in-traditional-wear-13222257/",
+      "photographer": "Abhishek Shekhawat",
+      "description": "Men's traditional kurta garment"
+    },
+    {
+      "slug": "men-suit-2pcs",
+      "file": "men/suit-2pcs.webp",
+      "url": "https://images.unsplash.com/photo-1592343516109-362f7bd871aa?w=1600&q=85",
+      "source": "Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/black-suit-jacket-on-white-plastic-clothes-hanger-VsCBt8j-qg4",
+      "photographer": "Victoria Priessnitz",
+      "description": "Black suit jacket on white hanger"
+    },
+    {
+      "slug": "women-lehenga-normal",
+      "file": "women/lehenga-normal.webp",
+      "url": "https://images.pexels.com/photos/8485746/pexels-photo-8485746.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/woman-in-red-and-gold-floral-sari-dress-8485746/",
+      "photographer": "Nguyễn Văn Minh Vương",
+      "description": "Ornate red and gold lehenga-style traditional dress"
+    },
+    {
+      "slug": "women-blouse-choli-normal",
+      "file": "women/blouse-choli.webp",
+      "url": "https://images.pexels.com/photos/13095687/pexels-photo-13095687.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/a-woman-in-red-and-gold-sari-dress-13095687/",
+      "photographer": "aman ajimal Fashion Stylist",
+      "description": "Traditional Indian bride blouse and red saree"
+    },
+    {
+      "slug": "household-bedsheet-single",
+      "file": "household/bedsheet.webp",
+      "url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1600&q=85",
+      "source": "Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/white-bed-linen-on-bed-1631049307264",
+      "photographer": "Spacejoy",
+      "description": "Crisp white bedsheets and pillows"
+    },
+    {
+      "slug": "household-blanket-double",
+      "file": "household/blanket.webp",
+      "url": "https://images.pexels.com/photos/10221752/pexels-photo-10221752.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/gray-knitted-fabric-in-close-up-photography-10221752/",
+      "photographer": "Engin Akyurt",
+      "description": "Gray knit blanket textile close-up"
+    },
+    {
+      "slug": "household-comforter-double",
+      "file": "household/comforter.webp",
+      "url": "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=1600&q=85",
+      "source": "Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/quilted-white-comforter-R-w5Q-4Mqm0",
+      "photographer": "Spacejoy",
+      "description": "Quilted white comforter on bed"
+    },
+    {
+      "slug": "household-shoes-sports",
+      "file": "accessories/shoes.webp",
+      "url": "https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/photo-of-sneakers-on-white-background-2529148/",
+      "photographer": "Melvin Buezo",
+      "description": "White sneakers on neutral background"
+    },
+    {
+      "slug": "kg-wash-fold",
+      "file": "services/wash-fold.webp",
+      "url": "https://images.pexels.com/photos/4041789/pexels-photo-4041789.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/person-holding-white-button-up-long-sleeved-shirt-4041789/",
+      "photographer": "cottonbro studio",
+      "description": "Freshly pressed white shirt held for folding"
+    },
+    {
+      "slug": "kg-wash-iron",
+      "file": "services/wash-iron.webp",
+      "url": "https://images.pexels.com/photos/4041789/pexels-photo-4041789.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/person-holding-white-button-up-long-sleeved-shirt-4041789/",
+      "photographer": "cottonbro studio",
+      "description": "Freshly pressed white shirt"
+    },
+    {
+      "slug": "kids-shirt-tshirt",
+      "file": "kids/shirt-tshirt.webp",
+      "url": "https://images.pexels.com/photos/8613311/pexels-photo-8613311.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/a-child-wearing-a-white-t-shirt-8613311/",
+      "photographer": "cottonbro studio",
+      "description": "Kids white t-shirt"
+    },
+    {
+      "slug": "kids-trouser-jeans",
+      "file": "kids/trouser-jeans.webp",
+      "url": "https://images.pexels.com/photos/8613309/pexels-photo-8613309.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/blue-denim-jeans-on-white-surface-8613309/",
+      "photographer": "cottonbro studio",
+      "description": "Kids denim jeans flat lay"
+    },
+    {
+      "slug": "kids-lower",
+      "file": "kids/lower.webp",
+      "url": "https://images.pexels.com/photos/8613313/pexels-photo-8613313.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/gray-sweatpants-on-white-background-8613313/",
+      "photographer": "cottonbro studio",
+      "description": "Kids lounge lower / sweatpants"
+    },
+    {
+      "slug": "kids-jogger-cargo",
+      "file": "kids/jogger-cargo.webp",
+      "url": "https://images.pexels.com/photos/7671165/pexels-photo-7671165.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/green-cargo-pants-on-white-background-7671165/",
+      "photographer": "cottonbro studio",
+      "description": "Kids cargo jogger pants"
+    },
+    {
+      "slug": "kids-shorts",
+      "file": "kids/shorts.webp",
+      "url": "https://images.pexels.com/photos/8613310/pexels-photo-8613310.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/blue-denim-shorts-on-white-background-8613310/",
+      "photographer": "cottonbro studio",
+      "description": "Kids denim shorts"
+    },
+    {
+      "slug": "kids-dhoti-lungi",
+      "file": "kids/dhoti-lungi.webp",
+      "url": "https://images.pexels.com/photos/9607926/pexels-photo-9607926.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/man-in-white-traditional-clothing-9607926/",
+      "photographer": "RDNE Stock project",
+      "description": "White traditional dhoti-style wrap (scaled for kids tile)"
+    },
+    {
+      "slug": "kids-kurta",
+      "file": "kids/kurta.webp",
+      "url": "https://images.pexels.com/photos/9607926/pexels-photo-9607926.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/man-in-white-traditional-clothing-9607926/",
+      "photographer": "RDNE Stock project",
+      "description": "Kids kurta — traditional white garment"
+    },
+    {
+      "slug": "kids-sherwani-cotton",
+      "file": "kids/sherwani-cotton.webp",
+      "url": "https://images.pexels.com/photos/9607926/pexels-photo-9607926.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/man-in-white-traditional-clothing-9607926/",
+      "photographer": "RDNE Stock project",
+      "description": "Kids cotton sherwani-style formal wear"
+    },
+    {
+      "slug": "kids-sherwani-wedding",
+      "file": "kids/sherwani-wedding.webp",
+      "url": "https://images.pexels.com/photos/9607926/pexels-photo-9607926.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/man-in-white-traditional-clothing-9607926/",
+      "photographer": "RDNE Stock project",
+      "description": "Kids wedding sherwani — festive traditional garment"
+    },
+    {
+      "slug": "kids-coat-formal",
+      "file": "kids/coat-formal.webp",
+      "url": "https://images.pexels.com/photos/631986/pexels-photo-631986.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/gray-coat-hanging-on-rack-631986/",
+      "photographer": "Julia M Cameron",
+      "description": "Kids formal coat on hanger"
+    },
+    {
+      "slug": "kids-coat-heavy",
+      "file": "kids/coat-heavy.webp",
+      "url": "https://images.pexels.com/photos/1124468/pexels-photo-1124468.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/man-wearing-black-leather-jacket-1124468/",
+      "photographer": "Mike Bird",
+      "description": "Kids heavy winter coat"
+    },
+    {
+      "slug": "kids-suit-2pcs",
+      "file": "kids/suit-2pcs.webp",
+      "url": "https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/black-suit-jacket-on-hanger-1926769/",
+      "photographer": "cottonbro studio",
+      "description": "Kids two-piece suit on hanger"
+    },
+    {
+      "slug": "kids-suit-3pcs",
+      "file": "kids/suit-3pcs.webp",
+      "url": "https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/black-suit-jacket-on-hanger-1926769/",
+      "photographer": "cottonbro studio",
+      "description": "Kids three-piece suit on hanger"
+    },
+    {
+      "slug": "kids-waistcoat",
+      "file": "kids/waistcoat.webp",
+      "url": "https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/black-suit-jacket-on-hanger-1926769/",
+      "photographer": "cottonbro studio",
+      "description": "Kids waistcoat / vest"
+    },
+    {
+      "slug": "kids-skirt",
+      "file": "kids/skirt.webp",
+      "url": "https://images.pexels.com/photos/6311391/pexels-photo-6311391.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/woman-in-red-and-gold-sari-6311391/",
+      "photographer": "Anastasia Shuraeva",
+      "description": "Kids skirt — festive fabric"
+    },
+    {
+      "slug": "kids-girl-dress",
+      "file": "kids/girl-dress.webp",
+      "url": "https://images.pexels.com/photos/8613087/pexels-photo-8613087.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/a-girl-wearing-a-pink-dress-8613087/",
+      "photographer": "cottonbro studio",
+      "description": "Girls party dress"
+    },
+    {
+      "slug": "kids-dupatta",
+      "file": "kids/dupatta.webp",
+      "url": "https://images.pexels.com/photos/6311391/pexels-photo-6311391.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/woman-in-red-and-gold-sari-6311391/",
+      "photographer": "Anastasia Shuraeva",
+      "description": "Kids dupatta scarf fabric"
+    },
+    {
+      "slug": "kids-frock",
+      "file": "kids/frock.webp",
+      "url": "https://images.pexels.com/photos/8613087/pexels-photo-8613087.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/a-girl-wearing-a-pink-dress-8613087/",
+      "photographer": "cottonbro studio",
+      "description": "Girls frock dress"
+    },
+    {
+      "slug": "kids-full-jacket-normal",
+      "file": "kids/full-jacket-normal.webp",
+      "url": "https://images.pexels.com/photos/631986/pexels-photo-631986.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/gray-coat-hanging-on-rack-631986/",
+      "photographer": "Julia M Cameron",
+      "description": "Kids full-length denim-style jacket"
+    },
+    {
+      "slug": "kids-full-jacket-leather",
+      "file": "kids/full-jacket-leather.webp",
+      "url": "https://images.pexels.com/photos/1124468/pexels-photo-1124468.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/man-wearing-black-leather-jacket-1124468/",
+      "photographer": "Mike Bird",
+      "description": "Kids full leather jacket"
+    },
+    {
+      "slug": "kids-half-jacket-normal",
+      "file": "kids/half-jacket-normal.webp",
+      "url": "https://images.pexels.com/photos/1124466/pexels-photo-1124466.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/man-wearing-blue-denim-jacket-1124466/",
+      "photographer": "Mike Bird",
+      "description": "Kids half jacket — casual denim outerwear"
+    },
+    {
+      "slug": "kids-half-jacket-leather",
+      "file": "kids/half-jacket-leather.webp",
+      "url": "https://images.pexels.com/photos/1124468/pexels-photo-1124468.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/man-wearing-black-leather-jacket-1124468/",
+      "photographer": "Mike Bird",
+      "description": "Kids half leather jacket"
+    },
+    {
+      "slug": "winter-sweater-kids",
+      "file": "winter/sweater-kids.webp",
+      "url": "https://images.pexels.com/photos/4611707/pexels-photo-4611707.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/kid-wearing-red-sweater-4611707/",
+      "photographer": "cottonbro studio",
+      "description": "Kids knit sweater"
+    },
+    {
+      "slug": "winter-overcoat-kids",
+      "file": "winter/overcoat-kids.webp",
+      "url": "https://images.pexels.com/photos/631986/pexels-photo-631986.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/gray-coat-hanging-on-rack-631986/",
+      "photographer": "Julia M Cameron",
+      "description": "Kids winter overcoat"
+    },
+    {
+      "slug": "winter-overcoat-men-women",
+      "file": "winter/overcoat-men-women.webp",
+      "url": "https://images.pexels.com/photos/631986/pexels-photo-631986.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/gray-coat-hanging-on-rack-631986/",
+      "photographer": "Julia M Cameron",
+      "description": "Winter overcoat on hanger"
+    },
+    {
+      "slug": "winter-overcoat-leather",
+      "file": "winter/overcoat-leather.webp",
+      "url": "https://images.pexels.com/photos/1124468/pexels-photo-1124468.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/man-wearing-black-leather-jacket-1124468/",
+      "photographer": "Mike Bird",
+      "description": "Leather overcoat / long leather coat"
+    },
+    {
+      "slug": "winter-jacket-cotton-denim",
+      "file": "winter/jacket-cotton-denim.webp",
+      "url": "https://images.pexels.com/photos/1124466/pexels-photo-1124466.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/man-wearing-blue-denim-jacket-1124466/",
+      "photographer": "Mike Bird",
+      "description": "Cotton denim jacket"
+    },
+    {
+      "slug": "winter-jacket-leather",
+      "file": "winter/jacket-leather.webp",
+      "url": "https://images.pexels.com/photos/1124468/pexels-photo-1124468.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/man-wearing-black-leather-jacket-1124468/",
+      "photographer": "Mike Bird",
+      "description": "Leather jacket"
+    },
+    {
+      "slug": "winter-half-jacket-cotton-denim",
+      "file": "winter/half-jacket-cotton-denim.webp",
+      "url": "https://images.pexels.com/photos/1124466/pexels-photo-1124466.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/man-wearing-blue-denim-jacket-1124466/",
+      "photographer": "Mike Bird",
+      "description": "Half-length denim jacket"
+    },
+    {
+      "slug": "winter-half-jacket-puffer",
+      "file": "winter/half-jacket-puffer.webp",
+      "url": "https://images.pexels.com/photos/631986/pexels-photo-631986.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/gray-coat-hanging-on-rack-631986/",
+      "photographer": "Julia M Cameron",
+      "description": "Half puffer jacket"
+    },
+    {
+      "slug": "winter-half-jacket-leather",
+      "file": "winter/half-jacket-leather.webp",
+      "url": "https://images.pexels.com/photos/1124468/pexels-photo-1124468.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/man-wearing-black-leather-jacket-1124468/",
+      "photographer": "Mike Bird",
+      "description": "Half leather jacket"
+    },
+    {
+      "slug": "winter-cap",
+      "file": "winter/cap.webp",
+      "url": "https://images.pexels.com/photos/303383/pexels-photo-303383.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/knitted-cap-on-snow-303383/",
+      "photographer": "Pixabay",
+      "description": "Winter knit cap"
+    },
+    {
+      "slug": "winter-hoodie",
+      "file": "winter/hoodie.webp",
+      "url": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=1600&q=85",
+      "source": "Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/gray-hoodie-on-white-surface-1556821840",
+      "photographer": "Erik Mclean",
+      "description": "Hooded sweatshirt"
+    },
+    {
+      "slug": "household-gloves-cotton",
+      "file": "accessories/gloves-cotton.webp",
+      "url": "https://images.pexels.com/photos/7266912/pexels-photo-7266912.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/white-cloth-gloves-on-white-background-7266912/",
+      "photographer": "Marija Makarova",
+      "description": "White cotton knitted gloves on white background"
+    },
+    {
+      "slug": "household-gloves-leather",
+      "file": "accessories/gloves-leather.webp",
+      "url": "https://images.unsplash.com/photo-1673294861057-4584f92b91d2?w=1600&q=85",
+      "source": "Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/a-pair-of-brown-leather-gloves-on-a-white-background-RLShnUiFFNA",
+      "photographer": "Adam Hornyak",
+      "description": "Brown leather gloves pair on white background"
+    },
+    {
+      "slug": "household-heels",
+      "file": "accessories/heels.webp",
+      "url": "https://images.pexels.com/photos/28821783/pexels-photo-28821783.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/elegant-high-heel-shoes-on-white-background-28821783/",
+      "photographer": "Lucent Designs Media International",
+      "description": "Women's high heel shoes on plain white background"
+    },
+    {
+      "slug": "household-trolley-s",
+      "file": "accessories/trolley-s.webp",
+      "url": "https://images.unsplash.com/photo-1673505705700-e0afd7273fbd?w=1600&q=85",
+      "source": "Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/a-black-suitcase-with-wheels-on-a-white-background-pmJAM2Fxbos",
+      "photographer": "Cyberbackpack.com",
+      "description": "Black rolling suitcase with wheels on white background"
+    },
+    {
+      "slug": "household-trolley-m",
+      "file": "accessories/trolley-m.webp",
+      "url": "https://images.unsplash.com/photo-1673505705687-dffbfd02b613?w=1600&q=85",
+      "source": "Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/a-suit-case-is-open-on-a-white-surface-2heJHPFDpKU",
+      "photographer": "Cyberbackpack.com",
+      "description": "Rolling carry-on suitcase on white surface"
+    },
+    {
+      "slug": "household-trolley-l",
+      "file": "accessories/trolley-l.webp",
+      "url": "https://images.unsplash.com/photo-1673505705700-e0afd7273fbd?w=1600&q=85",
+      "source": "Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/a-black-suitcase-with-wheels-on-a-white-background-pmJAM2Fxbos",
+      "photographer": "Cyberbackpack.com",
+      "description": "Large black rolling suitcase with wheels on white background"
+    }
+  ]
+}

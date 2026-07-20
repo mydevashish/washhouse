@@ -15,8 +15,8 @@ import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { GlassSurface } from '@/components/ui/glass-surface';
-import { HERO_SLIDE_IMAGES } from '@/features/discover/marketplace/laundry-images';
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
+import { WASHHOUSE_DECORATIVE_BANNERS } from '@/features/marketing/catalog/washhouse-catalog-photos';
 import {
   FRANCHISE_BROCHURE_PDF_FILENAME,
   FRANCHISE_BROCHURE_PDF_HREF,
@@ -36,7 +36,7 @@ const FRANCHISE_BENEFITS = [
   { label: 'Proven Model', icon: BadgeCheck },
 ] as const satisfies ReadonlyArray<{ label: string; icon: LucideIcon }>;
 
-const STOREFRONT_IMAGE = HERO_SLIDE_IMAGES.partner;
+const FRANCHISE_BANNER = WASHHOUSE_DECORATIVE_BANNERS.brandFranchise;
 
 export function FranchiseTeaser() {
   return (
@@ -45,17 +45,14 @@ export function FranchiseTeaser() {
       className={cn('relative isolate overflow-hidden', MARKETING_SECTION_PY)}
     >
       <Image
-        src={STOREFRONT_IMAGE}
+        src={FRANCHISE_BANNER.photo.src}
         alt=""
         fill
         sizes="100vw"
         className="object-cover"
         aria-hidden
       />
-      <div
-        className="absolute inset-0 bg-gradient-to-br from-brand-900/95 via-brand-800/90 to-brand-900/95"
-        aria-hidden
-      />
+      <div className={cn('absolute inset-0', FRANCHISE_BANNER.overlayClassName)} aria-hidden />
 
       <div className={cn('relative', MARKETING_CONTAINER)}>
         <FadeIn>

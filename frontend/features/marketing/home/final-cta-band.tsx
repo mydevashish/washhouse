@@ -11,6 +11,7 @@ import {
   CONTACT_CONFIG,
 } from '@/features/marketing/contact/contact-constants';
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
+import { WASHHOUSE_DECORATIVE_BANNERS } from '@/features/marketing/catalog/washhouse-catalog-photos';
 import {
   GLASS_ON_DARK_GRADIENT,
   MARKETING_CONTAINER,
@@ -18,8 +19,8 @@ import {
 } from '@/features/marketing/shared/marketing-layout';
 import { cn } from '@/lib/utils';
 
-const CTA_BACKGROUND_IMAGE =
-  'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=1920&q=80';
+/** Store lounge/counter hero — decorative background behind CTA copy */
+const CTA_BACKGROUND = WASHHOUSE_DECORATIVE_BANNERS.brandCta;
 
 const WHATSAPP_MESSAGE = 'Hi WashHouse — I would like to book a laundry pickup.';
 
@@ -35,7 +36,7 @@ export function FinalCtaBand() {
       className={cn('relative isolate overflow-hidden', MARKETING_SECTION_PY)}
     >
       <Image
-        src={CTA_BACKGROUND_IMAGE}
+        src={CTA_BACKGROUND.photo.src}
         alt=""
         fill
         priority={false}
@@ -43,10 +44,7 @@ export function FinalCtaBand() {
         className="object-cover"
         aria-hidden
       />
-      <div
-        className="absolute inset-0 bg-gradient-to-r from-brand-900/95 via-brand-600/90 to-brand-900/95"
-        aria-hidden
-      />
+      <div className={cn('absolute inset-0', CTA_BACKGROUND.overlayClassName)} aria-hidden />
 
       <div className={cn('relative', MARKETING_CONTAINER)}>
         <FadeIn>

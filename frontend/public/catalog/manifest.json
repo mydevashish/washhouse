@@ -1,0 +1,1345 @@
+{
+  "version": 1,
+  "source": "../brand/washhouse-service-catalog-source.jpeg",
+  "grid": {
+    "originX": 15,
+    "stepX": 120,
+    "tileWidth": 110,
+    "tileHeight": 110
+  },
+  "output": {
+    "targetWidth": 1200,
+    "targetHeight": 900,
+    "webpQuality": 85,
+    "format": "webp"
+  },
+  "items": [
+    {
+      "key": "shirt",
+      "slug": "men-shirt-tshirt",
+      "label": "Shirt / T-shirt",
+      "category": "men",
+      "file": "men/shirt.webp",
+      "source": "stock"
+    },
+    {
+      "key": "trouser",
+      "slug": "men-trouser-jeans",
+      "label": "Trouser / Jeans",
+      "category": "men",
+      "file": "men/trouser.webp",
+      "source": "stock"
+    },
+    {
+      "key": "lower",
+      "slug": "men-lower",
+      "label": "Lower",
+      "category": "men",
+      "file": "men/lower.webp",
+      "crop": {
+        "x": 255,
+        "y": 310,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "jogger",
+      "slug": "men-jogger-cargo",
+      "label": "Jogger / Cargo",
+      "category": "men",
+      "file": "men/jogger.webp",
+      "crop": {
+        "x": 375,
+        "y": 310,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "shorts",
+      "slug": "men-shorts",
+      "label": "Shorts",
+      "category": "men",
+      "file": "men/shorts.webp",
+      "crop": {
+        "x": 495,
+        "y": 310,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "dhoti",
+      "slug": "men-dhoti-lungi",
+      "label": "Dhoti / Lungi",
+      "category": "men",
+      "file": "men/dhoti.webp",
+      "crop": {
+        "x": 615,
+        "y": 310,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "kurta",
+      "slug": "men-kurta",
+      "label": "Kurta",
+      "category": "men",
+      "file": "men/kurta.webp",
+      "source": "stock"
+    },
+    {
+      "key": "cap",
+      "slug": "men-cap-fabric",
+      "label": "Cap (fabric)",
+      "category": "men",
+      "file": "men/cap-fabric.webp",
+      "crop": {
+        "x": 855,
+        "y": 310,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "cap",
+      "slug": "men-cap-leather",
+      "label": "Cap (leather)",
+      "category": "men",
+      "file": "men/cap-leather.webp",
+      "crop": {
+        "x": 975,
+        "y": 310,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "cap",
+      "slug": "men-turban",
+      "label": "Turban",
+      "category": "men",
+      "file": "men/turban.webp",
+      "crop": {
+        "x": 1095,
+        "y": 310,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "sherwani",
+      "slug": "men-sherwani-cotton",
+      "label": "Sherwani (cotton)",
+      "category": "men",
+      "file": "men/sherwani-cotton.webp",
+      "crop": {
+        "x": 15,
+        "y": 430,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "sherwani",
+      "slug": "men-sherwani-wedding",
+      "label": "Sherwani (wedding)",
+      "category": "men",
+      "file": "men/sherwani-wedding.webp",
+      "crop": {
+        "x": 135,
+        "y": 430,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "coat",
+      "slug": "men-coat-formal",
+      "label": "Coat (formal)",
+      "category": "men",
+      "file": "men/coat-formal.webp",
+      "crop": {
+        "x": 255,
+        "y": 430,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "coat",
+      "slug": "men-coat-heavy",
+      "label": "Coat (heavy)",
+      "category": "men",
+      "file": "men/coat-heavy.webp",
+      "crop": {
+        "x": 375,
+        "y": 430,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "suit",
+      "slug": "men-suit-2pcs",
+      "label": "Suit 2 pcs",
+      "category": "men",
+      "file": "men/suit-2pcs.webp",
+      "source": "stock"
+    },
+    {
+      "key": "suit",
+      "slug": "men-suit-3pcs",
+      "label": "Suit 3 pcs",
+      "category": "men",
+      "file": "men/suit-3pcs.webp",
+      "crop": {
+        "x": 615,
+        "y": 430,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "vest",
+      "slug": "men-vest",
+      "label": "Vest",
+      "category": "men",
+      "file": "men/vest.webp",
+      "crop": {
+        "x": 735,
+        "y": 430,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "vest",
+      "slug": "men-waistcoat",
+      "label": "Waistcoat",
+      "category": "men",
+      "file": "men/waistcoat.webp",
+      "crop": {
+        "x": 855,
+        "y": 430,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "wallet",
+      "slug": "men-wallet",
+      "label": "Wallet",
+      "category": "men",
+      "file": "men/wallet.webp",
+      "crop": {
+        "x": 975,
+        "y": 430,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "tie",
+      "slug": "men-tie",
+      "label": "Tie",
+      "category": "men",
+      "file": "men/tie.webp",
+      "crop": {
+        "x": 1095,
+        "y": 430,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "hanky",
+      "slug": "men-hanky",
+      "label": "Hanky",
+      "category": "men",
+      "file": "men/hanky.webp",
+      "crop": {
+        "x": 1215,
+        "y": 430,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "saree",
+      "slug": "women-saree-normal",
+      "label": "Saree (normal)",
+      "category": "women",
+      "file": "women/saree-normal.webp",
+      "source": "stock"
+    },
+    {
+      "key": "saree",
+      "slug": "women-saree-heavy",
+      "label": "Saree (heavy)",
+      "category": "women",
+      "file": "women/saree-heavy.webp",
+      "crop": {
+        "x": 135,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "lehenga",
+      "slug": "women-lehenga-normal",
+      "label": "Lehenga (normal)",
+      "category": "women",
+      "file": "women/lehenga-normal.webp",
+      "source": "stock"
+    },
+    {
+      "key": "lehenga",
+      "slug": "women-lehenga-heavy",
+      "label": "Lehenga (heavy)",
+      "category": "women",
+      "file": "women/lehenga-heavy.webp",
+      "crop": {
+        "x": 375,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "blouse",
+      "slug": "women-blouse-choli-normal",
+      "label": "Blouse / Choli",
+      "category": "women",
+      "file": "women/blouse-choli.webp",
+      "source": "stock"
+    },
+    {
+      "key": "top",
+      "slug": "women-top-kurti",
+      "label": "Top / Kurti",
+      "category": "women",
+      "file": "women/top-kurti.webp",
+      "crop": {
+        "x": 615,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "lower",
+      "slug": "women-patiala-salwar",
+      "label": "Salwar Suit",
+      "category": "women",
+      "file": "women/salwar-suit.webp",
+      "crop": {
+        "x": 735,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "dupatta",
+      "slug": "women-dupatta",
+      "label": "Dupatta",
+      "category": "women",
+      "file": "women/dupatta.webp",
+      "crop": {
+        "x": 855,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "gown",
+      "slug": "women-gown-anarkali",
+      "label": "Gown",
+      "category": "women",
+      "file": "women/gown.webp",
+      "crop": {
+        "x": 975,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "shawl",
+      "slug": "winter-shawl",
+      "label": "Shawl",
+      "category": "winter",
+      "file": "winter/shawl.webp",
+      "crop": {
+        "x": 1095,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "sweater",
+      "slug": "winter-sweater-men-women",
+      "label": "Sweater",
+      "category": "winter",
+      "file": "winter/sweater.webp",
+      "crop": {
+        "x": 1215,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "jacket_puffer",
+      "slug": "winter-jacket-puffer",
+      "label": "Jacket (puffer)",
+      "category": "winter",
+      "file": "winter/jacket-puffer.webp",
+      "crop": {
+        "x": 1335,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "bedsheet",
+      "slug": "household-bedsheet-single",
+      "label": "Bedsheet",
+      "category": "household",
+      "file": "household/bedsheet.webp",
+      "source": "stock"
+    },
+    {
+      "key": "blanket",
+      "slug": "household-blanket-double",
+      "label": "Blanket",
+      "category": "household",
+      "file": "household/blanket.webp",
+      "source": "stock"
+    },
+    {
+      "key": "comforter",
+      "slug": "household-comforter-double",
+      "label": "Comforter / Quilt",
+      "category": "household",
+      "file": "household/comforter.webp",
+      "source": "stock"
+    },
+    {
+      "key": "pillow",
+      "slug": "household-pillow",
+      "label": "Pillow",
+      "category": "household",
+      "file": "household/pillow.webp",
+      "crop": {
+        "x": 375,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "pillow",
+      "slug": "household-pillow-cover",
+      "label": "Pillow Cover",
+      "category": "household",
+      "file": "household/pillow-cover.webp",
+      "crop": {
+        "x": 435,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "curtain",
+      "slug": "household-curtain-panel",
+      "label": "Curtain",
+      "category": "household",
+      "file": "household/curtain.webp",
+      "crop": {
+        "x": 495,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "sofa_cover",
+      "slug": "household-sofa-cover",
+      "label": "Sofa Cover",
+      "category": "household",
+      "file": "household/sofa-cover.webp",
+      "crop": {
+        "x": 615,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "carpet",
+      "slug": "household-carpet-m",
+      "label": "Carpet / Rug",
+      "category": "household",
+      "file": "household/carpet.webp",
+      "crop": {
+        "x": 735,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "towel",
+      "slug": "household-bath-towel",
+      "label": "Towel",
+      "category": "household",
+      "file": "household/towel.webp",
+      "crop": {
+        "x": 855,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "shoes",
+      "slug": "household-shoes-sports",
+      "label": "Shoes",
+      "category": "accessories",
+      "file": "accessories/shoes.webp",
+      "source": "stock"
+    },
+    {
+      "key": "bag",
+      "slug": "household-bag-small",
+      "label": "School Bag",
+      "category": "accessories",
+      "file": "accessories/school-bag.webp",
+      "crop": {
+        "x": 1055,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "purse",
+      "slug": "women-purse-m",
+      "label": "Handbag",
+      "category": "accessories",
+      "file": "accessories/handbag.webp",
+      "crop": {
+        "x": 1155,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "bag",
+      "slug": "household-bag-large",
+      "label": "Backpack",
+      "category": "accessories",
+      "file": "accessories/backpack.webp",
+      "crop": {
+        "x": 1215,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "toy",
+      "slug": "household-toy-m",
+      "label": "Soft Toys",
+      "category": "accessories",
+      "file": "accessories/toy.webp",
+      "crop": {
+        "x": 1335,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "helmet",
+      "slug": "accessories-helmet",
+      "label": "Helmet",
+      "category": "accessories",
+      "file": "accessories/helmet.webp",
+      "crop": {
+        "x": 1415,
+        "y": 700,
+        "w": 121,
+        "h": 110
+      }
+    },
+    {
+      "key": "wash_fold",
+      "slug": "service-pickup-delivery",
+      "label": "Pickup & Delivery",
+      "category": "services",
+      "file": "services/pickup-delivery.webp",
+      "crop": {
+        "x": 15,
+        "y": 790,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "wash_fold",
+      "slug": "service-professional-cleaning",
+      "label": "Professional Cleaning",
+      "category": "services",
+      "file": "services/professional-cleaning.webp",
+      "crop": {
+        "x": 135,
+        "y": 790,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "wash_iron",
+      "slug": "service-hygienic-safe",
+      "label": "Hygienic & Safe",
+      "category": "services",
+      "file": "services/hygienic-safe.webp",
+      "crop": {
+        "x": 255,
+        "y": 790,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "wash_iron",
+      "slug": "service-steam-ironing",
+      "label": "Steam Ironing",
+      "category": "services",
+      "file": "services/steam-ironing.webp",
+      "crop": {
+        "x": 375,
+        "y": 790,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "shirt",
+      "slug": "service-quality-check",
+      "label": "Quality Check",
+      "category": "services",
+      "file": "services/quality-check.webp",
+      "crop": {
+        "x": 495,
+        "y": 790,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "bag",
+      "slug": "service-safe-packaging",
+      "label": "Safe Packaging",
+      "category": "services",
+      "file": "services/safe-packaging.webp",
+      "crop": {
+        "x": 615,
+        "y": 790,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "wash_fold",
+      "slug": "service-on-time-delivery",
+      "label": "On Time Delivery",
+      "category": "services",
+      "file": "services/on-time-delivery.webp",
+      "crop": {
+        "x": 735,
+        "y": 790,
+        "w": 110,
+        "h": 110
+      }
+    },
+    {
+      "key": "wash_fold",
+      "slug": "kg-wash-fold",
+      "label": "Wash & Fold",
+      "category": "services",
+      "file": "services/wash-fold.webp",
+      "source": "stock"
+    },
+    {
+      "key": "wash_iron",
+      "slug": "kg-wash-iron",
+      "label": "Wash & Iron",
+      "category": "services",
+      "file": "services/wash-iron.webp",
+      "source": "stock"
+    },
+    {
+      "key": "blouse",
+      "slug": "women-blouse-choli-heavy",
+      "label": "Blouse / Choli (heavy)",
+      "category": "women",
+      "file": "women/blouse-choli.webp",
+      "source": "stock"
+    },
+    {
+      "key": "skirt",
+      "slug": "women-skirt-short",
+      "label": "Skirt (short)",
+      "category": "women",
+      "file": "women/skirt-short.webp",
+      "crop": {
+        "x": 615,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "women-top-kurti",
+      "note": "No skirt tile — reuses top/kurti crop until collage updated"
+    },
+    {
+      "key": "skirt",
+      "slug": "women-skirt-long",
+      "label": "Skirt (long)",
+      "category": "women",
+      "file": "women/skirt-long.webp",
+      "crop": {
+        "x": 615,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "women-top-kurti",
+      "note": "No skirt tile — reuses top/kurti crop until collage updated"
+    },
+    {
+      "key": "dress",
+      "slug": "women-full-dress-normal",
+      "label": "Full Dress (normal)",
+      "category": "women",
+      "file": "women/full-dress-normal.webp",
+      "crop": {
+        "x": 975,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "women-gown-anarkali"
+    },
+    {
+      "key": "dress",
+      "slug": "women-full-dress-party",
+      "label": "Full Dress (party)",
+      "category": "women",
+      "file": "women/full-dress-party.webp",
+      "crop": {
+        "x": 975,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "women-gown-anarkali"
+    },
+    {
+      "key": "frock",
+      "slug": "women-frock-normal",
+      "label": "Frock (normal)",
+      "category": "women",
+      "file": "women/frock-normal.webp",
+      "crop": {
+        "x": 975,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "women-gown-anarkali",
+      "note": "No frock tile — reuses gown crop"
+    },
+    {
+      "key": "frock",
+      "slug": "women-frock-heavy",
+      "label": "Frock (heavy)",
+      "category": "women",
+      "file": "women/frock-heavy.webp",
+      "crop": {
+        "x": 375,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "women-lehenga-heavy",
+      "note": "No frock tile — reuses lehenga crop"
+    },
+    {
+      "key": "skirt",
+      "slug": "women-petticoat",
+      "label": "Petticoat",
+      "category": "women",
+      "file": "women/petticoat.webp",
+      "crop": {
+        "x": 735,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "women-patiala-salwar"
+    },
+    {
+      "key": "top",
+      "slug": "women-kameez-normal",
+      "label": "Kameez (normal)",
+      "category": "women",
+      "file": "women/kameez-normal.webp",
+      "crop": {
+        "x": 615,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "women-top-kurti"
+    },
+    {
+      "key": "top",
+      "slug": "women-kameez-fancy",
+      "label": "Kameez (fancy)",
+      "category": "women",
+      "file": "women/kameez-fancy.webp",
+      "crop": {
+        "x": 615,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "women-top-kurti"
+    },
+    {
+      "key": "gown",
+      "slug": "women-burkha",
+      "label": "Burkha",
+      "category": "women",
+      "file": "women/burkha.webp",
+      "crop": {
+        "x": 975,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "women-gown-anarkali"
+    },
+    {
+      "key": "kurta",
+      "slug": "women-kurta",
+      "label": "Kurta",
+      "category": "women",
+      "file": "women/kurta.webp",
+      "crop": {
+        "x": 615,
+        "y": 540,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "women-top-kurti"
+    },
+    {
+      "key": "bathrobe",
+      "slug": "women-bathrobe",
+      "label": "Bathrobe",
+      "category": "women",
+      "file": "women/bathrobe.webp",
+      "crop": {
+        "x": 855,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "household-bath-towel",
+      "note": "No bathrobe tile — reuses towel crop"
+    },
+    {
+      "key": "purse",
+      "slug": "women-purse-s",
+      "label": "Purse S",
+      "category": "accessories",
+      "file": "accessories/purse-s.webp",
+      "crop": {
+        "x": 1155,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "women-purse-m"
+    },
+    {
+      "key": "purse",
+      "slug": "women-purse-l",
+      "label": "Purse L",
+      "category": "accessories",
+      "file": "accessories/purse-l.webp",
+      "crop": {
+        "x": 1155,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "women-purse-m"
+    },
+    {
+      "key": "shirt",
+      "slug": "kids-shirt-tshirt",
+      "label": "Shirt / T-shirt",
+      "category": "kids",
+      "file": "kids/shirt-tshirt.webp",
+      "source": "stock"
+    },
+    {
+      "key": "trouser",
+      "slug": "kids-trouser-jeans",
+      "label": "Trouser / Jeans",
+      "category": "kids",
+      "file": "kids/trouser-jeans.webp",
+      "source": "stock"
+    },
+    {
+      "key": "lower",
+      "slug": "kids-lower",
+      "label": "Lower",
+      "category": "kids",
+      "file": "kids/lower.webp",
+      "source": "stock"
+    },
+    {
+      "key": "jogger",
+      "slug": "kids-jogger-cargo",
+      "label": "Jogger / Cargo",
+      "category": "kids",
+      "file": "kids/jogger-cargo.webp",
+      "source": "stock"
+    },
+    {
+      "key": "shorts",
+      "slug": "kids-shorts",
+      "label": "Shorts",
+      "category": "kids",
+      "file": "kids/shorts.webp",
+      "source": "stock"
+    },
+    {
+      "key": "dhoti",
+      "slug": "kids-dhoti-lungi",
+      "label": "Dhoti / Lungi",
+      "category": "kids",
+      "file": "kids/dhoti-lungi.webp",
+      "source": "stock"
+    },
+    {
+      "key": "kurta",
+      "slug": "kids-kurta",
+      "label": "Kurta",
+      "category": "kids",
+      "file": "kids/kurta.webp",
+      "source": "stock"
+    },
+    {
+      "key": "sherwani",
+      "slug": "kids-sherwani-cotton",
+      "label": "Sherwani (cotton)",
+      "category": "kids",
+      "file": "kids/sherwani-cotton.webp",
+      "source": "stock"
+    },
+    {
+      "key": "sherwani",
+      "slug": "kids-sherwani-wedding",
+      "label": "Sherwani (wedding)",
+      "category": "kids",
+      "file": "kids/sherwani-wedding.webp",
+      "source": "stock"
+    },
+    {
+      "key": "coat",
+      "slug": "kids-coat-formal",
+      "label": "Coat (formal)",
+      "category": "kids",
+      "file": "kids/coat-formal.webp",
+      "source": "stock"
+    },
+    {
+      "key": "coat",
+      "slug": "kids-coat-heavy",
+      "label": "Coat (heavy)",
+      "category": "kids",
+      "file": "kids/coat-heavy.webp",
+      "source": "stock"
+    },
+    {
+      "key": "suit",
+      "slug": "kids-suit-2pcs",
+      "label": "Suit 2 pcs",
+      "category": "kids",
+      "file": "kids/suit-2pcs.webp",
+      "source": "stock"
+    },
+    {
+      "key": "suit",
+      "slug": "kids-suit-3pcs",
+      "label": "Suit 3 pcs",
+      "category": "kids",
+      "file": "kids/suit-3pcs.webp",
+      "source": "stock"
+    },
+    {
+      "key": "vest",
+      "slug": "kids-waistcoat",
+      "label": "Waistcoat",
+      "category": "kids",
+      "file": "kids/waistcoat.webp",
+      "source": "stock"
+    },
+    {
+      "key": "skirt",
+      "slug": "kids-skirt",
+      "label": "Skirt",
+      "category": "kids",
+      "file": "kids/skirt.webp",
+      "source": "stock"
+    },
+    {
+      "key": "girl_dress",
+      "slug": "kids-girl-dress",
+      "label": "Girl Dress",
+      "category": "kids",
+      "file": "kids/girl-dress.webp",
+      "source": "stock"
+    },
+    {
+      "key": "dupatta",
+      "slug": "kids-dupatta",
+      "label": "Dupatta",
+      "category": "kids",
+      "file": "kids/dupatta.webp",
+      "source": "stock"
+    },
+    {
+      "key": "frock",
+      "slug": "kids-frock",
+      "label": "Frock",
+      "category": "kids",
+      "file": "kids/frock.webp",
+      "source": "stock"
+    },
+    {
+      "key": "jacket_denim",
+      "slug": "kids-full-jacket-normal",
+      "label": "Full jacket (normal)",
+      "category": "kids",
+      "file": "kids/full-jacket-normal.webp",
+      "source": "stock"
+    },
+    {
+      "key": "jacket_leather",
+      "slug": "kids-full-jacket-leather",
+      "label": "Full jacket (leather)",
+      "category": "kids",
+      "file": "kids/full-jacket-leather.webp",
+      "source": "stock"
+    },
+    {
+      "key": "jacket_denim",
+      "slug": "kids-half-jacket-normal",
+      "label": "Half jacket (normal)",
+      "category": "kids",
+      "file": "kids/half-jacket-normal.webp",
+      "source": "stock"
+    },
+    {
+      "key": "jacket_leather",
+      "slug": "kids-half-jacket-leather",
+      "label": "Half jacket (leather)",
+      "category": "kids",
+      "file": "kids/half-jacket-leather.webp",
+      "source": "stock"
+    },
+    {
+      "key": "sweater",
+      "slug": "winter-sweater-kids",
+      "label": "Sweater (kids)",
+      "category": "winter",
+      "file": "winter/sweater-kids.webp",
+      "source": "stock"
+    },
+    {
+      "key": "overcoat",
+      "slug": "winter-overcoat-kids",
+      "label": "Overcoat (kids)",
+      "category": "winter",
+      "file": "winter/overcoat-kids.webp",
+      "source": "stock"
+    },
+    {
+      "key": "overcoat",
+      "slug": "winter-overcoat-men-women",
+      "label": "Overcoat (men/women)",
+      "category": "winter",
+      "file": "winter/overcoat-men-women.webp",
+      "source": "stock"
+    },
+    {
+      "key": "overcoat_leather",
+      "slug": "winter-overcoat-leather",
+      "label": "Overcoat (leather)",
+      "category": "winter",
+      "file": "winter/overcoat-leather.webp",
+      "source": "stock"
+    },
+    {
+      "key": "jacket_denim",
+      "slug": "winter-jacket-cotton-denim",
+      "label": "Jacket (cotton/denim)",
+      "category": "winter",
+      "file": "winter/jacket-cotton-denim.webp",
+      "source": "stock"
+    },
+    {
+      "key": "jacket_leather",
+      "slug": "winter-jacket-leather",
+      "label": "Jacket (leather)",
+      "category": "winter",
+      "file": "winter/jacket-leather.webp",
+      "source": "stock"
+    },
+    {
+      "key": "jacket_denim",
+      "slug": "winter-half-jacket-cotton-denim",
+      "label": "Half Jacket (cotton/denim)",
+      "category": "winter",
+      "file": "winter/half-jacket-cotton-denim.webp",
+      "source": "stock"
+    },
+    {
+      "key": "jacket_puffer",
+      "slug": "winter-half-jacket-puffer",
+      "label": "Half Jacket (puffer)",
+      "category": "winter",
+      "file": "winter/half-jacket-puffer.webp",
+      "source": "stock"
+    },
+    {
+      "key": "jacket_leather",
+      "slug": "winter-half-jacket-leather",
+      "label": "Half Jacket (leather)",
+      "category": "winter",
+      "file": "winter/half-jacket-leather.webp",
+      "source": "stock"
+    },
+    {
+      "key": "cap",
+      "slug": "winter-cap",
+      "label": "Winter Cap",
+      "category": "winter",
+      "file": "winter/cap.webp",
+      "source": "stock"
+    },
+    {
+      "key": "hoodie",
+      "slug": "winter-hoodie",
+      "label": "Hoodie",
+      "category": "winter",
+      "file": "winter/hoodie.webp",
+      "source": "stock"
+    },
+    {
+      "key": "bedsheet",
+      "slug": "household-bedsheet-double",
+      "label": "Bedsheet double",
+      "category": "household",
+      "file": "household/bedsheet.webp",
+      "source": "stock"
+    },
+    {
+      "key": "blanket",
+      "slug": "household-blanket-4x6",
+      "label": "Blanket 4×6",
+      "category": "household",
+      "file": "household/blanket.webp",
+      "source": "stock"
+    },
+    {
+      "key": "blanket",
+      "slug": "household-blanket-king",
+      "label": "Blanket king",
+      "category": "household",
+      "file": "household/blanket.webp",
+      "source": "stock"
+    },
+    {
+      "key": "toy",
+      "slug": "household-toy-s",
+      "label": "Toy S",
+      "category": "accessories",
+      "file": "accessories/toy-s.webp",
+      "crop": {
+        "x": 1335,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "household-toy-m"
+    },
+    {
+      "key": "toy",
+      "slug": "household-toy-l",
+      "label": "Toy L",
+      "category": "accessories",
+      "file": "accessories/toy-l.webp",
+      "crop": {
+        "x": 1335,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "household-toy-m"
+    },
+    {
+      "key": "pillow",
+      "slug": "household-pillow-cushion-cover",
+      "label": "Pillow / Cushion Cover",
+      "category": "household",
+      "file": "household/pillow-cushion-cover.webp",
+      "crop": {
+        "x": 435,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "household-pillow-cover",
+      "note": "Aligns seed slug (was manifest-only household-pillow-cover)"
+    },
+    {
+      "key": "shoes",
+      "slug": "household-shoes-leather",
+      "label": "Shoes (leather)",
+      "category": "accessories",
+      "file": "accessories/shoes.webp",
+      "source": "stock"
+    },
+    {
+      "key": "heels",
+      "slug": "household-heels",
+      "label": "Heels",
+      "category": "accessories",
+      "file": "accessories/heels.webp",
+      "source": "stock"
+    },
+    {
+      "key": "trolley",
+      "slug": "household-trolley-s",
+      "label": "Trolley S",
+      "category": "accessories",
+      "file": "accessories/trolley-s.webp",
+      "source": "stock"
+    },
+    {
+      "key": "trolley",
+      "slug": "household-trolley-m",
+      "label": "Trolley M",
+      "category": "accessories",
+      "file": "accessories/trolley-m.webp",
+      "source": "stock"
+    },
+    {
+      "key": "trolley",
+      "slug": "household-trolley-l",
+      "label": "Trolley L",
+      "category": "accessories",
+      "file": "accessories/trolley-l.webp",
+      "source": "stock"
+    },
+    {
+      "key": "carpet",
+      "slug": "household-carpet-s",
+      "label": "Carpet S",
+      "category": "household",
+      "file": "household/carpet-s.webp",
+      "crop": {
+        "x": 735,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "household-carpet-m"
+    },
+    {
+      "key": "carpet",
+      "slug": "household-carpet-l",
+      "label": "Carpet L",
+      "category": "household",
+      "file": "household/carpet-l.webp",
+      "crop": {
+        "x": 735,
+        "y": 700,
+        "w": 110,
+        "h": 110
+      },
+      "placeholder": true,
+      "cropFrom": "household-carpet-m"
+    },
+    {
+      "key": "comforter",
+      "slug": "household-comforter-single",
+      "label": "Comforter single",
+      "category": "household",
+      "file": "household/comforter.webp",
+      "source": "stock"
+    },
+    {
+      "key": "gloves",
+      "slug": "household-gloves-cotton",
+      "label": "Gloves cotton",
+      "category": "accessories",
+      "file": "accessories/gloves-cotton.webp",
+      "source": "stock"
+    },
+    {
+      "key": "gloves",
+      "slug": "household-gloves-leather",
+      "label": "Gloves leather",
+      "category": "accessories",
+      "file": "accessories/gloves-leather.webp",
+      "source": "stock"
+    }
+  ]
+}

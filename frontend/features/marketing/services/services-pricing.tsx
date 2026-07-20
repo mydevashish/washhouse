@@ -17,7 +17,7 @@ export function ServicesPricing() {
         <SectionHeader
           eyebrow="Transparent pricing"
           title="How pricing works"
-          description="Indicative starting rates, what shows up at checkout, and a clear note that final prices are set by each laundry."
+          description="Indicative starting-from rates by category — the same catalogue and floors across partner stores. Final prices are set by each laundry and shown before you confirm."
           align="center"
           className="mb-8"
         />

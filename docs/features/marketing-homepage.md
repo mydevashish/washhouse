@@ -1,7 +1,7 @@
 # Feature: Marketing homepage v2
 
 > Status: shipped  
-> Last updated: 2026-07-17  
+> Last updated: 2026-07-20  
 > Route: `/`  
 > Related: [offline-booking-whatsapp.md](offline-booking-whatsapp.md), [customer-discovery.md](customer-discovery.md)
 
@@ -167,6 +167,37 @@ Curated testimonials for homepage carousel.
 ```
 
 Frontend falls back to static testimonials when API errors or returns empty.
+
+## Imagery
+
+Marketing heroes use dedicated **1920×1080** WebP assets; service preview cards use **4∶3 catalog tiles** (1200×900).
+
+| Piece | Path |
+| ----- | ---- |
+| **Marketing heroes** | `frontend/public/marketing/heroes/` (`welcome`, `services`, `franchise`, `delivery`) |
+| **Hero registry** | `frontend/features/marketing/catalog/marketing-hero-images.ts` |
+| **Catalog tiles** | `frontend/public/catalog/` (`men/`, `women/`, `kids/`, `winter/`, `household/`, `accessories/`, `services/`) |
+| **Catalog registry** | `frontend/features/marketing/catalog/washhouse-catalog-photos.ts` |
+| **Slug/name → key** | `frontend/features/marketing/catalog/resolve-catalog-photo-key.ts` (shared with `/pricing`) |
+
+Regenerate marketing heroes: `python scripts/download-marketing-heroes.py` (sources in `scripts/marketing-hero-sources.json`). Catalog crop/manifest workflow: `frontend/public/catalog/README.md`.
+
+### Image map (homepage)
+
+| Surface | Asset | File |
+| ------- | ----- | ---- |
+| Hero slide 1 — welcome | Folded fresh laundry | `/marketing/heroes/welcome.webp` |
+| Hero slide 2 — services | Professional facility | `/marketing/heroes/services.webp` |
+| Hero slide 3 — franchise | Partner storefront | `/marketing/heroes/franchise.webp` |
+| Hero slide 4 — delivery | Doorstep pickup / courier | `/marketing/heroes/delivery.webp` |
+| Delivery slide phone mock | On-time delivery tile | `/catalog/services/on-time-delivery.webp` |
+| Services preview (7 cards) | Unique catalog/service tiles | `services-data.ts` → `/catalog/**` |
+| Franchise teaser banner | Franchise hero (decorative) | `/marketing/heroes/franchise.webp` |
+| Final CTA band | Services hero (decorative) | `/marketing/heroes/services.webp` |
+| `/services` page hero | Welcome hero (decorative) | `/marketing/heroes/welcome.webp` |
+| `/stores` page hero | Franchise hero (decorative) | `/marketing/heroes/franchise.webp` |
+
+**LCP:** only the first carousel slide (`welcome`) gets `priority` / `fetchPriority="high"`; below-fold banners use `priority={false}` or lazy loading.
 
 ## Frontend integration
 

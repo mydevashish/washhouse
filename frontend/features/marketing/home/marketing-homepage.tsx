@@ -35,6 +35,14 @@ const ServicesPreview = dynamic(
   { loading: () => <section className="min-h-[24rem] bg-card" aria-hidden /> },
 );
 
+const SpecialCareSection = dynamic(
+  () =>
+    import('@/features/marketing/home/special-care-section').then((m) => ({
+      default: m.SpecialCareSection,
+    })),
+  { loading: () => <section className="min-h-[20rem] bg-muted/30" aria-hidden /> },
+);
+
 const DeliveryOptionsBand = dynamic(
   () =>
     import('@/features/marketing/home/delivery-options-band').then((m) => ({
@@ -102,6 +110,7 @@ export function MarketingHomepage() {
       <WhyChooseSection />
 
       <ServicesPreview />
+      <SpecialCareSection />
       <DeliveryOptionsBand />
       <FeaturedStoresTeaser />
       <FranchiseTeaser />

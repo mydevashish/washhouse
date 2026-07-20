@@ -1,9 +1,14 @@
+import { getImageProps } from 'next/image';
+
 import { neighborRackIndexes } from '@/features/marketing/pricing/lib/neighbor-rack-indexes';
 import {
   clearPricingPhotoPrefetchQueue,
   enqueuePricingPhotoPrefetch,
   pickPricingPhotoPrefetchCandidate,
+  PRICING_CATEGORY_PHOTO_SIZES,
   PRICING_PHOTO_PREFETCH_CONCURRENCY,
+  PRICING_PHOTO_PREFETCH_HEIGHT,
+  PRICING_PHOTO_PREFETCH_WIDTH,
   resetPricingPhotoPrefetchStateForTests,
 } from '@/features/marketing/pricing/lib/prefetch-pricing-product-image';
 
@@ -31,6 +36,19 @@ describe('neighborRackIndexes', () => {
 });
 
 describe('pickPricingPhotoPrefetchCandidate', () => {
+  it('resolves local /catalog/ WebP paths through the next/image optimizer', () => {
+    const { props } = getImageProps({
+      alt: '',
+      src: '/catalog/men/shirt.webp',
+      width: PRICING_PHOTO_PREFETCH_WIDTH,
+      height: PRICING_PHOTO_PREFETCH_HEIGHT,
+      sizes: PRICING_CATEGORY_PHOTO_SIZES,
+    });
+    const picked = pickPricingPhotoPrefetchCandidate(props.src, props.srcSet);
+    expect(picked).toMatch(/^\/_next\/image\?url=%2Fcatalog%2F/);
+    expect(picked).toContain('w=1080');
+  });
+
   it('falls back to src when srcSet is missing', () => {
     expect(pickPricingPhotoPrefetchCandidate('/a.jpg')).toBe('/a.jpg');
   });

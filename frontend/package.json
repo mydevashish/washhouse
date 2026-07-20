@@ -18,7 +18,8 @@
     "format:check": "prettier --check .",
     "lighthouse:collect": "lhci collect",
     "lighthouse:assert": "lhci assert",
-    "lighthouse:ci": "lhci autorun"
+    "lighthouse:ci": "lhci autorun",
+    "catalog:optimize": "node scripts/optimize-catalog-imports.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

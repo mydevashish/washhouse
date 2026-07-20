@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "notes": "16:9 marketing heroes for homepage carousel and decorative banners. Run: python scripts/download-marketing-heroes.py",
+  "output": {
+    "width": 1920,
+    "height": 1080,
+    "webpQuality": 82
+  },
+  "assets": [
+    {
+      "id": "welcome",
+      "file": "marketing/heroes/welcome.webp",
+      "url": "https://images.pexels.com/photos/3738121/pexels-photo-3738121.jpeg?auto=compress&cs=tinysrgb&w=2400",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/person-holding-white-textile-3738121/",
+      "photographer": "cottonbro studio",
+      "description": "Neatly folded fresh laundry stacks on a bright surface"
+    },
+    {
+      "id": "services",
+      "file": "marketing/heroes/services.webp",
+      "url": "https://images.pexels.com/photos/4099237/pexels-photo-4099237.jpeg?auto=compress&cs=tinysrgb&w=2400",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/white-front-load-washing-machines-4099237/",
+      "photographer": "cottonbro studio",
+      "description": "Row of commercial front-load washers in a professional laundry facility"
+    },
+    {
+      "id": "franchise",
+      "file": "marketing/heroes/franchise.webp",
+      "url": "https://images.pexels.com/photos/5591663/pexels-photo-5591663.jpeg?auto=compress&cs=tinysrgb&w=2400",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/a-laundromat-with-washing-machines-5591663/",
+      "photographer": "cottonbro studio",
+      "description": "WashHouse-style partner storefront with washers visible through the entrance"
+    },
+    {
+      "id": "delivery",
+      "file": "marketing/heroes/delivery.webp",
+      "url": "https://images.pexels.com/photos/4483612/pexels-photo-4483612.jpeg?auto=compress&cs=tinysrgb&w=2400",
+      "source": "Pexels",
+      "sourceUrl": "https://www.pexels.com/photo/man-in-blue-dress-shirt-holding-brown-cardboard-box-4483612/",
+      "photographer": "Ketut Subiyanto",
+      "description": "Courier holding a laundry delivery box at a doorstep pickup moment",
+      "focalY": 0.42
+    }
+  ]
+}

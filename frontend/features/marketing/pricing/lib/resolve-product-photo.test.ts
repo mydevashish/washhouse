@@ -1,4 +1,7 @@
-import { resolveProductPhotoKey } from '@/features/marketing/pricing/pricing-product-images';
+import {
+  PRICING_PRODUCT_PHOTOS,
+  resolveProductPhotoKey,
+} from '@/features/marketing/pricing/pricing-product-images';
 
 describe('resolveProductPhotoKey', () => {
   it('maps winter jackets to distinct garment frames', () => {
@@ -50,5 +53,12 @@ describe('resolveProductPhotoKey', () => {
 
   it('returns null for unknown garments', () => {
     expect(resolveProductPhotoKey('custom-widget', 'Custom Widget')).toBeNull();
+  });
+
+  it('resolved keys point at local catalog WebP tiles', () => {
+    const key = resolveProductPhotoKey('men-shirt-tshirt', 'Shirt / T-shirt');
+    expect(key).toBe('shirt');
+    expect(PRICING_PRODUCT_PHOTOS[key!].src).toBe('/catalog/men/shirt.webp');
+    expect(PRICING_PRODUCT_PHOTOS[key!].src).not.toMatch(/unsplash/i);
   });
 });

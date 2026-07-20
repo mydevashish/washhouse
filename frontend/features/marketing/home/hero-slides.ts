@@ -9,11 +9,12 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-import { HERO_SLIDE_IMAGES } from '@/features/discover/marketplace/laundry-images';
+import { WASHHOUSE_CATALOG_SUPPLEMENTAL_PHOTOS } from '@/features/marketing/catalog/washhouse-catalog-photos';
+import {
+  MARKETING_HERO_IMAGES,
+  MARKETING_HERO_SLIDE_OVERLAYS,
+} from '@/features/marketing/catalog/marketing-hero-images';
 import { FRANCHISE_BROCHURE_PDF_HREF } from '@/features/marketing/franchise/franchise-constants';
-
-const U = (id: string, w: number) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
 
 export type HeroTrustItem = {
   label: string;
@@ -80,10 +81,9 @@ export const HERO_SLIDES: readonly HeroSlide[] = [
       { label: 'Quality guaranteed', icon: ShieldCheck },
     ],
     promo: { badge: '20% OFF', code: 'WELCOME20' },
-    image: HERO_SLIDE_IMAGES.primary,
-    imageAlt: 'Freshly folded laundry ready for delivery',
-    overlayClassName:
-      'bg-gradient-to-br from-brand-500/20 via-transparent to-sky-500/15 dark:from-brand-900/30 dark:to-sky-500/10',
+    image: MARKETING_HERO_IMAGES.welcome.src,
+    imageAlt: MARKETING_HERO_IMAGES.welcome.alt,
+    overlayClassName: MARKETING_HERO_SLIDE_OVERLAYS.welcome,
   },
   {
     id: 'fabrics',
@@ -98,10 +98,9 @@ export const HERO_SLIDES: readonly HeroSlide[] = [
       'Steam Press',
       'Shoe Care',
     ],
-    image: HERO_SLIDE_IMAGES.compare,
-    imageAlt: 'Professional laundry facility with modern equipment',
-    overlayClassName:
-      'bg-gradient-to-tr from-sky-500/15 via-transparent to-brand-500/20 dark:from-sky-500/10 dark:to-brand-600/25',
+    image: MARKETING_HERO_IMAGES.services.src,
+    imageAlt: MARKETING_HERO_IMAGES.services.alt,
+    overlayClassName: MARKETING_HERO_SLIDE_OVERLAYS.fabrics,
   },
   {
     id: 'franchise',
@@ -116,10 +115,9 @@ export const HERO_SLIDES: readonly HeroSlide[] = [
     ],
     applyHref: '/franchise#apply',
     brochureHref: FRANCHISE_BROCHURE_PDF_HREF,
-    image: HERO_SLIDE_IMAGES.partner,
-    imageAlt: 'Laundry business owner reviewing orders on a tablet',
-    overlayClassName:
-      'bg-gradient-to-bl from-brand-900/20 via-transparent to-brand-500/15 dark:from-brand-900/35 dark:to-brand-600/20',
+    image: MARKETING_HERO_IMAGES.franchise.src,
+    imageAlt: MARKETING_HERO_IMAGES.franchise.alt,
+    overlayClassName: MARKETING_HERO_SLIDE_OVERLAYS.franchise,
   },
   {
     id: 'delivery',
@@ -127,12 +125,11 @@ export const HERO_SLIDES: readonly HeroSlide[] = [
     headline: 'WE PICK. WE CLEAN. WE DELIVER.',
     subcopy:
       'Schedule a pickup from home or office — track your order and get clothes back at your door.',
-    image: HERO_SLIDE_IMAGES.doorstep,
-    imageAlt: 'Delivery van with laundry bags ready for doorstep service',
-    phoneImage: U('photo-1512941937669-90a1b58e7e9c', 600),
-    phoneImageAlt: 'Mobile phone showing laundry order tracking',
-    overlayClassName:
-      'bg-gradient-to-r from-brand-500/15 via-transparent to-sky-500/20 dark:from-brand-600/20 dark:to-sky-500/15',
+    image: MARKETING_HERO_IMAGES.delivery.src,
+    imageAlt: MARKETING_HERO_IMAGES.delivery.alt,
+    phoneImage: WASHHOUSE_CATALOG_SUPPLEMENTAL_PHOTOS.on_time_delivery.src,
+    phoneImageAlt: WASHHOUSE_CATALOG_SUPPLEMENTAL_PHOTOS.on_time_delivery.alt,
+    overlayClassName: MARKETING_HERO_SLIDE_OVERLAYS.delivery,
   },
 ] as const;
 

@@ -7,9 +7,9 @@
 export const PRICING_CATEGORY_PHOTO_SIZES =
   '(max-width: 1023px) calc(100vw - 2rem), (max-width: 1439px) 42vw, 580px';
 
-/** Editorial photo aspect 4/3 @ ~2× of the 580px desktop slot. */
-export const PRICING_PHOTO_PREFETCH_WIDTH = 1160;
-export const PRICING_PHOTO_PREFETCH_HEIGHT = 870;
+/** Editorial photo aspect 4/3 — matches 1200×900 catalog tile masters. */
+export const PRICING_PHOTO_PREFETCH_WIDTH = 1200;
+export const PRICING_PHOTO_PREFETCH_HEIGHT = 900;
 
 /** Max simultaneous neighbor downloads (page-wide). */
 export const PRICING_PHOTO_PREFETCH_CONCURRENCY = 2;

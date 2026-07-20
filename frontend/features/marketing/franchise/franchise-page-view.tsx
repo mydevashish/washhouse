@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { GlassSurface } from '@/components/ui/glass-surface';
 import { GLASS_ON_DARK_GRADIENT } from '@/features/marketing/shared/marketing-layout';
-import { HERO_SLIDE_IMAGES } from '@/features/discover/marketplace/laundry-images';
+import { WASHHOUSE_DECORATIVE_BANNERS } from '@/features/marketing/catalog/washhouse-catalog-photos';
 import {
   FRANCHISE_BROCHURE_PDF_FILENAME,
   FRANCHISE_BROCHURE_PDF_HREF,
@@ -55,13 +55,13 @@ const FRANCHISE_BENEFITS = [
   icon: LucideIcon;
 }>;
 
-const STOREFRONT_IMAGE = HERO_SLIDE_IMAGES.partner;
+const FRANCHISE_BANNER = WASHHOUSE_DECORATIVE_BANNERS.brandFranchise;
 
 function FranchiseHero() {
   return (
     <header className="relative isolate overflow-hidden">
       <Image
-        src={STOREFRONT_IMAGE}
+        src={FRANCHISE_BANNER.photo.src}
         alt=""
         fill
         priority
@@ -69,10 +69,7 @@ function FranchiseHero() {
         className="object-cover"
         aria-hidden
       />
-      <div
-        className="absolute inset-0 bg-gradient-to-br from-brand-900/95 via-brand-800/90 to-brand-900/95"
-        aria-hidden
-      />
+      <div className={cn('absolute inset-0', FRANCHISE_BANNER.overlayClassName)} aria-hidden />
 
       <div className="relative mx-auto max-w-[1440px] px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <GlassSurface

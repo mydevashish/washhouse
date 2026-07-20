@@ -8,6 +8,19 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import {
+  WASHHOUSE_CATALOG_PHOTOS,
+  WASHHOUSE_CATALOG_SUPPLEMENTAL_PHOTOS,
+} from '@/features/marketing/catalog/washhouse-catalog-photos';
+
+const P = WASHHOUSE_CATALOG_PHOTOS;
+const S = WASHHOUSE_CATALOG_SUPPLEMENTAL_PHOTOS;
+
+/** Service card alt when the tile photo is representative but not a 1:1 match to the title. */
+function serviceCategoryAlt(title: string, photo: { alt: string }, contextual = false): string {
+  return contextual ? `${title} — ${photo.alt}` : photo.alt;
+}
+
 export type ServiceCategory = {
   id: string;
   title: string;
@@ -16,6 +29,8 @@ export type ServiceCategory = {
   accent: string;
   turnaround: string;
   priceFrom: string;
+  image?: string;
+  imageAlt?: string;
   ctaHref?: string;
   ctaLabel?: string;
   optional?: boolean;
@@ -36,17 +51,21 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     icon: ShoppingBasket,
     accent: 'bg-primary/10 text-primary',
     turnaround: '24–48 hours',
-    priceFrom: 'from ₹49/kg',
+    priceFrom: 'from ₹79/kg',
+    image: P.wash_fold.src,
+    imageAlt: P.wash_fold.alt,
   },
   {
     id: 'dry-clean',
     title: 'Dry Cleaning',
     description:
-      'Specialist care for suits, sarees, blazers, and delicate fabrics that need solvent-based cleaning.',
+      'Specialist solvent cleaning for suits, sarees, blazers, and delicate fabrics that need extra care.',
     icon: Shirt,
     accent: 'bg-info-muted text-info',
     turnaround: '2–4 days',
-    priceFrom: 'from ₹120/piece',
+    priceFrom: 'from ₹69/piece',
+    image: P.suit.src,
+    imageAlt: P.suit.alt,
   },
   {
     id: 'steam-iron',
@@ -57,6 +76,8 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     accent: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
     turnaround: '24–48 hours',
     priceFrom: 'from ₹15/piece',
+    image: P.wash_iron.src,
+    imageAlt: P.wash_iron.alt,
   },
   {
     id: 'shoe-bag-care',
@@ -66,8 +87,10 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     icon: Footprints,
     accent: 'bg-sky-100 text-sky-600 dark:bg-sky-950/40 dark:text-sky-400',
     turnaround: '2–3 days',
-    priceFrom: 'from ₹199/pair',
+    priceFrom: 'from ₹249/pair',
     optional: true,
+    image: P.shoes.src,
+    imageAlt: P.shoes.alt,
   },
   {
     id: 'express',
@@ -78,6 +101,8 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     accent: 'bg-warning-muted text-warning',
     turnaround: 'Same day – 24 hrs',
     priceFrom: 'from ₹79/kg',
+    image: S.on_time_delivery.src,
+    imageAlt: serviceCategoryAlt('Express / same-day', S.on_time_delivery, true),
   },
   {
     id: 'subscription',

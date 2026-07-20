@@ -1,5 +1,13 @@
-const U = (id: string, w: number) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
+import {
+  WASHHOUSE_CATALOG_PHOTOS,
+  WASHHOUSE_CATALOG_SUPPLEMENTAL_PHOTOS,
+  type WashhouseCatalogPhoto,
+} from '@/features/marketing/catalog/washhouse-catalog-photos';
+
+/** Special-care tile alt — label + garment/care context without repeating visible text verbatim. */
+function specialCareAlt(label: string, photo: WashhouseCatalogPhoto): string {
+  return `${label} specialist care — ${photo.alt}`;
+}
 
 export type SpecialCareItem = {
   id: string;
@@ -9,68 +17,71 @@ export type SpecialCareItem = {
   imageAlt: string;
 };
 
+const P = WASHHOUSE_CATALOG_PHOTOS;
+const S = WASHHOUSE_CATALOG_SUPPLEMENTAL_PHOTOS;
+
 export const SPECIAL_CARE_ITEMS: SpecialCareItem[] = [
   {
-    id: 'wedding-dresses',
-    slug: 'wedding-dresses',
-    label: 'Wedding Dresses',
-    image: U('photo-1519741497674-611481863552', 400),
-    imageAlt: 'Elegant white wedding dress on display',
+    id: 'wedding-sherwani',
+    slug: 'wedding-sherwani',
+    label: 'Wedding / Sherwani',
+    image: P.sherwani.src,
+    imageAlt: specialCareAlt('Wedding / Sherwani', P.sherwani),
   },
   {
     id: 'lehengas',
     slug: 'lehengas',
     label: 'Lehengas',
-    image: U('photo-1583391733981-5e38d4dcc9b5', 400),
-    imageAlt: 'Colourful embroidered lehenga with intricate detailing',
+    image: P.lehenga.src,
+    imageAlt: specialCareAlt('Lehengas', P.lehenga),
   },
   {
     id: 'sarees',
     slug: 'sarees',
     label: 'Sarees',
-    image: U('photo-1610030458120-9cb80a4b8744', 400),
-    imageAlt: 'Silk saree draped with rich fabric texture',
+    image: P.saree.src,
+    imageAlt: specialCareAlt('Sarees', P.saree),
   },
   {
     id: 'suits',
     slug: 'suits',
     label: 'Suits',
-    image: U('photo-1594938298603-c8148c4dae35', 400),
-    imageAlt: 'Tailored formal suit on a hanger',
+    image: P.suit.src,
+    imageAlt: specialCareAlt('Suits', P.suit),
   },
   {
     id: 'leather-jackets',
     slug: 'leather-jackets',
     label: 'Leather Jackets',
-    image: U('photo-1551028719-00167b16eac5', 400),
-    imageAlt: 'Classic brown leather jacket',
+    image: P.jacket_leather.src,
+    imageAlt: specialCareAlt('Leather Jackets', P.jacket_leather),
   },
   {
     id: 'shoes',
     slug: 'shoes',
     label: 'Shoes',
-    image: U('photo-1542291026-7eec264c27ff', 400),
-    imageAlt: 'Pair of clean sneakers after professional care',
+    image: P.shoes.src,
+    imageAlt: specialCareAlt('Shoes', P.shoes),
   },
   {
     id: 'curtains',
     slug: 'curtains',
     label: 'Curtains',
-    image: U('photo-1586023492125-27b2c045efd7', 400),
-    imageAlt: 'Light-filled room with freshly cleaned curtains',
+    image: S.curtain.src,
+    imageAlt: specialCareAlt('Curtains', S.curtain),
   },
   {
     id: 'blankets',
     slug: 'blankets',
     label: 'Blankets',
-    image: U('photo-1631889992177-49c4a3be4bfa', 400),
-    imageAlt: 'Soft folded blankets stacked neatly',
+    image: P.blanket.src,
+    imageAlt: specialCareAlt('Blankets', P.blanket),
   },
   {
     id: 'soft-toys',
     slug: 'soft-toys',
     label: 'Soft Toys',
-    image: U('photo-1530325243097-094c3a6efa94', 400),
-    imageAlt: 'Plush soft toys ready for gentle cleaning',
+    image: P.toy.src,
+    imageAlt: specialCareAlt('Soft Toys', P.toy),
   },
 ];

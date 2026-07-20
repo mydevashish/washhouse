@@ -11,6 +11,8 @@ import {
   getComparePriceLines,
 } from '@/features/discover/lib/compare-price-lines';
 import { getLaundryImage, getPartnerMeta } from '@/features/discover/marketplace/laundry-images';
+import { CatalogGarmentThumb } from '@/features/laundry-price-list/components/catalog-garment-thumb';
+import { resolvePriceListItemPhoto } from '@/features/laundry-price-list/lib/resolve-item-photo';
 import type { LaundryListItem } from '@/services/laundries';
 import { cn } from '@/lib/utils';
 
@@ -90,14 +92,20 @@ export function PartnerCard({ laundry, index }: PartnerCardProps) {
           <div className="mt-auto flex items-end justify-between gap-3 pt-5">
             <div className="min-w-0 text-sm">
               {priceLines.length > 0 ? (
-                <ul className="space-y-0.5 font-semibold text-success">
-                  {priceLines.map((line) => (
-                    <li key={line.key}>
-                      from {line.amountLabel}
-                      {line.unitSuffix ?? ''}{' '}
-                      <span className="font-normal text-fg-2">{line.label}</span>
-                    </li>
-                  ))}
+                <ul className="space-y-1 font-semibold text-success">
+                  {priceLines.map((line) => {
+                    const photo = resolvePriceListItemPhoto(line.slug, line.name, line.category);
+                    return (
+                      <li key={line.key} className="flex items-center gap-2">
+                        <CatalogGarmentThumb photo={photo} />
+                        <span>
+                          from {line.amountLabel}
+                          {line.unitSuffix ?? ''}{' '}
+                          <span className="font-normal text-fg-2">{line.label}</span>
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : (
                 <p className="font-medium text-fg-2">See prices on store</p>

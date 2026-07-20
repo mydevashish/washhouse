@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { Quote, Star } from 'lucide-react';
 import { useId } from 'react';
 
@@ -12,6 +11,7 @@ import {
 import { GlassSurface } from '@/components/ui/glass-surface';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
+import { TestimonialAvatar } from '@/features/marketing/testimonials/testimonial-avatar';
 import type { MarketingTestimonial } from '@/features/marketing/testimonials/types';
 import { useMarketingTestimonials } from '@/features/marketing/hooks/use-marketing';
 import { GLASS_MOBILE_SOLID_CARD } from '@/features/marketing/shared/marketing-layout';
@@ -47,15 +47,7 @@ function TestimonialBody({ testimonial }: { testimonial: MarketingTestimonial })
     <>
       <Quote className="absolute right-6 top-6 h-8 w-8 text-brand-500/10" aria-hidden />
       <div className="flex items-center gap-3">
-        <div className="relative h-12 w-12 overflow-hidden rounded-full ring-2 ring-brand-500/20">
-          <Image
-            src={testimonial.avatarUrl}
-            alt=""
-            fill
-            className="object-cover"
-            sizes="48px"
-          />
-        </div>
+        <TestimonialAvatar name={testimonial.name} avatarUrl={testimonial.avatarUrl} />
         <div>
           <p className="font-bold text-foreground">{testimonial.name}</p>
           <p className="text-xs text-muted-foreground">{testimonial.location}</p>

@@ -4,6 +4,7 @@ export type MarketingTestimonial = {
   location: string;
   rating: number;
   text: string;
-  avatarUrl: string;
+  /** Omitted in static fallback — `TestimonialAvatar` renders name initials instead. */
+  avatarUrl?: string;
   isFeatured: boolean;
 };

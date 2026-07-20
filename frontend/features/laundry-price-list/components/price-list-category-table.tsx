@@ -4,7 +4,9 @@ import {
   formatRupee,
   rupeeAriaLabel,
 } from '@/features/laundry-price-list/lib/format-inr';
+import { CatalogGarmentThumb } from '@/features/laundry-price-list/components/catalog-garment-thumb';
 import type { CategoryGroup } from '@/features/laundry-price-list/lib/group-categories';
+import { resolvePriceListItemPhoto } from '@/features/laundry-price-list/lib/resolve-item-photo';
 import { PRICE_LIST_CATEGORY_LABELS } from '@/features/laundry-price-list/types';
 import { cn } from '@/lib/utils';
 
@@ -53,18 +55,24 @@ export function PriceListCategoryTable({ group, className }: PriceListCategoryTa
               const primaryValue = showSingleRate && item.price_inr != null
                 ? item.price_inr
                 : item.dry_clean_inr;
+              const photo = resolvePriceListItemPhoto(item.slug, item.name, item.category);
               return (
                 <tr key={item.catalog_item_id} className="border-b border-border/60 last:border-0">
                   <th
                     scope="row"
                     className="py-2.5 pr-3 font-medium text-foreground"
                   >
-                    {item.name}
-                    {item.unit === 'kg' && (
-                      <span className="ml-1 text-xs font-normal text-muted-foreground">
-                        /kg
+                    <span className="flex items-center gap-2.5">
+                      <CatalogGarmentThumb photo={photo} />
+                      <span>
+                        {item.name}
+                        {item.unit === 'kg' && (
+                          <span className="ml-1 text-xs font-normal text-muted-foreground">
+                            /kg
+                          </span>
+                        )}
                       </span>
-                    )}
+                    </span>
                   </th>
                   {showPrimary && (
                     <td className="py-2.5 px-2 text-right tabular-nums text-foreground">

@@ -24,7 +24,18 @@ describe('getComparePriceLines', () => {
       shirt_dry_clean_from_inr: '69.00',
     });
     expect(lines).toHaveLength(2);
-    expect(lines[0]).toMatchObject({ key: 'wash_fold', amountLabel: '₹79', unitSuffix: '/kg' });
-    expect(lines[1]).toMatchObject({ key: 'shirt', amountLabel: '₹69' });
+    expect(lines[0]).toMatchObject({
+      key: 'wash_fold',
+      amountLabel: '₹79',
+      unitSuffix: '/kg',
+      slug: 'kg-wash-fold',
+      category: 'laundry_by_kg',
+    });
+    expect(lines[1]).toMatchObject({
+      key: 'shirt',
+      amountLabel: '₹69',
+      slug: 'men-shirt-tshirt',
+      category: 'men',
+    });
   });
 });

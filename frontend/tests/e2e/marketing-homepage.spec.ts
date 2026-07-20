@@ -54,6 +54,29 @@ test.describe('marketing homepage smoke', () => {
     await expect(page.getByRole('heading', { name: /why choose us/i })).toBeVisible();
   });
 
+  test('special care section renders with catalog images', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    const section = page
+      .locator('section')
+      .filter({ has: page.getByRole('heading', { name: /special care for delicate items/i }) });
+    await section.scrollIntoViewIfNeeded();
+    await expect(section).toBeVisible();
+
+    const tiles = section.locator('ul > li');
+    await expect(tiles).toHaveCount(9);
+
+    const images = section.locator('img');
+    await expect(images).toHaveCount(9);
+    await expect(images.first()).toBeVisible();
+
+    const firstSrc = await images.first().getAttribute('src');
+    expect(firstSrc, 'special care tiles must use local catalog WebP assets').toBeTruthy();
+    expect(decodeURIComponent(firstSrc!)).toMatch(/\/catalog\/.+\.webp/);
+    expect(firstSrc).not.toMatch(/unsplash/i);
+  });
+
   test('hero carousel navigates with next control and dots', async ({ page }) => {
     await page.goto('/');
     const carousel = page.getByRole('region', { name: /promotional highlights/i });
@@ -175,7 +198,7 @@ test.describe('marketing navbar', () => {
 
     await expect(page).toHaveURL(/\/services$/);
     await expect(
-      page.getByRole('heading', { name: /laundry services, explained/i }),
+      page.getByRole('heading', { name: /professional care for every fabric/i }),
     ).toBeVisible();
   });
 
@@ -214,6 +237,14 @@ test.describe('marketing navbar', () => {
       page.getByRole('heading', { name: /price guide by category/i }),
     ).toBeVisible();
     await expect(page.getByRole('heading', { name: /^men$/i })).toBeVisible();
+
+    const rackPhoto = page.locator('.pricing-category-photo img').first();
+    await expect(rackPhoto).toBeVisible();
+    const rackSrc = await rackPhoto.getAttribute('src');
+    expect(rackSrc, 'pricing rack photos must use local catalog WebP assets').toBeTruthy();
+    expect(decodeURIComponent(rackSrc!)).toMatch(/\/catalog\/.+\.webp/);
+    expect(rackSrc).not.toMatch(/unsplash/i);
+
     // Hanging tags (default motion) or reduced-motion tables both expose “from ₹”
     await expect(page.getByText(/from ₹/i).first()).toBeVisible();
     const firstTag = page.locator('.pricing-price-tag').first();

@@ -14,6 +14,8 @@ import { getComparePriceLines, comparePriceAriaSummary } from '@/features/discov
 import { getLaundryInitials } from '@/features/discover/detail/service-icons';
 import type { EnrichedLaundry } from '@/features/discover/lib/laundry-meta';
 import { deliveryLabel } from '@/features/discover/lib/laundry-meta';
+import { CatalogGarmentThumb } from '@/features/laundry-price-list/components/catalog-garment-thumb';
+import { resolvePriceListItemPhoto } from '@/features/laundry-price-list/lib/resolve-item-photo';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import { getLaundry } from '@/services/laundries';
@@ -102,16 +104,22 @@ function LaundryCardComponent({ laundry }: LaundryCardProps) {
         </ul>
 
         {priceLines.length > 0 ? (
-          <div className="mt-auto space-y-0.5 pt-1" aria-label={priceAria ?? undefined}>
-            {priceLines.map((line) => (
-              <p key={line.key} className="text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">from {line.amountLabel}</span>
-                {line.unitSuffix ? (
-                  <span className="font-medium text-muted-foreground">{line.unitSuffix}</span>
-                ) : null}{' '}
-                <span>{line.label}</span>
-              </p>
-            ))}
+          <div className="mt-auto space-y-1.5 pt-1" aria-label={priceAria ?? undefined}>
+            {priceLines.map((line) => {
+              const photo = resolvePriceListItemPhoto(line.slug, line.name, line.category);
+              return (
+                <p key={line.key} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CatalogGarmentThumb photo={photo} />
+                  <span>
+                    <span className="font-medium text-foreground">from {line.amountLabel}</span>
+                    {line.unitSuffix ? (
+                      <span className="font-medium text-muted-foreground">{line.unitSuffix}</span>
+                    ) : null}{' '}
+                    <span>{line.label}</span>
+                  </span>
+                </p>
+              );
+            })}
           </div>
         ) : (
           <p className="mt-auto pt-1 text-sm text-muted-foreground">Prices on store page</p>
