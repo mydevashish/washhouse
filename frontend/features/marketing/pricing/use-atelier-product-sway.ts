@@ -17,9 +17,9 @@ type UseAtelierProductSwayOptions = {
  */
 export function useAtelierProductSway<T extends HTMLElement = HTMLElement>(
   options: UseAtelierProductSwayOptions = {},
-): { ref: RefObject<T | null>; swayOn: boolean } {
+): { ref: RefObject<T>; swayOn: boolean } {
   const { amount = 0.25 } = options;
-  const ref = useRef<T | null>(null);
+  const ref = useRef<T>(null);
   const reduce = useReducedMotion();
   const inView = useInView(ref, { amount, margin: '8% 0px' });
   const { tryClaim, release, version } = usePricingMotionBudget();

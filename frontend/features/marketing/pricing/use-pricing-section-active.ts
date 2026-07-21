@@ -10,7 +10,7 @@ import { useInView, useReducedMotion } from 'framer-motion';
 export function usePricingSectionActive<T extends HTMLElement = HTMLElement>(
   amount = 0.06,
 ) {
-  const ref = useRef<T | null>(null);
+  const ref = useRef<T>(null);
   const reduce = useReducedMotion();
   const inView = useInView(ref, { amount, margin: '12% 0px' });
   const atmosphereOn = Boolean(!reduce && inView);

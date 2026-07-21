@@ -28,7 +28,7 @@ export function PricingCategoryMood({
   variant: variantProp,
   className,
 }: PricingCategoryMoodProps) {
-  const ref = useRef<HTMLDivElement | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const inView = useInView(ref, { amount: 0.2, margin: '8% 0px' });
   const variant =
