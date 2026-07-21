@@ -42,6 +42,7 @@ export function PricingAtelierGuide({ groups }: PricingAtelierGuideProps) {
                 category={group.category}
                 priority={index === 0}
                 mood={false}
+                sway={false}
                 className={photoFirst ? 'relative z-[1]' : 'relative z-[1] lg:order-2'}
               />
               <PricingCategoryTable

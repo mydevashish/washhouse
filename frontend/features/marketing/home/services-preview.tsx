@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import type { CSSProperties } from 'react';
 
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
 import { BookNowLink } from '@/features/marketing/book-now';
@@ -13,22 +14,30 @@ import {
 } from '@/features/marketing/home/services-data';
 import { MarketingGlassCard } from '@/features/marketing/shared/marketing-glass-card';
 import { MarketingSection } from '@/features/marketing/shared/marketing-section';
+import { PricingMotionBudgetProvider } from '@/features/marketing/pricing/pricing-motion-budget';
+import { useAtelierProductSway } from '@/features/marketing/pricing/use-atelier-product-sway';
 import { HORIZONTAL_SCROLL_NATIVE_CLASS } from '@/lib/horizontal-scroll-touch';
 import { cn } from '@/lib/utils';
 
+import '@/features/marketing/pricing/pricing-atelier.css';
+
 type ServicePreviewCardProps = {
   item: ServicePreviewItem;
+  index?: number;
   enableHoverLift?: boolean;
   solidOnMobile?: boolean;
 };
 
 function ServicePreviewCard({
   item,
+  index = 0,
   enableHoverLift = false,
   solidOnMobile = true,
 }: ServicePreviewCardProps) {
   const { id, title, description, image, imageAlt } = item;
   const isMoreServices = id === 'more-services';
+  const { ref, swayOn } = useAtelierProductSway<HTMLDivElement>({ amount: 0.2 });
+  const phaseAlt = index % 2 === 1;
 
   return (
     <MarketingGlassCard
@@ -36,14 +45,29 @@ function ServicePreviewCard({
       solidOnMobile={solidOnMobile}
       className="overflow-hidden !p-0"
     >
-      <div className="relative aspect-[4/3] w-full bg-muted">
-        <Image
-          src={image}
-          alt={imageAlt}
-          fill
-          className="object-cover"
-          sizes="(max-width: 414px) 83vw, (max-width: 768px) 83vw, (max-width: 1024px) 50vw, (max-width: 1280px) 25vw, 320px"
-        />
+      <div
+        ref={ref}
+        className="pricing-category-photo relative aspect-[4/3] w-full overflow-hidden !rounded-none !shadow-none"
+      >
+        <div
+          className="pricing-category-photo__sway"
+          data-sway={swayOn ? 'on' : 'off'}
+          data-phase={phaseAlt ? 'alt' : 'main'}
+          style={
+            {
+              '--tag-sway-amp': '0.55deg',
+              animationDelay: swayOn ? `${(index % 5) * -0.7}s` : undefined,
+            } as CSSProperties
+          }
+        >
+          <Image
+            src={image}
+            alt={imageAlt}
+            fill
+            className="object-contain"
+            sizes="(max-width: 414px) 83vw, (max-width: 768px) 83vw, (max-width: 1024px) 50vw, (max-width: 1280px) 25vw, 320px"
+          />
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col p-4 sm:p-5">
@@ -93,48 +117,55 @@ export function ServicesPreview() {
         align: 'center',
       }}
     >
-      <FadeIn>
-        {/* Mobile: horizontal scroll-snap carousel (~1.2 cards visible) */}
-        <div
-          className={cn(
-            'md:hidden -mx-4 min-w-0 w-full max-w-none overflow-x-auto overscroll-x-contain px-4 pb-2 scrollbar-none snap-x snap-mandatory',
-            HORIZONTAL_SCROLL_NATIVE_CLASS,
-          )}
-          aria-label="Browse our laundry services — swipe horizontally to see more"
-          role="region"
-          tabIndex={0}
-        >
-          <ul className="flex gap-4">
-            {SERVICE_PREVIEW_ITEMS.map((item) => (
-              <li key={item.id} className="w-[83.333%] max-w-sm shrink-0 snap-start">
-                <ServicePreviewCard item={item} />
+      <PricingMotionBudgetProvider>
+        <FadeIn>
+          {/* Mobile: horizontal scroll-snap carousel (~1.2 cards visible) */}
+          <div
+            className={cn(
+              'md:hidden -mx-4 min-w-0 w-full max-w-none overflow-x-auto overscroll-x-contain px-4 pb-2 scrollbar-none snap-x snap-mandatory',
+              HORIZONTAL_SCROLL_NATIVE_CLASS,
+            )}
+            aria-label="Browse our laundry services — swipe horizontally to see more"
+            role="region"
+            tabIndex={0}
+          >
+            <ul className="flex gap-4">
+              {SERVICE_PREVIEW_ITEMS.map((item, index) => (
+                <li key={item.id} className="w-[83.333%] max-w-sm shrink-0 snap-start">
+                  <ServicePreviewCard item={item} index={index} />
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Tablet: 2-column grid */}
+          <ul className="hidden gap-5 md:grid md:grid-cols-2 lg:hidden">
+            {SERVICE_PREVIEW_ITEMS.map((item, index) => (
+              <li key={item.id}>
+                <FadeInItem>
+                  <ServicePreviewCard item={item} index={index} solidOnMobile={false} />
+                </FadeInItem>
               </li>
             ))}
           </ul>
-        </div>
 
-        {/* Tablet: 2-column grid */}
-        <ul className="hidden gap-5 md:grid md:grid-cols-2 lg:hidden">
-          {SERVICE_PREVIEW_ITEMS.map((item) => (
-            <li key={item.id}>
-              <FadeInItem>
-                <ServicePreviewCard item={item} solidOnMobile={false} />
-              </FadeInItem>
-            </li>
-          ))}
-        </ul>
-
-        {/* Desktop: 4-column row + centered 3-column row */}
-        <ul className="hidden gap-6 lg:grid lg:grid-cols-12">
-          {SERVICE_PREVIEW_ITEMS.map((item, index) => (
-            <li key={item.id} className={desktopItemClass(index)}>
-              <FadeInItem>
-                <ServicePreviewCard item={item} enableHoverLift solidOnMobile={false} />
-              </FadeInItem>
-            </li>
-          ))}
-        </ul>
-      </FadeIn>
+          {/* Desktop: 4-column row + centered 3-column row */}
+          <ul className="hidden gap-6 lg:grid lg:grid-cols-12">
+            {SERVICE_PREVIEW_ITEMS.map((item, index) => (
+              <li key={item.id} className={desktopItemClass(index)}>
+                <FadeInItem>
+                  <ServicePreviewCard
+                    item={item}
+                    index={index}
+                    enableHoverLift
+                    solidOnMobile={false}
+                  />
+                </FadeInItem>
+              </li>
+            ))}
+          </ul>
+        </FadeIn>
+      </PricingMotionBudgetProvider>
     </MarketingSection>
   );
 }

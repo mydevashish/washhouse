@@ -2,7 +2,7 @@
 
 import { useReducedMotion } from 'framer-motion';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 import type { CatalogCategory } from '@/features/laundry-price-list/types';
 import { PricingCategoryMood } from '@/features/marketing/pricing/pricing-category-mood';
@@ -11,6 +11,7 @@ import {
   getPricingCategoryImage,
   type PricingCategoryImage,
 } from '@/features/marketing/pricing/pricing-category-images';
+import { useAtelierProductSway } from '@/features/marketing/pricing/use-atelier-product-sway';
 import { cn } from '@/lib/utils';
 
 type PricingCategoryPhotoProps = {
@@ -26,6 +27,8 @@ type PricingCategoryPhotoProps = {
    * Off for reduced-motion static guide — photo alone is the fallback.
    */
   mood?: boolean;
+  /** Soft hang sway (atelier-tag-sway). Off for reduced-motion static guide. */
+  sway?: boolean;
   className?: string;
 };
 
@@ -43,9 +46,11 @@ function crossfadeMs(): number {
 /**
  * Editorial category / product photo for the price-guide rate card.
  * Fixed 4/3 aspect at every breakpoint so category racks share one photo height
- * (no CLS, no md→lg aspect flip). When `image` changes with the settled tag,
- * a dual-buffer crossfade runs (opacity + scale only). Reduced-motion swaps
- * instantly. Never more than two layers — rapid scroll cannot stack fades.
+ * (no CLS, no md→lg aspect flip). White-canvas catalog tiles use object-contain.
+ * When `image` changes with the settled tag, a dual-buffer crossfade runs
+ * (opacity + scale only). Soft hang sway reuses atelier-tag-sway on a parent
+ * layer so it never fights the crossfade. Reduced-motion swaps instantly.
+ * Never more than two layers — rapid scroll cannot stack fades.
  */
 export function PricingCategoryPhoto({
   category,
@@ -53,9 +58,11 @@ export function PricingCategoryPhoto({
   productLabel,
   priority = false,
   mood = true,
+  sway = true,
   className,
 }: PricingCategoryPhotoProps) {
   const reduce = useReducedMotion();
+  const { ref: swayRef, swayOn } = useAtelierProductSway<HTMLDivElement>();
   const fallback = getPricingCategoryImage(category);
   const target = image ?? fallback;
 
@@ -152,56 +159,72 @@ export function PricingCategoryPhoto({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- start when front src waits to enter
   }, [front.src, frontVisible, reduce]);
 
+  const enableSway = Boolean(sway && !reduce && swayOn);
+  const swayPhaseAlt = category === 'women' || category === 'kids' || category === 'household';
+
   return (
     <figure
       className={cn('pricing-category-photo-sync', className)}
       data-synced={image ? 'on' : 'off'}
     >
       <div
+        ref={swayRef}
         className={cn(
-          'pricing-category-photo relative w-full overflow-hidden bg-muted',
+          'pricing-category-photo relative w-full overflow-hidden',
           'aspect-[4/3]',
         )}
       >
-        {back ? (
+        <div
+          className="pricing-category-photo__sway"
+          data-sway={enableSway ? 'on' : 'off'}
+          data-phase={swayPhaseAlt ? 'alt' : 'main'}
+          style={
+            {
+              '--tag-sway-amp': '0.65deg',
+              animationDelay: enableSway ? '-1.1s' : undefined,
+            } as CSSProperties
+          }
+        >
+          {back ? (
+            <div
+              key={`back-${backKey}-${back.src}`}
+              className="pricing-category-photo__layer pricing-category-photo__layer--back absolute inset-0"
+              data-animating={animating ? 'true' : 'false'}
+              data-fading={animating ? 'true' : 'false'}
+              aria-hidden
+            >
+              <Image
+                src={back.src}
+                alt=""
+                fill
+                decoding="async"
+                className="object-contain"
+                sizes={PRICING_CATEGORY_PHOTO_SIZES}
+              />
+            </div>
+          ) : null}
+
           <div
-            key={`back-${backKey}-${back.src}`}
-            className="pricing-category-photo__layer pricing-category-photo__layer--back absolute inset-0"
+            className="pricing-category-photo__layer pricing-category-photo__layer--front absolute inset-0"
+            data-visible={frontVisible ? 'true' : 'false'}
             data-animating={animating ? 'true' : 'false'}
-            data-fading={animating ? 'true' : 'false'}
-            aria-hidden
+            data-reduce={reduce ? 'true' : 'false'}
           >
             <Image
-              src={back.src}
-              alt=""
+              key={front.src}
+              src={front.src}
+              alt={front.alt}
               fill
+              priority={priority}
+              loading={priority ? undefined : 'lazy'}
               decoding="async"
-              className="object-cover"
+              fetchPriority={priority ? 'high' : 'auto'}
+              className="object-contain"
               sizes={PRICING_CATEGORY_PHOTO_SIZES}
+              onLoadingComplete={beginCrossfade}
+              onError={beginCrossfade}
             />
           </div>
-        ) : null}
-
-        <div
-          className="pricing-category-photo__layer pricing-category-photo__layer--front absolute inset-0"
-          data-visible={frontVisible ? 'true' : 'false'}
-          data-animating={animating ? 'true' : 'false'}
-          data-reduce={reduce ? 'true' : 'false'}
-        >
-          <Image
-            key={front.src}
-            src={front.src}
-            alt={front.alt}
-            fill
-            priority={priority}
-            loading={priority ? undefined : 'lazy'}
-            decoding="async"
-            fetchPriority={priority ? 'high' : 'auto'}
-            className="object-cover"
-            sizes={PRICING_CATEGORY_PHOTO_SIZES}
-            onLoadingComplete={beginCrossfade}
-            onError={beginCrossfade}
-          />
         </div>
 
         {mood ? <PricingCategoryMood category={category} /> : null}

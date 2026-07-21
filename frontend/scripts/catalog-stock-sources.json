@@ -104,20 +104,20 @@
     {
       "slug": "kg-wash-fold",
       "file": "services/wash-fold.webp",
-      "url": "https://images.pexels.com/photos/4041789/pexels-photo-4041789.jpeg?auto=compress&cs=tinysrgb&w=1600",
-      "source": "Pexels",
-      "sourceUrl": "https://www.pexels.com/photo/person-holding-white-button-up-long-sleeved-shirt-4041789/",
-      "photographer": "cottonbro studio",
-      "description": "Freshly pressed white shirt held for folding"
+      "url": "https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=1600&q=85",
+      "source": "Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/blue-plastic-laundry-basket-filled-with-clothes-9V3IZktFeM0",
+      "photographer": "Annie Spratt",
+      "description": "Blue laundry basket filled with everyday clothes — wash & fold"
     },
     {
       "slug": "kg-wash-iron",
       "file": "services/wash-iron.webp",
-      "url": "https://images.pexels.com/photos/4041789/pexels-photo-4041789.jpeg?auto=compress&cs=tinysrgb&w=1600",
+      "url": "https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg?auto=compress&cs=tinysrgb&w=1600",
       "source": "Pexels",
-      "sourceUrl": "https://www.pexels.com/photo/person-holding-white-button-up-long-sleeved-shirt-4041789/",
-      "photographer": "cottonbro studio",
-      "description": "Freshly pressed white shirt"
+      "sourceUrl": "https://www.pexels.com/photo/assorted-clothes-hanging-on-wooden-hangers-996329/",
+      "photographer": "Pixabay",
+      "description": "Pressed shirts and garments on wooden hangers — wash & iron"
     },
     {
       "slug": "kids-shirt-tshirt",

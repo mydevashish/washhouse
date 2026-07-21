@@ -56,4 +56,6 @@ Thumbs.db
 
 # Local image imports (processed by npm run catalog:optimize)
 public/catalog/_imports/
+public/catalog/_quarantine/
 public/marketing/_imports/
+public/marketing/_quarantine/

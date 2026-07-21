@@ -4,7 +4,7 @@ Standalone WebP tiles cropped from the WashHouse service-catalog collage. These 
 
 ## Unsplash migration (marketing)
 
-`features/marketing/**` no longer references `images.unsplash.com`. The `images.unsplash.com` remote pattern in `next.config.mjs` can stay for **discover/marketplace** (`features/discover/**`) until that area is migrated.
+`features/marketing/**` and `features/discover/**` partner/hero covers use local paths under `/marketing/heroes/**` and `/catalog/**` — no runtime `images.unsplash.com` URLs. The `images.unsplash.com` remote pattern in `next.config.mjs` may remain for any future CMS avatar URLs.
 
 ### Gaps — no catalog equivalent
 
@@ -18,7 +18,7 @@ Standalone WebP tiles cropped from the WashHouse service-catalog collage. These 
 | ------ | -------- |
 | `men/` | Men's wear tiles (shirt, trouser, kurta, suit, …) |
 | `women/` | Women's wear tiles (saree, lehenga, blouse, …) |
-| `kids/` | Kids tiles — **placeholder crops** from men's/women's rows (no kids row in source collage yet) |
+| `kids/` | Kids tiles — stock / shared product photos (no dedicated kids row in the collage) |
 | `winter/` | Winter tiles that appear on the women's row (shawl, sweater, puffer jacket) |
 | `household/` | Home-care tiles (bedsheet, blanket, curtain, …) |
 | `accessories/` | Shoes, bags, soft toys, helmet |
@@ -106,6 +106,10 @@ npm run catalog:optimize
 
 ```bash
 npm run catalog:optimize -- --force              # re-encode all imports
+npm run catalog:optimize -- --remove-bg --force  # punch near-white bg, then encode
+npm run catalog:optimize -- --from-sample --remove-bg --force
+# --from-sample: map public/sample/ → _imports PNG (see public/sample/MAPPING.md),
+# encode WebP, delete mapped samples, write public/sample/SKIPPED.md
 npm run catalog:optimize -- --marketing          # also process public/marketing/_imports/
 npm run catalog:optimize -- --marketing-only     # heroes only (1920×1080 WebP q82)
 ```
@@ -258,9 +262,9 @@ Last aligned with `seed_washhouse_catalog.py`, `pricing-product-images.ts`, `spe
 | `lehengas` | Lehengas | `women-lehenga-normal` | stock |  |
 | `sarees` | Sarees | `women-saree-normal` | stock |  |
 | `suits` | Suits | `men-suit-2pcs` | stock |  |
-| `leather-jackets` | Leather Jackets | `winter-jacket-leather` | stock | Placeholder coat crop |
+| `leather-jackets` | Leather Jackets | `winter-jacket-leather` | stock |  |
 | `shoes` | Shoes | `household-shoes-sports` | stock |  |
-| `curtains` | Curtains | `household-curtain-panel` | source |  |
+| `curtains` | Curtains | `household-curtain-panel` | stock |  |
 | `blankets` | Blankets | `household-blanket-double` | stock |  |
 | `soft-toys` | Soft Toys | `household-toy-m` | source |  |
 
@@ -273,18 +277,18 @@ Last aligned with `seed_washhouse_catalog.py`, `pricing-product-images.ts`, `spe
 | `premium-laundry` | Premium Laundry | `service-professional-cleaning` | source | Marketing-only service slug |
 | `dry-clean` | Dry Cleaning | `men-suit-2pcs` | stock | Marketing-only — suit tile as stand-in |
 | `shoe-cleaning` | Shoe Cleaning | `household-shoes-sports` | stock |  |
-| `curtain-cleaning` | Curtain Cleaning | `household-curtain-panel` | source |  |
+| `curtain-cleaning` | Curtain Cleaning | `household-curtain-panel` | stock |  |
 | `more-services` | More Services | `service-on-time-delivery` | source | Marketing-only catch-all |
 
 ### Platform seed slugs (`seed_washhouse_catalog.py`)
 
-- **110** seed slugs — **110** in manifest (**58** stock, **33** collage crops, **19** placeholders)
+- **110** seed slugs — **110** in manifest (**85** stock, **15** collage crops, **10** placeholders)
 
 | Slug | `key` | Tile | `cropFrom` / note |
 | --- | --- | --- | --- |
-| `household-bag-large` | `bag` | source | — |
-| `household-bag-small` | `bag` | source | — |
-| `household-bath-towel` | `towel` | source | — |
+| `household-bag-large` | `bag` | stock | — |
+| `household-bag-small` | `bag` | stock | — |
+| `household-bath-towel` | `towel` | stock | — |
 | `household-bedsheet-double` | `bedsheet` | stock | — |
 | `household-bedsheet-single` | `bedsheet` | stock | — |
 | `household-blanket-4x6` | `blanket` | stock | — |
@@ -295,11 +299,11 @@ Last aligned with `seed_washhouse_catalog.py`, `pricing-product-images.ts`, `spe
 | `household-carpet-s` | `carpet` | placeholder | household-carpet-m |
 | `household-comforter-double` | `comforter` | stock | — |
 | `household-comforter-single` | `comforter` | stock | — |
-| `household-curtain-panel` | `curtain` | source | — |
+| `household-curtain-panel` | `curtain` | stock | — |
 | `household-gloves-cotton` | `gloves` | stock | — |
 | `household-gloves-leather` | `gloves` | stock | — |
 | `household-heels` | `heels` | stock | — |
-| `household-pillow-cushion-cover` | `pillow` | placeholder | household-pillow-cover; Aligns seed slug (was manifest-only household-pillow-cover) |
+| `household-pillow-cushion-cover` | `pillow` | stock | — |
 | `household-shoes-leather` | `shoes` | stock | — |
 | `household-shoes-sports` | `shoes` | stock | — |
 | `household-toy-l` | `toy` | placeholder | household-toy-m |
@@ -332,22 +336,22 @@ Last aligned with `seed_washhouse_catalog.py`, `pricing-product-images.ts`, `spe
 | `kids-suit-3pcs` | `suit` | stock | — |
 | `kids-trouser-jeans` | `trouser` | stock | — |
 | `kids-waistcoat` | `vest` | stock | — |
-| `men-cap-fabric` | `cap` | source | — |
+| `men-cap-fabric` | `cap` | stock | — |
 | `men-cap-leather` | `cap` | source | — |
-| `men-coat-formal` | `coat` | source | — |
+| `men-coat-formal` | `coat` | stock | — |
 | `men-coat-heavy` | `coat` | source | — |
-| `men-dhoti-lungi` | `dhoti` | source | — |
+| `men-dhoti-lungi` | `dhoti` | stock | — |
 | `men-hanky` | `hanky` | source | — |
-| `men-jogger-cargo` | `jogger` | source | — |
+| `men-jogger-cargo` | `jogger` | stock | — |
 | `men-kurta` | `kurta` | stock | — |
-| `men-lower` | `lower` | source | — |
+| `men-lower` | `lower` | stock | — |
 | `men-sherwani-cotton` | `sherwani` | source | — |
 | `men-sherwani-wedding` | `sherwani` | source | — |
 | `men-shirt-tshirt` | `shirt` | stock | — |
-| `men-shorts` | `shorts` | source | — |
+| `men-shorts` | `shorts` | stock | — |
 | `men-suit-2pcs` | `suit` | stock | — |
 | `men-suit-3pcs` | `suit` | source | — |
-| `men-tie` | `tie` | source | — |
+| `men-tie` | `tie` | stock | — |
 | `men-trouser-jeans` | `trouser` | stock | — |
 | `men-turban` | `cap` | source | — |
 | `men-vest` | `vest` | source | — |
@@ -364,34 +368,34 @@ Last aligned with `seed_washhouse_catalog.py`, `pricing-product-images.ts`, `spe
 | `winter-overcoat-kids` | `overcoat` | stock | — |
 | `winter-overcoat-leather` | `overcoat_leather` | stock | — |
 | `winter-overcoat-men-women` | `overcoat` | stock | — |
-| `winter-shawl` | `shawl` | source | — |
+| `winter-shawl` | `shawl` | stock | — |
 | `winter-sweater-kids` | `sweater` | stock | — |
-| `winter-sweater-men-women` | `sweater` | source | — |
+| `winter-sweater-men-women` | `sweater` | stock | — |
 | `women-bathrobe` | `bathrobe` | placeholder | household-bath-towel; No bathrobe tile — reuses towel crop |
 | `women-blouse-choli-heavy` | `blouse` | stock | — |
 | `women-blouse-choli-normal` | `blouse` | stock | — |
-| `women-burkha` | `gown` | placeholder | women-gown-anarkali |
-| `women-dupatta` | `dupatta` | source | — |
+| `women-burkha` | `gown` | stock | — |
+| `women-dupatta` | `dupatta` | stock | — |
 | `women-frock-heavy` | `frock` | placeholder | women-lehenga-heavy; No frock tile — reuses lehenga crop |
-| `women-frock-normal` | `frock` | placeholder | women-gown-anarkali; No frock tile — reuses gown crop |
-| `women-full-dress-normal` | `dress` | placeholder | women-gown-anarkali |
-| `women-full-dress-party` | `dress` | placeholder | women-gown-anarkali |
-| `women-gown-anarkali` | `gown` | source | — |
+| `women-frock-normal` | `frock` | stock | — |
+| `women-full-dress-normal` | `dress` | stock | — |
+| `women-full-dress-party` | `dress` | stock | — |
+| `women-gown-anarkali` | `gown` | stock | — |
 | `women-kameez-fancy` | `top` | placeholder | women-top-kurti |
-| `women-kameez-normal` | `top` | placeholder | women-top-kurti |
-| `women-kurta` | `kurta` | placeholder | women-top-kurti |
+| `women-kameez-normal` | `top` | stock | — |
+| `women-kurta` | `kurta` | stock | — |
 | `women-lehenga-heavy` | `lehenga` | source | — |
 | `women-lehenga-normal` | `lehenga` | stock | — |
 | `women-patiala-salwar` | `lower` | source | — |
 | `women-petticoat` | `skirt` | placeholder | women-patiala-salwar |
 | `women-purse-l` | `purse` | placeholder | women-purse-m |
-| `women-purse-m` | `purse` | source | — |
+| `women-purse-m` | `purse` | stock | — |
 | `women-purse-s` | `purse` | placeholder | women-purse-m |
-| `women-saree-heavy` | `saree` | source | — |
+| `women-saree-heavy` | `saree` | stock | — |
 | `women-saree-normal` | `saree` | stock | — |
-| `women-skirt-long` | `skirt` | placeholder | women-top-kurti; No skirt tile — reuses top/kurti crop until collage updated |
-| `women-skirt-short` | `skirt` | placeholder | women-top-kurti; No skirt tile — reuses top/kurti crop until collage updated |
-| `women-top-kurti` | `top` | source | — |
+| `women-skirt-long` | `skirt` | stock | — |
+| `women-skirt-short` | `skirt` | stock | — |
+| `women-top-kurti` | `top` | stock | — |
 
 ### Manifest-only slugs (not in seed)
 
@@ -399,7 +403,7 @@ Last aligned with `seed_washhouse_catalog.py`, `pricing-product-images.ts`, `spe
 | --- | --- | --- |
 | `accessories-helmet` | `helmet` | Collage tile — not a priced catalog row |
 | `household-pillow` | `pillow` | Legacy slug; seed uses `household-pillow-cushion-cover` |
-| `household-pillow-cover` | `pillow` | Alias crop for pillow cover tile |
+| `household-pillow-cover` | `pillow` | Stock pillow-cover tile (seed also uses cushion-cover alias) |
 | `household-sofa-cover` | `sofa_cover` | Collage tile — not in seed yet |
 | `service-hygienic-safe` | `wash_iron` | Homepage service icon |
 | `service-on-time-delivery` | `wash_fold` | Homepage service icon |
@@ -411,26 +415,17 @@ Last aligned with `seed_washhouse_catalog.py`, `pricing-product-images.ts`, `spe
 
 ### Manual crop follow-ups
 
-**19** manifest rows use `placeholder: true` (inherited crops). Kids and winter placeholders are stock tiles now; remaining gaps: skirts/frocks, heels/trolleys/gloves.
+**10** manifest rows use `placeholder: true` (inherited crops). Sample import filled skirts/dresses/frock-normal and accessories; remaining gaps: frock-heavy, petticoat, kameez-fancy, bathrobe, purse S/L, toy S/L, carpet S/L.
 
 | Slug | Inherits from | Note |
 | --- | --- | --- |
-| `women-skirt-short` | `women-top-kurti` | No skirt tile — reuses top/kurti crop until collage updated |
-| `women-skirt-long` | `women-top-kurti` | No skirt tile — reuses top/kurti crop until collage updated |
-| `women-full-dress-normal` | `women-gown-anarkali` |  |
-| `women-full-dress-party` | `women-gown-anarkali` |  |
-| `women-frock-normal` | `women-gown-anarkali` | No frock tile — reuses gown crop |
 | `women-frock-heavy` | `women-lehenga-heavy` | No frock tile — reuses lehenga crop |
 | `women-petticoat` | `women-patiala-salwar` |  |
-| `women-kameez-normal` | `women-top-kurti` |  |
 | `women-kameez-fancy` | `women-top-kurti` |  |
-| `women-burkha` | `women-gown-anarkali` |  |
-| `women-kurta` | `women-top-kurti` |  |
 | `women-bathrobe` | `household-bath-towel` | No bathrobe tile — reuses towel crop |
 | `women-purse-s` | `women-purse-m` |  |
 | `women-purse-l` | `women-purse-m` |  |
 | `household-toy-s` | `household-toy-m` |  |
 | `household-toy-l` | `household-toy-m` |  |
-| `household-pillow-cushion-cover` | `household-pillow-cover` | Aligns seed slug (was manifest-only household-pillow-cover) |
 | `household-carpet-s` | `household-carpet-m` |  |
 | `household-carpet-l` | `household-carpet-m` |  |

@@ -74,7 +74,7 @@ export const SERVICE_PREVIEW_ITEMS: ServicePreviewItem[] = [
     slug: 'more-services',
     title: 'More Services',
     description: 'Steam press, express turnaround, and monthly plans from partner stores.',
-    image: S.steam_ironing.src,
-    imageAlt: servicePreviewAlt('More services', S.steam_ironing, true),
+    image: P.hoodie.src,
+    imageAlt: servicePreviewAlt('More services', P.hoodie, true),
   },
 ];

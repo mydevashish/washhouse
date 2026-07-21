@@ -1,10 +1,10 @@
 'use client';
 
-import Image from 'next/image';
 import { Star } from 'lucide-react';
 
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
 import { Section, SectionHeading } from '@/features/discover/marketplace/section';
+import { TestimonialAvatar } from '@/features/marketing/testimonials/testimonial-avatar';
 
 const TESTIMONIALS = [
   {
@@ -12,24 +12,18 @@ const TESTIMONIALS = [
     location: 'Koramangala, Bengaluru',
     rating: 5,
     text: 'Pickup was on time and my clothes came back smelling fresh. Tracking in the app made the whole process stress-free.',
-    image:
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
   },
   {
     name: 'Rahul Menon',
     location: 'Indiranagar, Bengaluru',
     rating: 5,
     text: 'Perfect for busy weeks — affordable rates and the partner handled my formal shirts better than my old dhobi.',
-    image:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
   },
   {
     name: 'Ananya Iyer',
     location: 'HSR Layout, Bengaluru',
     rating: 4,
     text: 'Express service saved me before a trip. Doorstep delivery is a game changer for our family of four.',
-    image:
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80',
   },
 ] as const;
 
@@ -49,9 +43,7 @@ export function Testimonials() {
             <FadeInItem key={t.name}>
               <article className="flex h-full flex-col rounded-2xl border border-border bg-bg-0 p-6 shadow-soft sm:p-8">
                 <div className="flex items-center gap-3">
-                  <div className="relative h-12 w-12 overflow-hidden rounded-full ring-2 ring-brand-50 dark:ring-brand-900/50">
-                    <Image src={t.image} alt="" fill className="object-cover" sizes="48px" />
-                  </div>
+                  <TestimonialAvatar name={t.name} />
                   <div>
                     <p className="font-semibold text-fg-0">{t.name}</p>
                     <p className="text-xs text-fg-2">{t.location}</p>

@@ -1,20 +1,11 @@
 import type { LaundryListItem } from '@/services/laundries';
+import {
+  getLaundryImage as getMarketplaceLaundryImage,
+  LAUNDRY_IMAGES_BY_SLUG as MARKETPLACE_LAUNDRY_IMAGES_BY_SLUG,
+} from '@/features/discover/marketplace/laundry-images';
 
-export const LAUNDRY_IMAGES_BY_SLUG: Record<string, string> = {
-  'demo-quick-wash-koramangala':
-    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
-  'demo-sparkle-indiranagar':
-    'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=800&q=80',
-  'demo-freshfold-hsr':
-    'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=800&q=80',
-};
-
-const FALLBACK_POOL = [
-  'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80',
-];
+/** @deprecated Prefer importing from `marketplace/laundry-images` — kept for existing callers. */
+export const LAUNDRY_IMAGES_BY_SLUG = MARKETPLACE_LAUNDRY_IMAGES_BY_SLUG;
 
 export type LaundryMeta = {
   distanceKm: number;
@@ -32,7 +23,7 @@ function hashSlug(slug: string): number {
 }
 
 export function getLaundryImage(slug: string, index: number): string {
-  return LAUNDRY_IMAGES_BY_SLUG[slug] ?? FALLBACK_POOL[index % FALLBACK_POOL.length]!;
+  return getMarketplaceLaundryImage(slug, index);
 }
 
 /** Pseudo distance/delivery until geo APIs ship — prices come from the API. */

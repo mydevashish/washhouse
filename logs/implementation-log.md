@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-07-21 — Catalog tiles: sample import scale fix + mapping docs
+
+- **Type:** fix
+- **Scope:** Marketing catalog product photos (`/pricing` racks, homepage services/special-care)
+- **Files:** `frontend/scripts/catalog_photo_utils.py`, `frontend/scripts/optimize-catalog-imports.py`, `frontend/public/sample/MAPPING.md`, `frontend/public/sample/SKIPPED.md`, `frontend/public/catalog/README.md`, `frontend/public/catalog/ATTRIBUTION.md`, `frontend/features/marketing/catalog/washhouse-catalog-photos.ts`, re-encoded `public/catalog/**/*.webp` from `_imports`
+- **Summary:** Sample Amazon `_SL360_` sources were fitted onto 1200×900 white canvases but subjects stayed ~25–35% frame height because PIL `thumbnail()` never upscales. Fixed `fit_on_tile_canvas` to crop alpha bbox then resize (up or down) to ~82% fill; always re-fit in `save_catalog_webp`. Re-ran `npm run catalog:optimize -- --force`. Restored `MAPPING.md`/`SKIPPED.md`. Pointed `pillow` → `household/pillow-cover`, `trolley` → `accessories/trolley-m`. Verified `/pricing` + homepage resolve only `/catalog/**` laundry tiles with care-context alts (no Unsplash).
+- **Risks:** A few office samples are e-commerce illustrations (shirt/hoodie) rather than photos; lifestyle Unsplash swaps break the single-garment white-tile look so samples were kept.
+- **Mitigation:** Prefer photo samples when re-dropping; style guide P0 custom shoot for ethnic wear remains.
+- **Next:** Optional rembg pass for stubborn backgrounds; replace remaining illustration samples with photo shoots.
+
+---
+
 ## 2026-07-17 — SEV2: Wire SMTP EmailService (contact / franchise / forgot-password)
 
 - **Type:** fix

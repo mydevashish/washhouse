@@ -32,7 +32,7 @@ SPECIAL_MAP = {
     "lehengas": ("women-lehenga-normal", None),
     "sarees": ("women-saree-normal", None),
     "suits": ("men-suit-2pcs", None),
-    "leather-jackets": ("winter-jacket-leather", "Placeholder coat crop"),
+    "leather-jackets": ("winter-jacket-leather", None),
     "shoes": ("household-shoes-sports", None),
     "curtains": ("household-curtain-panel", None),
     "blankets": ("household-blanket-double", None),
@@ -149,7 +149,7 @@ if extra:
     purpose = {
         "accessories-helmet": "Collage tile — not a priced catalog row",
         "household-pillow": "Legacy slug; seed uses `household-pillow-cushion-cover`",
-        "household-pillow-cover": "Alias crop for pillow cover tile",
+        "household-pillow-cover": "Stock pillow-cover tile (seed also uses cushion-cover alias)",
         "household-sofa-cover": "Collage tile — not in seed yet",
         "service-pickup-delivery": "Homepage service icon",
         "service-professional-cleaning": "Homepage service icon",
@@ -168,7 +168,8 @@ manual = [i for i in manifest["items"] if i.get("placeholder")]
 lines.append("\n### Manual crop follow-ups\n")
 lines.append(
     f"**{len(manual)}** manifest rows use `placeholder: true` (inherited crops). "
-    "Kids and winter placeholders are stock tiles now; remaining gaps: skirts/frocks, heels/trolleys/gloves.\n"
+    "Sample import filled skirts/dresses/frock-normal and accessories; remaining gaps: "
+    "frock-heavy, petticoat, kameez-fancy, bathrobe, purse S/L, toy S/L, carpet S/L.\n"
 )
 lines.append("| Slug | Inherits from | Note |")
 lines.append("| --- | --- | --- |")

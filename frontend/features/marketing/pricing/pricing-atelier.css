@@ -20,8 +20,9 @@
 
   position: relative;
   isolation: isolate;
+  /* Clip x so mist/sway never widen the page; keep y visible so hanging tickets aren’t sliced */
   overflow-x: clip;
-  overflow-y: hidden;
+  overflow-y: visible;
   background: linear-gradient(
     180deg,
     var(--atelier-bg-top) 0%,
@@ -187,15 +188,16 @@
   }
 }
 
-/* Photo+rates unit — clips misted category ambient; tickets stay above */
+/* Photo+rates unit — ambient self-clips; tickets may hang below without being sliced */
 .pricing-category-rack__unit {
   position: relative;
   isolation: isolate;
   overflow-x: clip;
-  overflow-y: hidden;
+  overflow-y: visible;
   border-radius: 1rem;
-  /* Soft inset so ambient tint washes the edges (not a card chrome) */
-  padding: 0.65rem 0.55rem 0.35rem;
+  /* Soft inset so ambient tint washes the edges (not a card chrome).
+   * Extra bottom padding = room for dual-line tickets + focus ring + sway. */
+  padding: 0.65rem 0.55rem 0.95rem;
   max-width: 100%;
   min-width: 0;
 }
@@ -207,13 +209,13 @@
 
 @media (min-width: 640px) {
   .pricing-category-rack__unit {
-    padding: 0.85rem 0.75rem 0.45rem;
+    padding: 0.85rem 0.75rem 1.1rem;
   }
 }
 
 @media (min-width: 1024px) {
   .pricing-category-rack__unit {
-    padding: 1rem 1rem 0.5rem;
+    padding: 1rem 1rem 1.25rem;
   }
 }
 
@@ -517,7 +519,7 @@
 
 /* Thin conveyor accent under each photo+rack unit */
 .pricing-category-rack__conveyor {
-  margin-top: 1.25rem;
+  margin-top: 0.85rem;
   height: 1.5px;
   width: 100%;
   border-radius: 9999px;
@@ -539,7 +541,7 @@
 
 @media (min-width: 1024px) {
   .pricing-category-rack__conveyor {
-    margin-top: 1.5rem;
+    margin-top: 1.1rem;
     height: 2px;
   }
 }
@@ -549,7 +551,7 @@
   left: 0;
   right: 0;
   /* Match scroller padding-top so screw heads sit on the rod */
-  top: 0.55rem;
+  top: 0.5rem;
   height: 0.6rem;
   z-index: 0;
   pointer-events: none;
@@ -622,10 +624,65 @@
 
 /* Editorial category photo — subtle atelier shadow, 16px radius */
 .pricing-category-photo {
+  --atelier-photo-bg: #ffffff;
   border-radius: 16px;
   box-shadow:
-    0 14px 32px var(--atelier-shadow),
+    0 14px 32px var(--atelier-shadow, rgb(15 39 68 / 0.12)),
     0 2px 8px rgb(15 39 68 / 0.06);
+  background: var(--atelier-photo-bg);
+}
+
+.dark .pricing-category-photo {
+  --atelier-photo-bg: #162333;
+}
+
+/*
+ * Soft hang sway on product media — reuses atelier-tag-sway (rotateZ only).
+ * Parent of crossfade layers so scale crossfade never fights hang rotateZ.
+ * Home sections use `.atelier-product-scope` (no full pricing-atelier wash).
+ */
+.atelier-product-scope {
+  --atelier-bg-top: #f4faff;
+  --atelier-bg-bottom: #e8f3fb;
+  --atelier-shadow: rgb(15 39 68 / 0.12);
+  --atelier-ink: #0f2744;
+  --atelier-muted: #5a6f84;
+  --atelier-price: #1a7ebf;
+}
+
+.dark .atelier-product-scope {
+  --atelier-bg-top: #0c1522;
+  --atelier-bg-bottom: #111c2b;
+  --atelier-shadow: rgb(0 0 0 / 0.45);
+  --atelier-ink: #f2f6fb;
+  --atelier-muted: #b4c7d8;
+  --atelier-price: #7ec8f0;
+}
+
+.pricing-category-photo__sway {
+  --tag-sway-amp: 0.65deg;
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 6%;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pricing-category-photo__sway[data-sway='on'] {
+    animation: atelier-tag-sway 5.6s ease-in-out infinite;
+  }
+
+  .pricing-category-photo__sway[data-sway='on'][data-phase='alt'] {
+    animation-duration: 6.4s;
+    animation-direction: reverse;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-category-photo__sway {
+    animation: none !important;
+  }
 }
 
 /* Scroll-synced product frame: stacked crossfade layers + soft plate */
@@ -896,50 +953,58 @@
   animation: none !important;
 }
 
-.pricing-atelier[data-atmosphere='off'] .pricing-category-mood .pricing-category-mood__steam,
-.pricing-atelier[data-atmosphere='off'] .pricing-category-mood .pricing-category-mood__fabric-sheet,
-.pricing-atelier[data-atmosphere='off'] .pricing-category-mood .pricing-category-mood__fabric-hem,
-.pricing-atelier[data-atmosphere='off'] .pricing-category-mood .pricing-category-mood__hang {
+:is(.pricing-atelier, .atelier-product-scope)[data-atmosphere='off']
+  .pricing-category-mood
+  .pricing-category-mood__steam,
+:is(.pricing-atelier, .atelier-product-scope)[data-atmosphere='off']
+  .pricing-category-mood
+  .pricing-category-mood__fabric-sheet,
+:is(.pricing-atelier, .atelier-product-scope)[data-atmosphere='off']
+  .pricing-category-mood
+  .pricing-category-mood__fabric-hem,
+:is(.pricing-atelier, .atelier-product-scope)[data-atmosphere='off']
+  .pricing-category-mood
+  .pricing-category-mood__hang {
   animation: none !important;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .pricing-atelier[data-atmosphere='on']
+  :is(.pricing-atelier, .atelier-product-scope)[data-atmosphere='on']
     .pricing-category-mood[data-mood='on']
     .pricing-category-mood__steam--a {
     animation: pricing-mood-steam 9.5s ease-in-out infinite;
     transform-origin: 50% 100%;
   }
 
-  .pricing-atelier[data-atmosphere='on']
+  :is(.pricing-atelier, .atelier-product-scope)[data-atmosphere='on']
     .pricing-category-mood[data-mood='on']
     .pricing-category-mood__steam--b {
     animation: pricing-mood-steam 12s ease-in-out infinite 0.8s reverse;
     transform-origin: 50% 100%;
   }
 
-  .pricing-atelier[data-atmosphere='on']
+  :is(.pricing-atelier, .atelier-product-scope)[data-atmosphere='on']
     .pricing-category-mood[data-mood='on']
     .pricing-category-mood__steam--c {
     animation: pricing-mood-steam 10.5s ease-in-out infinite 1.6s;
     transform-origin: 50% 100%;
   }
 
-  .pricing-atelier[data-atmosphere='on']
+  :is(.pricing-atelier, .atelier-product-scope)[data-atmosphere='on']
     .pricing-category-mood[data-mood='on']
     .pricing-category-mood__fabric-sheet {
     animation: pricing-mood-fabric 16s ease-in-out infinite;
     transform-origin: 50% 100%;
   }
 
-  .pricing-atelier[data-atmosphere='on']
+  :is(.pricing-atelier, .atelier-product-scope)[data-atmosphere='on']
     .pricing-category-mood[data-mood='on']
     .pricing-category-mood__fabric-hem {
     animation: pricing-mood-fabric 19s ease-in-out infinite reverse;
     transform-origin: 50% 100%;
   }
 
-  .pricing-atelier[data-atmosphere='on']
+  :is(.pricing-atelier, .atelier-product-scope)[data-atmosphere='on']
     .pricing-category-mood[data-mood='on']
     .pricing-category-mood__hang {
     animation: pricing-mood-hang 7.5s ease-in-out infinite;
@@ -1047,12 +1112,15 @@
   flex-shrink: 0;
   flex-direction: column;
   align-items: center;
-  perspective: 720px;
+  /* Shallower perspective = less horizontal paint bleed on rotateY spindle */
+  perspective: 900px;
   perspective-origin: 50% 0%;
   transform-style: preserve-3d;
   /* Snap lives on __item — duplicate align here fights mandatory snap on Android */
   touch-action: manipulation;
   outline: none;
+  /* Keep 3D paint inside the tag’s border box so the page never gains x scroll */
+  overflow: visible;
 }
 
 .pricing-price-tag:focus-visible .pricing-price-tag__face {
@@ -1176,9 +1244,12 @@
 }
 
 .pricing-price-tag__spindle {
+  width: 100%;
   transform-origin: top center;
   transform-style: preserve-3d;
   backface-visibility: hidden;
+  /* Contain rotateY foreshortening so ticket text stays inside the tag column */
+  transform-box: border-box;
 }
 
 .pricing-price-tag__face {
@@ -1363,6 +1434,10 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
   color: var(--atelier-ink);
 }
 
@@ -1376,11 +1451,21 @@
   margin-top: 0.28rem;
   display: flex;
   flex-direction: column;
-  gap: 0.22rem;
+  gap: 0.28rem;
   align-items: center;
+  width: 100%;
   /* No flex-grow — prices sit tight under the name, not at the bottom of a void */
   flex: 0 0 auto;
   justify-content: flex-start;
+}
+
+.pricing-price-tag__lines > .text-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.06rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .pricing-price-tag__service {
@@ -1388,6 +1473,7 @@
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  line-height: 1.1;
   color: var(--atelier-muted);
 }
 
@@ -1435,8 +1521,9 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  /* Contain the horizontal scroller so the page never gains x overflow */
+  /* Contain horizontal scroller bleed; let tickets hang into unit bottom padding */
   overflow-x: clip;
+  overflow-y: visible;
 }
 
 .pricing-rack-scroller {
@@ -1450,16 +1537,19 @@
   max-width: 100%;
   min-width: 0;
   overflow-x: auto;
-  /* Keep y clipped but pad enough for focus rings + dual-line tickets + sway */
+  /*
+   * overflow-x:auto forces a non-visible y box — pad enough that dual-line
+   * tickets, focus rings (outline-offset 3px), and rotateZ sway stay inside.
+   */
   overflow-y: hidden;
   overscroll-behavior-x: contain;
   overscroll-behavior-y: auto;
   scroll-snap-type: x proximity;
-  /* Focus outline (~5px) + screw clearance; never pad-left:0 (clips first tag ring) */
-  padding: 0.4rem 0.45rem 1rem;
-  scroll-padding-inline: 0.45rem;
-  /* Dense ticket height — screw + short hook + stub + rates */
-  min-height: 9rem;
+  /* Top: screw + focus; bottom: dual Dry Clean/Press + sway + focus ring */
+  padding: 0.5rem 0.5rem 1.5rem;
+  scroll-padding-inline: 0.5rem;
+  /* Floor for dual-line tickets (screw + hook + stub + name×2 + two rates) */
+  min-height: 12.25rem;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
@@ -1503,7 +1593,8 @@
     /* Premium one-tag settle on phones */
     scroll-snap-type: x mandatory;
     gap: 0.7rem;
-    min-height: 9.5rem;
+    min-height: 12.5rem;
+    padding: 0.5rem 0.5rem 1.6rem;
   }
 
   .pricing-rack-scroller__item {
@@ -1520,8 +1611,8 @@
 @media (min-width: 640px) {
   .pricing-rack-scroller {
     gap: 0.9rem;
-    padding: 0.4rem 0.5rem 1rem;
-    min-height: 9.75rem;
+    padding: 0.55rem 0.55rem 1.6rem;
+    min-height: 12.75rem;
   }
 }
 

@@ -1,33 +1,37 @@
-/** Curated Unsplash images for laundry partners and hero. */
+/** Local laundry imagery for discover partners and heroes — no remote Unsplash. */
 
-/** Verified Unsplash IDs (broken legacy URLs returned 404 and hurt LCP). */
-const U = (id: string, w: number) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
+import { MARKETING_HERO_IMAGES } from '@/features/marketing/catalog/marketing-hero-images';
 
-export const HERO_IMAGE = U('photo-1558618666-fcd25c85cd64', 800);
+/** Discover listing / detail cover — folded laundry (matches marketing welcome). */
+export const HERO_IMAGE = MARKETING_HERO_IMAGES.welcome.src;
 
-/** Verified IDs for marketing hero carousel (broken legacy URLs returned 404). */
+/**
+ * Verified local heroes for marketplace marketing slides.
+ * Keys align with historical Unsplash slide roles (primary / compare / partner / doorstep).
+ */
 export const HERO_SLIDE_IMAGES = {
   /** Folded fresh laundry — welcome slide */
-  primary: U('photo-1558618666-fcd25c85cd64', 1200),
+  primary: MARKETING_HERO_IMAGES.welcome.src,
   /** Professional laundry facility — services slide */
-  compare: U('photo-1571902943202-507ec2618e8f', 1200),
-  /** Small business owner — franchise slide (distinct from facility) */
-  partner: U('photo-1600880292203-757bb62b4baf', 1200),
-  /** Pickup / delivery — delivery slide */
-  doorstep: U('photo-1517677208171-0bc6725a3e60', 1200),
+  compare: MARKETING_HERO_IMAGES.services.src,
+  /** Partner laundromat interior — franchise slide */
+  partner: MARKETING_HERO_IMAGES.franchise.src,
+  /** Pickup / delivery laundry basket — delivery slide */
+  doorstep: MARKETING_HERO_IMAGES.delivery.src,
 } as const;
 
 export const LAUNDRY_IMAGES_BY_SLUG: Record<string, string> = {
-  'demo-quick-wash-koramangala': U('photo-1558618666-fcd25c85cd64', 800),
-  'demo-sparkle-indiranagar': U('photo-1571902943202-507ec2618e8f', 800),
-  'demo-freshfold-hsr': U('photo-1517677208171-0bc6725a3e60', 800),
+  'demo-quick-wash-koramangala': HERO_SLIDE_IMAGES.primary,
+  'demo-sparkle-indiranagar': HERO_SLIDE_IMAGES.compare,
+  'demo-freshfold-hsr': HERO_SLIDE_IMAGES.doorstep,
 };
 
 const FALLBACK_POOL = [
-  U('photo-1558618666-fcd25c85cd64', 800),
-  U('photo-1517677208171-0bc6725a3e60', 800),
-];
+  HERO_SLIDE_IMAGES.primary,
+  HERO_SLIDE_IMAGES.doorstep,
+  HERO_SLIDE_IMAGES.compare,
+  HERO_SLIDE_IMAGES.partner,
+] as const;
 
 export function getLaundryImage(slug: string, index: number): string {
   return LAUNDRY_IMAGES_BY_SLUG[slug] ?? FALLBACK_POOL[index % FALLBACK_POOL.length]!;

@@ -1,7 +1,7 @@
 # WashHouse image style guide & stock sourcing plan
 
 > **Owners:** UI/UX + Product  
-> **Last updated:** 2026-07-20  
+> **Last updated:** 2026-07-21  
 > **Code refs:** `pricing-product-images.ts`, `washhouse-catalog-photos.ts`, `public/catalog/`
 
 This document defines how we source, crop, export, and attribute images so marketing pages look professional, cohesive, and culturally appropriate for the India market.
@@ -77,7 +77,7 @@ When adding new tiles, update `CATALOG_PHOTO_ALTS` in `washhouse-catalog-photos.
 | Dry Cleaning | `suit` | Garment stand-in — OK |
 | Shoe Cleaning | `shoes` | OK |
 | Curtain Cleaning | `curtain` (supplemental) | OK |
-| More Services | `pickup_delivery` (supplemental) | OK |
+| More Services | `hoodie` | Garment stand-in — OK (`steam_ironing` tile is a near-empty stub) |
 
 Future service tiles (`services/*.webp`) should replace garment stand-ins where a literal service shot reads clearer.
 

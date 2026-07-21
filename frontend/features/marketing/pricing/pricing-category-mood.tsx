@@ -11,7 +11,10 @@ import {
 import { cn } from '@/lib/utils';
 
 type PricingCategoryMoodProps = {
-  category: CatalogCategory;
+  /** Catalog category — used when `variant` is omitted. */
+  category?: CatalogCategory;
+  /** Explicit mood loop (special-care / services tiles). */
+  variant?: PricingCategoryMoodVariant;
   className?: string;
 };
 
@@ -20,11 +23,16 @@ type PricingCategoryMoodProps = {
  * Decorative only — paused off-screen, hard-stopped under reduced-motion.
  * Never mounts on tickets; prices stay above this plane.
  */
-export function PricingCategoryMood({ category, className }: PricingCategoryMoodProps) {
+export function PricingCategoryMood({
+  category,
+  variant: variantProp,
+  className,
+}: PricingCategoryMoodProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const reduce = useReducedMotion();
   const inView = useInView(ref, { amount: 0.2, margin: '8% 0px' });
-  const variant = getPricingCategoryMood(category);
+  const variant =
+    variantProp ?? (category ? getPricingCategoryMood(category) : 'fabric');
   const moodOn = Boolean(!reduce && inView);
 
   if (reduce) {

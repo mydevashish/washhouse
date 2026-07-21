@@ -36,12 +36,7 @@
       "label": "Lower",
       "category": "men",
       "file": "men/lower.webp",
-      "crop": {
-        "x": 255,
-        "y": 310,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "jogger",
@@ -49,12 +44,7 @@
       "label": "Jogger / Cargo",
       "category": "men",
       "file": "men/jogger.webp",
-      "crop": {
-        "x": 375,
-        "y": 310,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "shorts",
@@ -62,12 +52,7 @@
       "label": "Shorts",
       "category": "men",
       "file": "men/shorts.webp",
-      "crop": {
-        "x": 495,
-        "y": 310,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "dhoti",
@@ -75,12 +60,7 @@
       "label": "Dhoti / Lungi",
       "category": "men",
       "file": "men/dhoti.webp",
-      "crop": {
-        "x": 615,
-        "y": 310,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "kurta",
@@ -96,12 +76,7 @@
       "label": "Cap (fabric)",
       "category": "men",
       "file": "men/cap-fabric.webp",
-      "crop": {
-        "x": 855,
-        "y": 310,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "cap",
@@ -161,12 +136,7 @@
       "label": "Coat (formal)",
       "category": "men",
       "file": "men/coat-formal.webp",
-      "crop": {
-        "x": 255,
-        "y": 430,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "coat",
@@ -247,12 +217,7 @@
       "label": "Tie",
       "category": "men",
       "file": "men/tie.webp",
-      "crop": {
-        "x": 1095,
-        "y": 430,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "hanky",
@@ -281,12 +246,7 @@
       "label": "Saree (heavy)",
       "category": "women",
       "file": "women/saree-heavy.webp",
-      "crop": {
-        "x": 135,
-        "y": 540,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "lehenga",
@@ -323,12 +283,7 @@
       "label": "Top / Kurti",
       "category": "women",
       "file": "women/top-kurti.webp",
-      "crop": {
-        "x": 615,
-        "y": 540,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "lower",
@@ -349,12 +304,7 @@
       "label": "Dupatta",
       "category": "women",
       "file": "women/dupatta.webp",
-      "crop": {
-        "x": 855,
-        "y": 540,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "gown",
@@ -362,12 +312,7 @@
       "label": "Gown",
       "category": "women",
       "file": "women/gown.webp",
-      "crop": {
-        "x": 975,
-        "y": 540,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "shawl",
@@ -375,12 +320,7 @@
       "label": "Shawl",
       "category": "winter",
       "file": "winter/shawl.webp",
-      "crop": {
-        "x": 1095,
-        "y": 540,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "sweater",
@@ -388,12 +328,7 @@
       "label": "Sweater",
       "category": "winter",
       "file": "winter/sweater.webp",
-      "crop": {
-        "x": 1215,
-        "y": 540,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "jacket_puffer",
@@ -451,12 +386,7 @@
       "label": "Pillow Cover",
       "category": "household",
       "file": "household/pillow-cover.webp",
-      "crop": {
-        "x": 435,
-        "y": 700,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "curtain",
@@ -464,12 +394,7 @@
       "label": "Curtain",
       "category": "household",
       "file": "household/curtain.webp",
-      "crop": {
-        "x": 495,
-        "y": 700,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "sofa_cover",
@@ -503,12 +428,7 @@
       "label": "Towel",
       "category": "household",
       "file": "household/towel.webp",
-      "crop": {
-        "x": 855,
-        "y": 700,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "shoes",
@@ -524,12 +444,7 @@
       "label": "School Bag",
       "category": "accessories",
       "file": "accessories/school-bag.webp",
-      "crop": {
-        "x": 1055,
-        "y": 700,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "purse",
@@ -537,12 +452,7 @@
       "label": "Handbag",
       "category": "accessories",
       "file": "accessories/handbag.webp",
-      "crop": {
-        "x": 1155,
-        "y": 700,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "bag",
@@ -550,12 +460,7 @@
       "label": "Backpack",
       "category": "accessories",
       "file": "accessories/backpack.webp",
-      "crop": {
-        "x": 1215,
-        "y": 700,
-        "w": 110,
-        "h": 110
-      }
+      "source": "stock"
     },
     {
       "key": "toy",
@@ -704,15 +609,7 @@
       "label": "Skirt (short)",
       "category": "women",
       "file": "women/skirt-short.webp",
-      "crop": {
-        "x": 615,
-        "y": 540,
-        "w": 110,
-        "h": 110
-      },
-      "placeholder": true,
-      "cropFrom": "women-top-kurti",
-      "note": "No skirt tile — reuses top/kurti crop until collage updated"
+      "source": "stock"
     },
     {
       "key": "skirt",
@@ -720,15 +617,7 @@
       "label": "Skirt (long)",
       "category": "women",
       "file": "women/skirt-long.webp",
-      "crop": {
-        "x": 615,
-        "y": 540,
-        "w": 110,
-        "h": 110
-      },
-      "placeholder": true,
-      "cropFrom": "women-top-kurti",
-      "note": "No skirt tile — reuses top/kurti crop until collage updated"
+      "source": "stock"
     },
     {
       "key": "dress",
@@ -736,14 +625,7 @@
       "label": "Full Dress (normal)",
       "category": "women",
       "file": "women/full-dress-normal.webp",
-      "crop": {
-        "x": 975,
-        "y": 540,
-        "w": 110,
-        "h": 110
-      },
-      "placeholder": true,
-      "cropFrom": "women-gown-anarkali"
+      "source": "stock"
     },
     {
       "key": "dress",
@@ -751,14 +633,7 @@
       "label": "Full Dress (party)",
       "category": "women",
       "file": "women/full-dress-party.webp",
-      "crop": {
-        "x": 975,
-        "y": 540,
-        "w": 110,
-        "h": 110
-      },
-      "placeholder": true,
-      "cropFrom": "women-gown-anarkali"
+      "source": "stock"
     },
     {
       "key": "frock",
@@ -766,15 +641,7 @@
       "label": "Frock (normal)",
       "category": "women",
       "file": "women/frock-normal.webp",
-      "crop": {
-        "x": 975,
-        "y": 540,
-        "w": 110,
-        "h": 110
-      },
-      "placeholder": true,
-      "cropFrom": "women-gown-anarkali",
-      "note": "No frock tile — reuses gown crop"
+      "source": "stock"
     },
     {
       "key": "frock",
@@ -813,14 +680,7 @@
       "label": "Kameez (normal)",
       "category": "women",
       "file": "women/kameez-normal.webp",
-      "crop": {
-        "x": 615,
-        "y": 540,
-        "w": 110,
-        "h": 110
-      },
-      "placeholder": true,
-      "cropFrom": "women-top-kurti"
+      "source": "stock"
     },
     {
       "key": "top",
@@ -843,14 +703,7 @@
       "label": "Burkha",
       "category": "women",
       "file": "women/burkha.webp",
-      "crop": {
-        "x": 975,
-        "y": 540,
-        "w": 110,
-        "h": 110
-      },
-      "placeholder": true,
-      "cropFrom": "women-gown-anarkali"
+      "source": "stock"
     },
     {
       "key": "kurta",
@@ -858,14 +711,7 @@
       "label": "Kurta",
       "category": "women",
       "file": "women/kurta.webp",
-      "crop": {
-        "x": 615,
-        "y": 540,
-        "w": 110,
-        "h": 110
-      },
-      "placeholder": true,
-      "cropFrom": "women-top-kurti"
+      "source": "stock"
     },
     {
       "key": "bathrobe",
@@ -1236,16 +1082,8 @@
       "slug": "household-pillow-cushion-cover",
       "label": "Pillow / Cushion Cover",
       "category": "household",
-      "file": "household/pillow-cushion-cover.webp",
-      "crop": {
-        "x": 435,
-        "y": 700,
-        "w": 110,
-        "h": 110
-      },
-      "placeholder": true,
-      "cropFrom": "household-pillow-cover",
-      "note": "Aligns seed slug (was manifest-only household-pillow-cover)"
+      "file": "household/pillow-cover.webp",
+      "source": "stock"
     },
     {
       "key": "shoes",

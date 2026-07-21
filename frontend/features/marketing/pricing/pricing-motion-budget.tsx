@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 
-const MAX_CONCURRENT = 7;
+const MAX_CONCURRENT = 9;
 
 type MotionBudgetContextValue = {
   tryClaim: () => boolean;
@@ -21,7 +21,7 @@ type MotionBudgetContextValue = {
 
 const MotionBudgetContext = createContext<MotionBudgetContextValue | null>(null);
 
-/** Caps simultaneous idle-sway tags across hanging pegs (~6–8). */
+/** Caps simultaneous idle-sway tags + product frames across hanging pegs (~7–9). */
 export function PricingMotionBudgetProvider({ children }: { children: ReactNode }) {
   const activeRef = useRef(0);
   const [version, setVersion] = useState(0);

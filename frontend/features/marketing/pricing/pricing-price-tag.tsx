@@ -87,10 +87,10 @@ export function PricingPriceTag({
     offset: ['start end', 'center center'],
   });
 
-  // Spindle flip: near edge-on ticket → face-on as the tag enters the viewport
-  const rotateY = useTransform(scrollYProgress, [0, 0.45, 0.85, 1], [86, 42, 8, 0]);
-  const rotateZ = useTransform(scrollYProgress, [0, 0.35, 0.7, 1], [6, -5, 1.5, 0]);
-  const opacity = useTransform(scrollYProgress, [0, 0.18, 1], [0.2, 1, 1]);
+  // Spindle flip: slight edge cue → face-on (keep prices readable; avoid edge-on hide)
+  const rotateY = useTransform(scrollYProgress, [0, 0.45, 0.85, 1], [38, 18, 4, 0]);
+  const rotateZ = useTransform(scrollYProgress, [0, 0.35, 0.7, 1], [3, -2.5, 1, 0]);
+  const opacity = useTransform(scrollYProgress, [0, 0.12, 1], [0.55, 1, 1]);
   const settleProgress = useTransform(scrollYProgress, [0.88, 1], [0, 1]);
   const [settled, setSettled] = useState(false);
 

@@ -6,7 +6,18 @@ to ``public/catalog/<category>/``. Optional ``--marketing`` processes
 
 Idempotent: skips outputs newer than their source unless ``--force``.
 
-Requires Pillow (same as ``extract-catalog-photos.py``).
+Requires Pillow (same as ``extract-catalog-photos.py``). ``--remove-bg`` uses
+edge flood-fill near-white punch-out by default; pass ``--remove-bg-engine rembg``
+when rembg + onnxruntime are installed.
+
+Commands::
+
+    cd frontend
+    npm run catalog:optimize -- --force
+    npm run catalog:optimize -- --remove-bg --force
+    npm run catalog:optimize -- --from-sample --remove-bg --force
+    # --from-sample: map public/sample/ -> _imports PNG (alpha), encode WebP,
+    # delete successfully mapped samples, write public/sample/SKIPPED.md
 """
 from __future__ import annotations
 
@@ -24,6 +35,7 @@ from catalog_photo_utils import (  # noqa: E402
     DEFAULT_WEBP_QUALITY,
     TILE_HEIGHT,
     TILE_WIDTH,
+    remove_background,
     save_catalog_webp,
 )
 
@@ -33,6 +45,7 @@ CATALOG_IMPORTS_DIR = CATALOG_DIR / '_imports'
 MARKETING_DIR = FRONTEND_DIR / 'public' / 'marketing'
 MARKETING_IMPORTS_DIR = MARKETING_DIR / '_imports'
 MARKETING_HEROES_DIR = MARKETING_DIR / 'heroes'
+SAMPLE_DIR = FRONTEND_DIR / 'public' / 'sample'
 
 SUPPORTED_EXTENSIONS = frozenset({'.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.tif', '.tiff'})
 MAX_SOURCE_DIMENSION = 8000
@@ -40,6 +53,64 @@ MAX_SOURCE_DIMENSION = 8000
 MARKETING_WIDTH = 1920
 MARKETING_HEIGHT = 1080
 MARKETING_QUALITY = 82
+
+# Approved sample → catalog mapping (replace-existing only; skips listed separately).
+# Keys are filenames under public/sample/; values are (category, kebab stem).
+SAMPLE_MAPPING: dict[str, tuple[str, str]] = {
+    'Anarkali.webp': ('women', 'gown'),
+    'Bag.webp': ('accessories', 'school-bag'),
+    'Bedsheet.webp': ('household', 'bedsheet'),
+    'Burkha.webp': ('women', 'burkha'),
+    'Cap.webp': ('men', 'cap-fabric'),
+    'Cargo.webp': ('men', 'jogger'),
+    'Coat.webp': ('men', 'coat-formal'),
+    'Curtain.webp': ('household', 'curtain'),
+    'Dupatta.webp': ('women', 'dupatta'),
+    'Gloves.webp': ('accessories', 'gloves-cotton'),
+    'Half jacket.webp': ('winter', 'half-jacket-cotton-denim'),
+    'Heels.webp': ('accessories', 'heels'),
+    'Hoodie.webp': ('winter', 'hoodie'),
+    'Jacket.webp': ('winter', 'jacket-cotton-denim'),
+    'Jeans.webp': ('men', 'trouser'),
+    'Kids girl dress.webp': ('kids', 'girl-dress'),
+    'Leather jacket.webp': ('winter', 'jacket-leather'),
+    'Leatherbag.webp': ('accessories', 'backpack'),
+    'Lower.webp': ('men', 'lower'),
+    'Lungi.webp': ('men', 'dhoti'),
+    'Men kurta.webp': ('men', 'kurta'),
+    'Overcoat.webp': ('winter', 'overcoat-men-women'),
+    'Pillow cover.webp': ('household', 'pillow-cover'),
+    'Purse.webp': ('accessories', 'handbag'),
+    'Saare heavy.webp': ('women', 'saree-heavy'),
+    'Saree normal.webp': ('women', 'saree-normal'),
+    'Shawl.webp': ('winter', 'shawl'),
+    'Shirt.webp': ('men', 'shirt'),
+    'Shoes.webp': ('accessories', 'shoes'),
+    'Shorts.webp': ('men', 'shorts'),
+    'Skirt large.webp': ('women', 'skirt-long'),
+    'Skirt small.webp': ('women', 'skirt-short'),
+    'Sweater.webp': ('winter', 'sweater'),
+    'Tie.webp': ('men', 'tie'),
+    'Towel.webp': ('household', 'towel'),
+    'Trolley bag.webp': ('accessories', 'trolley-m'),
+    'Women full dress.webp': ('women', 'full-dress-party'),
+    'Women kurta.webp': ('women', 'kurta'),
+    'Women short dress.webp': ('women', 'full-dress-normal'),
+    '4bxt1B1204uOy-d._SL360_QL95_FMwebp_.webp': ('women', 'top-kurti'),
+    'abxt1hjw-XuUDdJ._SL360_QL95_FMwebp_.webp': ('women', 'kameez-normal'),
+    'xbxt1xE$1UHxodK._SL360_QL95_FMwebp_.webp': ('women', 'frock-normal'),
+}
+
+SAMPLE_SKIPPED: dict[str, str] = {
+    'Shocks.webp': 'No socks/shocks seed slug or manifest row.',
+    'Tshirt.webp': 'Same tile as Shirt.webp (men/shirt.webp); prefer dress-shirt sample.',
+    'Pbxt1BNiDJSisrR._SL360_QL95_FMwebp_.webp': (
+        'Second men kurta; prefer named Men kurta.webp for men/kurta.webp.'
+    ),
+    'fbxt1hTbpb8e24L._SL360_QL95_FMwebp_.webp': (
+        'Second short skirt; prefer Skirt small.webp for women/skirt-short.webp.'
+    ),
+}
 
 
 def to_kebab_stem(filename: str) -> str:
@@ -107,7 +178,22 @@ def iter_import_files(imports_dir: Path) -> list[Path]:
     )
 
 
-def process_catalog_imports(*, force: bool, quality: int) -> tuple[int, int, int]:
+def prepare_image(img: Image.Image, *, remove_bg: bool, engine: str = 'flood') -> Image.Image:
+    return remove_background(img, engine=engine) if remove_bg else img
+
+
+def export_transparent_png(img: Image.Image, out_path: Path) -> None:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    img.convert('RGBA').save(out_path, 'PNG', optimize=True)
+
+
+def process_catalog_imports(
+    *,
+    force: bool,
+    quality: int,
+    remove_bg: bool,
+    bg_engine: str = 'flood',
+) -> tuple[int, int, int]:
     """Returns (written, skipped, warned_oversized)."""
     if not CATALOG_IMPORTS_DIR.is_dir():
         print(f'No catalog imports folder at {CATALOG_IMPORTS_DIR.relative_to(FRONTEND_DIR)}/')
@@ -123,7 +209,8 @@ def process_catalog_imports(*, force: bool, quality: int) -> tuple[int, int, int
         print(f'No category folders under {CATALOG_IMPORTS_DIR.relative_to(FRONTEND_DIR)}/')
         return 0, 0, 0
 
-    print(f'Catalog imports -> {TILE_WIDTH}×{TILE_HEIGHT} WebP q{quality}')
+    bg_note = f' + remove-bg ({bg_engine})' if remove_bg else ''
+    print(f'Catalog imports -> {TILE_WIDTH}×{TILE_HEIGHT} WebP q{quality}{bg_note}')
 
     for category_dir in category_dirs:
         category = category_dir.name
@@ -155,7 +242,8 @@ def process_catalog_imports(*, force: bool, quality: int) -> tuple[int, int, int
                     log_oversized(src, img, label=str(rel))
                     if max(img.size) > MAX_SOURCE_DIMENSION:
                         oversized += 1
-                    save_catalog_webp(img, out_path, quality=quality)
+                    prepared = prepare_image(img, remove_bg=remove_bg, engine=bg_engine)
+                    save_catalog_webp(prepared, out_path, quality=quality)
             except OSError as exc:
                 print(f'  SKIP (unreadable): {rel} — {exc}', file=sys.stderr)
                 skipped += 1
@@ -234,6 +322,78 @@ def process_marketing_imports(*, force: bool, quality: int) -> tuple[int, int, i
     return written, skipped, oversized
 
 
+def import_samples_to_catalog(
+    *,
+    remove_bg: bool,
+    bg_engine: str = 'flood',
+) -> tuple[list[Path], list[str]]:
+    """Write transparent PNGs into _imports from approved SAMPLE_MAPPING.
+
+    Returns (successfully_mapped_sample_paths, error_labels).
+    """
+    if not SAMPLE_DIR.is_dir():
+        print(f'No sample folder at {SAMPLE_DIR.relative_to(FRONTEND_DIR)}/', file=sys.stderr)
+        return [], ['missing sample dir']
+
+    bg_label = f'remove-bg ({bg_engine})' if remove_bg else 'no bg removal'
+    print(f'Sample import -> {CATALOG_IMPORTS_DIR.relative_to(FRONTEND_DIR)}/ ({bg_label})')
+
+    ok_paths: list[Path] = []
+    errors: list[str] = []
+
+    for filename, (category, stem) in sorted(SAMPLE_MAPPING.items()):
+        src = SAMPLE_DIR / filename
+        if not src.is_file():
+            msg = f'missing: {filename}'
+            print(f'  SKIP {msg}', file=sys.stderr)
+            errors.append(msg)
+            continue
+
+        out_png = CATALOG_IMPORTS_DIR / category / f'{stem}.png'
+        try:
+            with Image.open(src) as img:
+                prepared = prepare_image(img, remove_bg=remove_bg, engine=bg_engine)
+                export_transparent_png(prepared, out_png)
+        except OSError as exc:
+            msg = f'{filename}: {exc}'
+            print(f'  SKIP (unreadable): {msg}', file=sys.stderr)
+            errors.append(msg)
+            continue
+
+        print(f'  {filename:42} -> _imports/{category}/{stem}.png')
+        ok_paths.append(src)
+
+    return ok_paths, errors
+
+
+def write_skipped_md(*, remaining: list[str]) -> Path:
+    """Write SKIPPED.md for files left in sample/ after successful mapping cleanup."""
+    lines = [
+        '# Skipped sample files',
+        '',
+        'Left in `public/sample/` after catalog import. Not deleted.',
+        '',
+        '| sample filename | reason |',
+        '| --- | --- |',
+    ]
+    for name in remaining:
+        reason = SAMPLE_SKIPPED.get(name, 'Not in approved replace mapping (or import failed).')
+        lines.append(f'| `{name}` | {reason} |')
+    lines.append('')
+    out = SAMPLE_DIR / 'SKIPPED.md'
+    out.write_text('\n'.join(lines), encoding='utf-8')
+    return out
+
+
+def cleanup_mapped_samples(mapped: list[Path]) -> None:
+    for path in mapped:
+        try:
+            path.unlink(missing_ok=True)
+            print(f'  deleted sample: {path.name}')
+        except OSError as exc:
+            print(f'  WARN could not delete {path.name}: {exc}', file=sys.stderr)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -254,14 +414,68 @@ def main() -> int:
         default=MARKETING_QUALITY,
         help='WebP quality for marketing heroes',
     )
+    parser.add_argument(
+        '--remove-bg',
+        action='store_true',
+        help='Remove near-white background before compositing (also used by --from-sample)',
+    )
+    parser.add_argument(
+        '--remove-bg-engine',
+        choices=('flood', 'rembg'),
+        default='flood',
+        help='Background removal engine when --remove-bg / --from-sample (default: flood)',
+    )
+    parser.add_argument(
+        '--from-sample',
+        action='store_true',
+        help=(
+            'Import approved public/sample/ mapping into _imports as transparent PNG, '
+            'encode catalog WebP, delete mapped samples, write SKIPPED.md'
+        ),
+    )
     args = parser.parse_args()
 
     total_written = 0
     total_skipped = 0
     total_oversized = 0
+    mapped_samples: list[Path] = []
 
-    if not args.marketing_only:
-        written, skipped, oversized = process_catalog_imports(force=args.force, quality=args.quality)
+    if args.from_sample:
+        # Always write alpha PNGs for samples (step 1).
+        mapped_samples, import_errors = import_samples_to_catalog(
+            remove_bg=True,
+            bg_engine=args.remove_bg_engine,
+        )
+        if import_errors and not mapped_samples:
+            print('No samples imported; aborting.', file=sys.stderr)
+            return 1
+        # PNGs already have alpha — composite only (do not re-punch).
+        written, skipped, oversized = process_catalog_imports(
+            force=True,
+            quality=args.quality,
+            remove_bg=False,
+        )
+        total_written += written
+        total_skipped += skipped
+        total_oversized += oversized
+
+        cleanup_mapped_samples(mapped_samples)
+        remaining = sorted(
+            p.name
+            for p in SAMPLE_DIR.iterdir()
+            if p.is_file()
+            and p.suffix.lower() in SUPPORTED_EXTENSIONS
+            and p.name not in {m.name for m in mapped_samples}
+        )
+        skipped_path = write_skipped_md(remaining=remaining)
+        print(f'Wrote {skipped_path.relative_to(FRONTEND_DIR)} ({len(remaining)} left in sample/)')
+    elif not args.marketing_only:
+        written, skipped, oversized = process_catalog_imports(
+            force=args.force,
+            quality=args.quality,
+            remove_bg=args.remove_bg,
+            bg_engine=args.remove_bg_engine,
+        )
         total_written += written
         total_skipped += skipped
         total_oversized += oversized

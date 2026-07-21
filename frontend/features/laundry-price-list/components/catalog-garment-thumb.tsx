@@ -11,7 +11,8 @@ type CatalogGarmentThumbProps = {
 
 const SIZE_PX = { sm: 32, md: 40 } as const;
 
-/** Compact catalog garment tile for price lists and compare hints. */
+/** Compact catalog garment tile for price lists and compare hints.
+ * Intentionally static — no hang sway (sway is for atelier product frames only). */
 export function CatalogGarmentThumb({
   photo,
   size = 'sm',
