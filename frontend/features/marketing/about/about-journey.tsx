@@ -2,23 +2,23 @@ import { SectionHeader } from '@/components/marketplace/section-header';
 
 const MILESTONES = [
   {
-    year: '2023',
-    title: 'The idea takes shape',
-    description:
-      'Founded in Bengaluru with a small team who believed doorstep laundry deserved the same polish as food delivery.',
-  },
-  {
-    year: '2024',
-    title: 'Marketplace launch',
-    description:
-      'Opened The WashHouse to customers and partner stores — verified laundries, live tracking, and UPI checkout from day one.',
-  },
-  {
     year: '2025',
-    title: 'Growing across India',
+    title: 'The Idea Was Born',
     description:
-      'Expanding into more cities, onboarding neighbourhood favourites, and building subscription plans for regular customers.',
+      'The WashHouse was founded by three friends from Madhya Pradesh with a shared vision of building a modern, technology-driven laundry brand focused on quality, convenience, and customer satisfaction.',
   },
+  {
+    year: '2026',
+    title: 'Our First Laundry in Udaipur',
+    description:
+      'We launched our first WashHouse laundry facility in Udaipur, Rajasthan, offering professional garment care, doorstep pickup and delivery, and a simple booking experience.',
+  },
+  {
+    year: 'Future',
+    title: 'Building the WashHouse Network',
+    description:
+      'Our vision is to expand across India by opening WashHouse stores and welcoming franchise partners who share our commitment to quality, innovation, and customer-first service.',
+  }
 ] as const;
 
 export function AboutJourney() {

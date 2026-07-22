@@ -3,7 +3,7 @@ import { formatRupee, rupeeAriaLabel } from '@/features/laundry-price-list/lib/f
 /** Display “from ₹X” for indicative marketplace floors. */
 export function formatFromRupee(inr: string | null | undefined): string {
   if (inr == null || inr === '') return '—';
-  return `from ${formatRupee(inr)}`;
+  return `${formatRupee(inr)}`;
 }
 
 export function fromRupeeAriaLabel(inr: string | null | undefined): string {

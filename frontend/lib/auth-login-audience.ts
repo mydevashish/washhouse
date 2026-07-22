@@ -39,7 +39,7 @@ const AUDIENCE_COPY: Record<LoginAudience, LoginAudienceCopy> = {
     backLabel: 'Staff portal',
     showOtpTab: false,
     footerPrompt: 'Customer booking?',
-    footerHref: '/discover',
+    footerHref: '/stores',
     footerLinkText: 'Browse laundries',
   },
 };

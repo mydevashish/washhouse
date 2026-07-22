@@ -105,7 +105,7 @@ function HeroSlideImage({
             {slide.promo.code}
           </p>
           <p className="mt-1 text-xs leading-snug text-foreground/80">
-            Use at checkout on your first order
+            On Your FIRST THREE Orders
           </p>
         </GlassSurface>
       ) : null}

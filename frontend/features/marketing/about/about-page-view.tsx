@@ -10,7 +10,7 @@ export function AboutPageView() {
   return (
     <div className="bg-background">
       <AboutHero />
-      <AboutStats />
+      {/* <AboutStats /> */}
       <AboutMission />
       <AboutDifferentiators />
       <AboutValues />

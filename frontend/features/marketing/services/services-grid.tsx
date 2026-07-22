@@ -105,9 +105,8 @@ export function ServicesGrid() {
         </ul>
 
         <p className="mx-auto mt-8 max-w-prose text-center text-xs leading-relaxed text-muted-foreground sm:text-sm">
-          <strong className="font-medium text-foreground">Indicative pricing only.</strong> Starting-from
-          rates are by category; final bills are set by each laundry partner and shown on their store
-          page before you book.
+          <strong className="font-medium text-foreground">Indicative pricing only.</strong>{' '}
+          The prices shown are starting rates. Final pricing can be viewed on the pricing page, and a detailed bill will also be shared with you on WhatsApp before your order is confirmed.
         </p>
       </div>
     </section>

@@ -13,9 +13,9 @@ export function AboutHero() {
             will actually come back.
           </p>
           <p>
-            We built a youth-focused doorstep laundry marketplace so you can discover trusted
-            partners nearby, book pickup in minutes, and track every order in real time — from
-            your phone, between classes, meetings, or late-night plans.
+            We built a modern doorstep laundry marketplace where you can discover trusted laundry partners,
+            schedule a pickup in minutes, and get your clothes professionally cleaned and delivered back to
+            your doorstep. Booking is quick, and our team confirms every order via WhatsApp or phone.
           </p>
         </div>
       </div>

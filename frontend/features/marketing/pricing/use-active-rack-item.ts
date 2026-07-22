@@ -109,7 +109,14 @@ export function useActiveRackItem({
       }
     }
 
+    const maxScrollLeft = root.scrollWidth - root.clientWidth;
+
+    if (root.scrollLeft >= maxScrollLeft - 2) {
+      bestIndex = items.length - 1;
+    }
+
     const next = clampIndex(bestIndex);
+
     if (activeRef.current !== next) {
       activeRef.current = next;
       setActiveIndex(next);

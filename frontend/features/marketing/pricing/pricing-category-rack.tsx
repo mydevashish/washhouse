@@ -44,6 +44,11 @@ export function PricingCategoryRack({
     scrollerRef,
     itemCount: group.items.length,
   });
+  console.log({
+  activeIndex,
+  photoIndex,
+  total: group.items.length,
+});
   const spotlightItem = group.items[activeIndex] ?? group.items[0];
   const photoItem = group.items[photoIndex] ?? spotlightItem ?? group.items[0];
   const activeImage = photoItem

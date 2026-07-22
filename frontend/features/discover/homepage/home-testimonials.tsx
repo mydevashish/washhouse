@@ -215,7 +215,12 @@ function TestimonialsSkeleton() {
   );
 }
 
+const SHOW_TESTIMONIALS = false;
+
 export function HomeTestimonials() {
+  if (!SHOW_TESTIMONIALS) {
+    return null;
+  }
   const { testimonials, isLoading } = useMarketingTestimonials();
 
   if (isLoading) {

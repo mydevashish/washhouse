@@ -88,17 +88,6 @@ export default function StaffPortalPage() {
             </Link>
             .
           </p>
-          <p>
-            Booking laundry as a customer?{' '}
-            <Link href="/login" className="font-semibold text-primary hover:underline">
-              Customer sign in
-            </Link>{' '}
-            or{' '}
-            <Link href="/discover" className="font-semibold text-primary hover:underline">
-              browse stores
-            </Link>
-            .
-          </p>
         </div>
       </MarketingSection>
     </MarketingShell>

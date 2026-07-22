@@ -11,13 +11,14 @@ export function AboutMission() {
         />
         <div className="space-y-4 text-base leading-relaxed text-muted-foreground sm:text-lg [&_p+p]:mt-4">
           <p>
-            We believe fresh clothes shouldn&apos;t cost you a morning. Our mission is to make
-            professional laundry effortless, transparent, and trustworthy — for students, young
-            professionals, and families across India.
+            We believe fresh clothes shouldn&apos;t cost you valuable time. Our mission is to make
+            professional laundry simple, reliable, and accessible for everyone.
           </p>
+
           <p>
-            Every partner on The WashHouse is verified. Every price includes GST upfront. And every
-            order can be paid your way — UPI or cash on delivery. No hidden fees, no guesswork.
+            The WashHouse connects customers with trusted laundry partners, making doorstep
+            pickup and delivery easy. Book your service in minutes, and our team will coordinate
+            the rest so you can focus on what matters most.
           </p>
         </div>
       </div>

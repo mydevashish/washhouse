@@ -28,12 +28,12 @@ const QUICK_LINKS = [
     description: 'Booking, pricing, and care questions',
     icon: HelpCircle,
   },
-  {
-    href: '/orders',
-    label: 'Track order',
-    description: 'See live status on your pickups',
-    icon: Package,
-  },
+  // {
+  //   href: '/orders',
+  //   label: 'Track order',
+  //   description: 'See live status on your pickups',
+  //   icon: Package,
+  // },
   {
     href: '/franchise',
     label: 'Partner with us',
@@ -200,7 +200,7 @@ function OfficeAddress() {
   );
 }
 
-export function ContactPageView({ defaultSubject }: { defaultSubject?: 'general' | 'order-help' | 'franchise' | 'partnership' | 'legal-privacy' }) {
+export function ContactPageView({ defaultSubject }: { defaultSubject?: 'general' | 'order-help' | 'franchise' | 'legal-privacy' }) {
   return (
     <div className="bg-background">
       <ContactHero />

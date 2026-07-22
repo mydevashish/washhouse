@@ -7,25 +7,29 @@ const VALUES = [
   {
     icon: Sparkles,
     title: 'Quality',
-    description: 'Fresh, well-finished clothes — every time. We hold partners to standards we would expect ourselves.',
+    description:
+      'We work with trusted laundry partners who provide professional care for everyday wear, delicate fabrics, and premium garments.',
     accent: 'bg-primary/10 text-primary',
   },
   {
     icon: Eye,
     title: 'Transparency',
-    description: 'Clear pricing, honest timelines, and open communication. No surprises on your bill or at your door.',
+    description:
+      'Clear pricing, honest communication, and no hidden charges. You receive a detailed quotation before your order is confirmed.',
     accent: 'bg-info-muted text-info',
   },
   {
     icon: Zap,
     title: 'Convenience',
-    description: 'Doorstep pickup, phone OTP login, and tracking that actually works. Laundry on your schedule.',
+    description:
+      'Book your laundry service in minutes through our website or WhatsApp and enjoy hassle-free doorstep pickup and delivery.',
     accent: 'bg-success-muted text-success',
   },
   {
     icon: Heart,
-    title: 'Community',
-    description: 'We grow with local laundries and the neighbourhoods they serve — not at their expense.',
+    title: 'Customer First',
+    description:
+      'We focus on delivering a smooth, reliable experience and building lasting relationships with both customers and laundry partners.',
     accent: 'bg-warning-muted text-warning',
   },
 ] as const;

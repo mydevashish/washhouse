@@ -6,26 +6,30 @@ import { Card, CardContent } from '@/components/ui/card';
 const ITEMS = [
   {
     icon: ShieldCheck,
-    title: 'Verified partners',
-    description: 'Every laundry is reviewed and approved before they go live on the platform.',
+    title: 'Trusted Laundry Partners',
+    description:
+      'We connect you with reliable local laundry partners committed to quality garment care.',
     accent: 'bg-primary/10 text-primary',
   },
   {
     icon: Smartphone,
-    title: 'Real-time tracking',
-    description: 'Follow your order from pickup to wash, ready, and out for delivery — live updates.',
+    title: 'Easy Booking',
+    description:
+      'Book your laundry pickup in minutes using our simple booking form or WhatsApp.',
     accent: 'bg-info-muted text-info',
   },
   {
     icon: BadgeIndianRupee,
-    title: 'GST-compliant pricing',
-    description: 'See the full breakdown before you book. GST is always shown on your order.',
+    title: 'Transparent Pricing',
+    description:
+      'View service pricing upfront. Your final quotation is shared before your order is confirmed.',
     accent: 'bg-success-muted text-success',
   },
   {
     icon: MapPin,
-    title: 'UPI + COD',
-    description: 'Pay how you prefer — instant UPI or cash on delivery when your clothes arrive.',
+    title: 'Doorstep Pickup & Delivery',
+    description:
+      'Schedule a convenient pickup and enjoy clean clothes delivered back to your doorstep.',
     accent: 'bg-warning-muted text-warning',
   },
 ] as const;

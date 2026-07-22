@@ -4,7 +4,6 @@ export const CONTACT_SUBJECTS = [
   { value: 'general', label: 'General' },
   { value: 'order-help', label: 'Order help' },
   { value: 'franchise', label: 'Franchise' },
-  { value: 'partnership', label: 'Partnership' },
   { value: 'legal-privacy', label: 'Legal / Privacy' },
 ] as const;
 
@@ -35,14 +34,14 @@ export const CONTACT_CONFIG = {
   supportEmail: envOrDefault('NEXT_PUBLIC_SUPPORT_EMAIL', 'thewashhousesolutions@gmail.com'),
   phone: envOrDefault('NEXT_PUBLIC_SUPPORT_PHONE', '+91 99777 51122'),
   whatsapp: envOrDefault('NEXT_PUBLIC_WHATSAPP_NUMBER', '+91 99777 51122'),
-  businessHours: envOrDefault('NEXT_PUBLIC_BUSINESS_HOURS', 'Mon–Sat, 9:00 AM – 7:00 PM IST'),
+  businessHours: envOrDefault('NEXT_PUBLIC_BUSINESS_HOURS', 'Mon–Sat, 10:00 AM – 7:00 PM IST'),
   officeAddress: envOrDefault(
     'NEXT_PUBLIC_OFFICE_ADDRESS',
-    'The WashHouse Laundry & Dryclean\nKoramangala 5th Block\nBengaluru, Karnataka 560095\nIndia',
+    'The WashHouse Laundry & Dryclean\nMahaveer Colony Park\nUdaipur, Rajasthan 313001\nIndia',
   ),
 } as const;
 
-export type SocialPlatform = 'facebook' | 'instagram' | 'linkedin' | 'x' | 'youtube';
+export type SocialPlatform = 'instagram';
 
 export type SocialLink = {
   platform: SocialPlatform;
@@ -51,19 +50,19 @@ export type SocialLink = {
 };
 
 const SOCIAL_DEFAULTS: Record<SocialPlatform, { href: string; label: string }> = {
-  facebook: { href: 'https://facebook.com/washhouse', label: 'Facebook' },
+  // facebook: { href: 'https://facebook.com/washhouse', label: 'Facebook' },
   instagram: { href: 'https://instagram.com/washhouse', label: 'Instagram' },
-  linkedin: { href: 'https://linkedin.com/company/washhouse', label: 'LinkedIn' },
-  x: { href: 'https://x.com/washhouse', label: 'X (Twitter)' },
-  youtube: { href: 'https://youtube.com/@washhouse', label: 'YouTube' },
+  // linkedin: { href: 'https://linkedin.com/company/washhouse', label: 'LinkedIn' },
+  // x: { href: 'https://x.com/washhouse', label: 'X (Twitter)' },
+  // youtube: { href: 'https://youtube.com/@washhouse', label: 'YouTube' },
 };
 
 const SOCIAL_ENV_KEYS: Record<SocialPlatform, string> = {
-  facebook: 'NEXT_PUBLIC_FACEBOOK_URL',
+  // facebook: 'NEXT_PUBLIC_FACEBOOK_URL',
   instagram: 'NEXT_PUBLIC_INSTAGRAM_URL',
-  linkedin: 'NEXT_PUBLIC_LINKEDIN_URL',
-  x: 'NEXT_PUBLIC_X_URL',
-  youtube: 'NEXT_PUBLIC_YOUTUBE_URL',
+  // linkedin: 'NEXT_PUBLIC_LINKEDIN_URL',
+  // x: 'NEXT_PUBLIC_X_URL',
+  // youtube: 'NEXT_PUBLIC_YOUTUBE_URL',
 };
 
 export const SOCIAL_LINKS: readonly SocialLink[] = (

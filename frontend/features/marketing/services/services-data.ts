@@ -121,39 +121,33 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
 
 export const SERVICES_FAQ: ServicesFaqItem[] = [
   {
-    id: 'pickup-slots',
-    question: 'How do pickup slots work?',
+    id: 'how-book',
+    question: 'How do I book a laundry service?',
     answer:
-      'When you book through a laundry\'s detail page, you pick a pickup window that works for you — usually morning or evening slots. The partner confirms, and you get a reminder before they arrive. Slots vary by store and area.',
+      'Click "Book Now" or "Schedule Pickup", fill in your name, mobile number, and required service, then submit the form. Our team or the selected laundry partner will contact you by phone or WhatsApp to confirm your pickup.',
   },
   {
-    id: 'cancellation',
-    question: 'Can I cancel or reschedule an order?',
+    id: 'whatsapp-booking',
+    question: 'Can I book through WhatsApp or by phone?',
     answer:
-      'Yes — open your order in the app and cancel or reschedule before pickup, as long as the laundry hasn\'t started processing. After pickup, contact the store or our support team; policies may vary slightly by partner.',
+      'Yes. You can contact us directly through WhatsApp or call us to schedule your laundry pickup. Our team will help you complete your booking.',
   },
   {
-    id: 'garment-care',
-    question: 'How do you handle delicate or special garments?',
+    id: 'pricing',
+    question: 'How is the final price calculated?',
     answer:
-      'Tag items that need extra care when booking (e.g. silk, wool, embellished wear). Partners follow care-label instructions and may contact you if something needs dry clean instead of wash. When in doubt, mention it in order notes.',
+      'The prices shown on our website are starting rates. The final price depends on the garments, quantity, fabric type, and requested services. A detailed quotation and bill will be shared with you on WhatsApp before your order is processed.',
   },
   {
-    id: 'phone-booking',
-    question: 'Can I book by phone instead of the app?',
+    id: 'pickup',
+    question: 'How does pickup and delivery work?',
     answer:
-      'Many partner stores accept phone orders for regular customers. You\'ll still need to sign in with OTP for tracking and payments on the platform. Search a laundry on Stores and use their listed contact if you prefer calling first.',
+      'After your booking is confirmed, our team or the laundry partner will schedule a convenient pickup time. Once your clothes are cleaned, they will be delivered back to your doorstep.',
   },
   {
-    id: 'pricing-final',
-    question: 'Why does my final bill differ from the "starting from" price?',
+    id: 'special-care',
+    question: 'Can you handle delicate or premium garments?',
     answer:
-      'Starting-from prices on this page are indicative by category. Final bills can vary with fabric, weight, and add-ons — you see the full breakdown before you pay.',
-  },
-  {
-    id: 'express-availability',
-    question: 'Is express service available everywhere?',
-    answer:
-      'Express and same-day turnaround depend on partner capacity and your location. Ask when you book — availability can vary by day.',
+      'Yes. We work with experienced laundry partners who carefully handle delicate fabrics such as silk, wool, designer wear, and other garments requiring special care.',
   },
 ];

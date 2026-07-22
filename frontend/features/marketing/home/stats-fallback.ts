@@ -11,10 +11,10 @@ export type MarketingStat = {
 };
 
 export const MARKETING_STATS_FALLBACK_API: MarketingPublicStats = {
-  happy_customers: 5000,
-  cities_covered: 50,
-  pickup_points: 120,
-  garments_cleaned: 500_000,
+  happy_customers: 100,
+  cities_covered: 1,
+  pickup_points: 1,
+  garments_cleaned: 500,
   customer_satisfaction_percent: 98,
 };
 
@@ -26,45 +26,52 @@ export function mapMarketingStatsToDisplay(stats: MarketingPublicStats): Marketi
   const items: MarketingStat[] = [
     {
       id: 'happy-customers',
-      value: formatCountStat(stats.happy_customers),
+      // value: formatCountStat(stats.happy_customers),
+      value: '100+',
       label: 'Happy Customers',
       icon: Users,
     },
     {
       id: 'cities-covered',
-      value: formatCountStat(stats.cities_covered),
+      value: '1+',
       label: 'Cities Covered',
       icon: MapPin,
     },
     {
       id: 'pickup-points',
-      value: formatCountStat(stats.pickup_points),
+      value: '1+',
       label: 'Pickup Points',
       icon: MapPinned,
     },
     {
       id: 'garments-cleaned',
-      value: formatCountStat(stats.garments_cleaned),
+      value: '500+',
       label: 'Garments Cleaned',
       icon: Shirt,
     },
-  ];
-
-  if (stats.customer_satisfaction_percent != null) {
-    items.push({
+    {
       id: 'customer-satisfaction',
-      value: `${stats.customer_satisfaction_percent}%`,
+      value: '98%',
       label: 'Customer Satisfaction',
       icon: Star,
-    });
-  } else if (stats.avg_review_rating != null) {
-    items.push({
-      id: 'avg-review-rating',
-      value: stats.avg_review_rating.toFixed(1),
-      label: 'Average Review Rating',
-      icon: Star,
-    });
-  }
+    }
+  ];
+
+  // if (stats.customer_satisfaction_percent != null) {
+  //   items.push({
+  //     id: 'customer-satisfaction',
+  //     value: `${stats.customer_satisfaction_percent}%`,
+  //     label: 'Customer Satisfaction',
+  //     icon: Star,
+  //   });
+  // } else if (stats.avg_review_rating != null) {
+  //   items.push({
+  //     id: 'avg-review-rating',
+  //     value: stats.avg_review_rating.toFixed(1),
+  //     label: 'Average Review Rating',
+  //     icon: Star,
+  //   });
+  // }
 
   return items;
 }
