@@ -89,10 +89,13 @@ export function ServicesGrid() {
                       className={cn(
                         buttonVariants({ variant: 'outline', size: 'default' }),
                         'mt-5 w-full rounded-full',
+                        ctaLabel === 'Started Soon' && 'pointer-events-none opacity-60 cursor-not-allowed',
                       )}
                     >
                       {ctaLabel}
-                      <ArrowRight className="h-4 w-4" aria-hidden />
+                      {ctaLabel !== 'Started Soon' && (
+                        <ArrowRight className="h-4 w-4" aria-hidden />
+                      )}
                     </Link>
                   </CardContent>
                 </Card>

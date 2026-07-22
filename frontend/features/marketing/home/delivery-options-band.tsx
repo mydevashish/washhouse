@@ -12,7 +12,7 @@ const DELIVERY_OPTIONS = [
   {
     id: 'regular',
     title: 'Regular Delivery',
-    turnaround: '48–72 Hours',
+    turnaround: '24–72 Hours',
     pricing: 'Normal charges',
     icon: Clock,
     iconClassName: 'bg-brand-500/10 text-brand-500',
@@ -22,7 +22,7 @@ const DELIVERY_OPTIONS = [
   {
     id: 'express',
     title: 'Express Delivery',
-    turnaround: '24 Hours',
+    turnaround: '12 Hours',
     pricing: 'Extra charges',
     icon: Zap,
     iconClassName: 'bg-warning-muted text-warning',

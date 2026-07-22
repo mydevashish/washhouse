@@ -7,6 +7,11 @@
 export type CatalogPhotoKey =
   | 'wash_fold'
   | 'wash_iron'
+  | 'premium_laundry'
+  | 'dry_clean'
+  | 'shoe_cleaning'
+  | 'curtain_cleaning'
+  | 'more_services'
   | 'shirt'
   | 'trouser'
   | 'shorts'
@@ -47,13 +52,15 @@ export type CatalogPhotoKey =
   | 'comforter'
   | 'pillow'
   | 'shoes'
+  | 'shoes_bag'
   | 'heels'
   | 'bag'
   | 'trolley'
   | 'carpet'
   | 'towel'
   | 'toy'
-  | 'gloves';
+  | 'gloves'
+  | 'membership';
 
 /** Ordered rules — first match wins. Prefer slug fragments (stable). */
 const CATALOG_PHOTO_RULES: ReadonlyArray<{
