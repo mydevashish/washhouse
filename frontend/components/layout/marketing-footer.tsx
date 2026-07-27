@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Facebook, Instagram, Linkedin, Mail, MapPin, Phone, Youtube } from 'lucide-react';
+import { Instagram, Mail, MapPin, Phone } from 'lucide-react';
 
 import { WashhouseLogo, WASHHOUSE_BRAND_NAME } from '@/components/brand/washhouse-logo';
 import {
@@ -17,20 +17,8 @@ const linkClassName =
 const contactLinkClassName =
   'inline-flex min-h-11 md:min-h-0 items-start gap-2 py-1 md:py-0 transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  );
-}
-
 const SOCIAL_ICONS: Record<SocialPlatform, React.ComponentType<{ className?: string }>> = {
-  facebook: Facebook,
   instagram: Instagram,
-  linkedin: Linkedin,
-  x: XIcon,
-  youtube: Youtube,
 };
 
 type MarketingFooterProps = {
