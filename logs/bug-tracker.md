@@ -35,6 +35,29 @@
 
 ## Open
 
+### BUG-2026-07-27-001 — Login navbar showed “DLM”; book-now dialog layout issues
+
+- **Status:** resolved
+- **Priority:** P2
+- **Severity:** S3
+- **Area:** frontend / marketing book-now + auth login
+- **Environment:** local
+- **Repro:**
+  - `/?book=1` — form appeared pushed right; preferred-time label truncated; notes hint overlapping
+  - `/login?audience=partner` / `?audience=admin` — navbar H1 showed “DLM”
+- **Root cause:**
+  - `DialogContent` used CSS `grid` with an absolutely positioned Close, which could create an empty track and mis-align children; book dialog was also `sm:max-w-md` (tight for long select labels)
+  - `/login` missing from `getCustomerPageTitle`; `PublicShell` always derived title from pathname only
+- **Fix:**
+  - Dialog → `flex flex-col`; book dialog wider; form fields full-width; notes hint below textarea with gap
+  - `PublicShell` accepts `pageTitle`; login passes audience title via `getLoginPageTitle`; fallback “WashHouse” instead of “DLM”
+  - Larger auth `WashhouseLogo` (`adaptive={false}`); franchise PDF still placeholder — README documents blocker
+- **Verification:** unit tests for audience + customer titles; Playwright staff login title + book-now layout assertions
+
+**Resolved at:** 2026-07-27
+
+---
+
 ### BUG-2026-07-17-003 — Outbound email never sent (contact / franchise / forgot-password)
 
 - **Status:** resolved

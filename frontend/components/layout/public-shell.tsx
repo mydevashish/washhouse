@@ -10,10 +10,13 @@ import { getCustomerPageTitle } from '@/lib/navigation/customer-title';
 export function PublicShell({
   children,
   showBack: _showBack,
+  pageTitle,
 }: {
   children: React.ReactNode;
   /** @deprecated Back is handled by GlobalNavbar */
   showBack?: boolean;
+  /** Override navbar H1 — e.g. audience-aware login titles. */
+  pageTitle?: string;
 }) {
   const pathname = usePathname();
 
@@ -22,7 +25,7 @@ export function PublicShell({
       <SkipToContent />
       <GlobalNavbar
         app="customer"
-        pageTitle={getCustomerPageTitle(pathname)}
+        pageTitle={pageTitle ?? getCustomerPageTitle(pathname)}
         notificationsHref="/orders"
         settingsHref="/account"
       />

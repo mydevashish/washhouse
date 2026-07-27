@@ -7,11 +7,11 @@ export type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement>;
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, children, ...props }, ref) => (
-    <div className="relative w-full">
+    <div className="relative w-full min-w-0">
       <select
         ref={ref}
         className={cn(
-          'flex w-full appearance-none rounded-lg border border-input bg-background py-2 pl-3 pr-10 text-base text-foreground shadow-sm',
+          'flex w-full min-w-0 appearance-none rounded-lg border border-input bg-background py-2 pl-3 pr-10 text-left text-base text-foreground shadow-sm',
           'transition-colors duration-base',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           'disabled:cursor-not-allowed disabled:opacity-50',

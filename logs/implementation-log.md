@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-07-27 — Book-now dialog, login logo/titles, franchise PDF status
+
+- **Type:** fix
+- **Scope:** Marketing book-now dialog, auth login chrome, franchise brochure
+- **Files:** `dialog.tsx`, `select.tsx`, `book-now-dialog.tsx`, `book-pickup-form.tsx`, `washhouse-logo.tsx`, `login/page.tsx`, `register/page.tsx`, `public-shell.tsx`, `customer-title.ts`, `auth-login-audience.ts`, `public/brochures/README.md`, unit + e2e tests, `logs/bug-tracker.md`
+- **Summary:** Fixed book-now layout (Dialog `flex` not `grid`, full-width fields, preferred-time room, notes hint below textarea). Enlarged auth WashHouse wordmark. Audience-aware login navbar titles (partner/admin/customer) instead of “DLM”. Franchise PDF CTA unchanged; README notes official PDF still missing.
+- **Risks:** Shared Dialog layout change could affect other modals visually (flex vs grid stacking). Official brochure still placeholder until asset is dropped.
+- **Next:** Drop official `washhouse-franchise.pdf` in place; smoke `?book=1` + `/login?audience=partner|admin` + `/franchise` brochure download.
+
+---
+
 ## 2026-07-21 — Catalog tiles: sample import scale fix + mapping docs
 
 - **Type:** fix

@@ -36,7 +36,9 @@ export const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed z-50 grid w-full gap-3 border border-border bg-background p-4 shadow-modal sm:p-5',
+        // flex (not grid): absolute Close must not create an empty grid track that
+        // mis-aligns / pushes form content.
+        'fixed z-50 flex w-full flex-col gap-3 border border-border bg-background p-4 shadow-modal sm:p-5',
         'duration-base data-[state=open]:animate-zoom-in data-[state=closed]:animate-zoom-out',
         'left-[50%] top-[50%] max-h-[min(90vh,100%)] translate-x-[-50%] translate-y-[-50%]',
         'max-w-[calc(100%-2rem)] rounded-xl sm:max-w-lg',

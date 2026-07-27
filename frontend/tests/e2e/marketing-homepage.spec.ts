@@ -318,6 +318,28 @@ test.describe('staff portal access', () => {
     );
   });
 
+  test('login navbar titles are audience-aware', async ({ page }) => {
+    await page.goto('/login?audience=partner');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByRole('banner').getByRole('heading', { level: 1 })).toHaveText(
+      /laundry login/i,
+    );
+    await expect(page.getByRole('heading', { name: /laundry partner sign in/i })).toBeVisible();
+
+    await page.goto('/login?audience=admin');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByRole('banner').getByRole('heading', { level: 1 })).toHaveText(
+      /admin login/i,
+    );
+    await expect(page.getByRole('heading', { name: /^admin sign in$/i })).toBeVisible();
+
+    await page.goto('/login');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByRole('banner').getByRole('heading', { level: 1 })).toHaveText(
+      /^sign in$/i,
+    );
+  });
+
   test('homepage partner strip links to staff portal', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
@@ -497,6 +519,36 @@ test.describe('marketing Book Now dialog', () => {
     const dialog = page.getByTestId('book-now-dialog');
     await expect(dialog).toBeVisible({ timeout: 15_000 });
     await expect(dialog.getByRole('heading', { name: /schedule a pickup/i })).toBeVisible();
+  });
+
+  test('Book Now dialog fields are full-width and notes hint sits below textarea', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/?book=1');
+    await page.waitForLoadState('domcontentloaded');
+
+    const dialog = page.getByTestId('book-now-dialog');
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+
+    const preferred = dialog.getByLabel(/preferred pickup time/i);
+    await expect(preferred).toBeVisible();
+    await expect(preferred).toHaveValue('flexible');
+    // Closed select should expose the full flexible label (not truncated mid-word in a11y tree).
+    await expect(preferred.locator('option:checked')).toHaveText(/flexible — call me to confirm/i);
+
+    const notes = dialog.getByLabel(/notes/i);
+    const notesHint = dialog.locator('#book-now-message-hint');
+    await expect(notesHint).toBeVisible();
+    await expect(notesHint).toHaveText(/address landmark/i);
+
+    const notesBox = await notes.boundingBox();
+    const hintBox = await notesHint.boundingBox();
+    expect(notesBox).toBeTruthy();
+    expect(hintBox).toBeTruthy();
+    if (notesBox && hintBox) {
+      expect(hintBox.y).toBeGreaterThan(notesBox.y + notesBox.height - 1);
+    }
   });
 
   test('Book Now submit happy path posts contact lead and closes dialog', async ({

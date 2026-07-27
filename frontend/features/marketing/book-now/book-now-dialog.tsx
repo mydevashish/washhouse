@@ -82,14 +82,14 @@ export function BookNowDialog() {
         className={cn(
           'gap-4 overflow-y-auto',
           // Mobile: edge-to-edge sheet-like surface
-          'max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:flex max-sm:h-[100dvh] max-sm:max-h-[100dvh]',
+          'max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:h-[100dvh] max-sm:max-h-[100dvh]',
           'max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0',
           'max-sm:rounded-none max-sm:border-0 max-sm:p-4 max-sm:pt-12',
-          // Desktop / tablet: centered modal
-          'sm:max-h-[min(90vh,100%)] sm:max-w-md',
+          // Desktop / tablet: centered modal (wide enough for preferred-time labels)
+          'sm:max-h-[min(90vh,100%)] sm:max-w-lg',
         )}
       >
-        <DialogHeader>
+        <DialogHeader className="w-full shrink-0 text-left">
           <DialogTitle>Schedule a pickup</DialogTitle>
           <DialogDescription>
             Leave your details and we&apos;ll call or WhatsApp you to confirm a free pickup. No

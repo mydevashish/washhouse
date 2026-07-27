@@ -72,8 +72,8 @@ function FormField({ id, label, error, required, children, hint }: FieldProps) {
   const hintId = hint ? `${id}-hint` : undefined;
 
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>
+    <div className="flex w-full min-w-0 flex-col gap-2">
+      <Label htmlFor={id} className="text-left">
         {label}
         {required ? (
           <span className="text-danger" aria-hidden>
@@ -83,14 +83,14 @@ function FormField({ id, label, error, required, children, hint }: FieldProps) {
         ) : null}
         {required ? <span className="sr-only"> (required)</span> : null}
       </Label>
-      {children}
+      <div className="w-full min-w-0">{children}</div>
       {hint ? (
-        <p id={hintId} className="text-sm text-muted-foreground">
+        <p id={hintId} className="text-left text-sm leading-snug text-muted-foreground">
           {hint}
         </p>
       ) : null}
       {error ? (
-        <p id={errorId} className="text-sm text-danger" role="alert">
+        <p id={errorId} className="text-left text-sm text-danger" role="alert">
           {error}
         </p>
       ) : null}
@@ -196,7 +196,7 @@ export function BookPickupForm({
 
   return (
     <form
-      className="space-y-4"
+      className="flex w-full min-w-0 flex-col space-y-4 text-left"
       onSubmit={form.handleSubmit(onSubmit, onInvalid)}
       noValidate
     >
@@ -318,7 +318,10 @@ export function BookPickupForm({
               .filter(Boolean)
               .join(' ') || undefined
           }
-          className={cn(errors.message && 'border-destructive')}
+          className={cn(
+            'relative z-0 block resize-y',
+            errors.message && 'border-destructive',
+          )}
           {...form.register('message')}
         />
       </FormField>

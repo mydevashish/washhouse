@@ -141,9 +141,9 @@ function StaticFullLogo({
       width={FULL_LOGO_WIDTH}
       height={FULL_LOGO_HEIGHT}
       priority={priority}
-      sizes="(max-width: 639px) 52px, (max-width: 1023px) 64px, 68px"
+      sizes="(max-width: 639px) 160px, (max-width: 1023px) 200px, 240px"
       className={cn(
-        'h-9 w-auto max-w-full shrink-0 sm:h-11 lg:h-12',
+        'h-14 w-auto max-w-full shrink-0 sm:h-16 lg:h-20',
         objectContain,
         className,
       )}

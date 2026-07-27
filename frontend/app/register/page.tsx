@@ -46,7 +46,12 @@ export default function RegisterPage() {
       <PublicShell showBack={false}>
         <div className="mx-auto flex w-full max-w-md justify-center px-4 pt-10 sm:px-0">
           <div className="inline-flex max-w-full justify-center rounded-md p-1.5 dark:bg-white/90">
-            <WashhouseLogo href="/discover" priority adaptive={false} />
+            <WashhouseLogo
+              href="/discover"
+              priority
+              adaptive={false}
+              className="h-16 w-auto max-w-[15rem] sm:h-20 sm:max-w-[18rem] lg:h-24 lg:max-w-[20rem]"
+            />
           </div>
         </div>
         <AuthFormCard

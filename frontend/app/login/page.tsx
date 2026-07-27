@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { getPostLoginPath } from '@/lib/auth-routing';
 import {
   getLoginAudienceCopy,
+  getLoginPageTitle,
   parseLoginAudience,
 } from '@/lib/auth-login-audience';
 import { isApiError } from '@/lib/api';
@@ -42,6 +43,11 @@ export default function LoginPage() {
 
   const audience = parseLoginAudience(searchParams.get('audience'));
   const audienceCopy = getLoginAudienceCopy(audience);
+  const pageTitle = getLoginPageTitle(audience);
+
+  useEffect(() => {
+    document.title = `${pageTitle} · WashHouse`;
+  }, [pageTitle]);
 
   const [mode, setMode] = useState<'email' | 'otp'>('email');
   const [loading, setLoading] = useState(false);
@@ -132,7 +138,7 @@ export default function LoginPage() {
 
   return (
     <div aria-busy={loading || undefined}>
-      <PublicShell showBack={false}>
+      <PublicShell showBack={false} pageTitle={pageTitle}>
         <div className="mx-auto w-full max-w-md px-4 pt-6 sm:px-0">
           <Link
             href={audienceCopy.backHref}
@@ -144,7 +150,12 @@ export default function LoginPage() {
         </div>
         <div className="mx-auto flex w-full max-w-md justify-center px-4 pt-4 sm:px-0">
           <div className="inline-flex max-w-full justify-center rounded-md p-1.5 dark:bg-white/90">
-            <WashhouseLogo href="/" priority adaptive={false} />
+            <WashhouseLogo
+              href="/"
+              priority
+              adaptive={false}
+              className="h-16 w-auto max-w-[15rem] sm:h-20 sm:max-w-[18rem] lg:h-24 lg:max-w-[20rem]"
+            />
           </div>
         </div>
         <AuthFormCard

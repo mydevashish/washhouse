@@ -1,7 +1,10 @@
 export type LoginAudience = 'customer' | 'partner' | 'admin';
 
 export type LoginAudienceCopy = {
+  /** Auth card heading + preferred navbar / document title. */
   title: string;
+  /** Shorter navbar H1 when the card title is long (optional). */
+  navbarTitle?: string;
   description: string;
   backHref: string;
   backLabel: string;
@@ -24,6 +27,7 @@ const AUDIENCE_COPY: Record<LoginAudience, LoginAudienceCopy> = {
   },
   partner: {
     title: 'Laundry partner sign in',
+    navbarTitle: 'Laundry login',
     description: 'Manage orders, pickups, deliveries, and your storefront.',
     backHref: '/staff',
     backLabel: 'Staff portal',
@@ -34,6 +38,7 @@ const AUDIENCE_COPY: Record<LoginAudience, LoginAudienceCopy> = {
   },
   admin: {
     title: 'Admin sign in',
+    navbarTitle: 'Admin login',
     description: 'Platform operations, laundry approvals, settlements, and analytics.',
     backHref: '/staff',
     backLabel: 'Staff portal',
@@ -51,6 +56,12 @@ export function parseLoginAudience(value: string | null): LoginAudience {
 
 export function getLoginAudienceCopy(audience: LoginAudience): LoginAudienceCopy {
   return AUDIENCE_COPY[audience];
+}
+
+/** Navbar / document title for a login audience. */
+export function getLoginPageTitle(audience: LoginAudience): string {
+  const copy = AUDIENCE_COPY[audience];
+  return copy.navbarTitle ?? copy.title;
 }
 
 export function loginHrefForAudience(audience: Exclude<LoginAudience, 'customer'>): string {
