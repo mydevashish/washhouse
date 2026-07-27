@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-07-27 — Frontend npm audit: 17 → 0 vulnerabilities
+
+- **Type:** fix
+- **Scope:** `frontend` dependency security
+- **Files:** `frontend/package.json`, `frontend/package-lock.json`
+- **Summary:** Ran `npm audit fix` (not `--force`, which would downgrade Next to 9.3.3 / LHCI to 0.1.0). Bumped `axios` to `^1.18.1`, `postcss` to `^8.5.23`, `@lhci/cli` to `^0.15.1`. Added `overrides` for `postcss`, `sharp`, `brace-expansion`, `cookie`, `uuid`, `tmp` so nested Next/LHCI/eslint trees pick up patched versions. `npm audit` now reports 0 vulnerabilities.
+- **Risks:** `sharp@0.35` override may differ from Next’s bundled expectation for image optimization; LHCI 0.15 is a minor bump.
+- **Next:** Smoke `next build` / image optimization if image pipelines change; avoid `npm audit fix --force`.
+
+---
+
 ## 2026-07-27 — Book-now dialog, login logo/titles, franchise PDF status
 
 - **Type:** fix
