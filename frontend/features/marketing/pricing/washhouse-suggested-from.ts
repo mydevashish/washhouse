@@ -141,7 +141,7 @@ export function washhouseSuggestedFromItems(): MarketplaceFromItem[] {
     ['women-kameez-fancy', 'Kameez (fancy)', 139, 39],
     ['women-burkha', 'Burkha', 99, 29],
     ['women-patiala-salwar', 'Patiala / Salwar', 79, 20],
-    ['women-kurta', 'Kurta', 79, 20],
+    ['women-kurta', 'Kurti', 79, 20],
     ['women-bathrobe', 'Bathrobe', 99, 39],
     ['women-purse-s', 'Purse S', 99, null],
     ['women-purse-m', 'Purse M', 149, null],
