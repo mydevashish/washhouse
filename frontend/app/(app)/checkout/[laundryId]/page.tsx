@@ -7,6 +7,9 @@ import {
   resolveOnlineBookingEnabled,
 } from '@/lib/online-booking';
 
+/** Live `/config` + laundry-specific checkout — never prerender. */
+export const dynamic = 'force-dynamic';
+
 type PageProps = {
   params: Promise<{ laundryId: string }>;
 };

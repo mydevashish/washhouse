@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-07-29 — Unblock `next build` static generation hangs
+
+- **Type:** fix
+- **Scope:** Build-time SSR fetches that could stall at “Generating static pages (0/N)” when the API is down or firewalled
+- **Files:** `frontend/lib/abort-signal-after.ts`, `frontend/lib/online-booking.ts`, `frontend/features/marketing/pricing/api/marketplace-from.ts`, `frontend/app/(app)/checkout/[laundryId]/page.tsx`, matching Jest tests, `logs/implementation-log.md`
+- **Summary:** Added 5s abort timeouts on `/config` and `/catalog/marketplace-from` server fetches via portable `abortSignalAfter` (fail open to existing fallbacks). Marked checkout `force-dynamic` so it is not prerendered against a live config flag.
+- **Risks:** Very slow APIs (>5s) will use fallbacks during SSR/build — acceptable for marketing pricing; checkout resolves at request time.
+- **Next:** None required for this hang.
+- **Refs:** Production build stall at static page generation
+
+---
+
 ## 2026-07-29 — Register page matches login + marketing standards
 
 - **Type:** ui / fix

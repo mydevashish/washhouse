@@ -1,4 +1,5 @@
 import {
+  fetchOnlineBookingEnabledFromApi,
   isOnlineBookingEnabledFromEnv,
   resolveOnlineBookingEnabled,
   warnOnlineBookingFlagMismatch,
@@ -51,6 +52,45 @@ describe('resolveOnlineBookingEnabled', () => {
   it('falls back to env when API value is missing', () => {
     expect(resolveOnlineBookingEnabled(true, null)).toBe(true);
     expect(resolveOnlineBookingEnabled(true, undefined)).toBe(true);
+  });
+});
+
+describe('fetchOnlineBookingEnabledFromApi', () => {
+  const originalFetch = global.fetch;
+  const originalApiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    if (originalApiUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_API_URL;
+    } else {
+      process.env.NEXT_PUBLIC_API_URL = originalApiUrl;
+    }
+  });
+
+  it('passes an abort signal so hung APIs cannot stall the build', async () => {
+    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8000/api/v1';
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { online_booking_enabled: true } }),
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await expect(fetchOnlineBookingEnabledFromApi()).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8000/api/v1/config',
+      expect.objectContaining({
+        cache: 'no-store',
+        signal: expect.any(AbortSignal),
+      }),
+    );
+  });
+
+  it('returns null when the request is aborted or fails', async () => {
+    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8000/api/v1';
+    global.fetch = jest.fn().mockRejectedValue(new DOMException('Aborted', 'AbortError')) as unknown as typeof fetch;
+
+    await expect(fetchOnlineBookingEnabledFromApi()).resolves.toBeNull();
   });
 });
 

@@ -1,3 +1,5 @@
+import { abortSignalAfter } from '@/lib/abort-signal-after';
+
 /** Client-side online booking feature flag (NEXT_PUBLIC_*). */
 
 function boolEnv(value: string | undefined, fallback: boolean): boolean {
@@ -40,11 +42,17 @@ export function warnOnlineBookingFlagMismatch(
   );
 }
 
+/** Cap build/SSR waits so a down or firewalled API cannot stall `next build`. */
+export const ONLINE_BOOKING_CONFIG_FETCH_TIMEOUT_MS = 5_000;
+
 /** Server components — fetch backend `/config` without caching. */
 export async function fetchOnlineBookingEnabledFromApi(): Promise<boolean | null> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1';
   try {
-    const res = await fetch(`${apiUrl}/config`, { cache: 'no-store' });
+    const res = await fetch(`${apiUrl}/config`, {
+      cache: 'no-store',
+      signal: abortSignalAfter(ONLINE_BOOKING_CONFIG_FETCH_TIMEOUT_MS),
+    });
     if (!res.ok) return null;
     const json = (await res.json()) as { data?: { online_booking_enabled?: boolean } };
     const value = json.data?.online_booking_enabled;
