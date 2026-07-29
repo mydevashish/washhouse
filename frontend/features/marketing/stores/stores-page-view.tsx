@@ -190,6 +190,7 @@ export function StoresPageView() {
 
     const io = new IntersectionObserver(
       ([entry]) => {
+        if (!entry) return;
         syncCompact(!entry.isIntersecting);
       },
       {
