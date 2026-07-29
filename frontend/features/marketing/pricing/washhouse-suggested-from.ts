@@ -100,13 +100,13 @@ export function washhouseSuggestedFromItems(): MarketplaceFromItem[] {
     ['men-shorts', 'Shorts', 59, 15],
     ['men-dhoti-lungi', 'Dhoti / Lungi', 79, 25],
     ['men-kurta', 'Kurta', 79, 25],
-    ['men-cap-fabric', 'Cap (fabric)', 39, null],
-    ['men-cap-leather', 'Cap (leather)', 89, null],
+    ['men-cap-fabric', 'Cap (Fabric)', 39, null],
+    ['men-cap-leather', 'Cap (Leather)', 89, null],
     ['men-turban', 'Turban', 99, 39],
-    ['men-sherwani-cotton', 'Sherwani (cotton)', 219, 59],
-    ['men-sherwani-wedding', 'Sherwani (wedding)', 499, 99],
-    ['men-coat-formal', 'Coat (formal)', 149, 39],
-    ['men-coat-heavy', 'Coat (heavy)', 199, 49],
+    ['men-sherwani-cotton', 'Sherwani (Cotton)', 219, 59],
+    ['men-sherwani-wedding', 'Sherwani (Wedding)', 499, 99],
+    ['men-coat-formal', 'Coat (Formal)', 149, 39],
+    ['men-coat-heavy', 'Coat (Heavy)', 199, 49],
     ['men-suit-2pcs', 'Suit 2 pcs', 249, 59],
     ['men-suit-3pcs', 'Suit 3 pcs', 299, 69],
     ['men-vest', 'Vest', 39, 15],
@@ -143,9 +143,9 @@ export function washhouseSuggestedFromItems(): MarketplaceFromItem[] {
     ['women-patiala-salwar', 'Patiala / Salwar', 79, 20],
     ['women-kurta', 'Kurti', 79, 20],
     ['women-bathrobe', 'Bathrobe', 99, 39],
-    ['women-purse-s', 'Purse S', 99, null],
-    ['women-purse-m', 'Purse M', 149, null],
-    ['women-purse-l', 'Purse L', 299, null],
+    ['women-purse-s', 'Purse (Small)', 99, null],
+    ['women-purse-m', 'Purse (Medium)', 149, null],
+    ['women-purse-l', 'Purse (Large)', 299, null],
   ];
   for (const [slug, name, dry, press] of women) {
     items.push(dual({ slug, name, category: 'women', dry, press, sort_order: s }));
@@ -160,10 +160,10 @@ export function washhouseSuggestedFromItems(): MarketplaceFromItem[] {
     ['kids-shorts', 'Shorts', 49, 15],
     ['kids-dhoti-lungi', 'Dhoti / Lungi', 59, 20],
     ['kids-kurta', 'Kurta', 59, 20],
-    ['kids-sherwani-cotton', 'Sherwani (cotton)', 179, 49],
-    ['kids-sherwani-wedding', 'Sherwani (wedding)', 399, 79],
-    ['kids-coat-formal', 'Coat (formal)', 119, 29],
-    ['kids-coat-heavy', 'Coat (heavy)', 149, 39],
+    ['kids-sherwani-cotton', 'Sherwani (Cotton)', 179, 49],
+    ['kids-sherwani-wedding', 'Sherwani (Wedding)', 399, 79],
+    ['kids-coat-formal', 'Coat (Formal)', 119, 29],
+    ['kids-coat-heavy', 'Coat (Heavy)', 149, 39],
     ['kids-suit-2pcs', 'Suit 2 pcs', 179, 49],
     ['kids-suit-3pcs', 'Suit 3 pcs', 219, 59],
     ['kids-waistcoat', 'Waistcoat', 69, 25],
@@ -171,10 +171,10 @@ export function washhouseSuggestedFromItems(): MarketplaceFromItem[] {
     ['kids-girl-dress', 'Girl Dress', 79, 20],
     ['kids-dupatta', 'Dupatta', 49, 15],
     ['kids-frock', 'Frock', 99, 25],
-    ['kids-full-jacket-normal', 'Full jacket (normal)', 129, 39],
-    ['kids-full-jacket-leather', 'Full jacket (leather)', 299, 59],
-    ['kids-half-jacket-normal', 'Half jacket (normal)', 109, 29],
-    ['kids-half-jacket-leather', 'Half jacket (leather)', 249, 59],
+    ['kids-full-jacket-normal', 'Full jacket (Normal)', 129, 39],
+    ['kids-full-jacket-leather', 'Full jacket (Leather)', 299, 59],
+    ['kids-half-jacket-normal', 'Half jacket (Normal)', 109, 29],
+    ['kids-half-jacket-leather', 'Half jacket (Leather)', 249, 59],
   ];
   for (const [slug, name, dry, press] of kids) {
     items.push(dual({ slug, name, category: 'kids', dry, press, sort_order: s }));
@@ -185,7 +185,7 @@ export function washhouseSuggestedFromItems(): MarketplaceFromItem[] {
     ['winter-sweater-kids', 'Sweater (kids)', 99, 19],
     ['winter-sweater-men-women', 'Sweater (men/women)', 149, 29],
     ['winter-overcoat-kids', 'Overcoat (kids)', 149, 29],
-    ['winter-overcoat-men-women', 'Overcoat (men/women)', 199, 49],
+    ['winter-overcoat-men-women', 'Overcoat (Men/Women)', 199, 49],
     ['winter-overcoat-leather', 'Overcoat (leather)', 499, 99],
     ['winter-jacket-cotton-denim', 'Jacket (cotton/denim)', 149, 49],
     ['winter-jacket-puffer', 'Jacket (puffer)', 199, 59],
@@ -205,7 +205,7 @@ export function washhouseSuggestedFromItems(): MarketplaceFromItem[] {
   items.push(
     dual({
       slug: 'household-bedsheet-single',
-      name: 'Bedsheet single',
+      name: 'Bedsheet (Single)',
       category: 'household',
       dry: 99,
       press: 29,
@@ -216,7 +216,7 @@ export function washhouseSuggestedFromItems(): MarketplaceFromItem[] {
   items.push(
     dual({
       slug: 'household-bedsheet-double',
-      name: 'Bedsheet double',
+      name: 'Bedsheet (Double)',
       category: 'household',
       dry: 149,
       press: 39,
@@ -227,28 +227,35 @@ export function washhouseSuggestedFromItems(): MarketplaceFromItem[] {
 
   const householdSingle: [string, string, number][] = [
     ['household-blanket-4x6', 'Blanket 4×6', 169],
-    ['household-blanket-double', 'Blanket double', 299],
-    ['household-blanket-king', 'Blanket king', 349],
-    ['household-toy-s', 'Toy S', 99],
-    ['household-toy-m', 'Toy M', 149],
-    ['household-toy-l', 'Toy L', 299],
+    ['household-blanket-double', 'Blanket (Double)', 299],
+    ['household-blanket-king', 'Blanket (King)', 349],
+
+    ['household-toy-s', 'Toy (Small)', 99],
+    ['household-toy-m', 'Toy (Medium)', 149],
+    ['household-toy-l', 'Toy (Large)', 299],
+
+    ['household-bag-small', 'Bag (Small)', 149],
+    ['household-bag-large', 'Bag (Large)', 299],
+
+    ['household-trolley-s', 'Trolley (Small)', 199],
+    ['household-trolley-m', 'Trolley (Medium)', 299],
+    ['household-trolley-l', 'Trolley (Large)', 399],
+
+    ['household-carpet-s', 'Carpet (Small)', 79],
+    ['household-carpet-m', 'Carpet (Medium)', 149],
+    ['household-carpet-l', 'Carpet (Large)', 219],
+
+    ['household-comforter-single', 'Comforter (Single)', 249],
+    ['household-comforter-double', 'Comforter (Double)', 349],
+
+    ['household-gloves-cotton', 'Cotton Gloves', 39],
+    ['household-gloves-leather', 'Leather Gloves', 89],
+    
     ['household-pillow-cushion-cover', 'Pillow / Cushion Cover', 29],
     ['household-shoes-sports', 'Shoes (sports)', 249],
     ['household-shoes-leather', 'Shoes (leather)', 349],
-    ['household-heels', 'Heels', 299],
-    ['household-bag-small', 'Bag small', 149],
-    ['household-bag-large', 'Bag large', 299],
-    ['household-trolley-s', 'Trolley S', 199],
-    ['household-trolley-m', 'Trolley M', 299],
-    ['household-trolley-l', 'Trolley L', 399],
-    ['household-carpet-s', 'Carpet S', 79],
-    ['household-carpet-m', 'Carpet M', 149],
-    ['household-carpet-l', 'Carpet L', 219],
+    ['household-heels', 'Heels', 299],    
     ['household-bath-towel', 'Bath Towel', 59],
-    ['household-comforter-single', 'Comforter single', 249],
-    ['household-comforter-double', 'Comforter double', 349],
-    ['household-gloves-cotton', 'Gloves cotton', 39],
-    ['household-gloves-leather', 'Gloves leather', 89],
   ];
   for (const [slug, name, price] of householdSingle) {
     items.push(single({ slug, name, category: 'household', price, sort_order: s }));

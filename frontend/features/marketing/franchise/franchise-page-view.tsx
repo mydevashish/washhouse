@@ -102,13 +102,13 @@ function FranchiseHero() {
                 'hover:bg-white/15 hover:text-on-hero',
               )}
             >
-              <a
+              {/* <a
                 href={FRANCHISE_BROCHURE_PDF_HREF}
                 download={FRANCHISE_BROCHURE_PDF_FILENAME}
               >
                 <FileDown className="h-4 w-4" aria-hidden />
                 Request brochure
-              </a>
+              </a> */}
             </Button>
           </div>
         </GlassSurface>

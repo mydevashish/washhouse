@@ -57,7 +57,15 @@ export type CatalogPhotoKey =
   | 'purse_large'
   | 'bathrobe'
   | 'girl_dress'
-  | 'sweater'
+  | 'girl_dupatta'
+  | 'girl_frock'
+  | 'kids_full_jacket_leather'
+  | 'kids_full_jacket_normal'
+  | 'kids_half_jacket_leather'
+  | 'kids_half_jacket_normal'
+  | 'sweater_kids'
+  | 'sweater_men_women'
+  | 'overcoat_kids'
   | 'overcoat'
   | 'overcoat_leather'
   | 'jacket_denim'
@@ -103,6 +111,10 @@ const CATALOG_PHOTO_RULES: ReadonlyArray<{
       (n.includes('overcoat') && n.includes('leather')),
   },
   {
+    key: 'overcoat_kids',
+    match: (s, n) => s.includes('overcoat (kids)') || n.includes('overcoat (kids)'),
+  },
+  {
     key: 'overcoat',
     match: (s, n) => s.includes('overcoat') || n.includes('overcoat'),
   },
@@ -134,8 +146,14 @@ const CATALOG_PHOTO_RULES: ReadonlyArray<{
     match: (s, n) => s.includes('hoodie') || n.includes('hoodie'),
   },
   {
-    key: 'sweater',
-    match: (s, n) => s.includes('sweater') || n.includes('sweater'),
+    key: 'sweater_kids',
+    match: (s, n) => s.includes('sweater (kids)') || n.includes('sweater (kids)'),
+  },
+  {
+    key: 'sweater_men_women',
+    match: (s, n) =>
+      (s.includes('sweater') && s.includes('men')) ||
+      (n.includes('sweater') && n.includes('men')),
   },
   {
     key: 'shawl',
@@ -224,6 +242,30 @@ const CATALOG_PHOTO_RULES: ReadonlyArray<{
   {
     key: 'girl_dress',
     match: (s, n) => s.includes('girl-dress') || n.includes('girl dress'),
+  },
+  {
+    key: 'girl_dupatta',
+    match: (s, n) => s.includes('girl-dupatta') || n.includes('girl-dupatta'),
+  },
+  {
+    key: 'girl_frock',
+    match: (s, n) => s.includes('girl-frock') || n.includes('girl-frock'),
+  },
+  {
+    key: 'kids_full_jacket_leather',
+    match: (s, n) => s.includes('kids-full-jacket-leather') || n.includes('kids-full-jacket-leather'),
+  },
+  {
+    key: 'kids_full_jacket_normal',
+    match: (s, n) => s.includes('kids-full-jacket-normal') || n.includes('kids-full-jacket-normal'),
+  },
+  {
+    key: 'kids_half_jacket_leather',
+    match: (s, n) => s.includes('kids-half-jacket-leather') || n.includes('kids-half-jacket-leather'),
+  },
+  {
+    key: 'kids_half_jacket_normal',
+    match: (s, n) => s.includes('kids-half-jacket-normal') || n.includes('kids-half-jacket-normal'),
   },
   {
     key: 'frock_normal',

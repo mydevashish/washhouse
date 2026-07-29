@@ -322,13 +322,13 @@ function FranchiseSlideContent({
           variant="outline"
           className="h-11 rounded-full border-border/80 bg-background/95 px-6 shadow-soft backdrop-blur-sm active:scale-[0.98]"
         >
-          <a
+          {/* <a
             href={slide.brochureHref}
             download={FRANCHISE_BROCHURE_PDF_FILENAME}
           >
             <FileDown className="h-4 w-4" aria-hidden />
             Request brochure
-          </a>
+          </a> */}
         </Button>
       </div>
     </>

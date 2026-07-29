@@ -51,7 +51,7 @@ export type SocialLink = {
 
 const SOCIAL_DEFAULTS: Record<SocialPlatform, { href: string; label: string }> = {
   // facebook: { href: 'https://facebook.com/washhouse', label: 'Facebook' },
-  instagram: { href: 'https://instagram.com/washhouse', label: 'Instagram' },
+  instagram: { href: 'https://instagram.com/_the_washhouse', label: 'Instagram' },
   // linkedin: { href: 'https://linkedin.com/company/washhouse', label: 'LinkedIn' },
   // x: { href: 'https://x.com/washhouse', label: 'X (Twitter)' },
   // youtube: { href: 'https://youtube.com/@washhouse', label: 'YouTube' },

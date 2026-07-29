@@ -35,7 +35,7 @@ export function useStoreContactActions({
 }: UseStoreContactActionsOptions) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const storeHref = `/discover/${laundryId}`;
+  const storeHref = `/discover/${laundryId}`; 
   const loginRedirect = `/login?redirect=${encodeURIComponent(storeHref)}`;
 
   const contactQ = useQuery({
