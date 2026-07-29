@@ -7,7 +7,7 @@ import { ArrowRight, MapPin, Store } from 'lucide-react';
 import { SectionHeader } from '@/components/marketplace/section-header';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
+import { FadeIn } from '@/features/discover/marketplace/fade-in';
 import { StoresCard } from '@/features/marketing/stores/stores-card';
 import { StoresCardSkeleton } from '@/features/marketing/stores/stores-card-skeleton';
 import {
@@ -36,19 +36,22 @@ export function FeaturedStoresTeaser() {
       className={cn('bg-muted/30', MARKETING_SECTION_PY)}
     >
       <div className={MARKETING_CONTAINER}>
+        {/* No FadeInItem: store cards + Browse CTA stay visible (WCAG 2.4.7). */}
         <FadeIn>
-          <FadeInItem>
-            <SectionHeader
-              eyebrow="Stores"
-              title="Premium laundries near you"
-              description="Every partner is verified before going live. Find a store by neighbourhood and book pickup in minutes."
-              align="center"
-              className="mb-10"
-            />
-          </FadeInItem>
+          <SectionHeader
+            eyebrow="Stores"
+            title="Premium laundries near you"
+            description="Every partner is verified before going live. Find a store by neighbourhood and book pickup in minutes."
+            align="center"
+            className="mb-10"
+          />
 
           {isLoading && (
-            <div className="mx-auto max-w-3xl space-y-3" role="status" aria-busy="true">
+            <div
+              className="mx-auto max-w-3xl space-y-3 rounded-2xl border border-border/50 bg-card/60 p-3 sm:p-4"
+              role="status"
+              aria-busy="true"
+            >
               <span className="sr-only">Loading featured stores</span>
               {Array.from({ length: PREVIEW_COUNT }).map((_, i) => (
                 <StoresCardSkeleton key={i} />
@@ -60,7 +63,9 @@ export function FeaturedStoresTeaser() {
             <EmptyState
               icon={Store}
               title="Could not load stores"
-              description="Check your connection and try again."
+              description="Check your connection and try again, or browse the full store directory."
+              className="mx-auto max-w-3xl border-border/60 bg-card/80"
+              action={{ label: 'Browse stores', href: '/stores' }}
               secondaryAction={{
                 label: isFetching ? 'Retrying…' : 'Try again',
                 onClick: () => void refetch(),
@@ -72,8 +77,9 @@ export function FeaturedStoresTeaser() {
             <EmptyState
               icon={MapPin}
               title="Stores coming to your area soon"
-              description="We are onboarding laundries in more neighbourhoods across India."
-              action={{ label: 'Check stores', href: '/stores' }}
+              description="We are onboarding laundries in more neighbourhoods across India. Check the directory for the latest partners."
+              className="mx-auto max-w-3xl border-border/60 bg-card/80"
+              action={{ label: 'Browse all stores', href: '/stores' }}
             />
           )}
 
@@ -81,24 +87,20 @@ export function FeaturedStoresTeaser() {
             <ul className="mx-auto max-w-3xl space-y-3">
               {preview.map((laundry) => (
                 <li key={laundry.id}>
-                  <FadeInItem>
-                    <StoresCard laundry={laundry} />
-                  </FadeInItem>
+                  <StoresCard laundry={laundry} />
                 </li>
               ))}
             </ul>
           )}
 
-          <FadeInItem>
-            <div className="mt-10 flex justify-center">
-              <Button asChild size="lg" className="h-11 min-h-11 rounded-full">
-                <Link href="/stores">
-                  Browse all stores
-                  <ArrowRight className="h-4 w-4" aria-hidden />
-                </Link>
-              </Button>
-            </div>
-          </FadeInItem>
+          <div className="mt-10 flex justify-center">
+            <Button asChild size="lg" className="h-11 min-h-11 rounded-full">
+              <Link href="/stores">
+                Browse all stores
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+            </Button>
+          </div>
         </FadeIn>
       </div>
     </section>

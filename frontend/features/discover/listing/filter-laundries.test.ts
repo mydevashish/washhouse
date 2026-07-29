@@ -1,4 +1,8 @@
-import { enrichLaundry, resolveStartPrice } from '@/features/discover/lib/laundry-meta';
+import {
+  enrichLaundry,
+  pickNearestOrFeatured,
+  resolveStartPrice,
+} from '@/features/discover/lib/laundry-meta';
 import type { LaundryListItem } from '@/services/laundries';
 
 import {
@@ -18,6 +22,8 @@ const DEMO_LAUNDRIES: LaundryListItem[] = [
     avg_rating: '4.60',
     review_count: 128,
     is_verified: true,
+    latitude: 12.9352,
+    longitude: 77.6245,
     wash_fold_from_inr: '89.00',
     shirt_dry_clean_from_inr: '69.00',
     start_price_inr: '69.00',
@@ -30,6 +36,8 @@ const DEMO_LAUNDRIES: LaundryListItem[] = [
     avg_rating: '4.80',
     review_count: 256,
     is_verified: true,
+    latitude: 12.9784,
+    longitude: 77.6408,
     wash_fold_from_inr: '79.00',
     start_price_inr: '79.00',
   },
@@ -45,8 +53,8 @@ const DEMO_LAUNDRIES: LaundryListItem[] = [
   },
 ];
 
-function demoEnriched() {
-  return DEMO_LAUNDRIES.map((laundry, index) => enrichLaundry(laundry, index));
+function demoEnriched(userLocation?: { latitude: number; longitude: number } | null) {
+  return DEMO_LAUNDRIES.map((laundry, index) => enrichLaundry(laundry, index, userLocation));
 }
 
 describe('resolveStartPrice', () => {
@@ -56,6 +64,32 @@ describe('resolveStartPrice', () => {
 
   it('returns null when laundry has no compare hints', () => {
     expect(resolveStartPrice(DEMO_LAUNDRIES[2]!)).toBeNull();
+  });
+});
+
+describe('enrichLaundry with user location', () => {
+  it('uses haversine when coords and GPS are present', () => {
+    const near = { latitude: 12.9352, longitude: 77.6245 };
+    const enriched = enrichLaundry(DEMO_LAUNDRIES[0]!, 0, near);
+    expect(enriched.distanceIsApproximate).toBe(false);
+    expect(enriched.distanceKm).toBe(0);
+  });
+
+  it('falls back to approximate distance without store coords', () => {
+    const near = { latitude: 12.9352, longitude: 77.6245 };
+    const enriched = enrichLaundry(DEMO_LAUNDRIES[2]!, 0, near);
+    expect(enriched.distanceIsApproximate).toBe(true);
+  });
+});
+
+describe('pickNearestOrFeatured', () => {
+  it('returns nearest by GPS when available', () => {
+    const near = { latitude: 12.9352, longitude: 77.6245 };
+    expect(pickNearestOrFeatured(DEMO_LAUNDRIES, near, 2).map((l) => l.id)).toEqual(['a', 'b']);
+  });
+
+  it('falls back to top rated without GPS', () => {
+    expect(pickNearestOrFeatured(DEMO_LAUNDRIES, null, 2).map((l) => l.id)).toEqual(['b', 'a']);
   });
 });
 
@@ -121,6 +155,24 @@ describe('applyClientFilters', () => {
       sort: 'lowest_price',
     });
     expect(result.map((l) => l.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('sorts nearest with real GPS distances ahead of approximate', () => {
+    const enriched = demoEnriched();
+    enriched[0]!.distanceKm = 8;
+    enriched[0]!.distanceIsApproximate = true;
+    enriched[1]!.distanceKm = 3;
+    enriched[1]!.distanceIsApproximate = false;
+    enriched[2]!.distanceKm = 1;
+    enriched[2]!.distanceIsApproximate = false;
+
+    const result = applyClientFilters(enriched, {
+      ...DEFAULT_FILTERS,
+      maxDistance: 50,
+      sort: 'nearest',
+    });
+
+    expect(result.map((l) => l.id)).toEqual(['c', 'b', 'a']);
   });
 });
 

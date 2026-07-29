@@ -83,6 +83,7 @@ class ContactInfoResponse(BaseModel):
     show_call: bool
     show_whatsapp: bool
     show_callback: bool
+    show_directions: bool = False
     phone: str | None = None
     whatsapp_number: str | None = None
     whatsapp_url: str | None = None
@@ -92,6 +93,9 @@ class ContactInfoResponse(BaseModel):
     longitude: float | None = None
     full_address: str | None = None
     map_url: str | None = None
+    google_maps_url: str | None = None
+    apple_maps_url: str | None = None
+    geo_url: str | None = None
     working_hours: dict[str, str] | None = None
 
 

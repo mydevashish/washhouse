@@ -15,8 +15,11 @@ import { StoresCard } from '@/features/marketing/stores/stores-card';
 import { StoresCardSkeleton } from '@/features/marketing/stores/stores-card-skeleton';
 import { StoresCta } from '@/features/marketing/stores/stores-cta';
 import { StoresHero } from '@/features/marketing/stores/stores-hero';
+import { StoresNearMeControl } from '@/features/marketing/stores/stores-near-me-control';
+import { useGeolocation } from '@/hooks/use-geolocation';
 
 export function StoresPageView() {
+  const geo = useGeolocation();
   const [filters, setFilters] = useState<LaundryFilters>({
     ...DEFAULT_FILTERS,
     // Directory mode: do not apply discovery compare caps (distance/price/rating UI removed)
@@ -33,7 +36,26 @@ export function StoresPageView() {
     isFetching,
     isSearching,
     isDebouncing,
-  } = useLaundryDiscovery(filters);
+  } = useLaundryDiscovery(filters, { userLocation: geo.position });
+
+  const handleNearMe = async () => {
+    const pos = await geo.request();
+    if (pos) {
+      setFilters((f) => ({
+        ...f,
+        sort: 'nearest',
+        maxDistance: 50,
+      }));
+    }
+  };
+
+  const handleClearNearMe = () => {
+    geo.clear();
+    setFilters((f) => ({
+      ...f,
+      sort: 'top_rated',
+    }));
+  };
 
   return (
     <div className="bg-background">
@@ -47,11 +69,19 @@ export function StoresPageView() {
             description="Find a verified partner near you by name or neighbourhood. Services and pricing are the same across stores — pick the location that works for you."
           />
 
-          <HomeSearchBar
-            value={filters.search}
-            onChange={(search) => setFilters((f) => ({ ...f, search }))}
-            isSearching={isSearching && (isDebouncing || isFetching)}
-          />
+          <div className="space-y-3">
+            <HomeSearchBar
+              value={filters.search}
+              onChange={(search) => setFilters((f) => ({ ...f, search }))}
+              isSearching={isSearching && (isDebouncing || isFetching)}
+            />
+            <StoresNearMeControl
+              status={geo.status}
+              errorMessage={geo.errorMessage}
+              onRequest={() => void handleNearMe()}
+              onClear={handleClearNearMe}
+            />
+          </div>
 
           {isLoading && (
             <div className="space-y-3" role="status" aria-busy="true">

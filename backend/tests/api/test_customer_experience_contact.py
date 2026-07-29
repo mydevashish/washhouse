@@ -39,6 +39,8 @@ async def _seed_laundry_with_storefront(session: AsyncSession) -> tuple[Laundry,
         slug=f"contact-test-{uuid4().hex[:8]}",
         city="Bengaluru",
         address_line="12 Test Road, Koramangala, 560034",
+        latitude=12.9352,
+        longitude=77.6245,
         status=LaundryStatus.approved,
         is_verified=True,
     )
@@ -99,6 +101,14 @@ async def test_guest_contact_returns_phone_in_offline_mode(
     assert data["whatsapp_number"] == WHATSAPP_NUMBER
     assert data["whatsapp_url"] is not None
     assert "wa.me" in data["whatsapp_url"]
+    assert data["show_directions"] is True
+    assert data["latitude"] == pytest.approx(12.9352)
+    assert data["longitude"] == pytest.approx(77.6245)
+    assert data["google_maps_url"] is not None
+    assert "destination=12.9352,77.6245" in data["google_maps_url"]
+    assert data["apple_maps_url"] is not None
+    assert data["geo_url"] is not None
+    assert data["geo_url"].startswith("geo:")
 
 
 @patch.object(settings, "FEATURE_ONLINE_BOOKING", False)
@@ -108,7 +118,7 @@ async def test_guest_track_call_and_whatsapp_allowed_in_offline_mode(
 ) -> None:
     laundry, _ = await _seed_laundry_with_storefront(db_session)
 
-    for event_type in ("call_click", "whatsapp_click"):
+    for event_type in ("call_click", "whatsapp_click", "directions_click"):
         response = await client.post(
             f"/api/v1/laundries/{laundry.id}/contact/track",
             json={"event_type": event_type, "source": "test"},
@@ -116,8 +126,32 @@ async def test_guest_track_call_and_whatsapp_allowed_in_offline_mode(
         assert response.status_code == 200, response.text
         body = response.json()["data"]
         assert body["requires_login"] is False
-        assert body["phone"] == CONTACT_PHONE
-        assert body["whatsapp_url"] is not None
+        if event_type != "directions_click":
+            assert body["phone"] == CONTACT_PHONE
+            assert body["whatsapp_url"] is not None
+        else:
+            assert body["show_directions"] is True
+
+
+@patch.object(settings, "FEATURE_ONLINE_BOOKING", False)
+async def test_contact_without_coords_hides_directions(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    laundry, _ = await _seed_laundry_with_storefront(db_session)
+    laundry.latitude = None
+    laundry.longitude = None
+    await db_session.flush()
+
+    response = await client.get(f"/api/v1/laundries/{laundry.id}/contact")
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["show_directions"] is False
+    assert data["google_maps_url"] is None
+    assert data["apple_maps_url"] is None
+    assert data["geo_url"] is None
+    assert data["map_url"] is not None  # address fallback still available
 
 
 @patch.object(settings, "FEATURE_ONLINE_BOOKING", False)

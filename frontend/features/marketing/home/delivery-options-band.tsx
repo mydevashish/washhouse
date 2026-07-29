@@ -2,7 +2,7 @@
 
 import { Clock, Zap } from 'lucide-react';
 
-import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
+import { FadeIn } from '@/features/discover/marketplace/fade-in';
 import { useBookNowStore } from '@/features/marketing/book-now';
 import { MarketingGlassCard } from '@/features/marketing/shared/marketing-glass-card';
 import { MarketingSection } from '@/features/marketing/shared/marketing-section';
@@ -34,10 +34,10 @@ const DELIVERY_OPTIONS = [
 function PopularCornerRibbon() {
   return (
     <div
-      className="pointer-events-none absolute right-0 top-0 z-10 h-20 w-20 overflow-hidden"
+      className="pointer-events-none absolute -right-px -top-px z-10 h-[5.5rem] w-[5.5rem] overflow-hidden rounded-tr-2xl"
       aria-hidden
     >
-      <span className="absolute right-[-2.35rem] top-[1.15rem] w-[9.75rem] rotate-45 bg-brand-500 py-1 text-center text-[0.625rem] font-bold uppercase tracking-[0.14em] text-white shadow-sm">
+      <span className="absolute right-[-2.1rem] top-[1.05rem] w-[9.5rem] rotate-45 bg-brand-500 py-1 text-center text-[0.625rem] font-bold uppercase tracking-[0.14em] text-white shadow-sm">
         POPULAR
       </span>
     </div>
@@ -70,7 +70,9 @@ function DeliveryOptionCard({
       titleId={titleId}
       cta={{ label: 'Book Now', onClick: () => openBookNow() }}
       className={cn(
-        'relative h-full overflow-hidden',
+        'relative h-full min-h-[14.5rem]',
+        // Keep ribbon inside rounded glass — avoid clipping the badge band
+        popular && 'overflow-hidden',
         desktopPosition === 'left' && 'md:rounded-r-none',
         desktopPosition === 'right' &&
           'md:rounded-l-none md:border-l md:border-border/60',
@@ -116,15 +118,16 @@ export function DeliveryOptionsBand() {
         align: 'center',
       }}
     >
+      {/* No FadeInItem: opacity:0 until in-view hides focusable Book Now (WCAG 2.4.7). */}
       <FadeIn>
-        <div className="flex flex-col-reverse gap-4 md:grid md:grid-cols-2 md:gap-0">
+        <div className="flex flex-col-reverse gap-4 md:grid md:grid-cols-2 md:gap-0 md:items-stretch">
           {DELIVERY_OPTIONS.map((option) => (
-            <FadeInItem key={option.id} className="h-full">
+            <div key={option.id} className="flex h-full min-h-0 flex-col">
               <DeliveryOptionCard
                 option={option}
                 titleId={option.id === 'regular' ? 'delivery-options-title' : undefined}
               />
-            </FadeInItem>
+            </div>
           ))}
         </div>
       </FadeIn>

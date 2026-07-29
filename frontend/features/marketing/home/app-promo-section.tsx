@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
-import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
+import { FadeIn } from '@/features/discover/marketplace/fade-in';
 import { MarketingSection } from '@/features/marketing/shared/marketing-section';
 import { cn } from '@/lib/utils';
 
@@ -58,10 +58,10 @@ function AppFeatureRow({
   iconClassName,
 }: (typeof APP_FEATURES)[number]) {
   return (
-    <li className="flex gap-4">
+    <li className="flex gap-3 sm:gap-4">
       <div
         className={cn(
-          'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11',
           'border border-border/50 bg-background/55 shadow-sm max-md:[backdrop-filter:none] md:backdrop-blur-sm',
           iconClassName,
         )}
@@ -70,7 +70,9 @@ function AppFeatureRow({
       </div>
       <div className="min-w-0">
         <h3 className="text-base font-bold text-foreground sm:text-lg">{title}</h3>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+        <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground sm:mt-1">
+          {description}
+        </p>
       </div>
     </li>
   );
@@ -78,22 +80,23 @@ function AppFeatureRow({
 
 function PhoneMockup() {
   return (
-    <div className="relative mx-auto w-full max-w-[17.5rem] overflow-hidden sm:max-w-[19rem] lg:mx-0 lg:max-w-[20rem]">
+    <div className="relative mx-auto w-full max-w-[13.5rem] overflow-hidden sm:max-w-[17.5rem] lg:mx-0 lg:max-w-[20rem]">
       <div
         className="pointer-events-none absolute inset-0 scale-110 rounded-[3rem] bg-brand-500/15 blur-3xl"
         aria-hidden
       />
-      <div className="relative rounded-[2.5rem] border-[10px] border-foreground/90 bg-foreground/90 p-2 shadow-[0_24px_60px_-12px_rgba(0,0,0,0.35)]">
-        <div className="overflow-hidden rounded-[1.85rem] bg-background">
-          <div className="flex items-center justify-center bg-foreground/90 py-2">
-            <div className="h-1.5 w-16 rounded-full bg-background/25" aria-hidden />
+      <div className="relative rounded-[2rem] border-[8px] border-foreground/90 bg-foreground/90 p-1.5 shadow-[0_24px_60px_-12px_rgba(0,0,0,0.35)] sm:rounded-[2.5rem] sm:border-[10px] sm:p-2">
+        <div className="overflow-hidden rounded-[1.5rem] bg-background sm:rounded-[1.85rem]">
+          <div className="flex items-center justify-center bg-foreground/90 py-1.5 sm:py-2">
+            <div className="h-1.5 w-14 rounded-full bg-background/25 sm:w-16" aria-hidden />
           </div>
 
-          <div className="relative aspect-[9/18.5] bg-gradient-to-b from-brand-50/80 via-background to-muted/40 dark:from-brand-900/20">
-            <div className="border-b border-border/50 bg-card/90 px-4 py-3 backdrop-blur-sm">
+          {/* Fixed content height — avoid tall empty aspect ratio on mobile */}
+          <div className="relative bg-gradient-to-b from-brand-50/80 via-background to-muted/40 dark:from-brand-900/20">
+            <div className="border-b border-border/50 bg-card/90 px-3 py-2.5 backdrop-blur-sm sm:px-4 sm:py-3">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Smartphone className="h-4 w-4" aria-hidden />
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary sm:h-8 sm:w-8">
+                  <Smartphone className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-foreground">WashHouse</p>
@@ -102,8 +105,8 @@ function PhoneMockup() {
               </div>
             </div>
 
-            <div className="space-y-2.5 p-4">
-              <div className="rounded-xl border border-border/50 bg-card/90 p-3 shadow-soft">
+            <div className="space-y-2 p-3 sm:space-y-2.5 sm:p-4">
+              <div className="rounded-xl border border-border/50 bg-card/90 p-2.5 shadow-soft sm:p-3">
                 <p className="text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
                   Next pickup
                 </p>
@@ -155,8 +158,8 @@ function StoreBadgeButton({
       className={cn(
         'relative flex min-h-[3.25rem] w-full items-center gap-3 rounded-xl border border-border/70',
         'bg-card/90 px-4 py-2.5 text-left shadow-soft',
-        'disabled:cursor-not-allowed disabled:opacity-70',
-        'sm:w-auto sm:min-w-[11.5rem]',
+        'disabled:cursor-not-allowed disabled:opacity-90',
+        'sm:w-auto sm:min-w-[12rem]',
       )}
     >
       {store === 'google-play' ? (
@@ -174,13 +177,16 @@ function StoreBadgeButton({
           />
         </svg>
       )}
-      <span className="min-w-0 flex-1">
+      <span className="min-w-0 flex-1 pr-16">
         <span className="block text-[0.625rem] uppercase tracking-wide text-muted-foreground">
           {sublabel}
         </span>
         <span className="block text-sm font-semibold text-foreground">{label}</span>
       </span>
-      <Badge variant="warning" className="absolute -right-2 -top-2 shrink-0 shadow-sm">
+      <Badge
+        variant="warning"
+        className="absolute right-2 top-1/2 shrink-0 -translate-y-1/2 shadow-sm sm:right-2.5"
+      >
         Coming Soon
       </Badge>
     </button>
@@ -200,28 +206,30 @@ export function AppPromoSection() {
         align: 'center',
       }}
     >
+      {/* No FadeInItem: store badges / features must stay visible (WCAG 2.4.7). */}
       <FadeIn>
-        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-12 xl:gap-16">
-          <FadeInItem className="order-2 lg:order-1">
-            <PhoneMockup />
-          </FadeInItem>
-
-          <FadeInItem className="order-1 lg:order-2">
+        <div className="grid items-start gap-8 lg:grid-cols-2 lg:items-center lg:gap-12 xl:gap-16">
+          {/* Features + badges first on mobile so they sit under the section header */}
+          <div className="order-1 lg:order-2">
             <h2 id="app-promo-title" className="sr-only">
               WashHouse mobile app features
             </h2>
 
-            <ul className="space-y-6 sm:space-y-7">
+            <ul className="space-y-5 sm:space-y-7">
               {APP_FEATURES.map((feature) => (
                 <AppFeatureRow key={feature.id} {...feature} />
               ))}
             </ul>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
               <StoreBadgeButton store="google-play" sublabel="Get it on" label="Google Play" />
               <StoreBadgeButton store="app-store" sublabel="Download on the" label="App Store" />
             </div>
-          </FadeInItem>
+          </div>
+
+          <div className="order-2 lg:order-1">
+            <PhoneMockup />
+          </div>
         </div>
       </FadeIn>
     </MarketingSection>

@@ -19,16 +19,18 @@ from app.repositories.user import UserRepository
 from app.schemas.laundry import LaundryListItem, LaundrySearchItem, LaundrySearchResult
 from app.utils.money import format_inr, inr_to_paise
 
-# v2 includes compare price hints on list/search cards (Slice 5).
-_LIST_CACHE_PREFIX = "laundries:list:v2:"
-_SEARCH_CACHE_PREFIX = "laundries:search:v2:"
+# v3 includes optional latitude/longitude for client near-me sort.
+_LIST_CACHE_PREFIX = "laundries:list:v3:"
+_SEARCH_CACHE_PREFIX = "laundries:search:v3:"
 
 
 async def invalidate_laundry_discovery_cache() -> None:
     """Drop list/search caches after partner prices (or laundry status) change."""
     await cache_delete_pattern(_LIST_CACHE_PREFIX)
     await cache_delete_pattern(_SEARCH_CACHE_PREFIX)
-    # Legacy keys from before Slice 5
+    # Legacy keys (compare hints v2, pre-hints v1)
+    await cache_delete_pattern("laundries:list:v2:")
+    await cache_delete_pattern("laundries:search:v2:")
     await cache_delete_pattern("laundries:list:v1:")
     await cache_delete_pattern("laundries:search:v1:")
 
@@ -56,6 +58,8 @@ class LaundryService:
             "avg_rating": laundry.avg_rating,
             "review_count": laundry.review_count,
             "is_verified": laundry.is_verified,
+            "latitude": float(laundry.latitude) if laundry.latitude is not None else None,
+            "longitude": float(laundry.longitude) if laundry.longitude is not None else None,
             "wash_fold_from_inr": format_inr(h.wash_fold_inr),
             "wash_fold_from_paise": inr_to_paise(h.wash_fold_inr),
             "shirt_dry_clean_from_inr": format_inr(h.shirt_dry_clean_inr),

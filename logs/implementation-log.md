@@ -4,6 +4,90 @@
 
 ---
 
+## 2026-07-29 — Marketing navbar desktop Stores CTA
+
+- **Type:** feat
+- **Scope:** Marketing navbar — first-class Stores access on laptop/desktop
+- **Files:** `marketing-nav.ts`, `marketing-nav.test.ts`, `marketing-navbar.tsx`, `docs/features/marketing-homepage.md`
+- **Summary:** Added **Stores** to `MARKETING_NAV_LINKS` (after Pricing) and a desktop CTA between Book Now and Call Now linking to `MARKETING_STORES_HREF` (`/stores`). Overflow polish: Staff label shortens below `xl`; Call shows icon-only from `lg` with full label at `xl`. Mobile sticky Stores quick-pick unchanged; hamburger picks up Stores via nav links only (no duplicate CTA).
+- **Risks:** Seven centered nav links may feel tight on mid-width laptops; CTA row still prioritizes Stores over Call text.
+- **Next:** Optional Playwright assert for desktop Stores CTA → `/stores`.
+- **Refs:** User request — laptop/desktop Stores next to Book + Call
+
+---
+
+## 2026-07-29 — Marketing homepage FadeIn visibility fix
+
+- **Type:** fix
+- **Scope:** Marketing `/` section bodies stuck at Framer `opacity: 0`
+- **Files:** `fade-in.tsx`, `fade-in.test.tsx`, `delivery-options-band.tsx`, `app-promo-section.tsx`, `featured-stores-teaser.tsx`, `franchise-teaser.tsx`, `final-cta-band.tsx`, `services-preview.tsx`, `docs/features/marketing-homepage.md`
+- **Summary:** Hardened shared `FadeIn`/`FadeInItem`/`FadeInStagger` with soft viewport + 700ms force-visible fallback and reduced-motion plain markup. Removed `FadeInItem` (and Final CTA nested opacity motion) around focusable home CTAs so Book Now / links cannot stay invisible (WCAG 2.4.7).
+- **Risks:** Entrance stagger is lighter on CTA sections; timeout still animates other `FadeInItem` consumers if IO fails.
+- **Next:** Spot-check `/` light+dark on phone/desktop after deploy.
+- **Refs:** User report — blank bands under marketing section headers
+
+---
+
+## 2026-07-29 — Storefront Directions when coords exist
+
+- **Type:** feat
+- **Scope:** Laundry detail / storefront contact — optional Directions
+- **Files:** `enums.py`, `20260729_0036_directions_click_engagement.py`, `customer_experience_service.py`, `customer_experience.py` (schemas), `geo.ts`, `offline-booking-contact-panel.tsx`, `storefront-contact-section.tsx`, `laundry-information-tab.tsx`, contact API tests, docs
+- **Summary:** Contact API exposes `show_directions` + Google/Apple/`geo` URLs when laundry lat/lng present (partner toggle deferred; default on). Inline/sidebar contact panels and storefront section open platform-picked directions; mobile sticky bar and marketing CTAs unchanged. Tracks `directions_click` for signed-in customers (`engagement_event_type` enum extended).
+- **Risks:** Directions only appear for laundries with seeded coordinates; address-only shops keep Maps search fallback.
+- **Next:** Optional partner `show_directions` storefront toggle; engagement analytics counter.
+- **Refs:** User request — Directions on contact panel; not global sticky
+
+---
+
+## 2026-07-29 — Marketing CTAs respect online/offline booking mode
+
+- **Type:** feat
+- **Scope:** Marketing sticky CTA + final CTA band — booking-mode hierarchy
+- **Files:** `use-marketing-booking-cta-mode.ts`, `mobile-sticky-cta.tsx`, `final-cta-band.tsx`, `marketing-nav.ts`, `marketing-homepage.spec.ts`, `offline-booking.spec.ts`, `docs/features/marketing-homepage.md`, `docs/product/offline-booking-ui-map.md`
+- **Summary:** Sticky and final CTA bands now follow `useOnlineBookingEnabled` / `GET /config` `online_booking_enabled`. Online: primary **Book nearest** → `/discover`, WhatsApp/Call secondary. Offline: WhatsApp-primary + Stores quick-pick + Call (unchanged). Playwright covers both modes via default `:3000` and `offline-booking` `:3001`.
+- **Risks:** Brief hierarchy depends on FE env + API flag alignment; optimistic env while `/config` loads avoids WhatsApp-primary flash on online defaults.
+- **Next:** Optional FAB hierarchy polish to match sticky emphasis when online.
+- **Refs:** User request — marketing contact CTAs online vs offline
+
+---
+
+## 2026-07-29 — Stores Near me + sticky quick-pick sheet
+
+- **Type:** feat
+- **Scope:** Marketing `/stores` geolocation + sticky CTA quick-pick Drawer
+- **Files:** `laundry.py` (schema), `laundry_service.py`, `lib/geo.ts`, `hooks/use-geolocation.ts`, `laundry-meta.ts`, `use-laundry-discovery.ts`, `stores-near-me-control.tsx`, `stores-quick-pick-sheet.tsx`, `stores-page-view.tsx`, `mobile-sticky-cta.tsx`, `use-final-cta-visible.ts`, tests, `docs/product/offline-booking-ui-map.md`, `docs/features/customer-discovery.md`, `docs/features/marketing-homepage.md`
+- **Summary:** Exposed optional laundry lat/lng on existing list/search payloads (cache v3). `/stores` gained a Near me control (graceful deny → area search) sorting via client haversine. Sticky Stores opens a deferred vaul Drawer with up to 3 nearest/featured rows (View / Call / WhatsApp + See all stores) — no maps SDK.
+- **Risks:** Near-me quality depends on partners having lat/lng seeded; without coords, sort falls back to approximate distances after real GPS rows. Sticky Stores is now a button (sheet) not a direct `/stores` link — FABs/footer still navigate.
+- **Next:** Seed missing laundry coordinates; optional distance label on directory cards when GPS is active.
+- **Refs:** User request — Near me + sticky quick-pick sheet
+
+---
+
+## 2026-07-29 — Stores directory card Call / WhatsApp actions
+
+- **Type:** feat
+- **Scope:** Marketing `/stores` directory — compact contact + view actions
+- **Files:** `stores-card.tsx`, `stores-card-skeleton.tsx`, `marketing-homepage.spec.ts`, `docs/features/customer-discovery.md`, `docs/features/marketing-homepage.md`, `docs/product/offline-booking-ui-map.md`, `docs/product/offline-booking-customer-experience.md`, `logs/implementation-log.md`
+- **Summary:** Each store card keeps name + city and adds a lean action row: primary View store → `/discover/[id]`, plus Call / WhatsApp icons driven by `GET /laundries/{id}/contact` (`show_call` / `show_whatsapp` / `requires_login`) with `trackContactEvent` source `stores_directory`. Guests never get hardcoded `tel:` / `wa.me` hrefs when online booking requires login.
+- **Risks:** One contact GET per visible card (React Query cache key shared with storefront); acceptable for small directory lists.
+- **Next:** Optional unit test for requires_login redirect path.
+- **Refs:** User request — stores card contact actions; BUG-2026-07-14-004 guest contact rules
+
+---
+
+## 2026-07-29 — Marketing contact actions: Find stores
+
+- **Type:** feat
+- **Scope:** Marketing conversion chrome — sticky CTA, FABs, final CTA band
+- **Files:** `mobile-sticky-cta.tsx`, `floating-contact-actions.tsx`, `final-cta-band.tsx`, `marketing-homepage.spec.ts`, `docs/features/marketing-homepage.md`, `logs/implementation-log.md`
+- **Summary:** Added a third contact action linking to `/stores` (MapPin / “Stores” / “Find stores”) beside WhatsApp and Call across mobile sticky bar, floating FABs (incl. footer inline), and the homepage final CTA band. Copy treats self-serve store browse as equal to chat/call; Playwright asserts the sticky stores link.
+- **Risks:** Three sticky actions are tighter on ~360px widths — short “Stores” label + `min-h-12` / `min-w-11` keep tap targets ≥44px.
+- **Next:** Optional smoke for FAB + final CTA stores link in Playwright.
+- **Refs:** User request — Find stores next to Call/WhatsApp
+
+---
+
 ## 2026-07-29 — Fix `/partner/storefront` prerender `hasHydrated` crash
 
 - **Type:** fix

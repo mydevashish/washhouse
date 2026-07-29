@@ -3,6 +3,7 @@ import {
   getLaundryImage as getMarketplaceLaundryImage,
   LAUNDRY_IMAGES_BY_SLUG as MARKETPLACE_LAUNDRY_IMAGES_BY_SLUG,
 } from '@/features/discover/marketplace/laundry-images';
+import { distanceKmBetween, type GeoPoint } from '@/lib/geo';
 
 /** @deprecated Prefer importing from `marketplace/laundry-images` — kept for existing callers. */
 export const LAUNDRY_IMAGES_BY_SLUG = MARKETPLACE_LAUNDRY_IMAGES_BY_SLUG;
@@ -12,6 +13,8 @@ export type LaundryMeta = {
   deliveryHours: number;
   /** Real owner-set start price (INR), or null when no compare hints published */
   startPrice: number | null;
+  /** True when distanceKm came from slug hash (no GPS / no store coords). */
+  distanceIsApproximate: boolean;
 };
 
 export type EnrichedLaundry = LaundryListItem & LaundryMeta & { image: string };
@@ -26,7 +29,7 @@ export function getLaundryImage(slug: string, index: number): string {
   return getMarketplaceLaundryImage(slug, index);
 }
 
-/** Pseudo distance/delivery until geo APIs ship — prices come from the API. */
+/** Pseudo distance/delivery until user location + store coords are available. */
 export function getLaundryMeta(slug: string): Pick<LaundryMeta, 'distanceKm' | 'deliveryHours'> {
   const hash = hashSlug(slug);
   return {
@@ -48,13 +51,48 @@ export function resolveStartPrice(laundry: LaundryListItem): number | null {
   return Math.min(...candidates);
 }
 
-export function enrichLaundry(laundry: LaundryListItem, index: number): EnrichedLaundry {
+export function enrichLaundry(
+  laundry: LaundryListItem,
+  index: number,
+  userLocation?: GeoPoint | null,
+): EnrichedLaundry {
+  const approx = getLaundryMeta(laundry.slug);
+  const realKm = distanceKmBetween(userLocation, laundry.latitude, laundry.longitude);
   return {
     ...laundry,
-    ...getLaundryMeta(laundry.slug),
+    distanceKm: realKm ?? approx.distanceKm,
+    deliveryHours: approx.deliveryHours,
+    distanceIsApproximate: realKm == null,
     startPrice: resolveStartPrice(laundry),
     image: getLaundryImage(laundry.slug, index),
   };
+}
+
+/** Rank laundries nearest-first when GPS + coords exist; else top-rated. */
+export function pickNearestOrFeatured(
+  items: LaundryListItem[],
+  userLocation: GeoPoint | null | undefined,
+  limit = 3,
+): LaundryListItem[] {
+  if (!items.length) return [];
+
+  if (userLocation) {
+    const withDistance = items
+      .map((laundry) => ({
+        laundry,
+        km: distanceKmBetween(userLocation, laundry.latitude, laundry.longitude),
+      }))
+      .filter((row): row is { laundry: LaundryListItem; km: number } => row.km != null)
+      .sort((a, b) => a.km - b.km);
+
+    if (withDistance.length > 0) {
+      return withDistance.slice(0, limit).map((row) => row.laundry);
+    }
+  }
+
+  return [...items]
+    .sort((a, b) => Number(b.avg_rating) - Number(a.avg_rating))
+    .slice(0, limit);
 }
 
 export function minServicePrice(services: { price_inr: string; is_active: boolean }[]): number {

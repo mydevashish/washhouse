@@ -15,7 +15,7 @@ import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { GlassSurface } from '@/components/ui/glass-surface';
-import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
+import { FadeIn } from '@/features/discover/marketplace/fade-in';
 import { WASHHOUSE_DECORATIVE_BANNERS } from '@/features/marketing/catalog/washhouse-catalog-photos';
 import {
   FRANCHISE_BROCHURE_PDF_FILENAME,
@@ -55,76 +55,75 @@ export function FranchiseTeaser() {
       <div className={cn('absolute inset-0', FRANCHISE_BANNER.overlayClassName)} aria-hidden />
 
       <div className={cn('relative', MARKETING_CONTAINER)}>
+        {/* No FadeInItem: Apply / brochure links must stay visible (WCAG 2.4.7). */}
         <FadeIn>
-          <FadeInItem>
-            <GlassSurface
-              variant="onDark"
-              className={cn(
-                'mx-auto max-w-4xl rounded-2xl px-6 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-12',
-                GLASS_ON_DARK_GRADIENT,
-              )}
+          <GlassSurface
+            variant="onDark"
+            className={cn(
+              'mx-auto max-w-4xl rounded-2xl px-6 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-12',
+              GLASS_ON_DARK_GRADIENT,
+            )}
+          >
+            <p className="text-xs font-bold uppercase tracking-widest text-on-hero-muted sm:text-sm">
+              Partner with us
+            </p>
+            <h2
+              id="franchise-teaser-title"
+              className="mt-3 text-2xl font-bold tracking-tight text-on-hero text-balance sm:text-3xl lg:text-4xl"
             >
-              <p className="text-xs font-bold uppercase tracking-widest text-on-hero-muted sm:text-sm">
-                Partner with us
-              </p>
-              <h2
-                id="franchise-teaser-title"
-                className="mt-3 text-2xl font-bold tracking-tight text-on-hero text-balance sm:text-3xl lg:text-4xl"
+              Become a The WashHouse Partner
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-on-hero-muted sm:text-base">
+              Join India&apos;s doorstep laundry marketplace — we bring customers, you deliver fresh
+              clothes with a proven brand behind you.
+            </p>
+
+            <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {FRANCHISE_BENEFITS.map(({ label, icon: Icon }) => (
+                <li
+                  key={label}
+                  className="flex items-center gap-3 rounded-xl border border-on-hero/15 bg-white/10 px-3 py-3 max-md:[backdrop-filter:none] md:bg-white/5 md:backdrop-blur-sm"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-on-hero">
+                    <Icon className="h-4 w-4" aria-hidden />
+                  </span>
+                  <span className="text-xs font-semibold leading-snug text-on-hero sm:text-sm">
+                    {label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+              <Button
+                asChild
+                size="lg"
+                className="h-11 rounded-full px-6 active:scale-[0.98]"
               >
-                Become a The WashHouse Partner
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-on-hero-muted sm:text-base">
-                Join India&apos;s doorstep laundry marketplace — we bring customers, you deliver fresh
-                clothes with a proven brand behind you.
-              </p>
-
-              <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                {FRANCHISE_BENEFITS.map(({ label, icon: Icon }) => (
-                  <li
-                    key={label}
-                    className="flex items-center gap-3 rounded-xl border border-on-hero/15 bg-white/10 px-3 py-3 max-md:[backdrop-filter:none] md:bg-white/5 md:backdrop-blur-sm"
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-on-hero">
-                      <Icon className="h-4 w-4" aria-hidden />
-                    </span>
-                    <span className="text-xs font-semibold leading-snug text-on-hero sm:text-sm">
-                      {label}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-                <Button
-                  asChild
-                  size="lg"
-                  className="h-11 rounded-full px-6 active:scale-[0.98]"
+                <Link href="/franchise#apply">
+                  Apply for franchise
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className={cn(
+                  'h-11 rounded-full border-on-hero/40 bg-white/10 px-6 text-on-hero shadow-soft max-md:[backdrop-filter:none]',
+                  'hover:bg-white/15 hover:text-on-hero active:scale-[0.98] md:backdrop-blur-sm',
+                )}
+              >
+                <a
+                  href={FRANCHISE_BROCHURE_PDF_HREF}
+                  download={FRANCHISE_BROCHURE_PDF_FILENAME}
                 >
-                  <Link href="/franchise#apply">
-                    Apply for franchise
-                    <ArrowRight className="h-4 w-4" aria-hidden />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className={cn(
-                    'h-11 rounded-full border-on-hero/40 bg-white/10 px-6 text-on-hero shadow-soft max-md:[backdrop-filter:none]',
-                    'hover:bg-white/15 hover:text-on-hero active:scale-[0.98] md:backdrop-blur-sm',
-                  )}
-                >
-                  <a
-                    href={FRANCHISE_BROCHURE_PDF_HREF}
-                    download={FRANCHISE_BROCHURE_PDF_FILENAME}
-                  >
-                    <FileDown className="h-4 w-4" aria-hidden />
-                    Request brochure
-                  </a>
-                </Button>
-              </div>
-            </GlassSurface>
-          </FadeInItem>
+                  <FileDown className="h-4 w-4" aria-hidden />
+                  Request brochure
+                </a>
+              </Button>
+            </div>
+          </GlassSurface>
         </FadeIn>
       </div>
     </section>

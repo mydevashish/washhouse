@@ -10,6 +10,7 @@ import {
   OFFLINE_BOOKING_TITLE,
   offlineBookingBody,
 } from '@/lib/hooks/use-online-booking-enabled';
+import { pickDirectionsUrl } from '@/lib/geo';
 import { cn } from '@/lib/utils';
 import { getContactInfo, trackContactEvent } from '@/services/customer-experience';
 import { useAuthStore } from '@/store/auth.store';
@@ -79,11 +80,22 @@ export function OfflineBookingContactPanel({
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const handleMaps = () => {
+  const handleDirections = async () => {
+    if (!c?.show_directions) return;
+    if (user?.role === 'customer') {
+      await trackM.mutateAsync('directions_click');
+    }
+    const url = pickDirectionsUrl(c);
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleMapsFallback = () => {
     if (c?.map_url) window.open(c.map_url, '_blank', 'noopener,noreferrer');
   };
 
   const isMobileBar = variant === 'mobile-bar';
+  const showDirections = Boolean(c?.show_directions) && !isMobileBar;
+  const showMapsFallback = Boolean(c?.map_url) && !c?.show_directions && !isMobileBar;
 
   const actionButtons = c && (
     <div className={cn('gap-2', isMobileBar ? 'grid grid-cols-2' : 'flex flex-wrap')}>
@@ -117,13 +129,26 @@ export function OfflineBookingContactPanel({
           WhatsApp shop
         </Button>
       )}
-      {c.map_url && !isMobileBar && (
+      {showDirections && (
         <Button
           type="button"
           size="sm"
           variant="outline"
           className="gap-2"
-          onClick={handleMaps}
+          disabled={trackM.isPending}
+          onClick={() => void handleDirections()}
+        >
+          <Navigation className="h-4 w-4" aria-hidden />
+          Directions
+        </Button>
+      )}
+      {showMapsFallback && (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="gap-2"
+          onClick={handleMapsFallback}
         >
           <Navigation className="h-4 w-4" aria-hidden />
           Open in Google Maps

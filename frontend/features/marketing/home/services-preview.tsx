@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import type { CSSProperties } from 'react';
 
-import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
+import { FadeIn } from '@/features/discover/marketplace/fade-in';
 import { BookNowLink } from '@/features/marketing/book-now';
 import type { BookNowServiceId } from '@/features/marketing/book-now';
 import {
@@ -20,6 +20,10 @@ import { HORIZONTAL_SCROLL_NATIVE_CLASS } from '@/lib/horizontal-scroll-touch';
 import { cn } from '@/lib/utils';
 
 import '@/features/marketing/pricing/pricing-atelier.css';
+
+/** One primary image set — matches visible card widths (carousel / 2-col / 4-col). */
+const SERVICE_PREVIEW_IMAGE_SIZES =
+  '(max-width: 767px) 83vw, (max-width: 1023px) 45vw, (max-width: 1279px) 22vw, 280px';
 
 type ServicePreviewCardProps = {
   item: ServicePreviewItem;
@@ -64,8 +68,8 @@ function ServicePreviewCard({
             src={image}
             alt={imageAlt}
             fill
-            className="object-contain"
-            sizes="(max-width: 414px) 83vw, (max-width: 768px) 83vw, (max-width: 1024px) 50vw, (max-width: 1280px) 25vw, 320px"
+            className="object-cover"
+            sizes={SERVICE_PREVIEW_IMAGE_SIZES}
           />
         </div>
       </div>
@@ -99,10 +103,7 @@ function ServicePreviewCard({
 }
 
 function desktopItemClass(index: number) {
-  return cn(
-    'lg:col-span-3',
-    index === 4 && 'lg:col-start-2',
-  );
+  return cn('lg:col-span-3', index === 4 && 'lg:col-start-2');
 }
 
 export function ServicesPreview() {
@@ -119,48 +120,39 @@ export function ServicesPreview() {
     >
       <PricingMotionBudgetProvider>
         <FadeIn>
-          {/* Mobile: horizontal scroll-snap carousel (~1.2 cards visible) */}
-          <div
+          {/*
+            Single DOM list — CSS switches layout (carousel → 2-col → 12-col).
+            Avoids triple-mounting 21 next/image instances / absurd srcSet widths.
+          */}
+          <ul
             className={cn(
-              'md:hidden -mx-4 min-w-0 w-full max-w-none overflow-x-auto overscroll-x-contain px-4 pb-2 scrollbar-none snap-x snap-mandatory',
+              // Mobile: horizontal scroll-snap carousel (~1.2 cards visible)
+              '-mx-4 flex min-w-0 w-[calc(100%+2rem)] max-w-none gap-4 overflow-x-auto overscroll-x-contain px-4 pb-2 scrollbar-none snap-x snap-mandatory',
               HORIZONTAL_SCROLL_NATIVE_CLASS,
+              // Tablet+: grid replaces flex scroll
+              'md:mx-0 md:grid md:w-full md:grid-cols-2 md:gap-5 md:overflow-visible md:px-0 md:pb-0 md:snap-none',
+              // Desktop: 4-col row + centered 3-col row
+              'lg:grid-cols-12 lg:gap-6',
             )}
             aria-label="Browse our laundry services — swipe horizontally to see more"
             role="region"
             tabIndex={0}
           >
-            <ul className="flex gap-4">
-              {SERVICE_PREVIEW_ITEMS.map((item, index) => (
-                <li key={item.id} className="w-[83.333%] max-w-sm shrink-0 snap-start">
-                  <ServicePreviewCard item={item} index={index} />
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Tablet: 2-column grid */}
-          <ul className="hidden gap-5 md:grid md:grid-cols-2 lg:hidden">
             {SERVICE_PREVIEW_ITEMS.map((item, index) => (
-              <li key={item.id}>
-                <FadeInItem>
-                  <ServicePreviewCard item={item} index={index} solidOnMobile={false} />
-                </FadeInItem>
-              </li>
-            ))}
-          </ul>
-
-          {/* Desktop: 4-column row + centered 3-column row */}
-          <ul className="hidden gap-6 lg:grid lg:grid-cols-12">
-            {SERVICE_PREVIEW_ITEMS.map((item, index) => (
-              <li key={item.id} className={desktopItemClass(index)}>
-                <FadeInItem>
-                  <ServicePreviewCard
-                    item={item}
-                    index={index}
-                    enableHoverLift
-                    solidOnMobile={false}
-                  />
-                </FadeInItem>
+              <li
+                key={item.id}
+                className={cn(
+                  'w-[83.333%] max-w-sm shrink-0 snap-start',
+                  'md:w-auto md:max-w-none md:shrink',
+                  desktopItemClass(index),
+                )}
+              >
+                <ServicePreviewCard
+                  item={item}
+                  index={index}
+                  enableHoverLift
+                  solidOnMobile
+                />
               </li>
             ))}
           </ul>

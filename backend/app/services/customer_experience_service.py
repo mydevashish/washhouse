@@ -42,6 +42,23 @@ def _google_maps_url(
     return None
 
 
+def _directions_fields(latitude: float | None, longitude: float | None) -> dict:
+    """Directions when both coordinates exist (partner toggle deferred; default on)."""
+    if latitude is None or longitude is None:
+        return {
+            "show_directions": False,
+            "google_maps_url": None,
+            "apple_maps_url": None,
+            "geo_url": None,
+        }
+    return {
+        "show_directions": True,
+        "google_maps_url": f"https://www.google.com/maps/dir/?api=1&destination={latitude},{longitude}",
+        "apple_maps_url": f"https://maps.apple.com/?daddr={latitude},{longitude}",
+        "geo_url": f"geo:{latitude},{longitude}?q={latitude},{longitude}",
+    }
+
+
 def _location_fields(laundry) -> dict:
     full_address = f"{laundry.address_line}, {laundry.city}"
     latitude = float(laundry.latitude) if laundry.latitude is not None else None
@@ -53,6 +70,7 @@ def _location_fields(laundry) -> dict:
         "longitude": longitude,
         "full_address": full_address,
         "map_url": _google_maps_url(latitude, longitude, address=full_address),
+        **_directions_fields(latitude, longitude),
     }
 
 
@@ -233,6 +251,7 @@ class CustomerExperienceService:
         source: str | None = None,
     ) -> dict:
         offline_mode = not settings.FEATURE_ONLINE_BOOKING
+        # Directions are public (coords); call/WhatsApp/callback follow contact login rules.
         if event_type in ("call_click", "whatsapp_click", "callback_request"):
             if offline_mode:
                 if event_type == "callback_request" and customer_role != "customer":
@@ -244,7 +263,13 @@ class CustomerExperienceService:
         except ValueError as exc:
             raise ValidationError("Invalid event type") from exc
         should_track = True
-        if offline_mode and event_type in ("call_click", "whatsapp_click") and not customer_id:
+        if event_type == "directions_click" and not customer_id:
+            should_track = False
+        elif (
+            offline_mode
+            and event_type in ("call_click", "whatsapp_click")
+            and not customer_id
+        ):
             should_track = False
         if should_track:
             await self._repo.record_event(

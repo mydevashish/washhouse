@@ -470,16 +470,52 @@ test.describe('marketing contact form', () => {
 });
 
 test.describe('mobile sticky CTA', () => {
-  test('sticky CTA is visible at top of homepage on mobile', async ({ page }) => {
+  // Default Playwright webServer uses online booking (NEXT_PUBLIC_FEATURE_ONLINE_BOOKING default true).
+  // Offline sticky WhatsApp-primary + quick-pick coverage lives in offline-booking.spec.ts (:3001).
+
+  test('sticky CTA is visible at top of homepage on mobile (online booking)', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 412, height: 915 });
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
     const stickyCta = page.locator('[data-marketing-sticky-cta].fixed');
     await expect(stickyCta).toBeVisible();
-    await expect(stickyCta.getByRole('link', { name: /book on whatsapp/i })).toBeVisible();
+    await expect(stickyCta).toHaveAttribute('data-booking-mode', 'online');
+    await expect(stickyCta.getByRole('link', { name: /book nearest/i })).toHaveAttribute(
+      'href',
+      '/discover',
+    );
+    await expect(stickyCta.getByRole('link', { name: /chat on whatsapp/i })).toBeVisible();
     await expect(stickyCta.getByRole('link', { name: /call now/i })).toBeVisible();
+    await expect(stickyCta.getByRole('button', { name: /find stores/i })).toHaveCount(0);
     await expect(stickyCta).not.toHaveClass(/opacity-0/);
+  });
+
+  test('sticky Book nearest navigates to discover', async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    const stickyCta = page.locator('[data-marketing-sticky-cta].fixed');
+    await stickyCta.getByRole('link', { name: /book nearest/i }).click();
+    await expect(page).toHaveURL(/\/discover/);
+  });
+
+  test('final CTA band emphasizes Book nearest when online booking', async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    const band = page.locator('[data-marketing-bottom-cta]');
+    await band.scrollIntoViewIfNeeded();
+    await expect(band).toHaveAttribute('data-booking-mode', 'online');
+    await expect(band.getByRole('link', { name: /book nearest/i })).toHaveAttribute(
+      'href',
+      '/discover',
+    );
+    await expect(band.getByText(/book the nearest laundry online/i)).toBeVisible();
   });
 
   test('sticky CTA hides when final CTA band scrolls into view', async ({ page }) => {
@@ -659,6 +695,17 @@ test.describe('marketing Book Now dialog', () => {
 test.describe('marketing stores directory', () => {
   test('/stores is a simple name + city directory without compare chrome', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
+
+    const contactResponsePromise = page.waitForResponse(
+      (res) =>
+        res.url().includes('/laundries/') &&
+        res.url().includes('/contact') &&
+        !res.url().includes('/contact/track') &&
+        res.request().method() === 'GET' &&
+        res.ok(),
+      { timeout: 15_000 },
+    );
+
     await page.goto('/stores');
     await page.waitForLoadState('domcontentloaded');
 
@@ -682,5 +729,41 @@ test.describe('marketing stores directory', () => {
     const directory = page.getByRole('list', { name: /washhouse partner stores/i });
     const empty = page.getByRole('heading', { name: /no stores/i });
     await expect(directory.or(empty)).toBeVisible({ timeout: 15_000 });
+
+    if (await directory.isVisible()) {
+      const firstCard = directory.getByRole('listitem').first();
+      const viewStore = firstCard.getByRole('link', { name: /view store/i });
+      await expect(viewStore).toBeVisible();
+      await expect(viewStore).toHaveAttribute('href', /\/discover\/.+/);
+
+      // Compact Call / WhatsApp icons when contact API exposes channels (no tel:/wa hrefs in markup)
+      const contactRes = await contactResponsePromise.catch(() => null);
+      if (contactRes) {
+        const body = await contactRes.json();
+        const contact = body.data as {
+          contact_available?: boolean;
+          show_call?: boolean;
+          show_whatsapp?: boolean;
+          requires_login?: boolean;
+          phone?: string | null;
+        };
+
+        if (contact.contact_available && contact.show_call) {
+          await expect(
+            firstCard.getByRole('button', { name: /call |sign in to call /i }),
+          ).toBeVisible();
+          await expect(firstCard.locator('a[href^="tel:"]')).toHaveCount(0);
+          if (contact.requires_login) {
+            expect(contact.phone).toBeFalsy();
+          }
+        }
+        if (contact.contact_available && contact.show_whatsapp) {
+          await expect(
+            firstCard.getByRole('button', { name: /whatsapp |sign in for whatsapp /i }),
+          ).toBeVisible();
+          await expect(firstCard.locator('a[href*="wa.me"]')).toHaveCount(0);
+        }
+      }
+    }
   });
 });

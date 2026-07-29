@@ -93,8 +93,13 @@ export function applyClientFilters(
 
   result = [...result].sort((a, b) => {
     switch (f.sort) {
-      case 'nearest':
+      case 'nearest': {
+        // Prefer GPS haversine rows; approx (slug-hash) distances sort after.
+        const aApprox = a.distanceIsApproximate ? 1 : 0;
+        const bApprox = b.distanceIsApproximate ? 1 : 0;
+        if (aApprox !== bApprox) return aApprox - bApprox;
         return Number(a.distanceKm) - Number(b.distanceKm);
+      }
       case 'lowest_price': {
         const pa = a.startPrice;
         const pb = b.startPrice;

@@ -36,6 +36,7 @@ export interface ContactInfo {
   show_call: boolean;
   show_whatsapp: boolean;
   show_callback: boolean;
+  show_directions?: boolean;
   phone: string | null;
   whatsapp_number: string | null;
   whatsapp_url: string | null;
@@ -45,6 +46,9 @@ export interface ContactInfo {
   longitude?: number | null;
   full_address?: string | null;
   map_url?: string | null;
+  google_maps_url?: string | null;
+  apple_maps_url?: string | null;
+  geo_url?: string | null;
   working_hours?: Record<string, string> | null;
 }
 

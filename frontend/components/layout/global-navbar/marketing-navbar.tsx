@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Menu, Phone, X } from 'lucide-react';
+import { Menu, Phone, Store, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { WashhouseLogo } from '@/components/brand/washhouse-logo';
@@ -21,6 +21,7 @@ import {
   isMarketingNavLinkActive,
   MARKETING_NAV_LINKS,
   MARKETING_STAFF_HREF,
+  MARKETING_STORES_HREF,
 } from '@/lib/navigation/marketing-nav';
 import { cn } from '@/lib/utils';
 
@@ -219,7 +220,10 @@ export function MarketingNavbar() {
               size="sm"
               className="rounded-full px-3 font-medium text-foreground hover:text-foreground"
             >
-              <a href={MARKETING_STAFF_HREF}>Staff login</a>
+              <a href={MARKETING_STAFF_HREF}>
+                <span className="xl:hidden">Staff</span>
+                <span className="hidden xl:inline">Staff login</span>
+              </a>
             </Button>
             <BookNowCta size="sm" className="rounded-full px-4 font-semibold">
               Book Now
@@ -228,11 +232,29 @@ export function MarketingNavbar() {
               asChild
               variant="outline"
               size="sm"
-              className="hidden rounded-full border-success/60 px-4 font-semibold text-success hover:bg-success/10 hover:text-success xl:inline-flex"
+              className="rounded-full px-3 font-semibold"
             >
-              <a href={telHref}>
+              <a
+                href={MARKETING_STORES_HREF}
+                aria-current={
+                  isMarketingNavLinkActive(pathname, MARKETING_STORES_HREF, currentHash)
+                    ? 'page'
+                    : undefined
+                }
+              >
+                <Store className="h-3.5 w-3.5" aria-hidden />
+                Stores
+              </a>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="hidden rounded-full border-success/60 font-semibold text-success hover:bg-success/10 hover:text-success lg:inline-flex lg:px-2.5 xl:px-4"
+            >
+              <a href={telHref} aria-label="Call Now">
                 <Phone className="h-3.5 w-3.5" aria-hidden />
-                Call Now
+                <span className="hidden xl:inline">Call Now</span>
               </a>
             </Button>
           </div>

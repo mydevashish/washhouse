@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { MessageCircle, Phone, PhoneCall } from 'lucide-react';
+import { MessageCircle, Navigation, Phone, PhoneCall } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { pickDirectionsUrl } from '@/lib/geo';
 import { cn } from '@/lib/utils';
 import {
   getContactInfo,
@@ -83,7 +84,16 @@ export function StorefrontContactSection({
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  if (!c || (!c.contact_available && !c.show_callback)) return null;
+  const handleDirections = async () => {
+    if (!c?.show_directions) return;
+    if (user?.role === 'customer') {
+      await trackM.mutateAsync('directions_click');
+    }
+    const url = pickDirectionsUrl(c);
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  if (!c || (!c.contact_available && !c.show_callback && !c.show_directions)) return null;
 
   return (
     <section
@@ -118,6 +128,18 @@ export function StorefrontContactSection({
           >
             <MessageCircle className="h-4 w-4" aria-hidden />
             {c.requires_login ? 'Sign in for WhatsApp' : 'WhatsApp shop'}
+          </Button>
+        )}
+        {c.show_directions && (
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            disabled={trackM.isPending}
+            onClick={() => void handleDirections()}
+          >
+            <Navigation className="h-4 w-4" aria-hidden />
+            Directions
           </Button>
         )}
       </div>

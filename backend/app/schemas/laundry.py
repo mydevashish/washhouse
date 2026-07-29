@@ -44,6 +44,9 @@ class LaundryListItem(BaseModel):
     avg_rating: Decimal
     review_count: int
     is_verified: bool
+    # Optional store coords for client-side near-me (haversine); never invent
+    latitude: float | None = None
+    longitude: float | None = None
     # Wash & Fold (kg-wash-fold) when this laundry offers it
     wash_fold_from_inr: str | None = None
     wash_fold_from_paise: int | None = None

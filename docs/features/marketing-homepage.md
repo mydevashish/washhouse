@@ -1,7 +1,7 @@
 # Feature: Marketing homepage v2
 
 > Status: shipped  
-> Last updated: 2026-07-20  
+> Last updated: 2026-07-29 (homepage polish: service tiles, FAB overlap, Special Care)  
 > Route: `/`  
 > Related: [offline-booking-whatsapp.md](offline-booking-whatsapp.md), [customer-discovery.md](customer-discovery.md)
 
@@ -13,10 +13,10 @@ The public landing page must convert visitors into WhatsApp bookings or franchis
 
 | In scope | Out of scope |
 | -------- | ------------ |
-| Hero carousel (4 slides), stats, services, testimonials | Inline contact form on `/` (lives on `/contact`) |
-| Sticky navbar, mobile sticky CTA, floating FAB | `SpecialCareSection` (built, not wired) |
-| Marketing APIs: stats, testimonials, contact, franchise | Theme toggle in marketing navbar (uses system / app shell elsewhere) |
-| Playwright smoke + a11y specs | Full Lighthouse CI gate on `/` (manual verify documented) |
+| Hero carousel (4 slides), stats, services, special care, testimonials | Inline contact form on `/` (lives on `/contact`) |
+| Sticky navbar, mobile sticky CTA, floating FAB | Theme toggle in marketing navbar (uses system / app shell elsewhere) |
+| Marketing APIs: stats, testimonials, contact, franchise | Full Lighthouse CI gate on `/` (manual verify documented) |
+| Playwright smoke + a11y specs | |
 
 ## Section map
 
@@ -24,22 +24,24 @@ Render order from `frontend/features/marketing/home/marketing-homepage.tsx`:
 
 | # | Section | Component | Data source | Notes |
 | - | ------- | --------- | ----------- | ----- |
-| Shell | Sticky navbar | `MarketingNavbar` | static nav config | Home, Services, Pricing (`/pricing`), About, Franchise, Contact + Book Now (dialog) / Call |
+| Shell | Sticky navbar | `MarketingNavbar` | static nav config | Home, Services, Pricing, **Stores** (`/stores`), About, Franchise, Contact + desktop CTAs: Book Now (dialog) / **Stores** (`/stores`) / Call (icon `lg+`, label `xl+`); Staff shortens to “Staff” below `xl` |
 | 1 | Hero + carousel | `MarketingHomeHero` → `HeroCarousel` | `hero-slides.ts` | 4 slides; Embla autoplay 5 s; glass promo badge |
 | 1b | Hero mobile CTAs | `home-hero.tsx` | static | In-flow below carousel (`sm:hidden`): Book pickup (dialog), Become a partner |
 | 2 | Stats band | `StatsBand` | `GET /marketing/stats` + fallback | 5 KPIs (customers, cities, pickup points, garments, rating) |
 | 3 | Trust strip | `TrustStrip` | static | Verified / pickup / express badges |
 | 4 | How it works | `HowItWorksSection` | static steps | 5-step process in glass card |
 | 5 | Why choose us | `WhyChooseSection` | static | 6 benefit blocks |
-| 6 | Services preview | `ServicesPreview` | `services-data.ts` | 7 cards; Book Now → pickup dialog (pre-selects service) except More Services → `/services` (“View services”) |
-| 7 | Delivery options | `DeliveryOptionsBand` | static | Regular vs Express; Book Now → pickup dialog |
-| 8 | Featured stores | `FeaturedStoresTeaser` | `GET /laundries` (top 3) | Links to discover / store detail |
+| 6 | Services preview | `ServicesPreview` | `services-data.ts` | 7 cards; **single DOM** list (CSS carousel → 2-col → 12-col); `object-cover` + bounded `sizes`; Book Now → pickup dialog except More Services → `/services` |
+| 6b | Special care | `SpecialCareSection` | `special-care-items.ts` | Delicate-item tiles → `/services#…`; wired in homepage |
+| 7 | Delivery options | `DeliveryOptionsBand` | static | Equal Regular / Express cards; Popular corner ribbon; Book Now → pickup dialog |
+| 8 | Featured stores | `FeaturedStoresTeaser` | `GET /laundries` (top 3) | Skeleton / error / empty never blank; CTA → `/stores` |
 | 9 | Franchise teaser | `FranchiseTeaser` | static | Apply → `/franchise#apply`; brochure → `/brochures/washhouse-franchise.pdf` (`FRANCHISE_BROCHURE_PDF_HREF`, `download`). Content wrapper must be `relative` so glass panel sits above absolute photo/gradient (same as FranchiseHero / FinalCtaBand). |
-| 10 | Testimonials | `HomeTestimonials` | `GET /marketing/testimonials` + fallback | Mobile carousel + desktop 3-col grid |
-| 11 | App promo | `AppPromoSection` | static | Web-first; no store links yet |
-| 12 | Final CTA band | `FinalCtaBand` | static | WhatsApp + Call; `data-marketing-bottom-cta` |
-| Shell | Mobile sticky CTA | `MobileStickyCta` | env contact config | Fixed bottom WhatsApp/Call; hides when final CTA in view |
-| Shell | Floating FAB | `FloatingContactActions` | env contact config | Bottom-right on mobile/tablet; overlap-aware |
+| 10 | Partner login | `PartnerLoginStrip` | static | Partner / staff entry |
+| 11 | Testimonials | `HomeTestimonials` | `GET /marketing/testimonials` + fallback | Mobile carousel + desktop 3-col grid |
+| 12 | App promo | `AppPromoSection` | static | Features + Coming Soon store badges first on mobile; compact phone mock (no tall empty gap) |
+| 13 | Final CTA band | `FinalCtaBand` | `useMarketingBookingCtaMode` | **Online:** Book nearest (`/discover`) primary + WhatsApp/Call secondary; **Offline:** WhatsApp primary + Find stores (`/stores`) + Call; `data-marketing-bottom-cta` + `data-booking-mode` |
+| Shell | Mobile sticky CTA | `MobileStickyCta` | same booking flag as `useOnlineBookingEnabled` | **Online:** Book nearest primary → `/discover`; WhatsApp/Call icon secondary. **Offline:** WhatsApp primary + Stores quick-pick + Call; hides when final CTA in view |
+| Shell | Floating FAB | `FloatingContactActions` | env contact config | WhatsApp + Find stores + Call; when sticky bar visible, hides Call + WhatsApp (keeps Find stores); full hide on final CTA / footer social |
 | Shell | Book Now dialog | `BookNowDialog` | `POST /marketing/contact` | Shared modal; `?book=1` deep link; name/phone/service/time → `order-help` lead |
 | Shell | Footer | `MarketingFooter` | static groups | Company, Partner, Legal, Support links |
 
@@ -54,7 +56,7 @@ Primary marketing **Book Now** / **Book pickup** CTAs open a shared Radix Dialog
 | `BookPickupForm` | RHF + Zod; POSTs via `useSubmitContact()` with subject `order-help` |
 | `BookNowDialog` | Focus trap, Esc, `aria-labelledby`, mobile full-viewport, mounted in `MarketingShellOverlays` |
 | `/?book=1` | Deep link opens the same dialog; closing strips the query param |
-| `/stores` | Slim partner directory (name + city); no per-store price/rating compare UX. Used by “Find a store” / browse CTAs (`MARKETING_STORES_HREF`) |
+| `/stores` | Slim partner directory (name + city + Call / WhatsApp / View store) with optional **Near me** (browser geolocation → client haversine when list items include lat/lng); desktop navbar **Stores** (nav link + CTA) navigates here; mobile sticky **Stores** opens a deferred quick-pick sheet. No per-store price/rating compare UX on the directory itself. |
 
 Form fields map into the existing contact API message body (service + preferred time + notes). No parallel book endpoint.
 
@@ -170,7 +172,7 @@ Frontend falls back to static testimonials when API errors or returns empty.
 
 ## Imagery
 
-Marketing heroes use dedicated **1920×1080** WebP assets; service preview cards use **4∶3 catalog tiles** (1200×900).
+Marketing heroes use dedicated **1920×1080** WebP assets; service preview cards use **4∶3 catalog tiles** (1200×900). Service preview tiles under `catalog/services/{wash-fold,wash-iron,premium-laundry,dry-clean,shoe-cleaning,curtain-cleaning,more-services}.webp` must be real WebP (not JPEG bytes with a `.webp` extension) — mislabeled masters caused `naturalWidth: 0` / blank optimizer failures.
 
 | Piece | Path |
 | ----- | ---- |
@@ -212,10 +214,13 @@ Regenerate marketing heroes: `python scripts/download-marketing-heroes.py` (sour
 
 | Suite | Path | Coverage |
 | ----- | ---- | -------- |
-| Playwright smoke | `frontend/tests/e2e/marketing-homepage.spec.ts` | Load, carousel nav, contact validation, Book Now dialog + submit, sticky CTA |
+| Playwright smoke | `frontend/tests/e2e/marketing-homepage.spec.ts` | Load, carousel nav, contact validation, Book Now dialog + submit, **online** sticky Book nearest + final CTA |
+| Playwright offline | `frontend/tests/e2e/offline-booking.spec.ts` (`offline-booking` project :3001) | Guest contact + **offline** sticky WhatsApp/Stores quick-pick + final CTA copy |
 | Playwright a11y | `frontend/tests/e2e/marketing-a11y.spec.ts` | Axe on `/`, `/services`, `/pricing`, `/stores`, `/contact` |
 | Playwright smoke (legacy) | `frontend/tests/e2e/smoke.spec.ts` | Homepage heading assertion |
 | Jest unit | `frontend/features/marketing/home/home-hero.test.tsx` | Mobile CTA placement |
+| Jest unit | `frontend/features/marketing/lib/use-marketing-booking-cta-mode.test.tsx` | Online/offline CTA mode + optimistic env while loading |
+| Jest unit | `frontend/features/discover/marketplace/fade-in.test.tsx` | FadeIn force-visible fallback + reduced-motion plain markup |
 | Backend API | `backend/tests/api/test_marketing.py` | Contact, franchise, stats, testimonials |
 
 ```bash
@@ -223,10 +228,22 @@ Regenerate marketing heroes: `python scripts/download-marketing-heroes.py` (sour
 npm run test:e2e -- marketing-homepage
 npm run test:e2e -- marketing-a11y
 npm test -- home-hero
+npm test -- fade-in
 
 # From backend/
 pytest tests/api/test_marketing.py
 ```
+
+### FadeIn visibility (2026-07-29)
+
+Homepage bodies use `FadeIn` from `features/discover/marketplace/fade-in.tsx`. `FadeInItem` applies Framer `fadeUp.hidden` (`opacity: 0`) until the parent reaches `visible`.
+
+**Bug:** Aggressive `whileInView` margins + late dynamic mounts could leave Delivery / Services / App promo / Featured stores / Franchise / Final CTA bodies stuck invisible (headers outside `FadeIn` still showed → blank bands).
+
+**Fix:**
+- Soft viewport (`margin: '0px 0px -10% 0px'`, `amount: 0.01`) + **700ms force-visible** fallback on `FadeIn` / `FadeInItem` / `FadeInStagger`
+- `prefers-reduced-motion` → plain `div`s (full opacity)
+- Home sections with focusable CTAs no longer wrap cards/links in `FadeInItem` (same WCAG 2.4.7 pattern as `partners-section.tsx`)
 
 ## Performance targets
 
@@ -252,8 +269,8 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 - [ ] Hero carousel: swipe, prev/next buttons, dot tabs advance slides; live region announces slide
 - [ ] WELCOME20 promo badge visible on welcome slide
 - [ ] Stats band shows 5 KPIs (API or fallback)
-- [ ] Mobile sticky CTA (WhatsApp + Call) visible at top; hides when scrolling to final CTA band
-- [ ] Floating FAB does not overlap sticky CTA, hero CTAs, or footer social icons
+- [ ] Mobile sticky CTA respects booking mode: **online** Book nearest (`/discover`) primary + WhatsApp/Call secondary; **offline** WhatsApp + Find stores (quick-pick) + Call; hides when scrolling to final CTA band
+- [ ] Floating FAB: while sticky CTA is visible, only **Find stores** remains (Call + WhatsApp live on sticky); full FAB hides for final CTA / footer social; no overlap with hero CTAs
 - [ ] Footer social (Facebook/Instagram/etc.) fully visible & tappable above sticky CTA on mobile
 - [ ] Navbar hamburger opens/closes; links navigate; body scroll locked when open
 - [ ] All section headings visible; no horizontal scroll
@@ -274,17 +291,20 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 
 ### Desktop
 
-- [ ] Navbar inline links + Book Now / Call Now visible (no hamburger)
+- [ ] Navbar inline links (incl. Stores) + Book Now / Stores / Call Now visible (no hamburger)
 - [ ] Hero per-slide CTAs inside carousel (no duplicate global mobile CTAs)
 - [ ] How it works / Why choose grids align; glass cards readable
-- [ ] Services preview hover states; More Services → `/services` (View services); other cards Book Now → `/stores`
-- [ ] Final CTA band WhatsApp + Call links open correctly
+- [ ] Services preview: every card shows a real product image (`object-cover`); More Services → `/services`; other cards Book Now → pickup dialog
+- [ ] Special care tiles link to `/services#…`; Delivery Popular ribbon fully visible; both delivery Book Now open dialog
+- [ ] Featured stores: loading skeleton / error / empty never a blank white slab; Browse → `/stores`
+- [ ] Final CTA band matches mode: **online** Book nearest + WhatsApp + Call; **offline** WhatsApp + Find stores + Call
 - [ ] Footer link groups side-by-side: 2 cols (mobile+), 3 cols (md), 5 cols (lg); all links 44px tap target; no horizontal overflow
 - [ ] Keyboard: carousel focusable; tab order logical; skip-to-content works
 
 ### Cross-cutting
 
-- [ ] `prefers-reduced-motion`: carousel autoplay paused (manual nav still works)
+- [ ] `prefers-reduced-motion`: carousel autoplay paused (manual nav still works); section bodies (Delivery, Services, App promo, Featured stores, Final CTA) visible immediately — no opacity-0 trap
+- [ ] Scroll `/` mobile + desktop: Delivery cards, Services cards, App promo features + store badges, Featured stores, Franchise teaser, Final CTA all visible under headers (no blank bands)
 - [ ] Offline / API error: stats and testimonials show fallback content (no blank sections)
 - [ ] WhatsApp links use correct `NEXT_PUBLIC_WHATSAPP` number
 - [ ] Call links use correct `NEXT_PUBLIC_PHONE` number
@@ -295,6 +315,8 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 | ---- | ---- |
 | Route | `frontend/app/page.tsx` |
 | Page component | `frontend/features/marketing/home/marketing-homepage.tsx` |
+| Booking CTA mode | `frontend/features/marketing/lib/use-marketing-booking-cta-mode.ts` |
+| Sticky / final CTAs | `frontend/components/marketing/mobile-sticky-cta.tsx`, `frontend/features/marketing/home/final-cta-band.tsx` |
 | Shell | `frontend/components/layout/marketing-shell.tsx` |
 | API | `backend/app/api/v1/endpoints/marketing.py` |
 | Schema | `backend/app/schemas/marketing.py` |
@@ -302,7 +324,6 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 
 ## Open follow-ups
 
-1. Wire `SpecialCareSection` or remove dead code
-2. Bring `/` first-load JS within 180 kB budget (route-specific Providers)
-3. Add theme toggle to marketing navbar for explicit dark-mode QA on marketing-only sessions
-4. Run Lighthouse mobile on staging URL in CI
+1. Bring `/` first-load JS within 180 kB budget (route-specific Providers)
+2. Add theme toggle to marketing navbar for explicit dark-mode QA on marketing-only sessions
+3. Run Lighthouse mobile on staging URL in CI

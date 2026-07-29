@@ -1,10 +1,6 @@
-import {
-  WASHHOUSE_CATALOG_PHOTOS,
-  WASHHOUSE_CATALOG_SUPPLEMENTAL_PHOTOS,
-} from '@/features/marketing/catalog/washhouse-catalog-photos';
+import { WASHHOUSE_CATALOG_PHOTOS } from '@/features/marketing/catalog/washhouse-catalog-photos';
 
 const P = WASHHOUSE_CATALOG_PHOTOS;
-const S = WASHHOUSE_CATALOG_SUPPLEMENTAL_PHOTOS;
 
 /** Service preview tile alt — garment/care context from catalog, prefixed when the photo is indirect. */
 function servicePreviewAlt(title: string, photo: { alt: string }, contextual = false): string {

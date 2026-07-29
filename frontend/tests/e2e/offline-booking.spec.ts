@@ -101,4 +101,53 @@ test.describe('Offline booking mode', () => {
     await expect(page.getByRole('heading', { name: /walk-in orders/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /new entry/i })).toBeVisible();
   });
+
+  test('marketing sticky CTA emphasizes WhatsApp + Find stores + Call', async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    const stickyCta = page.locator('[data-marketing-sticky-cta].fixed');
+    await expect(stickyCta).toBeVisible();
+    await expect(stickyCta).toHaveAttribute('data-booking-mode', 'offline');
+    await expect(stickyCta.getByRole('link', { name: /book on whatsapp/i })).toBeVisible();
+    await expect(stickyCta.getByRole('button', { name: /find stores/i })).toBeVisible();
+    await expect(stickyCta.getByRole('link', { name: /call now/i })).toBeVisible();
+    await expect(stickyCta.getByRole('link', { name: /book nearest/i })).toHaveCount(0);
+  });
+
+  test('sticky Stores opens quick-pick sheet with See all stores', async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    const stickyCta = page.locator('[data-marketing-sticky-cta].fixed');
+    await stickyCta.getByRole('button', { name: /find stores/i }).click();
+
+    const sheet = page.getByRole('dialog');
+    await expect(sheet.getByRole('heading', { name: /nearby stores/i })).toBeVisible();
+    await expect(sheet.getByRole('link', { name: /see all stores/i })).toHaveAttribute(
+      'href',
+      '/stores',
+    );
+
+    await page.keyboard.press('Escape');
+    await expect(sheet).toBeHidden();
+  });
+
+  test('final CTA band keeps WhatsApp-primary offline copy', async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    const band = page.locator('[data-marketing-bottom-cta]');
+    await band.scrollIntoViewIfNeeded();
+    await expect(band).toHaveAttribute('data-booking-mode', 'offline');
+    await expect(band.getByRole('link', { name: /^whatsapp$/i })).toBeVisible();
+    await expect(band.getByRole('link', { name: /find stores/i })).toHaveAttribute(
+      'href',
+      '/stores',
+    );
+    await expect(band.getByText(/browse stores near you, chat on whatsapp/i)).toBeVisible();
+  });
 });

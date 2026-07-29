@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
-import { MessageCircle, Phone } from 'lucide-react';
+import { MapPin, MessageCircle, Phone } from 'lucide-react';
 
 import {
   buildTelHref,
   buildWhatsAppHref,
   CONTACT_CONFIG,
 } from '@/features/marketing/contact/contact-constants';
+import { MARKETING_STORES_HREF } from '@/lib/navigation/marketing-nav';
 import { cn } from '@/lib/utils';
 
 type FloatingContactActionsProps = {
@@ -21,24 +22,57 @@ const WHATSAPP_MESSAGE = 'Hi WashHouse — I have a question.';
 /** Hide FABs when these regions would sit under the floating stack. */
 const BOTTOM_CTA_SELECTOR = '[data-marketing-bottom-cta]';
 const FOOTER_SOCIAL_SELECTOR = '[data-marketing-footer-social]';
+/** Mobile sticky bar already exposes WhatsApp + Call — keep Find stores only. */
+const STICKY_BAR_SELECTOR = '[data-marketing-sticky-cta].fixed';
 
-function useFabOverlap() {
+type FabOverlapState = {
+  /** Fully hide stack (final CTA / footer social). */
+  obscured: boolean;
+  /** Sticky CTA visible — drop redundant Call + WhatsApp. */
+  contactRedundant: boolean;
+};
+
+function useFabOverlap(): FabOverlapState {
   const [obscured, setObscured] = useState(false);
+  const [contactRedundant, setContactRedundant] = useState(false);
 
   useEffect(() => {
     const bottomCtas = Array.from(document.querySelectorAll(BOTTOM_CTA_SELECTOR));
     const footerSocial = Array.from(document.querySelectorAll(FOOTER_SOCIAL_SELECTOR));
-    if (bottomCtas.length === 0 && footerSocial.length === 0) return;
+    const stickyBars = Array.from(document.querySelectorAll(STICKY_BAR_SELECTOR));
+    if (bottomCtas.length === 0 && footerSocial.length === 0 && stickyBars.length === 0) {
+      return;
+    }
 
-    const visible = new Set<Element>();
-    const sync = () => setObscured(visible.size > 0);
+    const fullHide = new Set<Element>();
+    const stickyVisible = new Set<Element>();
 
-    const onEntries = (entries: IntersectionObserverEntry[]) => {
+    const sync = () => {
+      setObscured(fullHide.size > 0);
+      setContactRedundant(stickyVisible.size > 0);
+    };
+
+    const onFullHide = (entries: IntersectionObserverEntry[]) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting && entry.intersectionRatio > 0.05) {
-          visible.add(entry.target);
+          fullHide.add(entry.target);
         } else {
-          visible.delete(entry.target);
+          fullHide.delete(entry.target);
+        }
+      });
+      sync();
+    };
+
+    const onSticky = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        const el = entry.target;
+        const hidden =
+          el.getAttribute('aria-hidden') === 'true' ||
+          el.hasAttribute('inert');
+        if (entry.isIntersecting && entry.intersectionRatio > 0.05 && !hidden) {
+          stickyVisible.add(el);
+        } else {
+          stickyVisible.delete(el);
         }
       });
       sync();
@@ -46,10 +80,11 @@ function useFabOverlap() {
 
     let ctaObserver: IntersectionObserver | undefined;
     let footerObserver: IntersectionObserver | undefined;
+    let stickyObserver: IntersectionObserver | undefined;
 
     try {
       if (bottomCtas.length > 0) {
-        ctaObserver = new IntersectionObserver(onEntries, {
+        ctaObserver = new IntersectionObserver(onFullHide, {
           threshold: [0, 0.05, 0.15],
           rootMargin: '0px 0px -80px 0px',
         });
@@ -57,12 +92,18 @@ function useFabOverlap() {
       }
 
       if (footerSocial.length > 0) {
-        // Expand downward so FABs yield as social enters the sticky/FAB zone
-        footerObserver = new IntersectionObserver(onEntries, {
+        footerObserver = new IntersectionObserver(onFullHide, {
           threshold: [0, 0.05, 0.15],
           rootMargin: '0px 0px 140px 0px',
         });
         footerSocial.forEach((target) => footerObserver!.observe(target));
+      }
+
+      if (stickyBars.length > 0) {
+        stickyObserver = new IntersectionObserver(onSticky, {
+          threshold: [0, 0.05, 0.5, 1],
+        });
+        stickyBars.forEach((target) => stickyObserver!.observe(target));
       }
     } catch {
       return;
@@ -71,10 +112,11 @@ function useFabOverlap() {
     return () => {
       ctaObserver?.disconnect();
       footerObserver?.disconnect();
+      stickyObserver?.disconnect();
     };
   }, []);
 
-  return obscured;
+  return { obscured, contactRedundant };
 }
 
 type ContactActionButtonProps = {
@@ -118,35 +160,57 @@ function ContactActionButton({
   );
 }
 
-function ContactActionButtons({ size }: { size: 'fab' | 'inline' }) {
+function ContactActionButtons({
+  size,
+  hideContactChannels = false,
+}: {
+  size: 'fab' | 'inline';
+  /** When sticky CTA already shows WhatsApp + Call. */
+  hideContactChannels?: boolean;
+}) {
   const telHref = buildTelHref(CONTACT_CONFIG.phone);
   const whatsappHref = buildWhatsAppHref(CONTACT_CONFIG.whatsapp, WHATSAPP_MESSAGE);
 
   return (
     <>
+      {!hideContactChannels ? (
+        <ContactActionButton
+          href={whatsappHref}
+          label="Chat on WhatsApp"
+          external
+          size={size}
+          className={size === 'fab' ? 'order-3' : undefined}
+        >
+          <MessageCircle
+            className={cn(size === 'fab' ? 'h-5 w-5' : 'h-4 w-4', 'text-[#25D366]')}
+            aria-hidden
+          />
+        </ContactActionButton>
+      ) : null}
       <ContactActionButton
-        href={whatsappHref}
-        label="Chat on WhatsApp"
-        external
+        href={MARKETING_STORES_HREF}
+        label="Find stores"
         size={size}
         className={size === 'fab' ? 'order-2' : undefined}
       >
-        <MessageCircle
-          className={cn(size === 'fab' ? 'h-5 w-5' : 'h-4 w-4', 'text-[#25D366]')}
-          aria-hidden
-        />
-      </ContactActionButton>
-      <ContactActionButton
-        href={telHref}
-        label={`Call ${CONTACT_CONFIG.phone}`}
-        size={size}
-        className={size === 'fab' ? 'order-1' : undefined}
-      >
-        <Phone
+        <MapPin
           className={cn(size === 'fab' ? 'h-5 w-5' : 'h-4 w-4', 'text-primary')}
           aria-hidden
         />
       </ContactActionButton>
+      {!hideContactChannels ? (
+        <ContactActionButton
+          href={telHref}
+          label={`Call ${CONTACT_CONFIG.phone}`}
+          size={size}
+          className={size === 'fab' ? 'order-1' : undefined}
+        >
+          <Phone
+            className={cn(size === 'fab' ? 'h-5 w-5' : 'h-4 w-4', 'text-primary')}
+            aria-hidden
+          />
+        </ContactActionButton>
+      ) : null}
     </>
   );
 }
@@ -164,7 +228,7 @@ function FloatingContactActionsInline({ className }: { className?: string }) {
 }
 
 function FloatingContactActionsFab({ className }: { className?: string }) {
-  const obscured = useFabOverlap();
+  const { obscured, contactRedundant } = useFabOverlap();
 
   return (
     <div
@@ -180,7 +244,7 @@ function FloatingContactActionsFab({ className }: { className?: string }) {
         className,
       )}
     >
-      <ContactActionButtons size="fab" />
+      <ContactActionButtons size="fab" hideContactChannels={contactRedundant} />
     </div>
   );
 }

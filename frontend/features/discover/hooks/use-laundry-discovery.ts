@@ -17,6 +17,7 @@ import {
   discoveryQueryRetryDelay,
   STALE,
 } from '@/lib/query-config';
+import type { GeoPoint } from '@/lib/geo';
 import {
   listLaundries,
   parseLaundryListPayload,
@@ -24,7 +25,16 @@ import {
   type LaundryListItem,
 } from '@/services/laundries';
 
-export function useLaundryDiscovery(filters: LaundryFilters = DEFAULT_FILTERS) {
+export type UseLaundryDiscoveryOptions = {
+  /** When set, distanceKm uses haversine against laundry lat/lng. */
+  userLocation?: GeoPoint | null;
+};
+
+export function useLaundryDiscovery(
+  filters: LaundryFilters = DEFAULT_FILTERS,
+  options: UseLaundryDiscoveryOptions = {},
+) {
+  const { userLocation = null } = options;
   const debouncedSearch = useDebouncedValue(filters.search.trim(), 300);
   const isSearching = debouncedSearch.length > 0;
   const isDebouncing = filters.search.trim() !== debouncedSearch;
@@ -67,8 +77,8 @@ export function useLaundryDiscovery(filters: LaundryFilters = DEFAULT_FILTERS) {
   }, [isSearching, searchQuery.data, listQuery.data]);
 
   const enriched = useMemo(
-    () => baseItems.map((l, i) => enrichLaundry(l, i)),
-    [baseItems],
+    () => baseItems.map((l, i) => enrichLaundry(l, i, userLocation)),
+    [baseItems, userLocation],
   );
 
   const filtered = useMemo(() => applyClientFilters(enriched, filters), [enriched, filters]);

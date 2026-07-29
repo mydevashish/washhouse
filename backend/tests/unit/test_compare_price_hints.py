@@ -45,6 +45,24 @@ def test_list_item_schema_defaults_null_hints() -> None:
     assert item.wash_fold_from_inr is None
     assert item.shirt_dry_clean_from_inr is None
     assert item.start_price_inr is None
+    assert item.latitude is None
+    assert item.longitude is None
+
+
+def test_list_item_schema_optional_coords() -> None:
+    item = LaundryListItem(
+        id=uuid4(),
+        name="Geotagged",
+        slug="geotagged",
+        city="Bengaluru",
+        avg_rating=Decimal("4.50"),
+        review_count=1,
+        is_verified=True,
+        latitude=12.9716,
+        longitude=77.5946,
+    )
+    assert item.latitude == 12.9716
+    assert item.longitude == 77.5946
 
 
 def test_list_item_schema_formats_owner_prices() -> None:

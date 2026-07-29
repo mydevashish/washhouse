@@ -20,6 +20,12 @@ describe('isMarketingNavLinkActive', () => {
     expect(isMarketingNavLinkActive('/pricing', '/services', '')).toBe(false);
   });
 
+  it('activates Stores on /stores', () => {
+    expect(isMarketingNavLinkActive('/stores', '/stores', '')).toBe(true);
+    expect(isMarketingNavLinkActive('/stores', '/pricing', '')).toBe(false);
+    expect(isMarketingNavLinkActive('/pricing', '/stores', '')).toBe(false);
+  });
+
   it('keeps Services active for hashes on /services', () => {
     expect(isMarketingNavLinkActive('/services', '/services', 'pricing')).toBe(true);
     expect(isMarketingNavLinkActive('/services', '/pricing', 'pricing')).toBe(false);
@@ -31,6 +37,7 @@ describe('isMarketingNavLinkActive', () => {
       { pathname: '/services', currentHash: '' },
       { pathname: '/services', currentHash: 'pricing' },
       { pathname: '/pricing', currentHash: '' },
+      { pathname: '/stores', currentHash: '' },
       { pathname: '/about', currentHash: '' },
     ];
 

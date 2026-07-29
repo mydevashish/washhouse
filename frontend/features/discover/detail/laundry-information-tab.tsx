@@ -3,11 +3,12 @@
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Clock, MapPin, MessageCircle, Phone, Shield, Truck } from 'lucide-react';
+import { Clock, MapPin, MessageCircle, Navigation, Phone, Shield, Truck } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { InfoBanner } from '@/components/ui/info-banner';
 import { Button } from '@/components/ui/button';
+import { pickDirectionsUrl } from '@/lib/geo';
 import { getContactInfo } from '@/services/customer-experience';
 import type { LaundryDetail } from '@/services/laundries';
 
@@ -64,13 +65,27 @@ export function LaundryInformationTab({ laundry }: LaundryInformationTabProps) {
         <CardContent className="space-y-5 p-6 sm:p-8">
           <h2 className="text-xl font-bold text-foreground">Location & contact</h2>
           <InfoRow icon={MapPin} label="Address" value={address} />
-          {contact?.map_url && (
+          {contact?.show_directions ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => {
+                const url = pickDirectionsUrl(contact);
+                if (url) window.open(url, '_blank', 'noopener,noreferrer');
+              }}
+            >
+              <Navigation className="h-4 w-4" aria-hidden />
+              Directions
+            </Button>
+          ) : contact?.map_url ? (
             <Button type="button" variant="outline" size="sm" asChild>
               <a href={contact.map_url} target="_blank" rel="noopener noreferrer">
                 Open in Google Maps
               </a>
             </Button>
-          )}
+          ) : null}
           {contact?.phone ? (
             <InfoRow icon={Phone} label="Phone" value={contact.phone} />
           ) : contact?.requires_login && contact.show_call ? (

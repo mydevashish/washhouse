@@ -10,6 +10,9 @@ export interface LaundryListItem {
   review_count: number;
   is_verified: boolean;
   rank_score?: number | null;
+  /** Store coords when published — client near-me (haversine); may be null */
+  latitude?: number | null;
+  longitude?: number | null;
   /** Owner-set Wash & Fold (kg) when offered — discovery compare hint */
   wash_fold_from_inr?: string | null;
   wash_fold_from_paise?: number | null;

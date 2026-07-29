@@ -314,6 +314,7 @@ class EngagementEventType(str, enum.Enum):
     service_view = "service_view"
     call_click = "call_click"
     whatsapp_click = "whatsapp_click"
+    directions_click = "directions_click"
     callback_request = "callback_request"
     question_asked = "question_asked"
 
