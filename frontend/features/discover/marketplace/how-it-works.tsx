@@ -39,8 +39,11 @@ export function HowItWorks() {
         </FadeInItem>
         <ol className="grid gap-6 md:grid-cols-3">
           {STEPS.map(({ step, title, description, icon: Icon }) => (
-            <FadeInItem key={step}>
-              <li className="relative flex h-full list-none flex-col rounded-2xl border border-border bg-bg-0 p-6 shadow-soft sm:p-8">
+            <li
+              key={step}
+              className="relative flex h-full list-none flex-col rounded-2xl border border-border bg-bg-0 p-6 shadow-soft sm:p-8"
+            >
+              <FadeInItem className="flex h-full flex-col">
                 <span
                   className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground"
                   aria-hidden
@@ -52,8 +55,8 @@ export function HowItWorks() {
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-fg-0">{title}</h3>
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-fg-1 sm:text-base">{description}</p>
-              </li>
-            </FadeInItem>
+              </FadeInItem>
+            </li>
           ))}
         </ol>
       </FadeIn>

@@ -71,6 +71,13 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   return data.data;
 }
 
+export async function cancelOrder(orderId: string, reason?: string): Promise<Order> {
+  const { data } = await api.post<ApiEnvelope<Order>>(`/orders/${orderId}/cancel`, {
+    reason: reason || undefined,
+  });
+  return data.data;
+}
+
 export async function listOrderEvents(orderId: string): Promise<OrderStatusEvent[]> {
   const { data } = await api.get<ApiEnvelope<OrderStatusEvent[]>>(`/orders/${orderId}/events`);
   return data.data;

@@ -1,7 +1,7 @@
 # Feature: Loyalty, referrals, coupons
 
-> Status: planned  
-> Last updated: 2026-06-01
+> Status: planned (**P2** — API skeleton shipped; full admin loyalty UI does not block launch)  
+> Last updated: 2026-07-28
 
 ## Scope (v1)
 

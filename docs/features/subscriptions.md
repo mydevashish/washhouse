@@ -1,9 +1,11 @@
 # Feature: Subscriptions
 
-> Status: planned  
-> Last updated: 2026-06-01
+> Status: planned (**P2** — do not block admin / marketplace launch)  
+> Last updated: 2026-07-28
 
 See [ADR-002](../decisions/ADR-002-subscription-billing.md).
+
+Plans table + list API exist; full subscribe/cancel admin ops remain P2.
 
 ## Plans (seed)
 

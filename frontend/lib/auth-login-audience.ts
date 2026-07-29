@@ -1,11 +1,12 @@
 export type LoginAudience = 'customer' | 'partner' | 'admin';
 
 export type LoginAudienceCopy = {
-  /** Auth card heading + preferred navbar / document title. */
+  /** Auth card heading. */
   title: string;
-  /** Shorter navbar H1 when the card title is long (optional). */
+  /** Shorter document title when the card title is long (optional). */
   navbarTitle?: string;
   description: string;
+  /** Secondary text link under the card (e.g. partner/admin → Staff portal). */
   backHref: string;
   backLabel: string;
   showOtpTab: boolean;
@@ -58,7 +59,7 @@ export function getLoginAudienceCopy(audience: LoginAudience): LoginAudienceCopy
   return AUDIENCE_COPY[audience];
 }
 
-/** Navbar / document title for a login audience. */
+/** Document title for a login audience (MarketingNavbar has no page H1). */
 export function getLoginPageTitle(audience: LoginAudience): string {
   const copy = AUDIENCE_COPY[audience];
   return copy.navbarTitle ?? copy.title;

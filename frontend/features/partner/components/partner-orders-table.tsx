@@ -86,7 +86,7 @@ export function PartnerOrdersTable({ orders, filter: initialFilter = 'all', show
             aria-selected={filter === f.id}
             onClick={() => setFilter(f.id)}
             className={cn(
-              'min-h-[36px] rounded-md px-2.5 py-1 text-xs font-medium',
+              'min-h-[44px] rounded-md px-2.5 py-1.5 text-xs font-medium sm:min-h-[36px] sm:py-1',
               filter === f.id ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground',
             )}
           >
@@ -185,11 +185,21 @@ export function PartnerOrdersTable({ orders, filter: initialFilter = 'all', show
                               <Button
                                 type="button"
                                 size="sm"
+                                className="min-h-[44px]"
                                 disabled={isBusy}
+                                aria-busy={acceptMutation.isPending}
+                                aria-label={
+                                  acceptMutation.isPending
+                                    ? `Accepting order ${o.tracking_code}`
+                                    : `Accept order ${o.tracking_code}`
+                                }
                                 onClick={() => acceptMutation.mutate(o.id)}
                               >
                                 {acceptMutation.isPending ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  <>
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                                    Accepting…
+                                  </>
                                 ) : (
                                   'Accept'
                                 )}
@@ -231,11 +241,21 @@ export function PartnerOrdersTable({ orders, filter: initialFilter = 'all', show
                               <Button
                                 type="button"
                                 size="sm"
+                                className="min-h-[44px]"
                                 disabled={isBusy}
+                                aria-busy={advanceMutation.isPending}
+                                aria-label={
+                                  advanceMutation.isPending
+                                    ? `Updating order ${o.tracking_code}`
+                                    : `${nextLabel} for order ${o.tracking_code}`
+                                }
                                 onClick={() => advanceOrder(o.id, o.status, o.order_source)}
                               >
                               {advanceMutation.isPending ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                <>
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                                  Updating…
+                                </>
                               ) : (
                                 nextLabel
                               )}

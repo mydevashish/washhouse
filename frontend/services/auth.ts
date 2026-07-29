@@ -80,3 +80,27 @@ export async function logoutApi(): Promise<void> {
     // Server unreachable or session already invalid — local logout still runs.
   }
 }
+
+/** Always returns a generic message; does not reveal whether the email exists. */
+export async function forgotPassword(input: {
+  email: string;
+}): Promise<{ message: string; otp_debug?: string }> {
+  const { data } = await api.post<ApiEnvelope<{ message: string; otp_debug?: string }>>(
+    '/auth/password/forgot',
+    { email: input.email },
+  );
+  return data.data;
+}
+
+export async function resetPassword(input: {
+  email: string;
+  code: string;
+  new_password: string;
+}): Promise<{ message: string }> {
+  const { data } = await api.post<ApiEnvelope<{ message: string }>>('/auth/password/reset', {
+    email: input.email,
+    code: input.code,
+    new_password: input.new_password,
+  });
+  return data.data;
+}

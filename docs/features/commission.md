@@ -1,7 +1,7 @@
 # Feature: Commission configuration
 
-> Status: planned  
-> Last updated: 2026-06-01
+> Status: **shipped** (default + per-laundry override; order snapshot at create)  
+> Last updated: 2026-07-28
 
 ## Decision
 
@@ -10,6 +10,7 @@ Default platform commission **10%**; per-laundry override in admin.
 ## Data model
 
 - `laundries.commission_rate` (nullable → use platform default from `platform_settings`)
+- `orders.commission_rate` snapshotted at order creation
 
 ## API surface
 
@@ -21,4 +22,5 @@ Default platform commission **10%**; per-laundry override in admin.
 
 ## Acceptance criteria
 
-- [ ] Commission stored on order snapshot at creation time
+- [x] Commission stored on order snapshot at creation time
+- [x] Admin management list shows effective rate after PATCH

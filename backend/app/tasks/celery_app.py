@@ -26,6 +26,21 @@ celery_app.conf.update(
     worker_max_tasks_per_child=200,
     timezone="UTC",
     enable_utc=True,
+    # Fail fast when Redis broker is down so API request paths never hang.
+    broker_connection_timeout=2,
+    broker_connection_retry_on_startup=False,
+    broker_connection_max_retries=1,
+    broker_transport_options={
+        "socket_connect_timeout": 2,
+        "socket_timeout": 2,
+        "retry_on_timeout": False,
+        "max_connections": 10,
+    },
+    result_backend_transport_options={
+        "socket_connect_timeout": 2,
+        "socket_timeout": 2,
+        "retry_on_timeout": False,
+    },
 )
 
 # Beat schedule

@@ -40,7 +40,7 @@ export function AdminAlertsStrip({ dashboard }: AdminAlertsStripProps) {
       {pending > 0 && (
         <Link
           href="/admin/approvals"
-          className="inline-flex items-center gap-2 rounded-lg bg-warning-muted px-3 py-1.5 text-xs font-medium text-warning ring-1 ring-warning/25 hover:opacity-90"
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-warning-muted px-3 py-2 text-sm font-semibold text-warning ring-1 ring-warning/25 hover:opacity-90"
         >
           <Store className="h-3.5 w-3.5" aria-hidden />
           {pending} pending approval{pending !== 1 ? 's' : ''}
@@ -50,7 +50,7 @@ export function AdminAlertsStrip({ dashboard }: AdminAlertsStripProps) {
       {complaints > 0 && (
         <Link
           href="/admin/notifications"
-          className="inline-flex items-center gap-2 rounded-lg bg-danger-muted px-3 py-1.5 text-xs font-medium text-danger ring-1 ring-danger/25 hover:opacity-90"
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-danger-muted px-3 py-2 text-sm font-semibold text-danger ring-1 ring-danger/25 hover:opacity-90"
         >
           <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
           {complaints} complaint{complaints !== 1 ? 's' : ''}

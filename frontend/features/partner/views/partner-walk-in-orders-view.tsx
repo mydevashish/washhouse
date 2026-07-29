@@ -118,13 +118,13 @@ export function PartnerWalkInOrdersView() {
         </div>
       )}
 
-      {(!enabled || ordersQ.isPending) && <Skeleton className="h-64 w-full rounded-2xl" />}
+      {ordersQ.isLoading && <Skeleton className="h-64 w-full rounded-2xl" />}
       {enabled && ordersQ.isError && (
         <InfoBanner variant="destructive" title="Could not load walk-in orders">
           Refresh the page to try again.
         </InfoBanner>
       )}
-      {ordersQ.data && ordersQ.data.length === 0 && !showForm && (
+      {enabled && !ordersQ.isLoading && ordersQ.data && ordersQ.data.length === 0 && !showForm && (
         <EmptyState
           icon={Store}
           title="No walk-in orders yet"
@@ -132,7 +132,7 @@ export function PartnerWalkInOrdersView() {
         />
       )}
 
-      {ordersQ.data && ordersQ.data.length > 0 && (
+      {enabled && ordersQ.data && ordersQ.data.length > 0 && (
         <div className="grid gap-4 lg:grid-cols-2">
           {ordersQ.data.map((order) => (
             <WalkInOrderCard

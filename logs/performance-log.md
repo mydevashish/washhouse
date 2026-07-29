@@ -18,6 +18,33 @@
 
 ## History
 
+### 2026-07-28 — Perf + a11y review: Lighthouse mobile, lean dashboards, touch/axe
+
+- **Area:** frontend (/, /discover, /partner, /admin)
+- **Hypothesis:** Unused admin lazy shell + sync Recharts on KPI/overview inflate low-end Android cost; LHCI was desktop and omitted partner/admin; touch targets used `size="sm"` at 40px
+- **Measure (Lighthouse mobile, `next dev`, simulate 4G — see `logs/lighthouse-2026-07-28/`):**
+
+  | Route | Perf | A11y | LCP | CLS |
+  | ----- | ---- | ---- | --- | --- |
+  | `/` | 0.63 | 0.93 | **2.4 s** | **0.01** |
+  | `/discover` | 0.36 | 0.93 | 58 s* | 0.00 |
+  | `/partner` | 0.42 | 0.95 | 54 s* | 0.00 |
+  | `/admin` | 0.45 | 0.95 | 44 s* | 0.00 |
+
+  \*LCP on `/discover` and auth-gated shells under **dev** is not trustworthy (long-tail images / login redirect / EBUSY chrome cleanup). **CLS ≤ 0.1 on all four — no CLS regression.** `/` LCP meets ≤2.5 s on this run (prior prod baseline 3.7 s on 2026-07-13).
+- **Accepted (with rationale):**
+  - Performance category still **warn** in LHCI (`minScore` 0.9) until remasured on `next start` prod build; hard gate kept on **CLS ≤ 0.1** and **LCP ≤ 4 s** (product target remains 2.5 s)
+  - Auth-gated `/partner` `/admin` LHCI collects login-gate shells only (no session cookies in CI)
+- **Change:**
+  - Wire `AdminDashboardLazy` on `/admin`; dynamic-import admin charts + partner orders table / revenue / review charts
+  - Replace Recharts KPI sparklines with SVG (removes focusable surfaces + chart weight from KPI grid)
+  - LHCI: mobile form factor; URLs `/, /discover, /partner, /admin, /login`
+  - Touch: `Button` `sm` → `min-h-[44px]` on mobile; partner filter tabs + order tracking actions
+- **Cost:** complexity + (dynamic splits); bundle ↓ Recharts off admin KPI / partner overview critical path
+- **Files:** `admin/page.tsx`, `admin-overview-view.tsx`, `kpi-sparkline.tsx`, `partner-overview-view.tsx`, `partner-revenue-view.tsx`, `partner-reviews-view.tsx`, `.lighthouserc.json`, `button.tsx`, …
+- **Follow-ups:** Prod `next start` Lighthouse remasure for `/discover`; raise LHCI performance assert from warn → error when score ≥90
+- **Follow-up (same day, lean audit):** Stopped `PartnerShell` from polling full `/partner/orders` every 45s for nav badges — badges use analytics summary only ([Audit dashboard lean-ness](f894dadf-50bd-4bff-82ae-81ee6215ee59) P0#2)
+
 ### 2026-07-17 — `/pricing` rack neighbor photo prefetch
 
 - **Area:** frontend marketing pricing

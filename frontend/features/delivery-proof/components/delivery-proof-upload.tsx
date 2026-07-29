@@ -121,7 +121,8 @@ export function DeliveryProofUpload({
           accept="image/*"
           capture="environment"
           className="sr-only"
-          aria-hidden
+          tabIndex={-1}
+          aria-label="Choose delivery proof photo"
           onChange={(e) => {
             const picked = e.target.files?.[0];
             if (picked) addFile(picked);

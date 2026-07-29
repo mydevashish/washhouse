@@ -6,6 +6,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_user_payload
@@ -26,6 +27,12 @@ from app.services.order_service import OrderService
 from app.services.pickup_evidence_service import PickupEvidenceService
 
 router = APIRouter(prefix="/orders", tags=["orders"])
+
+
+class OrderCancelRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str | None = Field(default=None, max_length=500)
 
 
 @router.post("", status_code=201)
@@ -121,6 +128,23 @@ async def get_order(
     body.delivery_proof = _delivery_proof_response(proof) if proof else None
     body.custody_timeline = custody
     return success_envelope(body, request)
+
+
+@router.post("/{order_id}/cancel")
+async def cancel_order(
+    order_id: UUID,
+    request: Request,
+    session: SessionDep,
+    payload: Annotated[dict, Depends(get_current_user_payload)],
+    body: OrderCancelRequest | None = None,
+) -> dict:
+    """Customer cancel within window (before picked_up)."""
+    order = await OrderService(session).cancel_order_customer(
+        UUID(payload["sub"]),
+        order_id,
+        reason=body.reason if body else None,
+    )
+    return success_envelope(OrderResponse.model_validate(order), request)
 
 
 @router.get("/{order_id}/events")

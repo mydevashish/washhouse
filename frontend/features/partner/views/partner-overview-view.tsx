@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
   AlertTriangle,
@@ -18,7 +19,6 @@ import { LaundryTrustScoreCard } from '@/features/partner/components/laundry-tru
 import { PartnerActionCenter } from '@/features/partner/components/partner-action-center';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
 import { PartnerKpiCard, PartnerKpiGrid } from '@/features/partner/components/partner-kpi-card';
-import { PartnerOrdersTable } from '@/features/partner/components/partner-orders-table';
 import { buildAttentionItems } from '@/features/partner/lib/partner-derive';
 import {
   usePartnerAnalytics,
@@ -33,6 +33,15 @@ import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import { getOperationsDashboard } from '@/services/operations';
 import { useQuery } from '@tanstack/react-query';
+
+const PartnerOrdersTable = dynamic(
+  () =>
+    import('@/features/partner/components/partner-orders-table').then((m) => m.PartnerOrdersTable),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-64 w-full rounded-2xl" />,
+  },
+);
 
 export function PartnerOverviewView() {
   const mounted = useMounted();
@@ -52,9 +61,10 @@ export function PartnerOverviewView() {
     orders,
     mounted && queriesEnabled ? Date.now() : undefined,
   );
-  const kpisLoading = !queriesEnabled || analyticsQ.isPending;
-  const opsLoading = !queriesEnabled || opsQ.isPending;
-  const ordersLoading = !queriesEnabled || ordersQ.isPending;
+  // Use isLoading (pending && fetching) so disabled queries do not spin forever.
+  const kpisLoading = analyticsQ.isLoading;
+  const opsLoading = opsQ.isLoading;
+  const ordersLoading = ordersQ.isLoading;
 
   return (
     <PartnerContent className="space-y-5">

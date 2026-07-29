@@ -19,7 +19,7 @@
 
 | ID | Title | Root cause | Fix | Status |
 | -- | ----- | ---------- | --- | ------ |
-| BUG-001 | Forgot / reset password — no UI | Backend exists; frontend never built | Add `/forgot-password` and `/reset-password` pages | Open |
+| BUG-001 | Forgot / reset password — no UI | Backend exists; frontend never built | Add `/forgot-password` and `/reset-password` pages | **Fixed** |
 | BUG-003 | Default `JWT_SECRET` too weak | Dev default `dev-secret-change-me` (20 bytes) | Enforce ≥32 char secret in staging/prod startup check | Open |
 | BUG-004 | `/admin/inventory-changes` missing RoleGuard | Page omitted guard wrapper | Wrap with `RoleGuard` + `AdminContent` | **Fixed** |
 | BUG-006 | Dispute forms TypeScript/build failure | Radix Select API used on native `<select>` wrapper | Use native `value`/`onChange` on `Select` | **Fixed** |

@@ -7,9 +7,9 @@
   /* Brand — WashHouse primary action blue */
   --brand-50: #e8f4fb;
   --brand-100: #cce7f5;
-  --brand-500: #1a7ebf; /* primary button fill — white text ~4.6:1 */
-  --brand-600: #1670ab; /* ~12% darker hover */
-  --brand-700: #145f94; /* ~20% darker active/pressed */
+  --brand-500: #1578b5; /* primary fill — white text ≥4.5:1 (was #1a7ebf @ 4.39) */
+  --brand-600: #146a9e; /* hover */
+  --brand-700: #125a87; /* active/pressed */
   --brand-900: #0a3d5c;
 
   /* Sky — WashHouse cyan / teal accent */
@@ -28,7 +28,7 @@
   --bg-2: #f1f5f9;
   --fg-0: #0f172a;
   --fg-1: #475569;
-  --fg-2: #64748b;
+  --fg-2: #556274; /* on bg-1 ≥4.5:1 (was #64748b / near-miss on #f8fafc) */
   --border: #e2e8f0;
   --border-strong: #cbd5e1;
 
@@ -36,13 +36,13 @@
   --success: #047857;
   --success-foreground: #ffffff;
   --success-muted: #d1fae5;
-  --warning: #d97706;
+  --warning: #b45309; /* on warning-muted ≥4.5:1 */
   --warning-foreground: #ffffff;
   --warning-muted: #fef3c7;
-  --danger: #dc2626;
+  --danger: #b91c1c; /* on danger-muted ≥4.5:1 */
   --danger-foreground: #ffffff;
   --danger-muted: #fee2e2;
-  --info: #0891b2;
+  --info: #0e7490; /* on info-muted ≥4.5:1 */
   --info-foreground: #ffffff;
   --info-muted: #cffafe;
   --rating: #d97706;
@@ -57,13 +57,13 @@
   --popover-foreground: #0f172a;
   --primary: var(--brand-500);
   --primary-foreground: #ffffff;
-  --button-primary: #1a7ebf;
-  --button-primary-hover: #1670ab;
+  --button-primary: var(--brand-500);
+  --button-primary-hover: var(--brand-600);
   --button-primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  --muted-foreground: #5b6b7c; /* on muted ≥4.5:1 */
   --accent: #ecfeff;
   --accent-foreground: #1e3a8a;
   --destructive: var(--danger);
@@ -159,11 +159,11 @@
   --card-foreground: #f8fafc;
   --popover: #111827;
   --popover-foreground: #f8fafc;
-  /* Same fill as light — white label text ~4.6:1 on #1a7ebf */
-  --primary: #1a7ebf;
+  /* Align with light brand-500 — white label ≥4.5:1 */
+  --primary: #1578b5;
   --primary-foreground: #ffffff;
-  --button-primary: #1a7ebf;
-  --button-primary-hover: #1670ab;
+  --button-primary: #1578b5;
+  --button-primary-hover: #146a9e;
   --button-primary-foreground: #ffffff;
   --secondary: #1f2937;
   --secondary-foreground: #f8fafc;

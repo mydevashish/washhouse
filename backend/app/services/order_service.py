@@ -8,6 +8,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -18,8 +19,17 @@ from app.core.exceptions import (
     OrderInvalidTransitionError,
     ValidationError,
 )
-from app.models.enums import CustodyActorRole, CustodyEventType, LaundryStatus, OrderSource, OrderStatus
+from app.models.enums import (
+    CustodyActorRole,
+    CustodyEventType,
+    LaundryStatus,
+    OrderSource,
+    OrderStatus,
+    PaymentMethod,
+    PaymentStatus,
+)
 from app.models.order import Order, OrderItem, OrderStatusEvent
+from app.models.payment import Payment
 from app.repositories.address import AddressRepository
 from app.repositories.laundry import LaundryRepository
 from app.repositories.order import OrderRepository
@@ -27,9 +37,10 @@ from app.repositories.partner_service_catalog import PartnerServiceCatalogReposi
 from app.services.custody_event_service import CustodyEventService
 from app.services.fraud_detection_service import FraudDetectionService
 from app.services.inventory_verification_service import InventoryVerificationService
-from app.services.order_events import publish_order_status_update
-from app.services.pickup_evidence_service import PickupEvidenceService
 from app.services.notifications.order_status_whatsapp_notifier import OrderStatusWhatsAppNotifier
+from app.services.order_events import publish_order_status_update
+from app.services.payments.provider import get_payment_provider
+from app.services.pickup_evidence_service import PickupEvidenceService
 from app.services.platform_config_service import PlatformConfigService
 
 DELIVERY_FEE_INR = Decimal("49")
@@ -52,6 +63,8 @@ WALK_IN_NEXT_STATUS: dict[OrderStatus, OrderStatus] = {
 ACCEPT_NOTE = "Order accepted by partner"
 REJECT_NOTE = "Order rejected by partner"
 CONFIRMED_NOTE = "Order confirmed"
+CUSTOMER_CANCEL_NOTE = "Cancelled by customer"
+CUSTOMER_CANCELABLE_STATUSES = frozenset({OrderStatus.confirmed, OrderStatus.pickup_assigned})
 
 
 class OrderService:
@@ -208,6 +221,97 @@ class OrderService:
             note=REJECT_NOTE,
         )
 
+    async def cancel_order_customer(
+        self,
+        user_id: UUID,
+        order_id: UUID,
+        *,
+        reason: str | None = None,
+    ) -> Order:
+        """Customer cancel before pickup — only confirmed / pickup_assigned.
+
+        Reconciles payment: unpaid/COD voided locally; paid Razorpay refunded.
+        """
+        order = await self.get_for_user(user_id, order_id)
+
+        if order.status == OrderStatus.cancelled:
+            return order
+
+        if order.status not in CUSTOMER_CANCELABLE_STATUSES:
+            raise OrderInvalidTransitionError(
+                "Order can only be cancelled before pickup",
+            )
+
+        await self._reconcile_payment_on_customer_cancel(order)
+
+        order.status = OrderStatus.cancelled
+        note = reason.strip() if reason and reason.strip() else CUSTOMER_CANCEL_NOTE
+        event = OrderStatusEvent(
+            order_id=order.id,
+            status=OrderStatus.cancelled,
+            note=note[:500],
+        )
+        await self._orders.add_event(event)
+
+        await CustodyEventService(self._session).record(
+            order.id,
+            CustodyEventType.order_cancelled,
+            actor_user_id=user_id,
+            actor_role=CustodyActorRole.customer,
+            metadata={
+                "status": OrderStatus.cancelled.value,
+                "payment_status": order.payment_status.value,
+            },
+        )
+        await publish_order_status_update(order, event)
+        OrderStatusWhatsAppNotifier.schedule(order, OrderStatus.cancelled)
+        await FraudDetectionService(self._session).on_order_cancelled(user_id)
+
+        await self._session.flush()
+        refreshed = await self._orders.get_by_id(order.id)
+        return refreshed or order
+
+    async def _reconcile_payment_on_customer_cancel(self, order: Order) -> None:
+        """Update payment_status so cancel cannot orphan a captured charge."""
+        if order.payment_status == PaymentStatus.refunded:
+            return
+
+        if order.payment_status in (
+            PaymentStatus.pending,
+            PaymentStatus.pending_cod,
+            PaymentStatus.failed,
+        ):
+            if order.payment_status != PaymentStatus.failed:
+                order.payment_status = PaymentStatus.failed
+            return
+
+        if order.payment_status != PaymentStatus.paid:
+            raise ConflictError("Cannot cancel order with unresolved payment status")
+
+        # Paid — refund Razorpay capture (or mark refunded for COD / stub).
+        if order.payment_method == PaymentMethod.razorpay:
+            payment = await self._session.scalar(
+                select(Payment).where(Payment.order_id == order.id),
+            )
+            provider = get_payment_provider()
+            payment_ref = payment.razorpay_payment_id if payment else None
+            if provider.is_configured and not payment_ref:
+                raise ConflictError(
+                    "Cannot cancel: paid order is missing a payment reference for refund",
+                )
+            try:
+                await provider.refund(payment_ref or f"dev_{order.id}", order.total_inr)
+            except ConflictError:
+                raise
+            except Exception as exc:  # noqa: BLE001 — no gateway body/PII in client errors
+                raise ConflictError(
+                    "Refund failed; cancel is blocked until payment is refunded",
+                ) from exc
+            if payment:
+                payment.status = PaymentStatus.refunded
+
+        order.payment_status = PaymentStatus.refunded
+
     async def update_status_partner(
         self,
         partner_user_id: UUID,
@@ -286,11 +390,12 @@ class OrderService:
         return refreshed or order
 
     async def _require_partner_order(self, partner_user_id: UUID, order_id: UUID) -> Order:
-        laundry = await self._laundries.get_by_owner(partner_user_id)
-        if not laundry:
+        laundries = await self._laundries.list_by_owner(partner_user_id)
+        if not laundries:
             raise NotFoundError("Partner laundry not found")
+        laundry_ids = {laundry.id for laundry in laundries}
         order = await self._orders.get_by_id(order_id)
-        if not order or order.laundry_id != laundry.id:
+        if not order or order.laundry_id not in laundry_ids:
             raise NotFoundError("Order not found")
         return order
 

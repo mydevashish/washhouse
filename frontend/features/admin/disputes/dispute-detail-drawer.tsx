@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { AdminPanel } from '@/features/admin/components/admin-panel';
+import { ConfirmActionDialog } from '@/features/admin/components/confirm-action-dialog';
 import { FraudRiskBadge } from '@/features/admin/components/fraud-risk-badge';
 import { DisputeFraudRiskPanel } from '@/features/admin/disputes/dispute-fraud-risk-panel';
 import { DisputeSlaCell } from '@/features/admin/disputes/dispute-sla-cell';
@@ -41,6 +42,8 @@ import {
   type DisputeStatus,
 } from '@/services/disputes';
 
+const DESTRUCTIVE_STATUSES = new Set<DisputeStatus>(['resolved', 'rejected', 'closed']);
+
 type Props = {
   disputeId: string | null;
   open: boolean;
@@ -52,6 +55,7 @@ export function DisputeDetailDrawer({ disputeId, open, onOpenChange }: Props) {
   const [newStatus, setNewStatus] = useState<DisputeStatus>('investigating');
   const [statusNote, setStatusNote] = useState('');
   const [internalNote, setInternalNote] = useState('');
+  const [confirmStatus, setConfirmStatus] = useState(false);
 
   const detailQ = useQuery({
     queryKey: queryKeys.adminDisputeDetail(disputeId ?? ''),
@@ -76,6 +80,7 @@ export function DisputeDetailDrawer({ disputeId, open, onOpenChange }: Props) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.adminDisputesTable({}) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.adminDisputeDetail(disputeId!) });
       setStatusNote('');
+      setConfirmStatus(false);
     },
     onError: () => toast.error('Status update failed'),
   });
@@ -93,7 +98,16 @@ export function DisputeDetailDrawer({ disputeId, open, onOpenChange }: Props) {
   const d = detailQ.data;
   const hasEvidence = Boolean(d && (d.pickup_evidence.length > 0 || d.delivery_proof));
 
+  function requestStatusUpdate() {
+    if (DESTRUCTIVE_STATUSES.has(newStatus)) {
+      setConfirmStatus(true);
+      return;
+    }
+    statusM.mutate();
+  }
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={hasEvidence ? 'max-h-[92vh] max-w-4xl overflow-y-auto' : 'max-h-[92vh] max-w-2xl overflow-y-auto'}>
         {detailQ.isLoading && (
@@ -186,7 +200,7 @@ export function DisputeDetailDrawer({ disputeId, open, onOpenChange }: Props) {
                   onChange={(e) => setStatusNote(e.target.value)}
                   rows={2}
                 />
-                <Button type="button" size="sm" disabled={statusM.isPending} onClick={() => statusM.mutate()}>
+                <Button type="button" size="sm" disabled={statusM.isPending} onClick={requestStatusUpdate}>
                   {statusM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update status'}
                 </Button>
               </AdminPanel>
@@ -254,5 +268,19 @@ export function DisputeDetailDrawer({ disputeId, open, onOpenChange }: Props) {
         )}
       </DialogContent>
     </Dialog>
+
+    <ConfirmActionDialog
+      open={confirmStatus}
+      onOpenChange={(next) => {
+        if (!statusM.isPending) setConfirmStatus(next);
+      }}
+      title={`Mark dispute as ${DISPUTE_STATUS_LABELS[newStatus]}?`}
+      description="This closes the resolution path for the customer complaint. Add notes before confirming if needed."
+      confirmLabel="Confirm status update"
+      confirmVariant={newStatus === 'rejected' ? 'destructive' : 'default'}
+      pending={statusM.isPending}
+      onConfirm={() => statusM.mutate()}
+    />
+    </>
   );
 }

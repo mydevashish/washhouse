@@ -22,10 +22,13 @@
 - CI / CD baseline: **in-progress** (frontend workflow fixed 2026-07-13; verify GitHub Actions green)
 
 ## Phase 2 — Customer MVP
-- Laundry discovery: **shipped** (API + FE list + detail)
-- Order placement: **shipped** (API + FE booking)
-- Order tracking: **shipped** (events API + FE polling; WS deferred)
+- Laundry discovery: **shipped** (API + FE list + detail; search/filter/sort on `/discover` PartnersSection 2026-07-28)
+- Order placement: **shipped** (API + FE booking; GST fields on create)
+- Order tracking: **shipped** (events API + FE polling; WS deferred; customer cancel within window 2026-07-28)
 - Reviews: **shipped** (API + FE on delivered orders)
+- Addresses: **shipped** (add/edit/delete on `/account` 2026-07-28)
+- Riya customer journey E2E: **shipped** — `frontend/tests/e2e/customer-journey.spec.ts` + `playwright.customer.config.ts` (steps 1–6 + auth guard); 7/7 passed twice consecutively 2026-07-28 (`logs/playwright-customer-journey-1.txt`, `-2.txt`)
+- Complaints: **shipped** as disputes (`FileDisputeForm` on order + `/disputes`) — not a separate complaints page
 
 ## Phase 3 — Partner MVP
 - Partner registration: **shipped** (API)
@@ -35,15 +38,17 @@
 
 ## Phase 4 — Admin
 - Approvals / dashboard: **shipped** (API + FE)
-- Complaints / commission UI: **shipped** (commission FE; complaints API only)
+- Complaints / commission UI: **shipped** (commission FE; complaints as disputes)
+- Admin marketplace chain automation: **shipped** (2026-07-28) — pytest `test_admin_marketplace_chain.py` (register→approve→order→accept→complete + 403 gates); Playwright `admin-marketplace-chain.spec.ts` (Anita UI surfaces + confirm dialogs + role deny)
+- Approve/reject audit + confirmation dialogs: **shipped** (2026-07-28)
 
 ## Phase 5 — Payments + subscriptions
 - Razorpay + COD: **shipped** (httpx provider when keys set + FE selection)
-- Subscriptions: **in-progress** (plans table + list API)
-- Notifications WhatsApp: **shipped** (stub)
+- Subscriptions: **in-progress** (plans table + list API) — **P2 launch gap** (do not block admin launch; see `docs/features/subscriptions.md`)
+- Notifications WhatsApp: **shipped** (stub) — richer admin notification center still **P2** (`docs/features/notifications.md`)
 
 ## Phase 6 — Launch
-- Loyalty / referrals: **shipped** (API skeleton)
+- Loyalty / referrals: **shipped** (API skeleton) — **P2** full admin loyalty ops UI (`docs/features/loyalty-referrals.md`); do not fail launch on thin loyalty surfaces
 - Landing hero: **shipped** (Framer Motion)
 - Marketing homepage v2: **shipped** — hero carousel, glass UI, stats/testimonials APIs, Playwright smoke (`docs/features/marketing-homepage.md`); Request brochure → `/contact?subject=franchise#contact-form` (2026-07-17); Franchise teaser stacking fix — content wrapper `relative` so glass panel is visible over photo (2026-07-17); dedicated Pricing page `/pricing` with WashHouse category “from ₹” rate cards (photo + peg tags; visual uniqueness pass 2026-07-17 — denser tickets, women/kids ambient depth; `docs/features/marketing-pricing.md`); More Services card → `/services` (View services); Book Now → shared pickup dialog (`?book=1` / `BookNowDialog`, POST contact `order-help`) (2026-07-17); `/stores` slim directory (name + city, no compare UX) (2026-07-17)
 - Runbooks: **shipped**

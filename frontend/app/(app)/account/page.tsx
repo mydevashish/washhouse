@@ -3,7 +3,7 @@
 import { useEffect, useId, useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { MapPin, Scale, Trash2 } from 'lucide-react';
+import { MapPin, Pencil, Scale, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { QueryErrorState } from '@/components/feedback/query-error-state';
@@ -18,7 +18,14 @@ import { PAGE_CONTAINER, PAGE_SECTION } from '@/lib/page-layout';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import { fetchMe } from '@/services/auth';
-import { createAddress, deleteAddress, listAddresses, updateProfile } from '@/services/users';
+import {
+  createAddress,
+  deleteAddress,
+  listAddresses,
+  updateAddress,
+  updateProfile,
+  type Address,
+} from '@/services/users';
 import { useAuthStore } from '@/store/auth.store';
 
 export default function AccountPage() {
@@ -28,6 +35,7 @@ export default function AccountPage() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
+  const [editing, setEditing] = useState<Address | null>(null);
 
   const addressesQ = useQuery({
     queryKey: queryKeys.addresses(),
@@ -46,20 +54,26 @@ export default function AccountPage() {
   });
 
   const addressMutation = useMutation({
-    mutationFn: (fd: FormData) =>
-      createAddress({
+    mutationFn: (fd: FormData) => {
+      const payload = {
         label: String(fd.get('label') || 'Home'),
         line1: String(fd.get('line1')),
         city: String(fd.get('city')),
         state: String(fd.get('state')),
         pincode: String(fd.get('pincode')),
         is_default: fd.get('is_default') === 'on',
-      }),
+      };
+      if (editing) {
+        return updateAddress(editing.id, payload);
+      }
+      return createAddress(payload);
+    },
     onSuccess: () => {
-      toast.success('Address added');
+      toast.success(editing ? 'Address updated' : 'Address added');
+      setEditing(null);
       void queryClient.invalidateQueries({ queryKey: queryKeys.addresses() });
     },
-    onError: () => toast.error('Could not add address'),
+    onError: () => toast.error(editing ? 'Could not update address' : 'Could not add address'),
   });
 
   useEffect(() => {
@@ -187,50 +201,89 @@ export default function AccountPage() {
                       {a.line1}, {a.city} — {a.pincode}
                     </p>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0 text-destructive hover:bg-danger-muted hover:text-destructive"
-                    aria-label={`Remove ${a.label}`}
-                    onClick={async () => {
-                      await deleteAddress(a.id);
-                      void queryClient.invalidateQueries({ queryKey: queryKeys.addresses() });
-                      toast.success('Address removed');
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Edit ${a.label}`}
+                      onClick={() => setEditing(a)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:bg-danger-muted hover:text-destructive"
+                      aria-label={`Remove ${a.label}`}
+                      onClick={async () => {
+                        await deleteAddress(a.id);
+                        if (editing?.id === a.id) setEditing(null);
+                        void queryClient.invalidateQueries({ queryKey: queryKeys.addresses() });
+                        toast.success('Address removed');
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
 
           <form
+            key={editing?.id ?? 'new'}
             id={formId}
             className="grid gap-4 border-t border-border pt-6 sm:grid-cols-2"
             onSubmit={(e) => {
               e.preventDefault();
               addressMutation.mutate(new FormData(e.currentTarget));
-              e.currentTarget.reset();
+              if (!editing) e.currentTarget.reset();
             }}
           >
-            <p className="sm:col-span-2 text-sm font-semibold text-foreground">Add new address</p>
+            <p className="sm:col-span-2 text-sm font-semibold text-foreground">
+              {editing ? `Edit ${editing.label}` : 'Add new address'}
+            </p>
             <div className="grid gap-2">
               <Label htmlFor={`${formId}-label`}>Label</Label>
-              <Input id={`${formId}-label`} name="label" placeholder="Home" autoComplete="off" />
+              <Input
+                id={`${formId}-label`}
+                name="label"
+                placeholder="Home"
+                defaultValue={editing?.label ?? ''}
+                autoComplete="off"
+              />
             </div>
             <div className="grid gap-2 sm:col-span-2">
               <Label htmlFor={`${formId}-line1`}>Street address</Label>
-              <Input id={`${formId}-line1`} name="line1" required autoComplete="street-address" />
+              <Input
+                id={`${formId}-line1`}
+                name="line1"
+                required
+                defaultValue={editing?.line1 ?? ''}
+                autoComplete="street-address"
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor={`${formId}-city`}>City</Label>
-              <Input id={`${formId}-city`} name="city" required autoComplete="address-level2" />
+              <Input
+                id={`${formId}-city`}
+                name="city"
+                required
+                defaultValue={editing?.city ?? ''}
+                autoComplete="address-level2"
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor={`${formId}-state`}>State</Label>
-              <Input id={`${formId}-state`} name="state" required autoComplete="address-level1" />
+              <Input
+                id={`${formId}-state`}
+                name="state"
+                required
+                defaultValue={editing?.state ?? ''}
+                autoComplete="address-level1"
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor={`${formId}-pincode`}>PIN code</Label>
@@ -240,21 +293,36 @@ export default function AccountPage() {
                 required
                 inputMode="numeric"
                 pattern="\d{6}"
+                defaultValue={editing?.pincode ?? ''}
                 autoComplete="postal-code"
                 placeholder="6 digits"
               />
             </div>
             <label className="flex min-h-[44px] cursor-pointer items-center gap-2 text-sm sm:col-span-2">
-              <input type="checkbox" name="is_default" className="h-4 w-4 accent-primary" />
+              <input
+                type="checkbox"
+                name="is_default"
+                defaultChecked={editing?.is_default ?? false}
+                className="h-4 w-4 accent-primary"
+              />
               Set as default address
             </label>
-            <Button
-              type="submit"
-              className="sm:col-span-2"
-              disabled={addressMutation.isPending}
-            >
-              {addressMutation.isPending ? 'Adding…' : 'Add address'}
-            </Button>
+            <div className="flex flex-wrap gap-2 sm:col-span-2">
+              <Button type="submit" disabled={addressMutation.isPending}>
+                {addressMutation.isPending
+                  ? editing
+                    ? 'Saving…'
+                    : 'Adding…'
+                  : editing
+                    ? 'Save address'
+                    : 'Add address'}
+              </Button>
+              {editing && (
+                <Button type="button" variant="outline" onClick={() => setEditing(null)}>
+                  Cancel edit
+                </Button>
+              )}
+            </div>
           </form>
         </CardContent>
       </Card>

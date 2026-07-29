@@ -285,6 +285,8 @@ class AuditAction(str, enum.Enum):
     ownership_partner_deactivated = "ownership_partner_deactivated"
     platform_expense_recorded = "platform_expense_recorded"
     platform_expense_deleted = "platform_expense_deleted"
+    laundry_approved = "laundry_approved"
+    laundry_rejected = "laundry_rejected"
     profit_share_finalized = "profit_share_finalized"
     profit_share_payout_released = "profit_share_payout_released"
 

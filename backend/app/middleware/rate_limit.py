@@ -61,5 +61,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             raise
         except Exception as exc:
             log.warning("rate_limit.redis_unavailable", error=str(exc))
+            # Auth / OTP must fail closed — bypassing limits enables credential stuffing.
+            if path.startswith("/api/v1/auth"):
+                raise RateLimitError("Rate limiter unavailable") from exc
 
         return await call_next(request)

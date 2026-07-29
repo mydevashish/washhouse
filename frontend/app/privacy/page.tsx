@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { PublicShell } from '@/components/layout/public-shell';
+import { MarketingShell } from '@/components/layout/marketing-shell';
 import { WASHHOUSE_BRAND_NAME } from '@/components/brand/washhouse-logo';
 import { PrivacyContent } from '@/features/marketing/legal';
 
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <PublicShell>
+    <MarketingShell>
       <PrivacyContent />
-    </PublicShell>
+    </MarketingShell>
   );
 }

@@ -15,7 +15,7 @@ from app.api.admin_list_params import AdminAuditListParams, AdminOrderListParams
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.core.pagination import apply_sort, build_paginated_response
 from app.core.security import hash_password
-from app.models.enums import LaundryStatus, OrderStatus, UserRole
+from app.models.enums import AuditAction, LaundryStatus, OrderStatus, UserRole
 from app.models.laundry import Laundry, LaundryService as LaundryServiceModel
 from app.models.order import Order
 from app.models.user import User
@@ -33,6 +33,7 @@ class AdminService:
         self._session = session
         self._users = UserRepository(session)
         self._laundries = LaundryRepository(session)
+        self._audit = AuditRepository(session)
 
     async def create_laundry_with_partner(self, payload: AdminCreateLaundryRequest) -> dict:
         email = payload.owner_email.lower()
@@ -389,7 +390,7 @@ class AdminService:
         result = await self._session.execute(
             select(Order, Laundry.name, User.full_name)
             .join(Laundry, Laundry.id == Order.laundry_id)
-            .join(User, User.id == Order.user_id)
+            .outerjoin(User, User.id == Order.user_id)
             .where(Order.deleted_at.is_(None))
             .order_by(Order.created_at.desc())
             .limit(limit),
@@ -403,7 +404,7 @@ class AdminService:
                 "payment_status": order.payment_status.value,
                 "created_at": order.created_at,
                 "laundry_name": laundry_name,
-                "customer_name": customer_name,
+                "customer_name": customer_name or order.customer_name or "Walk-in",
             }
             for order, laundry_name, customer_name in result.all()
         ]
@@ -412,7 +413,7 @@ class AdminService:
         stmt = (
             select(Order, Laundry.name, User.full_name)
             .join(Laundry, Laundry.id == Order.laundry_id)
-            .join(User, User.id == Order.user_id)
+            .outerjoin(User, User.id == Order.user_id)
             .where(Order.deleted_at.is_(None))
         )
         if params.status:
@@ -455,7 +456,7 @@ class AdminService:
                 "payment_status": order.payment_status.value,
                 "created_at": order.created_at,
                 "laundry_name": laundry_name,
-                "customer_name": customer_name,
+                "customer_name": customer_name or order.customer_name or "Walk-in",
             }
             for order, laundry_name, customer_name in result.all()
         ]
@@ -535,11 +536,56 @@ class AdminService:
             page_size=params.page_size,
         )
 
-    async def reject_laundry(self, laundry_id: UUID) -> dict:
+    async def approve_laundry(
+        self,
+        laundry_id: UUID,
+        *,
+        actor_user_id: UUID | None = None,
+    ) -> dict:
         laundry = await self._laundries.get_by_id(laundry_id)
         if not laundry:
             raise NotFoundError("Laundry not found")
+        old = laundry.status.value
+        laundry.status = LaundryStatus.approved
+        laundry.is_verified = True
+        await self._session.flush()
+        await self._audit.log(
+            action=AuditAction.laundry_approved,
+            actor_user_id=actor_user_id,
+            resource_type="laundry",
+            resource_id=str(laundry.id),
+            metadata={
+                "old_value": old,
+                "new_value": laundry.status.value,
+                "source": "admin_panel",
+                "event": "laundry_approved",
+            },
+        )
+        return {"id": str(laundry.id), "status": laundry.status.value}
+
+    async def reject_laundry(
+        self,
+        laundry_id: UUID,
+        *,
+        actor_user_id: UUID | None = None,
+    ) -> dict:
+        laundry = await self._laundries.get_by_id(laundry_id)
+        if not laundry:
+            raise NotFoundError("Laundry not found")
+        old = laundry.status.value
         laundry.status = LaundryStatus.rejected
         laundry.is_verified = False
         await self._session.flush()
+        await self._audit.log(
+            action=AuditAction.laundry_rejected,
+            actor_user_id=actor_user_id,
+            resource_type="laundry",
+            resource_id=str(laundry.id),
+            metadata={
+                "old_value": old,
+                "new_value": laundry.status.value,
+                "source": "admin_panel",
+                "event": "laundry_rejected",
+            },
+        )
         return {"id": str(laundry.id), "status": laundry.status.value}

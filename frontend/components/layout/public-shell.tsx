@@ -7,6 +7,11 @@ import { GlobalNavbar } from '@/components/layout/global-navbar';
 import { MarketingFooter } from '@/components/layout/marketing-footer';
 import { getCustomerPageTitle } from '@/lib/navigation/customer-title';
 
+/**
+ * @deprecated Prefer MarketingShell for public marketing/legal/auth chrome.
+ * Kept only for app/error.tsx and app/not-found.tsx (GlobalNavbar + pageTitle).
+ * Do not use for new public routes.
+ */
 export function PublicShell({
   children,
   showBack: _showBack,

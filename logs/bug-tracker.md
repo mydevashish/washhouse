@@ -33,7 +33,283 @@
 
 ---
 
+## Pre-flight — 2026-07-28 (local, before role testing)
+
+**Agents:** devops-engineer + qa-engineer  
+**Prompts:** `fix-api-connectivity-env.md`, `pre-flight.md`
+
+### Infrastructure snapshot
+
+| Check | Result |
+| ----- | ------ |
+| Backend `GET /api/v1/health` | **200** `{"status":"ok","service":"dlm-backend","version":"0.1.0"}` |
+| `GET /api/v1/health/db` | **404** — endpoint not implemented |
+| `GET /api/v1/health/redis` | **404** — endpoint not implemented |
+| `POST /api/v1/auth/login` (admin@yopmail.com) | **200** — access_token + role=admin |
+| CORS preflight `OPTIONS /auth/login` Origin `http://localhost:3000` | **200** ACAO=`http://localhost:3000` |
+| Alembic `current` / `heads` | `20260717_0034` (head) — **aligned** |
+| Postgres `:5432` | up |
+| Redis `:6379` | **down** (OK locally: `RATE_LIMIT_ENABLED=false`, `CACHE_ENABLED=false`) |
+| Docker | **not installed** / not on PATH |
+| Staging `https://washhouse.onrender.com/api/v1/health` | **timeout** |
+| `NEXT_PUBLIC_API_URL` (`.env.local`) | `http://localhost:8000/api/v1` — **fixed this run** |
+| `frontend/.env` (fallback) | still `https://washhouse.onrender.com/api/v1` (overridden by `.env.local`) |
+
+### Suite results
+
+| Suite | Result |
+| ----- | ------ |
+| `cd backend && pytest -q --tb=line` | **32 passed, 84 errors** — `InvalidPasswordError` for user `dlm` against `dlm_test` |
+| `frontend` lint (`npm run lint`) | **pass** |
+| `frontend` type-check | **fail** — 3× `TS2540` assign to `NODE_ENV` in `lib/online-booking.test.ts` |
+| `frontend` jest | **126 passed, 2 failed** (see open bugs) |
+| `playwright` smoke (`smoke.spec.ts` chromium-desktop) | **2/2 pass** (home + discover) |
+
+**P0 fixed this run:** started uvicorn; set `frontend/.env.local` `NEXT_PUBLIC_API_URL` (+ `APP_URL`) to local backend. Login + health unblocked for local role testing.
+
+---
+
 ## Open
+
+### BUG-2026-07-28-SEC-001 — `invoice_number` never assigned on order create
+
+- **Status:** open
+- **Priority:** P2
+- **Severity:** S2 (Medium security/compliance)
+- **Area:** orders / GST invoicing
+- **Owner:** backend-architect
+- **Description:** Order model has `invoice_number` (unique); create paths set `gst_rate` / `cgst_inr` / `sgst_inr` but never allocate an invoice number. Blocks India GST invoice issuance.
+- **Remediation:** Allocate sequential/unique invoice numbers at create (and walk-in); expose on order response; add regression test.
+
+### BUG-2026-07-28-SEC-002 — `.env.example` CORS is localhost-only (no prod guidance)
+
+- **Status:** open
+- **Priority:** P2
+- **Severity:** S3 (Medium ops/security)
+- **Area:** CORS / deployment
+- **Owner:** devops-engineer
+- **Description:** `CORS_ALLOW_ORIGINS=http://localhost:3000` only. Prod misconfig risk if operators copy example blindly (wrong origin or accidental widen).
+- **Remediation:** Document prod comma-separated allow-list in `.env.example` comments + Railway/Render env docs; never use `*`.
+
+### BUG-2026-07-28-SEC-003 — Auth OTP rate window looser than security rules; no Retry-After
+
+- **Status:** open
+- **Priority:** P2
+- **Severity:** S3 (Medium)
+- **Area:** rate limiting
+- **Owner:** backend-architect
+- **Description:** Rules specify login 10/15min and OTP 5/hour; middleware uses 20/min auth prefix and 5/min OTP. 429 responses lack `Retry-After`.
+- **Remediation:** Align `LIMITS` with `09-security.md`; attach `Retry-After` on `RateLimitError` responses.
+
+### BUG-2026-07-28-020 — Walk-in create hung ~2min when Redis/Celery broker down
+
+- **Status:** resolved
+- **Priority:** P0
+- **Severity:** S1
+- **Area:** partner / walk-in orders
+- **Owner:** backend-architect
+- **Environment:** local (Redis :6379 down)
+- **Repro:** `POST /partner/walk-in-orders` blocked on `send_order_status_whatsapp.delay()` until Celery broker connect gave up (~122s)
+- **Fix:** Daemon-thread enqueue in `OrderStatusWhatsAppNotifier.schedule`; Celery `broker_connection_timeout=2` + redis transport socket timeouts
+- **Verification:** create ~5s without Redis; Playwright partner journey test 6 green
+
+### BUG-2026-07-28-021 — Partner saw full Admin shell on `/admin` (RoleGuard page-only)
+
+- **Status:** resolved
+- **Priority:** P0
+- **Severity:** S1
+- **Area:** authz / admin + partner layouts
+- **Owner:** frontend-architect
+- **Environment:** local
+- **Repro:** Login as `partner.koramangala@demo.dlm` → `/admin` showed DLM Ops sidebar + Overview breadcrumb with only main pane “Access not allowed”
+- **Fix:** Wrap `AdminShell` / `PartnerShell` in layout-level `RoleGuard` so denied roles never get portal chrome
+- **Verification:** Playwright partner journey test 8 + customer `/partner` authz smoke
+
+### BUG-2026-07-28-010 — Discover PartnersSection lacked search/filter/sort (orphaned LaundryListing)
+
+- **Status:** resolved
+- **Priority:** P1
+- **Severity:** S2
+- **Area:** customer / discovery
+- **Owner:** frontend-architect
+- **Environment:** local
+- **Repro:** `/discover#partners` showed cards only — no search/filter/sort UI despite shipped listing components
+- **Fix (2026-07-28):** Wired `useLaundryDiscovery` + `LaundryFiltersBar` + search into `PartnersSection`
+- **Verification:** Playwright customer-journey step 2; browser shows Filters search region
+
+### BUG-2026-07-28-011 — Customer cancel order missing (API + FE)
+
+- **Status:** resolved
+- **Priority:** P1
+- **Severity:** S2
+- **Area:** customer / orders
+- **Owner:** backend-architect + frontend-architect
+- **Repro:** Spec requires cancel before `picked_up`; no `POST /orders/{id}/cancel` or UI
+- **Fix:** `OrderService.cancel_order_customer` + endpoint; `cancelOrder` service + Cancel button on tracking (confirmed / pickup_assigned)
+- **Verification:** API smoke create→cancel; Playwright step 6 twice
+
+### BUG-2026-07-28-012 — Account address edit UI missing (PATCH API existed)
+
+- **Status:** resolved
+- **Priority:** P2
+- **Severity:** S3
+- **Area:** customer / account
+- **Fix:** `updateAddress` FE client + Edit/Save on `/account`
+- **Verification:** Playwright step 3 add/edit/delete
+
+### BUG-2026-07-28-013 — `goToCheckout` no-op when env flag false but `/config` true
+
+- **Status:** resolved
+- **Priority:** P0
+- **Severity:** S1
+- **Area:** checkout
+- **Repro:** UI showed Continue to checkout (runtime config) but navigate gated on `NEXT_PUBLIC_FEATURE_ONLINE_BOOKING` → click did nothing
+- **Fix:** `goToCheckout` no longer re-checks env; callers gate via `useOnlineBookingEnabled`. Local flags set `FEATURE_ONLINE_BOOKING=true` / `NEXT_PUBLIC_FEATURE_ONLINE_BOOKING=true` for online journey QA
+- **Verification:** Playwright checkout step; dual consecutive green runs
+
+### BUG-2026-07-28-009 — Playwright default config dual webServer hangs on unhealthy :3000
+
+- **Status:** open (workaround shipped)
+- **Priority:** P2
+- **Severity:** S3
+- **Area:** qa / e2e infra
+- **Owner:** qa-engineer
+- **Environment:** local
+- **Repro:**
+  1. Port 3000 occupied by a hung/zombie Next process (TCP open, HTTP timeout)
+  2. `npx playwright test` (default `playwright.config.ts`) waits on webServer URLs `:3000` + `:3001`
+  3. Suite never starts (no “Running N tests” output for minutes)
+- **Workaround:** `npx playwright test --config=playwright.auth.config.ts` or `playwright.customer.config.ts` (no webServer; expects FE already up)
+- **Fix ideas:** Health-check timeout on webServer; single primary server for non-offline projects; fail fast if URL TCP-open but HTTP dead
+
+---
+
+### BUG-2026-07-28-001 — Local FE pointed at Render API (missing `/api/v1` local override)
+
+- **Status:** resolved
+- **Priority:** P0
+- **Severity:** S1
+- **Area:** devops / env
+- **Owner:** devops-engineer
+- **Environment:** local
+- **Category:** A — env / network
+- **Repro:**
+  1. `frontend/.env` has `NEXT_PUBLIC_API_URL=https://washhouse.onrender.com/api/v1`
+  2. `frontend/.env.local` had only support phone/email — no API URL override
+  3. Local backend on `:8000` not used; Render health timed out → login/network errors
+- **Fix:** Added to `frontend/.env.local`:
+  - `NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1`
+  - `NEXT_PUBLIC_APP_URL=http://localhost:3000`
+  - Started `uvicorn` on `:8000`; verified health 200 + login 200
+- **Verification:** health 200; login admin@yopmail.com → 200; CORS ACAO localhost:3000
+
+**Resolved at:** 2026-07-28
+
+---
+
+### BUG-2026-07-28-002 — pytest suite cannot auth to `dlm_test` (84 setup errors)
+
+- **Status:** mitigated (local)
+- **Priority:** P1
+- **Severity:** S2
+- **Area:** qa / backend test infra
+- **Owner:** qa-engineer
+- **Environment:** local
+- **Repro:**
+  1. Local Postgres running with app user password from `backend/.env` (not necessarily `dlm_dev_password`)
+  2. `cd backend && pytest -q --tb=line`
+  3. Observe: `asyncpg.exceptions.InvalidPasswordError: password authentication failed for user "dlm"` on API/integration fixtures
+- **Root cause:** `tests/conftest.py` hardcodes `postgresql+asyncpg://dlm:dlm_dev_password@localhost:5432/dlm_test`; local DB password / `dlm_test` DB may not match CI defaults. Live app health uses `backend/.env` and works.
+- **Mitigation (2026-07-28 auth-session):** Override for local runs:
+  - `$env:DATABASE_URL="postgresql+asyncpg://postgres:…@localhost:5432/dlm_test"`
+  - `$env:DATABASE_URL_DIRECT="postgresql://postgres:…@localhost:5432/dlm_test"`
+  - `tests/api/test_auth.py` → **14 passed** with `dlm_env` + postgres creds
+- **Follow-up:** Align CI/local default URL with `.env` or document required `dlm` role + `dlm_test` DB in README
+- **Defer:** does not block login/health for role testing. Fix: create `dlm_test` with matching password or export `DATABASE_URL` before pytest.
+
+---
+
+### BUG-2026-07-28-003 — Staging Render health timeout
+
+- **Status:** open
+- **Priority:** P1
+- **Severity:** S1
+- **Area:** devops / staging
+- **Owner:** devops-engineer
+- **Environment:** staging (`washhouse.onrender.com`)
+- **Repro:** `Invoke-WebRequest https://washhouse.onrender.com/api/v1/health` → operation timed out (~15s+)
+- **Notes:** Known Phase-6 blocker in `current-status.md`. Local stack healthy; staging not verified.
+
+---
+
+### BUG-2026-07-28-004 — `/health/db` and `/health/redis` not implemented (404)
+
+- **Status:** open
+- **Priority:** P2
+- **Severity:** S3
+- **Area:** backend / observability
+- **Owner:** backend-architect
+- **Environment:** local
+- **Repro:** `GET /api/v1/health/db` and `/api/v1/health/redis` → 404. Only liveness `GET /api/v1/health` exists.
+- **Defer:** not required for login; needed for post-deploy checklist.
+
+---
+
+### BUG-2026-07-28-005 — Redis not running locally
+
+- **Status:** open
+- **Priority:** P2
+- **Severity:** S3
+- **Area:** devops
+- **Owner:** devops-engineer
+- **Environment:** local
+- **Repro:** `Test-NetConnection localhost -Port 6379` → False; Docker CLI unavailable
+- **Mitigation in effect:** `RATE_LIMIT_ENABLED=false`, `CACHE_ENABLED=false` in `backend/.env` — login not blocked
+- **Defer:** start Redis before enabling rate-limit/cache
+
+---
+
+### BUG-2026-07-28-006 — `tsc --noEmit` fails on test file `NODE_ENV` assigns
+
+- **Status:** open
+- **Priority:** P2
+- **Severity:** S3
+- **Area:** frontend / types
+- **Owner:** frontend-architect
+- **Environment:** local
+- **Repro:** `cd frontend && npm run type-check` → `TS2540` at `lib/online-booking.test.ts` lines 63, 68, 83 (`Cannot assign to 'NODE_ENV'`)
+- **Defer:** feature/test typing; does not block login
+
+---
+
+### BUG-2026-07-28-007 — Jest: home-hero phoneImage + formatFromRupee regressions
+
+- **Status:** open
+- **Priority:** P2
+- **Severity:** S3
+- **Area:** frontend / marketing
+- **Owner:** frontend-architect
+- **Environment:** local
+- **Repro:**
+  1. `cd frontend && npm test`
+  2. `features/marketing/home/home-hero.test.tsx` — `slide.phoneImage` undefined for delivery variant
+  3. `features/marketing/pricing/lib/group-from-categories.test.ts` — expected `"from ₹69"`, got `"₹69"`
+- **Defer:** feature bugs; smoke e2e still green
+
+---
+
+### BUG-2026-07-28-008 — `pnpm run *` blocked by `ERR_PNPM_IGNORED_BUILDS`
+
+- **Status:** open
+- **Priority:** P2
+- **Severity:** S3
+- **Area:** devops / frontend tooling
+- **Owner:** devops-engineer
+- **Environment:** local (Windows)
+- **Repro:** `pnpm` not on PATH initially; after `npm i -g pnpm`, `pnpm run lint` fails with ignored builds for `msw`, `sharp`, `unrs-resolver`. Repo uses `package-lock.json` (npm).
+- **Workaround:** use `npm run lint|type-check|test` — verified this run
+
+---
 
 ### BUG-2026-07-27-001 — Login navbar showed “DLM”; book-now dialog layout issues
 
@@ -277,6 +553,18 @@
 ---
 
 ## Resolved
+
+### BUG-001 — Forgot / reset password UI missing
+
+- **Severity:** S1 (launch gate / High)
+- **Reported by:** production-readiness / QA audit
+- **Reported at:** 2026-06 (BUG_LIST) / reconfirmed 2026-07-28
+- **Environment:** all
+- **Symptoms:** No `/forgot-password` or `/reset-password` pages; login had no recovery link. Backend `POST /auth/password/forgot` + `/reset` already existed.
+- **Root cause:** Frontend never built for password recovery.
+- **Fix:** MarketingShell pages + RHF/Zod forms; `forgotPassword` / `resetPassword` in `services/auth.ts`; login “Forgot password?” (preserves `audience`); generic success copy; Playwright smoke + schema unit tests.
+- **Resolved at:** 2026-07-29
+- **Postmortem:** n/a (feature gap, not prod incident)
 
 ### BUG-2026-07-14-004 — Guest Call / WhatsApp missing (online booking mode)
 

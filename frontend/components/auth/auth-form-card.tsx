@@ -13,11 +13,15 @@ type AuthFormCardProps = {
   className?: string;
 };
 
+/**
+ * Auth card under MarketingShell — avoid full-viewport min-height (shell already
+ * owns min-h-screen + sticky-nav + mobile sticky-CTA padding).
+ */
 export function AuthFormCard({ title, description, children, footer, className }: AuthFormCardProps) {
   return (
     <div
       className={cn(
-        'mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-md flex-col justify-center px-4 py-10 sm:py-12',
+        'mx-auto flex w-full max-w-md flex-col justify-center px-4 py-8 sm:py-10 lg:py-14',
         className,
       )}
     >
@@ -28,7 +32,7 @@ export function AuthFormCard({ title, description, children, footer, className }
         </CardHeader>
         <CardContent>{children}</CardContent>
       </Card>
-      {footer && <div className="mt-6 text-center text-sm text-muted-foreground">{footer}</div>}
+      {footer && <div className="mt-6 space-y-3 text-center text-sm text-muted-foreground">{footer}</div>}
     </div>
   );
 }

@@ -318,26 +318,74 @@ test.describe('staff portal access', () => {
     );
   });
 
-  test('login navbar titles are audience-aware', async ({ page }) => {
-    await page.goto('/login?audience=partner');
-    await page.waitForLoadState('domcontentloaded');
-    await expect(page.getByRole('banner').getByRole('heading', { level: 1 })).toHaveText(
-      /laundry login/i,
-    );
-    await expect(page.getByRole('heading', { name: /laundry partner sign in/i })).toBeVisible();
+  test('auth pages use MarketingNavbar chrome', async ({ page }) => {
+    async function assertMarketingNavbar() {
+      const banner = page.getByRole('banner');
+      await expect(banner).toBeVisible();
+      // No app GlobalNavbar page title H1
+      await expect(banner.getByRole('heading', { level: 1 })).toHaveCount(0);
+      await expect(banner.getByRole('link', { name: /staff login/i })).toBeVisible();
+      await expect(banner.getByRole('button', { name: /^book now$/i })).toBeVisible();
+    }
 
-    await page.goto('/login?audience=admin');
-    await page.waitForLoadState('domcontentloaded');
-    await expect(page.getByRole('banner').getByRole('heading', { level: 1 })).toHaveText(
-      /admin login/i,
-    );
-    await expect(page.getByRole('heading', { name: /^admin sign in$/i })).toBeVisible();
+    await page.setViewportSize({ width: 1280, height: 800 });
 
     await page.goto('/login');
     await page.waitForLoadState('domcontentloaded');
-    await expect(page.getByRole('banner').getByRole('heading', { level: 1 })).toHaveText(
-      /^sign in$/i,
+    await assertMarketingNavbar();
+    await expect(page.getByRole('heading', { name: /^sign in$/i })).toBeVisible();
+
+    await page.goto('/login?audience=partner');
+    await page.waitForLoadState('domcontentloaded');
+    await assertMarketingNavbar();
+    await expect(page.getByRole('heading', { name: /laundry partner sign in/i })).toBeVisible();
+    await expect(
+      page.locator('main').getByRole('link', { name: 'Staff portal', exact: true }),
+    ).toBeVisible();
+
+    await page.goto('/login?audience=admin');
+    await page.waitForLoadState('domcontentloaded');
+    await assertMarketingNavbar();
+    await expect(page.getByRole('heading', { name: /^admin sign in$/i })).toBeVisible();
+
+    await page.goto('/register');
+    await page.waitForLoadState('domcontentloaded');
+    await assertMarketingNavbar();
+    await expect(page.getByRole('heading', { name: /create account/i })).toBeVisible();
+    await expect(page).toHaveTitle(/create account · washhouse/i);
+    await expect(page.getByRole('link', { name: /^sign in$/i })).toHaveAttribute('href', '/login');
+    await expect(page.getByRole('link', { name: /laundry or admin\?/i })).toHaveAttribute(
+      'href',
+      '/staff',
     );
+
+    await page.goto('/register?next=%2Faccount');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByRole('link', { name: /^sign in$/i })).toHaveAttribute(
+      'href',
+      '/login?next=%2Faccount',
+    );
+  });
+
+  test('login form clears sticky CTA on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/login');
+    await page.waitForLoadState('domcontentloaded');
+
+    const submit = page.getByRole('button', { name: /^sign in$/i });
+    await expect(submit).toBeVisible();
+
+    const stickyCta = page.locator('[data-marketing-sticky-cta].fixed');
+    await expect(stickyCta).toBeVisible();
+
+    // Scroll to page end — MarketingShell main padding should keep submit above sticky CTA.
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+
+    const submitBox = await submit.boundingBox();
+    const ctaBox = await stickyCta.boundingBox();
+    expect(submitBox).toBeTruthy();
+    expect(ctaBox).toBeTruthy();
+    expect(submitBox!.y + submitBox!.height).toBeLessThanOrEqual(ctaBox!.y + 1);
   });
 
   test('homepage partner strip links to staff portal', async ({ page }) => {

@@ -13,7 +13,7 @@ import {
   getPartnerPageTitle,
   isPartnerNavActive,
 } from '@/features/partner/lib/partner-nav';
-import { usePartnerAnalytics, usePartnerOrders } from '@/features/partner/hooks/use-partner-operations';
+import { usePartnerAnalytics } from '@/features/partner/hooks/use-partner-operations';
 import { useScrollRestore } from '@/hooks/use-scroll-restore';
 import { useMounted } from '@/lib/hooks/use-mounted';
 import { cn } from '@/lib/utils';
@@ -100,10 +100,10 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
   useScrollRestore();
 
   const mounted = useMounted();
+  // Badges from analytics only — avoid polling full orders list on every partner route.
   const analyticsQ = usePartnerAnalytics();
-  const ordersQ = usePartnerOrders();
   const badges = mounted
-    ? partnerBadges(analyticsQ.data, ordersQ.data, Date.now())
+    ? partnerBadges(analyticsQ.data, undefined, Date.now())
     : { orders: 0, pickups: 0, notifications: 0 };
   const laundryName = mounted ? analyticsQ.data?.laundry_name : undefined;
   const userName = mounted ? user?.full_name : undefined;

@@ -124,7 +124,8 @@ export function FileDisputeForm({ orderId, trackingCode, onFiled, className }: F
           accept="image/*"
           multiple
           className="sr-only"
-          aria-hidden
+          tabIndex={-1}
+          aria-label="Attach dispute photos"
           onChange={(e) => {
             if (e.target.files?.length) addFiles(e.target.files);
             e.target.value = '';

@@ -1,12 +1,8 @@
-import { RoleGuard } from '@/components/auth/role-guard';
-import { AdminOverviewView } from '@/features/admin/views/admin-overview-view';
+import { AdminDashboardLazy } from '@/features/admin/admin-dashboard-lazy';
 
 export const metadata = { title: 'Admin · Overview' };
 
+/** Lazy client shell — keeps Recharts off the first admin paint (low-end Android). */
 export default function AdminOverviewPage() {
-  return (
-    <RoleGuard roles={['admin', 'super_admin']}>
-      <AdminOverviewView />
-    </RoleGuard>
-  );
+  return <AdminDashboardLazy />;
 }

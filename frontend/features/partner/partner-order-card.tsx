@@ -142,10 +142,15 @@ export function PartnerOrderCard({
               type="button"
               className="min-h-[44px] w-full"
               disabled={busy}
+              aria-busy={isAccepting}
+              aria-label={isAccepting ? 'Accepting order' : 'Accept order'}
               onClick={onAccept}
             >
               {isAccepting ? (
-                <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                  Accepting…
+                </>
               ) : (
                 'Accept order'
               )}
@@ -155,10 +160,15 @@ export function PartnerOrderCard({
               variant="outline"
               className="min-h-[44px] w-full border-danger/40 text-danger hover:bg-danger-muted"
               disabled={busy}
+              aria-busy={isRejecting}
+              aria-label={isRejecting ? 'Rejecting order' : 'Reject order'}
               onClick={onReject}
             >
               {isRejecting ? (
-                <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                  Rejecting…
+                </>
               ) : (
                 'Reject order'
               )}
@@ -210,10 +220,15 @@ export function PartnerOrderCard({
             type="button"
             className="min-h-[44px] w-full"
             disabled={busy || (needsPickupEvidence && !hasEvidence) || (needsInventory && !hasInventory)}
+            aria-busy={isAdvancing}
+            aria-label={isAdvancing ? `Updating status to ${nextLabel}` : nextLabel}
             onClick={onAdvance}
           >
             {isAdvancing ? (
-              <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                Updating…
+              </>
             ) : (
               nextLabel
             )}

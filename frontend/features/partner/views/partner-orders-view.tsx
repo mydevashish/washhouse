@@ -17,13 +17,13 @@ export function PartnerOrdersView() {
     <PartnerContent className="space-y-5">
       <PartnerPageHeader title="Orders" description="Accept, process, and deliver customer orders." />
 
-      {(!enabled || ordersQ.isPending) && <Skeleton className="h-96 w-full rounded-2xl" />}
+      {ordersQ.isLoading && <Skeleton className="h-96 w-full rounded-2xl" />}
       {enabled && ordersQ.isError && (
         <InfoBanner variant="destructive" title="Could not load orders">
           Refresh the page to try again.
         </InfoBanner>
       )}
-      {ordersQ.data && ordersQ.data.length === 0 && (
+      {enabled && !ordersQ.isLoading && ordersQ.data && ordersQ.data.length === 0 && (
         <EmptyState
           icon={Package}
           title="No orders yet"

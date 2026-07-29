@@ -7,20 +7,16 @@ Registration, login, OTP, refresh, password reset.
 ```
 auth/
 ├── components/
-│   ├── login-form.tsx
-│   ├── register-form.tsx
-│   └── otp-form.tsx
-├── api/
-│   ├── auth.ts            # axios calls
-│   └── mutations.ts       # useLogin, useRegister, useRefresh
+│   ├── forgot-password-form.tsx
+│   └── reset-password-form.tsx
 ├── schemas/
-│   ├── login.schema.ts
-│   └── register.schema.ts
-├── hooks/
-│   └── use-auth.ts
-├── types/
-└── index.ts
+│   ├── forgot-password.schema.ts
+│   └── reset-password.schema.ts
+└── README.md
 ```
+
+Axios calls live in `frontend/services/auth.ts` (`forgotPassword`, `resetPassword`).
+Login/register remain route-level pages under `app/login` and `app/register`.
 
 ## Rules
 

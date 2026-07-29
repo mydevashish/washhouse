@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Flag, MessageSquare, Star, ThumbsDown, ThumbsUp, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
@@ -16,7 +17,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
 import { PartnerKpiCard, PartnerKpiGrid } from '@/features/partner/components/partner-kpi-card';
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
-import { ReviewRatingTrendChart } from '@/features/partner/reviews/review-rating-trend-chart';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { queryKeys } from '@/lib/query-keys';
@@ -29,6 +29,19 @@ import {
   type ReviewManagementRow,
 } from '@/services/review-management';
 import { cn } from '@/lib/utils';
+
+const ReviewRatingTrendChart = dynamic(
+  () =>
+    import('@/features/partner/reviews/review-rating-trend-chart').then(
+      (m) => m.ReviewRatingTrendChart,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-48 animate-pulse rounded-lg bg-muted/50 ring-1 ring-border/40" aria-busy="true" />
+    ),
+  },
+);
 
 export function PartnerReviewsView() {
   const queryClient = useQueryClient();

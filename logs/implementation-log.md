@@ -4,6 +4,182 @@
 
 ---
 
+## 2026-07-29 — Register page matches login + marketing standards
+
+- **Type:** ui / fix
+- **Scope:** Auth `/register` parity with `/login` + MarketingShell
+- **Files:** `frontend/app/register/page.tsx`, `frontend/app/login/page.tsx`, `frontend/tests/e2e/marketing-homepage.spec.ts`, `frontend/tests/e2e/auth-session.spec.ts`, `logs/implementation-log.md`
+- **Summary:** Customer-only register keeps email/password/name; document title `Create account · WashHouse`; Sign in footer preserves safe `next`; “Laundry or admin?” → `/staff` under the card (no partner/admin signup confusion). Login “Create account” also forwards `next`. Playwright asserts chrome, title, staff link, and next-aware Sign in.
+- **Risks:** Staff link could be mistapped by customers — copy is intentionally soft (“Laundry or admin?”) and does not advertise register for partners.
+- **Next:** Optional sticky-CTA hide on auth routes (from prior MarketingShell note).
+- **Refs:** Prompt 2 after MarketingShell auth; `docs/features/auth.md`
+
+---
+
+## 2026-07-29 — BUG-001: Forgot + reset password UI
+
+- **Type:** feature / fix
+- **Scope:** Ship `/forgot-password` + `/reset-password` under MarketingShell; wire login “Forgot password?” link; close BUG-001 launch gate
+- **Files (new):**
+  - `frontend/app/forgot-password/{layout,page}.tsx`
+  - `frontend/app/reset-password/{layout,page}.tsx`
+  - `frontend/features/auth/components/{forgot,reset}-password-form.tsx`
+  - `frontend/features/auth/schemas/{forgot,reset}-password.schema.ts`
+  - `frontend/features/auth/schemas/password-reset.schema.test.ts`
+- **Files (updated):** `frontend/services/auth.ts` (`forgotPassword` / `resetPassword`), `frontend/app/login/page.tsx`, `frontend/tests/e2e/smoke.spec.ts`, `BUG_LIST.md`, `logs/bug-tracker.md`, `docs/features/auth.md`
+- **Summary:** Forgot form posts email to `POST /auth/password/forgot` and always shows generic success (no email-existence leak). Reset form takes email + code (`?code=` or `?token=`) + new/confirm password (min 8) → `POST /auth/password/reset`. Audience query preserved from login. Errors via `getApiErrorMessage` (no stack traces). Jest schema tests + Playwright smoke (mocked forgot + reset prefills).
+- **Risks:** Reset requires email delivery (or `OTP_DEBUG` / `otp_debug` toast in local). SMTP still required in non-debug staging.
+- **Next:** Optional full E2E with seeded mailbox; soft-recheck production-readiness GO after health probes.
+- **Refs:** BUG-001; `docs/features/auth.md`; production-readiness-2026-07-28
+
+---
+
+## 2026-07-29 — Auth pages use MarketingShell chrome
+
+- **Type:** ui / fix
+- **Scope:** Align `/login` + `/register` with marketing navbar/footer; remove duplicate logo/back chrome
+- **Files (new):** `frontend/app/login/layout.tsx`, `frontend/app/register/layout.tsx`
+- **Files (updated):** `frontend/app/login/page.tsx`, `frontend/app/register/page.tsx`, `frontend/components/auth/auth-form-card.tsx`, `frontend/lib/auth-login-audience.ts`, `frontend/lib/auth-login-audience.test.ts`, `frontend/tests/e2e/marketing-homepage.spec.ts`
+- **Summary:** Client auth pages wrap via route layouts → `MarketingShell` (RSC-safe). Dropped in-page WashHouse logo + ArrowLeft back row; partner/admin keep Staff portal text under the card. `AuthFormCard` no longer uses full-viewport `min-h` under sticky nav + mobile sticky CTA. Playwright asserts MarketingNavbar on auth routes + mobile submit clears sticky CTA.
+- **Risks:** Sticky CTA still present on auth (by design); padding relies on MarketingShell `main` pb.
+- **Next:** Optional — hide sticky CTA on auth-only routes if product prefers quieter chrome.
+- **Refs:** MarketingNavbar / MarketingShell; auth audience `?audience=partner|admin`
+
+---
+
+## 2026-07-28 — API integration test matrix (Phase 5 / qa-engineer)
+
+- **Type:** test
+- **Scope:** Lock Phases 2–7 P0/P1 fixes with pytest + Playwright; role header fixtures; flake-proof E2E scripts
+- **Files (new):**
+  - `backend/tests/api/test_users.py` — profile + address CRUD / IDOR / default-delete guard
+  - `backend/tests/api/test_admin.py` — dashboard RBAC, paginated list envelope (BUG-014-002), platform-config, `/config`
+  - `backend/tests/unit/test_laundry_repository.py` — multi-laundry `get_by_owner` / `list_by_owner` (BUG-015-001)
+  - `backend/tests/unit/test_whatsapp_notifier_nonblocking.py` — schedule must not block (BUG-020)
+  - `frontend/features/checkout/lib/navigate.test.ts` — `goToCheckout` no env re-gate (BUG-013)
+  - `frontend/playwright.smoke.config.ts` — smoke without dual webServer (BUG-009 workaround)
+- **Files (updated):**
+  - `backend/tests/conftest.py` — `customer_headers` / `partner_headers` / `admin_headers` (+ users/laundry)
+  - `backend/tests/api/test_orders.py` — create+GST, empty items 422, cancel after pickup, list auth
+  - `backend/tests/api/test_partner.py` — multi-laundry orders list regression + fixture smoke
+  - `backend/tests/api/test_walk_in_orders.py` — non-blocking Celery hang regression; WhatsApp provider session patch
+  - `backend/app/schemas/marketing.py` — `from_attributes=True` on testimonials (suite unblocker)
+  - `frontend/tests/e2e/smoke.spec.ts` — discover resolves cards/empty (not infinite skeleton)
+  - `frontend/tests/e2e/helpers/{auth,partner-orders}.ts` — assert login 200; resolve partner laundry dynamically
+  - `frontend/tests/e2e/partner-journey.spec.ts` — Accept accessible-name match (`Accept order <code>`)
+  - `frontend/package.json` — `test:e2e` → smoke config; `test:e2e:{smoke,customer,partner,admin,auth,journeys,all}`
+- **Summary:** `pytest tests/api/` **125 passed ×3**. `npm run test:e2e` (smoke) **2/2 ×3**. Customer/partner/admin journeys + smoke **green ×2**. Coverage exercised on order/partner/user/admin services + laundry/address repos + WhatsApp notifier.
+- **Risks:** Default `playwright.config.ts` dual-webServer still hangs on unhealthy :3000 (use role configs). Local pytest still needs `DATABASE_URL` override when `dlm` role missing (BUG-002).
+- **Next:** Phase 6 payments hardening leftovers; fold smoke into main Playwright when BUG-009 fixed.
+- **Refs:** `.cursor/prompts/api-integration-test-matrix.md`, `write-tests.md`; BUG-011/012/013/020/021/014-002/015-001
+
+---
+
+## 2026-07-28 — Perf + a11y review (performance-optimizer + accessibility-reviewer)
+
+- **Type:** perf / a11y / fix
+- **Scope:** Lighthouse mobile on `/, /discover, /partner, /admin`; axe on login/discover/checkout/partner orders/admin; keyboard login→discover→laundry; touch targets
+- **Files:** `frontend/.lighthouserc.json`, `frontend/styles/tokens.css`, `frontend/components/ui/button.tsx`, `frontend/app/(admin)/admin/page.tsx`, `frontend/features/admin/**`, `frontend/features/partner/**`, `frontend/features/orders/order-tracking.tsx`, `frontend/features/discover/marketplace/how-it-works.tsx`, pickup/delivery/dispute file inputs, `frontend/tests/e2e/critical-a11y.spec.ts`, `playwright.a11y.config.ts`, docs + `logs/performance-log.md`
+- **Summary:** P0 a11y fixed (contrast tokens, list+motion, file-input `aria-hidden`, Recharts sparkline focusables, toast `richColors`). Dashboards leaner via unused `AdminDashboardLazy` + dynamic charts. Touch ≥44px on mobile `sm` buttons + order actions. Playwright critical-a11y **7/7** (`logs/playwright-critical-a11y.txt`). `/` mobile LCP **2.4s**, CLS **0.01**; CLS OK on all four routes. Perf score still warn-level — accepted pending prod remasure.
+- **Risks:** Brand blue darkened slightly for AA; Sonner without `richColors` looks less “semantic”.
+- **Next:** Remasure Lighthouse on `next start`; flip LHCI performance warn→error when ≥90.
+- **Refs:** `.cursor/prompts/performance-review.md`, `accessibility-review.md`; `logs/lighthouse-2026-07-28/`
+
+---
+
+## 2026-07-28 — Admin marketplace chain (Anita QA + BE architect)
+
+- **Type:** test / fix
+- **Scope:** admin journey — KPIs, approvals, commission, complaints, RBAC 403, approval→order chain
+- **Files:** `backend/tests/api/test_admin_marketplace_chain.py`, `backend/app/services/admin_service.py`, `backend/app/api/v1/endpoints/admin.py`, `backend/app/api/v1/endpoints/partner.py`, `backend/app/models/enums.py`, `backend/alembic/versions/20260728_0035_laundry_approval_audit_actions.py`, `frontend/features/admin/admin-approval-queue.tsx`, `frontend/features/admin/disputes/dispute-detail-drawer.tsx`, `frontend/features/admin/components/confirm-action-dialog.tsx`, `frontend/tests/e2e/admin-marketplace-chain.spec.ts`, `frontend/playwright.admin.config.ts`, feature specs + logs
+- **Summary:** Pytest **2/2** (register→approve→order→accept→complete + 403 on all core admin routes). Playwright Anita **5/5** (`logs/playwright-admin-marketplace-chain-1.txt`). Fixed partner register MissingGreenlet on `services`; admin orders outerjoin so walk-ins appear; approve/reject audit + confirm dialogs. P2 gaps filed on subscriptions/notifications/loyalty.
+- **Risks:** Run alembic `20260728_0035` on app DB before approve audit writes in non-test envs.
+- **Next:** Optional second Playwright re-run; fold admin config into main suite when dual-webServer (BUG-009) is fixed.
+- **Refs:** specs admin-dashboard, admin-approvals, commission, complaints
+
+---
+
+## 2026-07-28 — Partner journey (Mahesh QA + FE architect)
+
+- **Type:** test / fix
+- **Scope:** partner happy path E2E + IDOR pytest; close P0 partner bugs
+- **Files:** `frontend/tests/e2e/partner-journey.spec.ts`, `frontend/tests/e2e/helpers/{auth,partner-orders}.ts`, `frontend/playwright.partner.config.ts`, `frontend/app/(admin)/layout.tsx`, `frontend/app/(partner)/layout.tsx`, `backend/app/services/notifications/order_status_whatsapp_notifier.py`, `backend/app/tasks/celery_app.py`, `backend/tests/api/test_partner.py`, logs
+- **Summary:** Full partner journey Playwright (10/10) against seed partner: KPIs, accept order (API-seeded incoming), inventory/QR surfaces, staff CRUD, catalog/pricing, walk-in create+advance, settlements/ops/reviews, `/admin` deny without shell leak, mobile primary actions, customer blocked from `/partner`. Pytest `test_partner.py` 9/9 (accept/status/staff + cross-laundry IDOR). Fixed walk-in hang when Redis down; gated admin/partner shells at layout RoleGuard.
+- **Risks:** Nested page+layout RoleGuard double-checks `/me`; Celery WhatsApp still best-effort without Redis.
+- **Next:** Optional start Redis for real WhatsApp enqueue; fold partner webServer into main Playwright config if dual-server hang (BUG-009) remains.
+- **Refs:** BUG-2026-07-28-020, BUG-2026-07-28-021; specs partner-*; `logs/playwright-partner-journey-24.txt`
+
+---
+
+## 2026-07-28 — Auth session verify (customer / partner / admin)
+
+- **Type:** test / fix
+- **Scope:** auth — API RBAC + Playwright role login smoke
+- **Files:** `backend/tests/api/test_auth.py`, `backend/tests/conftest.py`, `backend/pyproject.toml`, `frontend/tests/e2e/helpers/auth.ts`, `frontend/tests/e2e/auth-session.spec.ts`, `frontend/playwright.auth.config.ts`, `logs/bug-tracker.md`
+- **Summary:** Extended API auth coverage for login/refresh/logout per role, wrong password, expired/missing token (401), and cross-role / partner-mutation IDOR (403). Added Playwright helpers `loginAsCustomer` / `loginAsPartner` / `loginAsAdmin` + smoke spec. Fixed Windows asyncpg loop coupling by using function-scoped NullPool engines + sync schema bootstrap.
+- **Risks:** Default Playwright config still dual-webServer (BUG-009); local pytest still needs `DATABASE_URL` override when `dlm` user missing (BUG-002 mitigated).
+- **Mitigation:** Auth smoke via `playwright.auth.config.ts`; document env overrides in bug tracker.
+- **Next:** Optional — fold auth webServer fix into main Playwright config; seed CI `dlm_test` creds.
+- **Refs:** `fix-api-auth-session.md`, `docs/features/auth.md`; BUG-002 (mitigated), BUG-009 (open)
+
+---
+
+## 2026-07-28 — Pre-flight local stack (devops + qa)
+
+- **Type:** ops / qa
+- **Scope:** Verify local stack before role testing; fix P0 connectivity only
+- **Files:** `frontend/.env.local` (API URL override); `logs/bug-tracker.md`; `logs/deployment-log.md`; this entry
+- **Summary:** Brought local API up (`uvicorn :8000`). Health **200**, migrations at `20260717_0034`, CORS OK, admin login **200**. Fixed P0: `.env.local` now sets `NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1` (was falling through to Render via `frontend/.env`). Playwright smoke **2/2 green**. Pytest **84 errors** (test DB password) + FE type-check/unit feature fails **logged, deferred**. Redis down but rate-limit off. Staging Render health still times out.
+- **Risks:** Role testing against Render if someone runs FE without `.env.local`; pytest not green locally until `dlm_test` credentials aligned.
+- **Next:** Role testing (auth-session / CRUD prompts); triage BUG-2026-07-28-002…008; optional health/db+redis endpoints.
+- **Refs:** BUG-2026-07-28-001 (resolved), `-002`…`-008` (open); `fix-api-connectivity-env.md`
+
+---
+
+## 2026-07-28 — Production readiness audit (all roles)
+
+- **Type:** docs
+- **Scope:** product-manager + qa-engineer — production readiness matrix + execution plan (no code fixes)
+- **Files:** `logs/implementation-log.md` (this entry); sources: `current-status.md`, `docs/product/INDEX.md`, `docs/features/*`, `DEMO_ACCOUNTS.md`, `backend/tests/**`, `frontend/tests/e2e/**`, `.cursor/prompts/api-production-ready.md`, `.cursor/checklists/post-deploy.md`
+- **Summary:** Audited existing pytest/Jest/Playwright coverage, QA seed accounts, and health probes against customer/partner/admin critical paths. App is **not production-ready**: health readiness probes missing (`/health/db`, `/health/redis`), forgot-password UI absent (BUG-001), no Playwright role journeys (login→order→partner→admin), payments/subscriptions/loyalty thin or stubbed, staging health + CI remote still Phase-6 blockers.
+- **Risks:** Shipping without the phased API-production-ready prompts risks silent CRUD/contract failures across roles; Razorpay Checkout.js + webhook idempotency remain launch risks.
+- **Mitigation:** Run Cursor phases below in order; gate deploy on matrix P0 rows green + post-deploy checklist.
+- **Next:** Execute phases 0→5 from `.cursor/prompts/api-production-ready.md`, then P0 product gaps (forgot-password UI, health/db+redis, E2E critical flows, Razorpay), then `.cursor/prompts/deploy.md` + post-deploy checklist.
+- **Refs:** `docs/deployment/production-readiness-v0.1.0.md` (DO NOT DEPLOY); BUG-001, BUG-010, BUG-012, BUG-016
+
+### Inventory (2026-07-28)
+
+| Area | What exists |
+| ---- | ----------- |
+| Backend pytest | 31 files under `backend/tests/` — strong on marketing, price-list, offline/walk-in, auth happy path; many partner/admin/order/payment areas are **auth-gate only** (401), not CRUD happy paths |
+| Frontend unit | ~29 Jest files — mostly marketing/discovery/nav/price-list helpers; thin on orders/partner/admin |
+| E2E Playwright | 10 specs — smoke home+discover, marketing, discover, price-list, offline/online booking contact; **no** login / place-order / partner-accept / admin-approve |
+| Seed users | `DEMO_ACCOUNTS.md` + `seed_qa.py` — admin@demo.dlm, partner.koramangala@demo.dlm, customer@demo.dlm, vip/highrisk/blocked, platform-partner, support, ops; password conventions documented |
+| Health | `GET /api/v1/health` liveness only + `test_health.py`; **missing** `/health/db` and `/health/redis` required by post-deploy checklist |
+
+### Ordered Cursor phases (run next)
+
+1. **Phase 0 — Diagnose** → `.cursor/prompts/diagnose-api-errors.md` (bug list → `logs/bug-tracker.md`)
+2. **Phase 1 — Connectivity/env** → `.cursor/prompts/fix-api-connectivity-env.md` (incl. health/db+redis gap)
+3. **Phase 2 — Auth/session** → `.cursor/prompts/fix-api-auth-session.md` + BUG-001 forgot-password UI via `.cursor/prompts/fix-bug.md` / `add-page.md`
+4. **Phase 3 — FE↔BE contracts** → `.cursor/prompts/fix-api-frontend-contracts.md`
+5. **Phase 4 — CRUD by role** → `.cursor/prompts/fix-api-crud-by-role.md` (customer → partner → admin)
+6. **Phase 5 — Test matrix** → `.cursor/prompts/api-integration-test-matrix.md` + `.cursor/prompts/write-tests.md` (pytest happy paths + Playwright critical flows from `08-testing.md`)
+7. **Phase 6 — Payments hardening** → Razorpay Checkout.js + webhook idempotency (BUG-012); COD confirmation; ADR-001; optional `generate-adr.md` if contract break
+8. **Phase 7 — Planned/stub features gate** → subscriptions/loyalty/notifications: ship minimal or explicitly defer with feature flags; `start-feature.md` only if launch-blocking
+9. **Phase 8 — Deploy gate** → `.cursor/prompts/deploy.md` + `.cursor/checklists/post-deploy.md`; confirm staging health + CI green (current-status Phase-6 blockers)
+10. **Optional polish** → `.cursor/prompts/marketing-production-ready.md`, `security-review.md`, `accessibility-review.md`, `performance-review.md`
+
+### PRODUCTION READINESS MATRIX (summary)
+
+P0 gaps: forgot-password UI; health/db+redis; auth/order/partner/admin E2E; order-create + payment API tests; staging health; Razorpay live checkout + webhook reconciliation; order idempotency (BUG-016).  
+P1 gaps: complaints/disputes happy-path tests; partner ops (inventory/QR/staff/settlements) CRUD tests; subscriptions cancel/me; notifications beyond stubs.  
+P2 gaps: loyalty/referrals full product; Google OAuth; WhatsApp templates live; marketing Lighthouse perf.
+
+Full matrix published in chat for this audit (Feature | Role | Spec | Routes | API | Tests | Gap | Priority).
+
+---
+
 ## 2026-07-27 — Frontend npm audit: 17 → 0 vulnerabilities
 
 - **Type:** fix

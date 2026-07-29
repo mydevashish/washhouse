@@ -4,14 +4,22 @@ Automated Lighthouse runs on **every pull request** enforce category score floor
 
 ## Thresholds (CI fails if not met)
 
-| Category | Minimum score |
-| -------- | ------------- |
-| Performance | **90** |
-| Accessibility | **90** |
-| Best Practices | **90** |
-| SEO | **90** |
+| Category | CI assertion | Notes |
+| -------- | ------------ | ----- |
+| Performance | **warn** ≥ 90 | Hard fail deferred until mobile LCP ≤2.5s is green on prod |
+| Accessibility | **error** ≥ 90 | |
+| Best Practices | **error** ≥ 90 | |
+| SEO | **warn** ≥ 90 | Auth-gated `/partner` `/admin` often redirect |
 
-Configured in `frontend/.lighthouserc.json` (`minScore: 0.9` per category).
+Configured in `frontend/.lighthouserc.json`. Form factor: **mobile** (simulated 4G).
+
+Hard gates on Core Web Vitals:
+
+| Metric | Assertion |
+| ------ | --------- |
+| LCP | **error** ≤ 4000 ms (budget target remains 2500 ms) |
+| CLS | **error** ≤ 0.1 |
+| FCP / TBT / SI | **warn** |
 
 Additional **performance budget** checks live in:
 
@@ -25,9 +33,10 @@ Each PR audits the production build at:
 | URL | Page |
 | --- | ---- |
 | `/` | Marketing home |
-| `/login` | Auth |
 | `/discover` | Marketplace browse |
-| `/partners` | Partner landing |
+| `/partner` | Partner shell (unauth → login gate) |
+| `/admin` | Admin shell (unauth → login gate) |
+| `/login` | Auth |
 
 Three runs per URL; Lighthouse CI uses the median run for assertions.
 

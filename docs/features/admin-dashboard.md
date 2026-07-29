@@ -39,6 +39,17 @@ Admins understand platform health within **10 seconds** of login: laundries, cus
 | `GET /admin/audit-logs` | Audit trail |
 | `PATCH /admin/laundries/{id}/commission` | Per-laundry override |
 
+## Tests
+
+- Pytest: `backend/tests/api/test_admin_marketplace_chain.py`
+- Playwright: `frontend/tests/e2e/admin-marketplace-chain.spec.ts` (`playwright.admin.config.ts`)
+
+## P2 (do not block launch)
+
+- Subscriptions admin depth — `docs/features/subscriptions.md`
+- Rich notifications — `docs/features/notifications.md`
+- Loyalty admin ops — `docs/features/loyalty-referrals.md`
+
 ## Frontend structure
 
 - Shell: `components/layout/admin-shell.tsx`

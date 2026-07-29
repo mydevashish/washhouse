@@ -20,6 +20,7 @@ from app.repositories.inventory import InventoryRepository
 from app.repositories.laundry import LaundryRepository
 from app.repositories.order import OrderRepository
 from app.repositories.staff import StaffRepository
+from app.services.fraud_detection_service import FraudDetectionService
 
 
 class PartnerService:
@@ -69,11 +70,15 @@ class PartnerService:
             "revenue_week_inr": str(Decimal("0.00")),
         }
 
-    async def get_inventory(self, partner_user_id: UUID, order_id: UUID) -> OrderInventory:
-        laundry = await self._laundry_for_partner(partner_user_id)
+    async def _require_owned_order(self, partner_user_id: UUID, order_id: UUID) -> Order:
+        laundry_ids = await self._laundry_ids_for_partner(partner_user_id)
         order = await self._orders.get_by_id(order_id)
-        if not order or order.laundry_id != laundry.id:
+        if not order or order.laundry_id not in laundry_ids:
             raise NotFoundError("Order not found")
+        return order
+
+    async def get_inventory(self, partner_user_id: UUID, order_id: UUID) -> OrderInventory:
+        await self._require_owned_order(partner_user_id, order_id)
         row = await self._inventory.get_by_order(order_id)
         if not row:
             row = OrderInventory(order_id=order_id, expected_count=0, received_count=0)
@@ -90,10 +95,7 @@ class PartnerService:
         missing_notes: str | None,
         damaged_notes: str | None,
     ) -> OrderInventory:
-        laundry = await self._laundry_for_partner(partner_user_id)
-        order = await self._orders.get_by_id(order_id)
-        if not order or order.laundry_id != laundry.id:
-            raise NotFoundError("Order not found")
+        order = await self._require_owned_order(partner_user_id, order_id)
         row = await self._inventory.get_by_order(order_id)
         if not row:
             row = OrderInventory(order_id=order_id)
@@ -103,7 +105,7 @@ class PartnerService:
         row.damaged_notes = damaged_notes
         saved = await self._inventory.upsert(row)
         if received_count < expected_count or missing_notes or damaged_notes:
-            await FraudDetectionService(self._session).on_inventory_mismatch(laundry.id, order_id)
+            await FraudDetectionService(self._session).on_inventory_mismatch(order.laundry_id, order_id)
         return saved
 
     async def list_staff(self, partner_user_id: UUID) -> list[PartnerStaff]:
@@ -121,6 +123,28 @@ class PartnerService:
         laundry = await self._laundry_for_partner(partner_user_id)
         staff = PartnerStaff(laundry_id=laundry.id, name=name, phone=phone, role=role)
         return await self._staff.create(staff)
+
+    async def update_staff(
+        self,
+        partner_user_id: UUID,
+        staff_id: UUID,
+        *,
+        name: str | None = None,
+        phone: str | None = None,
+        role=None,
+    ) -> PartnerStaff:
+        laundry = await self._laundry_for_partner(partner_user_id)
+        staff = await self._staff.get_by_id(staff_id, laundry.id)
+        if not staff:
+            raise NotFoundError("Staff not found")
+        if name is not None:
+            staff.name = name
+        if phone is not None:
+            staff.phone = phone
+        if role is not None:
+            staff.role = role
+        await self._session.flush()
+        return staff
 
     async def delete_staff(self, partner_user_id: UUID, staff_id: UUID) -> None:
         laundry = await self._laundry_for_partner(partner_user_id)

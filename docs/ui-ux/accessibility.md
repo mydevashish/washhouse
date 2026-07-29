@@ -25,6 +25,10 @@ Target: **WCAG 2.1 AA**. Tested via automated + manual checks.
 | FAB vs bottom CTAs | `IntersectionObserver` on `[data-marketing-sticky-cta]` / `[data-marketing-bottom-cta]`; hide with `inert` + `aria-hidden` (not opacity alone) |
 | Horizontal scroll strip | `tabIndex={0}` + `focus-visible:ring-*` on scroll container |
 | Glass hero copy    | Use `GlassSurface variant="strong"`; body text uses token `text-foreground` / `text-muted-foreground` (audited on opaque card mix) |
+| List + motion      | Never wrap `<li>` in Framer `motion.div` — put `FadeInItem` **inside** `<li>` |
+| Hidden file input  | `className="sr-only"` + `tabIndex={-1}` + `aria-label` — do **not** use `aria-hidden` on focusable inputs |
+| Decorative sparkline | Prefer SVG `aria-hidden` (not Recharts) so no `tabindex=0` inside `aria-hidden` |
+| Toast theme        | Avoid Sonner `richColors` (success green fails AA); dismiss/exclude `[data-sonner-toaster]` in axe scans |
 
 ## Contrast minimums
 

@@ -23,17 +23,25 @@ class StaffManagementRepository:
         self._session = session
 
     async def get_laundry_for_owner(self, owner_user_id: UUID) -> Laundry | None:
-        return await self._session.scalar(
-            select(Laundry).where(Laundry.owner_user_id == owner_user_id, Laundry.deleted_at.is_(None)),
+        result = await self._session.execute(
+            select(Laundry)
+            .where(Laundry.owner_user_id == owner_user_id, Laundry.deleted_at.is_(None))
+            .order_by(Laundry.created_at.asc())
+            .limit(1),
         )
+        return result.scalars().first()
 
     async def get_staff_by_user(self, user_id: UUID) -> PartnerStaff | None:
-        return await self._session.scalar(
-            select(PartnerStaff).where(
+        result = await self._session.execute(
+            select(PartnerStaff)
+            .where(
                 PartnerStaff.user_id == user_id,
                 PartnerStaff.deleted_at.is_(None),
-            ),
+            )
+            .order_by(PartnerStaff.created_at.asc())
+            .limit(1),
         )
+        return result.scalars().first()
 
     async def get_staff(self, staff_id: UUID, laundry_id: UUID) -> PartnerStaff | None:
         return await self._session.scalar(

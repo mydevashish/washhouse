@@ -1,29 +1,34 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { MapPin, Store } from 'lucide-react';
+import { useState } from 'react';
+import { MapPin, Search, Store } from 'lucide-react';
 
 import { EmptyState } from '@/components/ui/empty-state';
 import { InfoBanner } from '@/components/ui/info-banner';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useLaundryDiscovery } from '@/features/discover/hooks/use-laundry-discovery';
+import {
+  DEFAULT_FILTERS,
+  type LaundryFilters,
+} from '@/features/discover/listing/filter-laundries';
+import { LaundryFiltersBar } from '@/features/discover/listing/laundry-filters';
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
 import { PartnerCard } from '@/features/discover/marketplace/partner-card';
 import { Section, SectionHeading } from '@/features/discover/marketplace/section';
-import { queryKeys } from '@/lib/query-keys';
-import {
-  discoveryQueryRetry,
-  discoveryQueryRetryDelay,
-  STALE,
-} from '@/lib/query-config';
-import { listLaundries } from '@/services/laundries';
 
 export function PartnersSection() {
-  const { data, isError, refetch, isFetching, isPending } = useQuery({
-    queryKey: queryKeys.laundries(),
-    queryFn: () => listLaundries(),
-    staleTime: STALE.laundries,
-    retry: discoveryQueryRetry,
-    retryDelay: discoveryQueryRetryDelay,
-  });
+  const [filters, setFilters] = useState<LaundryFilters>(DEFAULT_FILTERS);
+  const {
+    filtered,
+    enriched,
+    isLoading,
+    isError,
+    refetch,
+    isFetching,
+    isSearching,
+    total,
+  } = useLaundryDiscovery(filters);
 
   return (
     <Section id="partners" tone="brand" ariaLabel="Nearby laundry partners">
@@ -45,7 +50,44 @@ export function PartnersSection() {
           </InfoBanner>
         </FadeInItem>
 
-        {isPending && (
+        <FadeInItem>
+          <div className="mb-6 max-w-xl">
+            <Label htmlFor="partners-search" className="font-semibold">
+              Search
+            </Label>
+            <Input
+              id="partners-search"
+              type="search"
+              placeholder="Name, area, service, or tag…"
+              value={filters.search}
+              onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+              className="mt-2"
+              aria-describedby="partners-search-hint"
+            />
+            <p id="partners-search-hint" className="mt-1 text-sm text-fg-1">
+              {isSearching && isLoading
+                ? 'Searching…'
+                : isSearching
+                  ? `${total} result${total === 1 ? '' : 's'} from server`
+                  : 'Server search runs as you type'}
+            </p>
+          </div>
+        </FadeInItem>
+
+        <FadeInItem>
+          <div className="mb-8">
+            <LaundryFiltersBar
+              filters={filters}
+              onChange={setFilters}
+              resultCount={filtered.length}
+              totalCount={isSearching ? total : undefined}
+              isLoading={isLoading}
+              isFetching={isFetching}
+            />
+          </div>
+        </FadeInItem>
+
+        {isLoading && (
           <div
             className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
             aria-busy="true"
@@ -80,7 +122,7 @@ export function PartnersSection() {
           />
         )}
 
-        {data && data.length === 0 && (
+        {!isLoading && !isError && enriched.length === 0 && !isSearching && (
           <EmptyState
             icon={Store}
             title="No partners in your area yet"
@@ -89,12 +131,35 @@ export function PartnersSection() {
           />
         )}
 
-        {data && data.length > 0 && (
+        {!isLoading && !isError && isSearching && filtered.length === 0 && (
+          <EmptyState
+            icon={Search}
+            title="No matches for your search"
+            description="Try a different store name, neighbourhood, or service."
+            secondaryAction={{
+              label: 'Clear search',
+              onClick: () => setFilters((f) => ({ ...f, search: '' })),
+            }}
+          />
+        )}
+
+        {!isLoading && !isError && !isSearching && enriched.length > 0 && filtered.length === 0 && (
+          <EmptyState
+            icon={MapPin}
+            title="No laundries match your filters"
+            description="Try widening distance or price filters, or clear your search."
+            secondaryAction={{
+              label: 'Reset filters',
+              onClick: () => setFilters(DEFAULT_FILTERS),
+            }}
+          />
+        )}
+
+        {filtered.length > 0 && (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {data.map((laundry, index) => (
-              <FadeInItem key={laundry.id}>
-                <PartnerCard laundry={laundry} index={index} />
-              </FadeInItem>
+            {filtered.map((laundry, index) => (
+              // No FadeInItem: opacity:0 until in-view hides focusable PartnerCard links (WCAG 2.4.7).
+              <PartnerCard key={laundry.id} laundry={laundry} index={index} />
             ))}
           </div>
         )}

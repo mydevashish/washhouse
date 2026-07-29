@@ -86,7 +86,11 @@ class MarketingPublicStatsResponse(BaseModel):
 
 
 class MarketingTestimonialResponse(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, ser_json_by_alias=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+        ser_json_by_alias=True,
+    )
 
     id: UUID
     name: str

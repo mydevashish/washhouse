@@ -126,6 +126,12 @@ async def test_create_walk_in_order_schedules_whatsapp(
     assert len(body["items"]) == 1
     assert Decimal(body["total_inr"]) > 0
 
+    # Enqueue runs on a daemon thread (BUG-020) — poll briefly instead of asserting immediately.
+    import time
+
+    deadline = time.monotonic() + 2.0
+    while time.monotonic() < deadline and mock_whatsapp_task.delay.call_count < 1:
+        time.sleep(0.05)
     mock_whatsapp_task.delay.assert_called_once_with(body["id"], OrderStatus.confirmed.value)
 
     order_id = UUID(body["id"])
@@ -133,6 +139,37 @@ async def test_create_walk_in_order_schedules_whatsapp(
     order = result.scalar_one()
     assert order.order_source == OrderSource.walk_in
     assert order.customer_phone == "+919876543210"
+
+
+@patch("app.tasks.order_notifications.send_order_status_whatsapp")
+async def test_walk_in_create_does_not_block_when_celery_broker_hangs(
+    mock_whatsapp_task: MagicMock,
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """BUG-2026-07-28-020: Redis/Celery hang must not stall walk-in HTTP response."""
+    import time
+
+    def _slow_delay(*_args: object, **_kwargs: object) -> None:
+        time.sleep(30)
+
+    mock_whatsapp_task.delay = _slow_delay
+    _partner, _laundry, service, token = await _seed_partner_laundry(db_session)
+
+    started = time.perf_counter()
+    response = await client.post(
+        "/api/v1/partner/walk-in-orders",
+        headers=_partner_headers(token),
+        json={
+            "customer_name": "Fast Path Customer",
+            "customer_phone": "+919876543210",
+            "items": [{"service_id": str(service.id), "quantity": 1}],
+        },
+    )
+    elapsed = time.perf_counter() - started
+
+    assert response.status_code == 201, response.text
+    assert elapsed < 5.0, f"walk-in create blocked for {elapsed:.1f}s (expected <5s)"
 
 
 @patch("app.tasks.order_notifications.send_order_status_whatsapp")
@@ -275,9 +312,11 @@ async def test_walk_in_skips_pickup_inventory_requirements(
         assert response.status_code == 200
 
 
+@patch("app.services.order_events.publish_order_status_update", new_callable=AsyncMock)
 @patch("app.services.notifications.whatsapp.get_whatsapp_provider")
 async def test_send_order_status_whatsapp_uses_provider(
     mock_get_provider: MagicMock,
+    _mock_publish: AsyncMock,
     db_session: AsyncSession,
 ) -> None:
     mock_provider = MagicMock()
@@ -296,7 +335,20 @@ async def test_send_order_status_whatsapp_uses_provider(
     )
     assert order.order_source == OrderSource.walk_in
 
-    await _send_order_status_whatsapp(order.id, OrderStatus.confirmed)
+    # Task opens its own session — reuse the test session so flushed rows are visible.
+    session_cm = MagicMock()
+    session_cm.__aenter__ = AsyncMock(return_value=db_session)
+    session_cm.__aexit__ = AsyncMock(return_value=False)
+
+    with (
+        patch("app.db.session.AsyncSessionLocal", return_value=session_cm),
+        patch(
+            "app.services.notifications.dispatch.is_channel_enabled",
+            new_callable=AsyncMock,
+            return_value=True,
+        ),
+    ):
+        await _send_order_status_whatsapp(order.id, OrderStatus.confirmed)
 
     mock_provider.send_template.assert_awaited_once()
     call_args = mock_provider.send_template.await_args

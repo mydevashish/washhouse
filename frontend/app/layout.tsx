@@ -46,7 +46,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning className={inter.variable}>
       <body className="min-h-screen antialiased">
         <Providers>{children}</Providers>
-        <Toaster richColors position="top-right" />
+        {/* richColors fails WCAG AA on success/error toast titles — use default theme */}
+        <Toaster position="top-right" closeButton />
       </body>
     </html>
   );

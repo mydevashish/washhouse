@@ -21,6 +21,8 @@ dist/
 .parcel-cache/
 .turbo/
 .lighthouseci/
+.lighthouse-audit*
+
 
 # Environment (never commit secrets)
 .env

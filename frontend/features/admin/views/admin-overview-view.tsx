@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -7,7 +8,6 @@ import { Activity, ClipboardCheck, IndianRupee, Package, Percent, Store, Users }
 
 import { Button } from '@/components/ui/button';
 import { QueryErrorState } from '@/components/feedback/query-error-state';
-import { AdminAnalyticsCharts } from '@/features/admin/charts/admin-analytics-charts';
 import { AdminTopLaundriesWidget } from '@/features/admin/revenue-analytics/admin-top-laundries-widget';
 import { AdminAlertsStrip } from '@/features/admin/components/admin-alerts-strip';
 import { AdminContent } from '@/features/admin/components/admin-content';
@@ -19,6 +19,21 @@ import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import { useAdminQueriesEnabled } from '@/features/admin/hooks/use-admin-queries';
 import { getAdminAnalytics, getAdminDashboard } from '@/services/admin';
+
+const AdminAnalyticsCharts = dynamic(
+  () =>
+    import('@/features/admin/charts/admin-analytics-charts').then((m) => m.AdminAnalyticsCharts),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="h-72 animate-pulse rounded-2xl bg-muted/50 ring-1 ring-border/40"
+        aria-busy="true"
+        aria-label="Loading analytics charts"
+      />
+    ),
+  },
+);
 
 function trendSeries(
   points: Array<{ orders?: number; revenue_inr?: string; new_customers?: number; new_laundries?: number }>,

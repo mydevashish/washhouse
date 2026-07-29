@@ -55,7 +55,7 @@ Current live stack (interim): **Vercel** `washhouse.vercel.app` + **Render** `wa
 | BUG-002 | 1 | `OTP_DEBUG` in API responses | **Mitigated** — forced off in staging/prod |
 | — | 1 | CI/CD baseline green | **In progress** — workflow fixed; verify on remote |
 | BUG-010 | 1 | Integration tests fail without Docker Postgres | **Open** (docs) |
-| BUG-012 | 2 | Razorpay `payment.captured` webhook incomplete | **Open** |
+| BUG-012 | 2 | Razorpay `payment.captured` webhook incomplete | **Fixed 2026-07-28** — capture → `paid` + Payment upsert; idempotent terminal guards |
 | BUG-016 | 2 | No order-create idempotency | **Open** |
 | — | 2 | Staging backend health | **FAIL** — `washhouse.onrender.com` health timed out; `staging.dlm.app` unreachable |
 

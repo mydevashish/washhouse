@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   ArrowLeft,
@@ -42,11 +42,14 @@ import { formatInr } from '@/features/discover/detail/order-pricing';
 import { useMounted } from '@/lib/hooks/use-mounted';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
-import { getOrder } from '@/services/orders';
+import { cancelOrder, getOrder } from '@/services/orders';
 import { cn } from '@/lib/utils';
+
+const CANCELABLE_STATUSES = new Set(['confirmed', 'pickup_assigned']);
 
 export function OrderTracking({ orderId }: { orderId: string }) {
   const mounted = useMounted();
+  const queryClient = useQueryClient();
   const { mode, isLive, pollIntervalMs } = useOrderTrackingLive(orderId);
 
   const orderQ = useQuery({
@@ -60,6 +63,16 @@ export function OrderTracking({ orderId }: { orderId: string }) {
       return pollIntervalMs;
     },
     refetchIntervalInBackground: false,
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: () => cancelOrder(orderId),
+    onSuccess: (order) => {
+      queryClient.setQueryData(queryKeys.order(orderId), order);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.orders() });
+      toast.success('Order cancelled');
+    },
+    onError: () => toast.error('Could not cancel order'),
   });
 
   const isLoading = orderQ.isLoading;
@@ -83,6 +96,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
   const isCancelled = order.status === 'cancelled';
   const isDelivered = order.status === 'delivered';
   const isTerminal = isCancelled || isDelivered;
+  const canCancel = CANCELABLE_STATUSES.has(order.status);
   const timelineSteps = isCancelled ? [] : buildOrderTimeline(order.status, events);
   const progress = trackingProgressPercent(order.status);
 
@@ -180,12 +194,32 @@ export function OrderTracking({ orderId }: { orderId: string }) {
             </div>
           )}
         </div>
-        <CardContent className="flex justify-end border-t border-border p-3">
+        <CardContent className="flex flex-wrap items-center justify-end gap-2 border-t border-border p-3">
+          {canCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-[44px] text-destructive hover:bg-danger-muted hover:text-destructive sm:min-h-0"
+              disabled={cancelMutation.isPending}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    'Cancel this order? You can only cancel before the laundry picks up your clothes.',
+                  )
+                ) {
+                  cancelMutation.mutate();
+                }
+              }}
+            >
+              {cancelMutation.isPending ? 'Cancelling…' : 'Cancel order'}
+            </Button>
+          )}
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className="min-h-[44px] gap-2 sm:min-h-0"
             disabled={isRefetching}
             onClick={() => void orderQ.refetch()}
           >

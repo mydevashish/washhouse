@@ -1,15 +1,17 @@
 import { saveCheckoutCart } from '@/features/checkout/lib/cart-storage';
-import { isOnlineBookingEnabledFromEnv } from '@/lib/online-booking';
 
 type RouterLike = { push: (href: string) => void };
 
+/**
+ * Persist cart and navigate to checkout.
+ * Callers must gate on online booking (runtime `/config` via useOnlineBookingEnabled).
+ */
 export function goToCheckout(
   router: RouterLike,
   laundryId: string,
   quantities: Record<string, number>,
   options?: { signedIn: boolean },
 ): void {
-  if (!isOnlineBookingEnabledFromEnv()) return;
   saveCheckoutCart(laundryId, quantities);
   const path = `/checkout/${laundryId}`;
   if (options?.signedIn === false) {

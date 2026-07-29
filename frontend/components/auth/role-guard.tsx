@@ -8,6 +8,7 @@ import { PageSpinner } from '@/components/feedback/page-spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { getPostLoginPath } from '@/lib/auth-routing';
+import { useStoreHydrated } from '@/lib/hooks/use-store-hydrated';
 import { fetchMe } from '@/services/auth';
 import { tryRefreshSession } from '@/lib/session';
 import { useAuthStore } from '@/store/auth.store';
@@ -21,12 +22,15 @@ export function RoleGuard({
   roles: UserRole[];
 }) {
   const router = useRouter();
+  const hydrated = useStoreHydrated(useAuthStore);
   const setUser = useAuthStore((s) => s.setUser);
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
   const [ready, setReady] = useState(false);
   const [denied, setDenied] = useState(false);
 
   useEffect(() => {
+    if (!hydrated) return;
+
     let cancelled = false;
     async function load() {
       let token = useAuthStore.getState().accessToken;
@@ -74,7 +78,7 @@ export function RoleGuard({
     return () => {
       cancelled = true;
     };
-  }, [roles, router, setAccessToken, setUser]);
+  }, [hydrated, roles, router, setAccessToken, setUser]);
 
   if (denied) {
     const user = useAuthStore.getState().user;
@@ -83,10 +87,10 @@ export function RoleGuard({
       user?.role === 'platform_partner'
         ? 'Go to Platform Partner dashboard'
         : user?.role === 'partner' || user?.role === 'partner_staff'
-        ? 'Go to Partner dashboard'
-        : user?.role === 'admin' || user?.role === 'super_admin'
-          ? 'Go to Admin'
-          : 'Go to Discover';
+          ? 'Go to Partner dashboard'
+          : user?.role === 'admin' || user?.role === 'super_admin'
+            ? 'Go to Admin'
+            : 'Go to Discover';
 
     return (
       <div className="mx-auto flex min-h-[50vh] max-w-md items-center px-4 py-12">
@@ -105,7 +109,7 @@ export function RoleGuard({
     );
   }
 
-  if (!ready) {
+  if (!hydrated || !ready) {
     return <PageSpinner label="Checking access…" />;
   }
 

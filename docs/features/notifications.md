@@ -1,7 +1,9 @@
 # Feature: Notifications
 
-> Status: planned  
-> Last updated: 2026-06-01
+> Status: planned (**P2** for rich admin notification center; WhatsApp stubs shipped)  
+> Last updated: 2026-07-28
+
+Admin `/admin/notifications` currently derives alerts from dashboard data — full in-app notification product is P2 and must not fail launch falsely.
 
 ## Channels
 

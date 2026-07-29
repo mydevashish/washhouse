@@ -141,7 +141,8 @@ export function PickupEvidenceUpload({
           capture="environment"
           multiple
           className="sr-only"
-          aria-hidden
+          tabIndex={-1}
+          aria-label="Choose pickup evidence photos"
           onChange={(e) => {
             if (e.target.files?.length) addFiles(e.target.files);
             e.target.value = '';

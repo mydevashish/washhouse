@@ -10,9 +10,6 @@ from fastapi import APIRouter, Depends, Query, Request
 from app.api.admin_list_params import AdminAuditListQuery, AdminOrderListQuery, AdminUserListQuery
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_admin
-from app.core.exceptions import NotFoundError
-from app.repositories.laundry import LaundryRepository
-from app.models.enums import LaundryStatus
 from app.services.laundry_service import invalidate_laundry_discovery_cache
 from app.schemas.admin import (
     AdminAnalyticsResponse,
@@ -84,16 +81,14 @@ async def approve_laundry(
     laundry_id: UUID,
     request: Request,
     session: SessionDep,
-    _: Annotated[dict, Depends(get_current_admin)],
+    payload: Annotated[dict, Depends(get_current_admin)],
 ) -> dict:
-    laundry = await LaundryRepository(session).get_by_id(laundry_id)
-    if not laundry:
-        raise NotFoundError("Laundry not found")
-    laundry.status = LaundryStatus.approved
-    laundry.is_verified = True
-    await session.flush()
+    result = await AdminService(session).approve_laundry(
+        laundry_id,
+        actor_user_id=UUID(payload["sub"]),
+    )
     await invalidate_laundry_discovery_cache()
-    return success_envelope({"id": str(laundry.id), "status": laundry.status.value}, request)
+    return success_envelope(result, request)
 
 
 @router.post("/laundries/{laundry_id}/reject")
@@ -101,9 +96,12 @@ async def reject_laundry(
     laundry_id: UUID,
     request: Request,
     session: SessionDep,
-    _: Annotated[dict, Depends(get_current_admin)],
+    payload: Annotated[dict, Depends(get_current_admin)],
 ) -> dict:
-    result = await AdminService(session).reject_laundry(laundry_id)
+    result = await AdminService(session).reject_laundry(
+        laundry_id,
+        actor_user_id=UUID(payload["sub"]),
+    )
     await invalidate_laundry_discovery_cache()
     return success_envelope(result, request)
 

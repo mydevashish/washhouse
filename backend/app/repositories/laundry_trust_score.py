@@ -26,9 +26,12 @@ class LaundryTrustScoreRepository:
 
     async def get_laundry_by_owner(self, owner_user_id: UUID) -> Laundry | None:
         result = await self._session.execute(
-            select(Laundry).where(Laundry.owner_user_id == owner_user_id, Laundry.deleted_at.is_(None)),
+            select(Laundry)
+            .where(Laundry.owner_user_id == owner_user_id, Laundry.deleted_at.is_(None))
+            .order_by(Laundry.created_at.asc())
+            .limit(1),
         )
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     async def list_laundries(self, *, limit: int = 200) -> list[Laundry]:
         result = await self._session.execute(

@@ -25,8 +25,8 @@ export const buttonVariants = cva(
       },
       size: {
         default: 'h-control min-h-[44px] rounded-md px-3 text-sm sm:min-h-0',
-        sm: 'h-control-sm min-h-[40px] rounded-md px-2.5 text-xs sm:min-h-0',
-        lg: 'h-10 rounded-lg px-5 text-sm font-semibold',
+        sm: 'h-control-sm min-h-[44px] rounded-md px-2.5 text-xs sm:min-h-0',
+        lg: 'h-11 min-h-[44px] rounded-lg px-5 text-sm font-semibold',
         icon: 'h-control w-control min-h-[44px] rounded-md sm:min-h-0 sm:min-w-0',
       },
     },

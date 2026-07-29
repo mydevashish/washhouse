@@ -23,7 +23,7 @@ Customer, partner, admin — urban mobile users in India.
 - [x] Register + login (email/password)
 - [ ] Refresh token rotation (httpOnly cookie)
 - [ ] OTP email + phone
-- [ ] Password reset
+- [x] Password reset (API + `/forgot-password` / `/reset-password` UI — BUG-001)
 - [ ] Google OAuth (501 until `GOOGLE_CLIENT_ID`)
 
 ## Non-goals
@@ -50,9 +50,13 @@ Customer, partner, admin — urban mobile users in India.
 
 ## Frontend surface
 
-- Routes: `/login`, `/register`
+- Routes: `/login`, `/register`, `/forgot-password`, `/reset-password` (MarketingShell chrome)
+- `/register` is **customer-only** (email / password / name); partners apply via franchise; laundry/admin → `/staff`
+- Auth footers preserve safe `?next=` between `/login` ↔ `/register`
 - `frontend/services/auth.ts`, `frontend/store/auth.store.ts`
+- Forms: `frontend/features/auth/components/*`, Zod schemas under `features/auth/schemas/`
 - Access token in Zustand memory; refresh in httpOnly cookie
+- Reset uses email + OTP `code` (query `?code=` or `?token=` prefills code; optional `?email=`)
 
 ## Acceptance criteria
 

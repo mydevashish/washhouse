@@ -43,6 +43,11 @@ export async function createAddress(input: AddressInput): Promise<Address> {
   return data.data;
 }
 
+export async function updateAddress(id: string, input: Partial<AddressInput>): Promise<Address> {
+  const { data } = await api.patch<ApiEnvelope<Address>>(`/users/me/addresses/${id}`, input);
+  return data.data;
+}
+
 export async function deleteAddress(id: string): Promise<void> {
   await api.delete(`/users/me/addresses/${id}`);
 }

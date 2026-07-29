@@ -19,6 +19,7 @@ from app.schemas.partner import (
     PartnerOrderResponse,
     StaffCreateRequest,
     StaffResponse,
+    StaffUpdateRequest,
 )
 from app.services.laundry_trust_score_service import LaundryTrustScoreService
 from app.services.laundry_service import LaundryService
@@ -43,7 +44,22 @@ async def register_laundry(
         address_line=body.address_line,
         description=body.description,
     )
-    return success_envelope(LaundryDetailResponse.model_validate(laundry), request)
+    # Avoid lazy-loading `services` outside an async greenlet context.
+    detail = LaundryDetailResponse.model_validate(
+        {
+            "id": laundry.id,
+            "name": laundry.name,
+            "slug": laundry.slug,
+            "city": laundry.city,
+            "avg_rating": laundry.avg_rating,
+            "review_count": laundry.review_count,
+            "is_verified": laundry.is_verified,
+            "description": laundry.description,
+            "address_line": laundry.address_line,
+            "services": [],
+        },
+    )
+    return success_envelope(detail, request)
 
 
 def _partner_order_response(order, customer_name: str) -> PartnerOrderResponse:
@@ -238,6 +254,24 @@ async def create_staff(
     return success_envelope(StaffResponse.model_validate(row), request)
 
 
+@router.patch("/staff/{staff_id}")
+async def update_staff(
+    staff_id: UUID,
+    body: StaffUpdateRequest,
+    request: Request,
+    session: SessionDep,
+    payload: Annotated[dict, Depends(get_current_partner)],
+) -> dict:
+    row = await PartnerService(session).update_staff(
+        UUID(payload["sub"]),
+        staff_id,
+        name=body.name,
+        phone=body.phone,
+        role=body.role,
+    )
+    return success_envelope(StaffResponse.model_validate(row), request)
+
+
 @router.delete("/staff/{staff_id}", status_code=204, response_class=Response)
 async def delete_staff(
     staff_id: UUID,
@@ -258,9 +292,10 @@ async def scan_tracking(
 ) -> dict:
     from app.repositories.laundry import LaundryRepository
 
-    laundry = await LaundryRepository(session).get_by_owner(UUID(payload["sub"]))
+    laundries = await LaundryRepository(session).list_by_owner(UUID(payload["sub"]))
+    laundry_ids = {laundry.id for laundry in laundries}
     order = await OrderRepository(session).get_by_tracking_code(tracking_code)
-    if not order or not laundry or order.laundry_id != laundry.id:
+    if not order or order.laundry_id not in laundry_ids:
         from app.core.exceptions import NotFoundError
 
         raise NotFoundError("Order not found")

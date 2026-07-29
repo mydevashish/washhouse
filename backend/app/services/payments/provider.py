@@ -21,11 +21,20 @@ class PaymentProvider(Protocol):
 
     async def verify_webhook(self, body: bytes, signature: str) -> dict: ...
 
+    async def refund(self, razorpay_payment_id: str, amount_inr: Decimal) -> dict: ...
+
+    @property
+    def is_configured(self) -> bool: ...
+
 
 class RazorpayProvider:
+    @property
+    def is_configured(self) -> bool:
+        return bool(settings.RAZORPAY_KEY_ID and settings.RAZORPAY_KEY_SECRET)
+
     async def create_order(self, order_id: UUID, amount_inr: Decimal) -> dict:
         amount_paise = int(amount_inr * 100)
-        if not settings.RAZORPAY_KEY_ID or not settings.RAZORPAY_KEY_SECRET:
+        if not self.is_configured:
             log.warning("razorpay.not_configured", order_id=str(order_id))
             return {"razorpay_order_id": f"dev_{order_id}", "amount_paise": amount_paise}
 
@@ -45,6 +54,26 @@ class RazorpayProvider:
             return {
                 "razorpay_order_id": data["id"],
                 "amount_paise": data["amount"],
+            }
+
+    async def refund(self, razorpay_payment_id: str, amount_inr: Decimal) -> dict:
+        """Refund a captured Razorpay payment. Stub-safe when keys are unset (local/test)."""
+        amount_paise = int(amount_inr * 100)
+        if not self.is_configured:
+            log.warning("razorpay.refund_stub", payment_id=razorpay_payment_id)
+            return {"razorpay_refund_id": f"dev_rfnd_{razorpay_payment_id}", "amount_paise": amount_paise}
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.post(
+                f"https://api.razorpay.com/v1/payments/{razorpay_payment_id}/refund",
+                auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET),
+                json={"amount": amount_paise},
+            )
+            response.raise_for_status()
+            data = response.json()
+            return {
+                "razorpay_refund_id": data.get("id"),
+                "amount_paise": data.get("amount", amount_paise),
             }
 
     async def verify_webhook(self, body: bytes, signature: str) -> dict:

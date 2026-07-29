@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import threading
+
 import structlog
 
 from app.models.enums import OrderSource, OrderStatus
@@ -42,6 +44,11 @@ class OrderStatusWhatsAppNotifier:
 
     @classmethod
     def schedule(cls, order: Order, status: OrderStatus) -> None:
+        """Enqueue WhatsApp notify without blocking the request path.
+
+        Celery broker connect can hang for minutes when Redis is down; enqueue
+        on a daemon thread so walk-in create / status PATCH stays responsive.
+        """
         if order.order_source != OrderSource.walk_in:
             return
         if not order.customer_phone:
@@ -49,19 +56,25 @@ class OrderStatusWhatsAppNotifier:
         if status not in NOTIFY_STATUSES:
             return
 
-        try:
-            from app.tasks.order_notifications import send_order_status_whatsapp
+        order_id = str(order.id)
+        status_value = status.value
 
-            send_order_status_whatsapp.delay(str(order.id), status.value)
-            log.info(
-                "order.whatsapp_notify_scheduled",
-                order_id=str(order.id),
-                status=status.value,
-            )
-        except Exception as exc:
-            log.warning(
-                "order.whatsapp_notify_enqueue_failed",
-                order_id=str(order.id),
-                status=status.value,
-                error=str(exc),
-            )
+        def _enqueue() -> None:
+            try:
+                from app.tasks.order_notifications import send_order_status_whatsapp
+
+                send_order_status_whatsapp.delay(order_id, status_value)
+                log.info(
+                    "order.whatsapp_notify_scheduled",
+                    order_id=order_id,
+                    status=status_value,
+                )
+            except Exception as exc:
+                log.warning(
+                    "order.whatsapp_notify_enqueue_failed",
+                    order_id=order_id,
+                    status=status_value,
+                    error=str(exc),
+                )
+
+        threading.Thread(target=_enqueue, name="whatsapp-notify-enqueue", daemon=True).start()

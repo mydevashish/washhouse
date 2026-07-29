@@ -1,14 +1,8 @@
 'use client';
 
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import dynamic from 'next/dynamic';
+import { useMemo } from 'react';
+import { IndianRupee, TrendingUp } from 'lucide-react';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
@@ -16,8 +10,15 @@ import { PartnerKpiCard, PartnerKpiGrid } from '@/features/partner/components/pa
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { usePartnerAnalytics, usePartnerOrders } from '@/features/partner/hooks/use-partner-operations';
 import { formatInr } from '@/features/discover/detail/order-pricing';
-import { IndianRupee, TrendingUp } from 'lucide-react';
-import { useMemo } from 'react';
+
+const PartnerRevenueChart = dynamic(
+  () =>
+    import('@/features/partner/components/partner-revenue-chart').then((m) => m.PartnerRevenueChart),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-48 w-full" />,
+  },
+);
 
 export function PartnerRevenueView() {
   const analyticsQ = usePartnerAnalytics();
@@ -91,22 +92,7 @@ export function PartnerRevenueView() {
           {analyticsQ.isLoading ? (
             <Skeleton className="h-48 w-full" />
           ) : (
-            <div className="h-48 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" vertical={false} />
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} width={48} />
-                  <Tooltip formatter={(v) => formatInr(Number(v))} />
-                  <Area
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="hsl(var(--primary))"
-                    fill="hsl(var(--primary)/0.15)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            <PartnerRevenueChart data={chartData} />
           )}
         </PartnerPanel>
 

@@ -39,6 +39,14 @@ class StaffCreateRequest(BaseModel):
     role: PartnerStaffRole
 
 
+class StaffUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    phone: str | None = Field(default=None, max_length=20)
+    role: PartnerStaffRole | None = None
+
+
 class StaffResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
