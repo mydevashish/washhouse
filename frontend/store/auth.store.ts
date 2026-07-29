@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+import { createSsrSafeJSONStorage } from '@/lib/ssr-safe-storage';
 import type { User } from '@/types/user';
 
 interface AuthState {
@@ -22,6 +23,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'dlm.auth',
+      storage: createSsrSafeJSONStorage(),
       // Persist only the user — token stays in memory.
       partialize: (state) => ({ user: state.user }),
       /** Avoid SSR/client mismatch; rehydrate in StoreHydration after mount. */

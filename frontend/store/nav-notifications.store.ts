@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 import type { AppContext, NavNotification } from '@/lib/navigation/types';
+import { createSsrSafeJSONStorage } from '@/lib/ssr-safe-storage';
 
 /** Stable seed timestamp — never use Date.now() during store init (hydration-safe). */
 const SEED_CREATED_AT = '2026-01-01T12:00:00.000Z';
@@ -99,6 +100,7 @@ export const useNavNotificationsStore = create<NavNotificationsState>()(
     }),
     {
       name: 'dlm.nav-notifications',
+      storage: createSsrSafeJSONStorage(),
       skipHydration: true,
     },
   ),

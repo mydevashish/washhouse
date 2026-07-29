@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-07-29 — Fix `/partner/storefront` prerender `hasHydrated` crash
+
+- **Type:** fix
+- **Scope:** Zustand persist SSR — `store.persist` missing when `localStorage` throws under Node
+- **Files:** `frontend/lib/ssr-safe-storage.ts`, `frontend/lib/ssr-safe-storage.test.ts`, `frontend/store/auth.store.ts`, `frontend/store/nav-notifications.store.ts`, `frontend/lib/hooks/use-store-hydrated.ts`, `frontend/components/providers/store-hydration.tsx`, `frontend/features/marketing/pricing/pricing-category-rack.tsx`, `logs/implementation-log.md`
+- **Summary:** Default Zustand `createJSONStorage(() => localStorage)` returns `undefined` on the server, so persist middleware never attaches `api.persist` and `useStoreHydrated` crashes during static generation (`Cannot read properties of undefined (reading 'hasHydrated')`). Added SSR-safe storage for auth/nav stores, optional-chained the hydration hook + `StoreHydration`, removed a leftover pricing-rack `console.log`.
+- **Risks:** Server path uses no-op storage (expected with `skipHydration`); client still rehydrates via `StoreHydration`.
+- **Next:** Re-run `next build` to confirm `/partner/storefront` prerenders.
+- **Refs:** Prerender error on `/partner/storefront`
+
+---
+
 ## 2026-07-29 — Unblock `next build` static generation hangs
 
 - **Type:** fix

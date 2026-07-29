@@ -11,16 +11,21 @@ type PersistApi = {
 
 /** True after a persist middleware store has finished rehydrating from storage. */
 export function useStoreHydrated<T>(
-  store: UseBoundStore<StoreApi<T>> & { persist: PersistApi },
+  store: UseBoundStore<StoreApi<T>> & { persist?: PersistApi },
 ): boolean {
-  const [hydrated, setHydrated] = useState(() => store.persist.hasHydrated());
+  const [hydrated, setHydrated] = useState(() => store.persist?.hasHydrated() ?? false);
 
   useEffect(() => {
-    if (store.persist.hasHydrated()) {
+    const persistApi = store.persist;
+    if (!persistApi) {
       setHydrated(true);
       return;
     }
-    return store.persist.onFinishHydration(() => setHydrated(true));
+    if (persistApi.hasHydrated()) {
+      setHydrated(true);
+      return;
+    }
+    return persistApi.onFinishHydration(() => setHydrated(true));
   }, [store]);
 
   return hydrated;

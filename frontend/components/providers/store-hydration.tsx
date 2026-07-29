@@ -11,8 +11,8 @@ import { useNavNotificationsStore } from '@/store/nav-notifications.store';
  */
 export function StoreHydration() {
   useEffect(() => {
-    void useAuthStore.persist.rehydrate();
-    void useNavNotificationsStore.persist.rehydrate();
+    void useAuthStore.persist?.rehydrate();
+    void useNavNotificationsStore.persist?.rehydrate();
   }, []);
 
   return null;
