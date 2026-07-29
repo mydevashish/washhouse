@@ -17,26 +17,44 @@ export type CatalogPhotoKey =
   | 'shorts'
   | 'lower'
   | 'jogger'
-  | 'kurta'
+  | 'kurta_m'
+  | 'kameez_normal'
+  | 'kameez_fancy'
   | 'dhoti'
-  | 'sherwani'
-  | 'coat'
+  | 'sherwani_cotton'
+  | 'sherwani_wedding'
+  | 'coat_formal'
+  | 'coat_heavy'
+  | 'petticoat'
   | 'suit'
+  | 'suit_2pcs'
+  | 'suit_3pcs'
   | 'vest'
+  | 'waistcoat'
   | 'tie'
-  | 'cap'
+  | 'cap_fabric'
+  | 'cap_leather'
+  | 'turban'
   | 'wallet'
   | 'hanky'
-  | 'saree'
-  | 'lehenga'
-  | 'blouse'
+  | 'saree_normal'
+  | 'saree_heavy'
+  | 'lehenga_normal'
+  | 'lehenga_heavy'
+  | 'blouse_choli_heavy'
+  | 'blouse_choli_normal'
   | 'gown'
-  | 'skirt'
-  | 'dress'
+  | 'skirt_short'
+  | 'skirt_long'
+  | 'dress_normal'
+  | 'dress_party'
   | 'top'
   | 'dupatta'
-  | 'frock'
-  | 'purse'
+  | 'frock_normal'
+  | 'frock_heavy'
+  | 'purse_small'
+  | 'purse_medium'
+  | 'purse_large'
   | 'bathrobe'
   | 'girl_dress'
   | 'sweater'
@@ -60,7 +78,10 @@ export type CatalogPhotoKey =
   | 'towel'
   | 'toy'
   | 'gloves'
-  | 'membership';
+  | 'membership'
+  | 'burkha'
+  | 'salwar'
+  | 'kurta_w';
 
 /** Ordered rules — first match wins. Prefer slug fragments (stable). */
 const CATALOG_PHOTO_RULES: ReadonlyArray<{
@@ -121,54 +142,76 @@ const CATALOG_PHOTO_RULES: ReadonlyArray<{
     match: (s, n) => s.includes('shawl') || n.includes('shawl'),
   },
   {
-    // Word/slug boundary — do not match “petticoat”
-    key: 'coat',
-    match: (s, n) =>
-      /(^|-)coat(-|$)/.test(s) || /\bcoat\b/.test(n),
-  },
-  {
-    key: 'skirt',
+    key: 'petticoat',
     match: (s, n) => s.includes('petticoat') || n.includes('petticoat'),
   },
   {
-    key: 'gown',
+    key: 'coat_formal',
+    match: (s, n) => s.includes('coat_formal') || n.includes('coat (formal)'),
+  },
+  {
+    key: 'coat_heavy',
+    match: (s, n) => s.includes('coat_heavy') || n.includes('coat (heavy)'),
+  },
+  {
+    key: 'skirt_short',
+    match: (s, n) => s.includes('skirt-short') || n.includes('skirt-short'),
+  },
+  {
+    key: 'skirt_long',
+    match: (s, n) => s.includes('skirt-long') || n.includes('skirt-long'),
+  },
+  {
+    key: 'burkha',
     match: (s, n) => s.includes('burkha') || n.includes('burkha'),
   },
   {
-    key: 'lower',
-    match: (s, n) =>
-      s.includes('patiala') ||
-      s.includes('salwar') ||
-      n.includes('patiala') ||
-      n.includes('salwar'),
+    key: 'salwar',
+    match: (s, n) => s.includes('salwar') || n.includes('salwar'),
   },
   {
-    key: 'cap',
+    key: 'turban',
     match: (s, n) => s.includes('turban') || n.includes('turban'),
   },
   {
-    key: 'suit',
-    match: (s, n) => s.includes('suit') || n.includes('suit'),
+    key: 'suit_2pcs',
+    match: (s, n) => s.includes('suit_2pcs') || n.includes('suit 2 pcs'),
   },
   {
-    key: 'sherwani',
-    match: (s, n) => s.includes('sherwani') || n.includes('sherwani'),
+    key: 'suit_3pcs',
+    match: (s, n) => s.includes('suit_2pcs') || n.includes('suit 3 pcs'),
   },
   {
-    key: 'lehenga',
-    match: (s, n) => s.includes('lehenga') || n.includes('lehenga'),
+    key: 'sherwani_cotton',
+    match: (s, n) => s.includes('sherwani-cotton') || n.includes('sherwani (cotton)'),
   },
   {
-    key: 'saree',
-    match: (s, n) => s.includes('saree') || n.includes('saree'),
+    key: 'sherwani_wedding',
+    match: (s, n) => s.includes('sherwani-wedding') || n.includes('sherwani (wedding)'),
   },
   {
-    key: 'blouse',
-    match: (s, n) =>
-      s.includes('blouse') ||
-      s.includes('choli') ||
-      n.includes('blouse') ||
-      n.includes('choli'),
+    key: 'lehenga_normal',
+    match: (s, n) => s.includes('lehenga-normal') || n.includes('lehenga-normal'),
+  },
+  {
+    key: 'lehenga_heavy',
+    match: (s, n) => s.includes('lehenga-heavy') || n.includes('lehenga-heavy'),
+  },
+  {
+    key: 'saree_normal',
+    match: (s, n) => s.includes('saree-normal') || n.includes('saree-normal'),
+  },
+  {
+    key: 'saree_heavy',
+    match: (s, n) => s.includes('saree-heavy') || n.includes('saree-heavy'),
+  },
+  {
+    key: 'blouse_choli_normal',
+    match: (s, n) => s.includes('blouse-choli-normal') || n.includes('blouse-choli-normal'),
+  },
+  {
+    key: 'blouse_choli_heavy',
+    match: (s, n) => s.includes('blouse-choli-heavy') || n.includes('blouse-choli-heavy'),
   },
   {
     key: 'gown',
@@ -183,19 +226,20 @@ const CATALOG_PHOTO_RULES: ReadonlyArray<{
     match: (s, n) => s.includes('girl-dress') || n.includes('girl dress'),
   },
   {
-    key: 'frock',
-    match: (s, n) => s.includes('frock') || n.includes('frock'),
+    key: 'frock_normal',
+    match: (s, n) => s.includes('frock-normal') || n.includes('frock-normal'),
   },
   {
-    key: 'dress',
-    match: (s, n) =>
-      s.includes('full-dress') ||
-      s.includes('full_dress') ||
-      n.includes('full dress'),
+    key: 'frock_heavy',
+    match: (s, n) => s.includes('frock-heavy') || n.includes('frock-heavy'),
   },
   {
-    key: 'skirt',
-    match: (s, n) => s.includes('skirt') || n.includes('skirt'),
+    key: 'dress_normal',
+    match: (s, n) => s.includes('dress-normal') || n.includes('dress-normal'),
+  },
+  {
+    key: 'dress_party',
+    match: (s, n) => s.includes('dress-party') || n.includes('dress-party'),
   },
   {
     key: 'dupatta',
@@ -210,20 +254,36 @@ const CATALOG_PHOTO_RULES: ReadonlyArray<{
       n.includes('top /'),
   },
   {
-    key: 'kurta',
-    match: (s, n) =>
-      s.includes('kurta') ||
-      s.includes('kameez') ||
-      n.includes('kurta') ||
-      n.includes('kameez'),
+    key: 'kurta_m',
+    match: (s, n) => s.includes('kurta') || n.includes('kurta'),
+  },
+  {
+    key: 'kurta_w',
+    match: (s, n) => s.includes('kurti') || n.includes('kurti'),
+  },
+  {
+    key: 'kameez_normal',
+    match: (s, n) => s.includes('kameez-normal') || n.includes('kameez-normal'),
+  },
+  {
+    key: 'kameez_fancy',
+    match: (s, n) => s.includes('kameez-fancy') || n.includes('kameez-fancy'),
   },
   {
     key: 'bathrobe',
     match: (s, n) => s.includes('bathrobe') || n.includes('bathrobe'),
   },
   {
-    key: 'purse',
-    match: (s, n) => s.includes('purse') || n.includes('purse'),
+    key: 'purse_small',
+    match: (s, n) => s.includes('purse-s') || n.includes('purse-s'),
+  },
+  {
+    key: 'purse_medium',
+    match: (s, n) => s.includes('purse-m') || n.includes('purse-m'),
+  },
+  {
+    key: 'purse_large',
+    match: (s, n) => s.includes('purse-l') || n.includes('purse-l'),
   },
   {
     key: 'shirt',
@@ -267,11 +327,11 @@ const CATALOG_PHOTO_RULES: ReadonlyArray<{
   },
   {
     key: 'vest',
-    match: (s, n) =>
-      s.includes('vest') ||
-      s.includes('waistcoat') ||
-      n.includes('vest') ||
-      n.includes('waistcoat'),
+    match: (s, n) => s.includes('vest') || n === 'vest',
+  },
+  {
+    key: 'waistcoat',
+    match: (s, n) => s.includes('waistcoat') || n === 'waistcoat',
   },
   {
     key: 'tie',
@@ -282,8 +342,12 @@ const CATALOG_PHOTO_RULES: ReadonlyArray<{
     match: (s, n) => s.includes('wallet') || n.includes('wallet'),
   },
   {
-    key: 'cap',
-    match: (s, n) => s.includes('cap') || n.includes('cap'),
+    key: 'cap_fabric',
+    match: (s, n) => s.includes('cap-fabric') || n.includes('cap (fabric)'),
+  },
+  {
+    key: 'cap_leather',
+    match: (s, n) => s.includes('cap-leather') || n.includes('cap (leather)'),
   },
   {
     key: 'hanky',

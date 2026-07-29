@@ -71,7 +71,7 @@
       "source": "stock"
     },
     {
-      "key": "cap",
+      "key": "cap-fabric",
       "slug": "men-cap-fabric",
       "label": "Cap (fabric)",
       "category": "men",
@@ -79,7 +79,7 @@
       "source": "stock"
     },
     {
-      "key": "cap",
+      "key": "cap-leather",
       "slug": "men-cap-leather",
       "label": "Cap (leather)",
       "category": "men",
@@ -186,7 +186,7 @@
       }
     },
     {
-      "key": "vest",
+      "key": "waistcoat",
       "slug": "men-waistcoat",
       "label": "Waistcoat",
       "category": "men",
