@@ -1,5 +1,6 @@
 'use client';
 
+import { useMarketingBookingModeSnapshot } from '@/features/marketing/lib/marketing-booking-mode-context';
 import { useMounted } from '@/lib/hooks/use-mounted';
 import { useOnlineBookingEnabled } from '@/lib/hooks/use-online-booking-enabled';
 import { isOnlineBookingEnabledFromEnv } from '@/lib/online-booking';
@@ -7,20 +8,22 @@ import { isOnlineBookingEnabledFromEnv } from '@/lib/online-booking';
 /**
  * Marketing contact CTA mode (sticky bar + final CTA band).
  *
- * SSR + the hydration pass always use the env flag so server HTML matches the
- * first client paint (React Query `/config` must not flip offline↔online mid-hydrate).
- * After mount, keep env while `/config` loads (avoid WhatsApp-primary flash), then follow API.
+ * SSR + hydration always use the server snapshot (or env fallback) so React Query
+ * `/config` cannot flip offline↔online mid-hydrate. After mount, keep that value
+ * while `/config` loads (avoid WhatsApp-primary flash), then follow the API.
  */
 export function useMarketingBookingCtaMode(): {
   onlineBooking: boolean;
   isLoading: boolean;
 } {
+  const snapshot = useMarketingBookingModeSnapshot();
   const envAllows = isOnlineBookingEnabledFromEnv();
+  const ssrOnlineBooking = snapshot ?? envAllows;
   const { enabled, isLoading } = useOnlineBookingEnabled();
   const mounted = useMounted();
 
   if (!mounted || isLoading) {
-    return { onlineBooking: envAllows, isLoading: true };
+    return { onlineBooking: ssrOnlineBooking, isLoading: true };
   }
 
   return {

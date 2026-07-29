@@ -31,7 +31,10 @@ export function StoresServicePreview({ laundry, className }: StoresServicePrevie
   if (priceLines.length > 0) {
     return (
       <ul
-        className={cn('flex flex-wrap gap-2', className)}
+        className={cn(
+          'flex max-h-14 flex-wrap gap-1.5 overflow-hidden sm:gap-2',
+          className,
+        )}
         aria-label={priceAria ?? 'Service prices'}
       >
         {priceLines.map((line) => {
@@ -69,7 +72,10 @@ export function StoresServicePreview({ laundry, className }: StoresServicePrevie
 
   return (
     <ul
-      className={cn('flex flex-wrap gap-1.5', className)}
+      className={cn(
+        'flex max-h-14 flex-wrap gap-1.5 overflow-hidden',
+        className,
+      )}
       aria-label="WashHouse services available"
     >
       {CATEGORY_CHIPS.map((label) => (

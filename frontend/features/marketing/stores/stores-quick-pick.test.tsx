@@ -6,7 +6,9 @@ import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 import type { EnrichedLaundry } from '@/features/discover/lib/laundry-meta';
-import { StoresCard } from '@/features/marketing/stores/stores-card';
+import { QuickPickCompactRow } from '@/features/marketing/stores/quick-pick-compact-row';
+import { QuickPickSkeleton } from '@/features/marketing/stores/quick-pick-skeleton';
+import { QuickPickSpotlight } from '@/features/marketing/stores/quick-pick-spotlight';
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn(), prefetch: jest.fn() }),
@@ -17,10 +19,12 @@ jest.mock('next/image', () => ({
   default: function MockImage({
     alt,
     fill: _fill,
+    priority: _priority,
     ...props
   }: {
     alt?: string;
     fill?: boolean;
+    priority?: boolean;
     src?: string;
   }) {
     // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
@@ -37,14 +41,12 @@ jest.mock('framer-motion', () => {
         children,
         initial: _initial,
         animate: _animate,
-        whileHover: _whileHover,
         transition: _transition,
         ...rest
       }: {
         children?: React.ReactNode;
         initial?: unknown;
         animate?: unknown;
-        whileHover?: unknown;
         transition?: unknown;
         className?: string;
         'aria-label'?: string;
@@ -58,28 +60,27 @@ jest.mock('framer-motion', () => {
   return {
     motion: {
       article: passthrough('article'),
-      div: passthrough('div'),
+      li: passthrough('li'),
       span: passthrough('span'),
     },
     useReducedMotion: () => true,
   };
 });
 
-jest.mock('@/features/marketing/stores/use-card-in-view', () => ({
-  useCardInView: () => ({ ref: { current: null }, inView: false }),
-}));
-
 jest.mock('@/store/auth.store', () => ({
   useAuthStore: (select: (s: { user: null }) => unknown) => select({ user: null }),
 }));
 
 jest.mock('@/services/customer-experience', () => ({
-  getContactInfo: jest.fn(),
+  getContactInfo: jest.fn().mockResolvedValue({
+    contact_available: true,
+    show_call: true,
+    show_whatsapp: true,
+    requires_login: false,
+    phone: '+919999999999',
+    whatsapp_url: 'https://wa.me/919999999999',
+  }),
   trackContactEvent: jest.fn(),
-}));
-
-jest.mock('@/services/laundries', () => ({
-  getLaundry: jest.fn(),
 }));
 
 const mockLaundry: EnrichedLaundry = {
@@ -92,79 +93,74 @@ const mockLaundry: EnrichedLaundry = {
   is_verified: true,
   distanceKm: 2.4,
   deliveryHours: 24,
-  distanceIsApproximate: true,
-  startPrice: null,
+  distanceIsApproximate: false,
+  startPrice: 149,
   image: '/catalog/store-cover.webp',
 };
 
-function renderCard(laundry: EnrichedLaundry = mockLaundry) {
+function withQuery(ui: ReactNode) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-  return render(<StoresCard laundry={laundry} index={0} />, { wrapper });
+  return render(ui, { wrapper });
 }
 
-describe('StoresCard', () => {
-  it('renders key fields from EnrichedLaundry (name, city, rating, services, open link)', () => {
-    renderCard();
+describe('QuickPickSpotlight', () => {
+  it('renders Open store, place line, from-price, and rating when present', () => {
+    withQuery(<QuickPickSpotlight laundry={mockLaundry} />);
 
     expect(
       screen.getByRole('article', { name: /sparkle clean hub, bengaluru/i }),
     ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Sparkle Clean Hub' })).toBeInTheDocument();
     expect(screen.getByText('Bengaluru')).toBeInTheDocument();
-    expect(screen.getByText('Verified')).toBeInTheDocument();
+    expect(screen.getByText('2.4 km')).toBeInTheDocument();
+    expect(screen.getByText('From ₹149')).toBeInTheDocument();
     expect(screen.getByText('4.8')).toBeInTheDocument();
-    expect(screen.getByText(/reviews/i)).toBeInTheDocument();
-    expect(screen.getByText(/24 hour delivery/i)).toBeInTheDocument();
 
-    expect(
-      screen.getByRole('list', { name: /washhouse services available/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Wash & Fold')).toBeInTheDocument();
-
-    const actions = screen.getByRole('group', { name: /actions for sparkle clean hub/i });
-    expect(actions.className).toMatch(/flex-nowrap/);
-
-    const openStore = screen.getByRole('link', { name: /^open store$/i });
-    expect(openStore).toHaveAttribute(
+    const open = screen.getByRole('link', { name: /open store/i });
+    expect(open).toHaveAttribute(
       'href',
       '/discover/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     );
-    // Primary Open store is first control in the action row (quick-pick language)
-    expect(actions.firstElementChild).toBe(openStore);
+  });
+
+  it('hides rating badge when rating is missing', () => {
+    withQuery(
+      <QuickPickSpotlight laundry={{ ...mockLaundry, avg_rating: '' }} />,
+    );
+
+    expect(screen.queryByText('4.8')).not.toBeInTheDocument();
+    expect(screen.queryByText('—')).not.toBeInTheDocument();
+  });
+});
+
+describe('QuickPickCompactRow', () => {
+  it('renders name, city + distance, and open link', () => {
+    withQuery(
+      <ul>
+        <QuickPickCompactRow laundry={mockLaundry} index={0} />
+      </ul>,
+    );
+
     expect(screen.getByRole('link', { name: /open sparkle clean hub/i })).toHaveAttribute(
       'href',
       '/discover/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     );
+    expect(screen.getByText('Sparkle Clean Hub')).toBeInTheDocument();
+    expect(screen.getByText('2.4 km')).toBeInTheDocument();
+    expect(screen.getByText((_, el) => el?.classList.contains('truncate') && el.textContent?.includes('Bengaluru') === true)).toBeInTheDocument();
   });
+});
 
-  it('shows distance with city when GPS distance is real', () => {
-    renderCard({
-      ...mockLaundry,
-      distanceIsApproximate: false,
-      distanceKm: 1.5,
-      city: 'Pune',
-    });
-
-    expect(screen.getByText('1.5 km')).toBeInTheDocument();
-    expect(screen.getByText('Pune')).toBeInTheDocument();
-  });
-
-  it('shows Closest to you chip when variant is featured', () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-    });
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-    render(<StoresCard laundry={mockLaundry} index={0} variant="featured" />, {
-      wrapper,
-    });
-
-    expect(screen.getByText('Closest to you')).toBeInTheDocument();
+describe('QuickPickSkeleton', () => {
+  it('exposes a layout-matched loading status', () => {
+    render(<QuickPickSkeleton />);
+    expect(
+      screen.getByRole('status', { name: /loading nearby stores/i }),
+    ).toBeInTheDocument();
   });
 });

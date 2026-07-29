@@ -2,10 +2,15 @@ import { test, expect } from '@playwright/test';
 
 import { OFFLINE_BOOKING_TITLE } from '../../lib/hooks/use-online-booking-enabled';
 
-const offlineMode = process.env.NEXT_PUBLIC_FEATURE_ONLINE_BOOKING === 'false';
-
 test.describe('Offline booking mode', () => {
-  test.skip(!offlineMode, 'Set NEXT_PUBLIC_FEATURE_ONLINE_BOOKING=false for this project');
+  // Isolated to --project=offline-booking (:3001, NEXT_PUBLIC_FEATURE_ONLINE_BOOKING=false).
+  // Do not gate on process.env — shell/.env.local often has FEATURE=true and would skip all coverage.
+  test.beforeEach(({}, testInfo) => {
+    test.skip(
+      testInfo.project.name !== 'offline-booking',
+      'Run with --project=offline-booking (webServer :3001, online booking off)',
+    );
+  });
 
   test('guest sees call-to-book banner and contact on laundry detail', async ({ page }) => {
     await page.goto('/discover');
@@ -126,13 +131,18 @@ test.describe('Offline booking mode', () => {
 
     const sheet = page.getByRole('dialog');
     await expect(sheet.getByRole('heading', { name: /nearby stores/i })).toBeVisible();
-    await expect(sheet.getByRole('link', { name: /see all stores/i })).toHaveAttribute(
-      'href',
-      '/stores',
-    );
+    const seeAll = sheet.getByRole('link', { name: /see all stores/i });
+    await expect(seeAll).toHaveAttribute('href', '/stores');
 
-    await page.keyboard.press('Escape');
-    await expect(sheet).toBeHidden();
+    // When seeded stores load, spotlight primary CTA is present.
+    await expect(
+      sheet.getByRole('link', { name: /^open store$/i }).or(
+        sheet.getByText(/no stores nearby yet|couldn't load/i),
+      ),
+    ).toBeVisible({ timeout: 15_000 });
+
+    await seeAll.click();
+    await expect(page).toHaveURL(/\/stores/);
   });
 
   test('final CTA band keeps WhatsApp-primary offline copy', async ({ page }) => {

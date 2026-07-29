@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-07-29 — /stores phone + tablet gallery polish
+
+- **Type:** polish
+- **Scope:** Marketing `/stores` directory (phone + tablet visual parity with quick-pick)
+- **Files:** `stores-page-view.tsx`, `stores-hero.tsx`, `stores-card.tsx`, `stores-near-me-control.tsx`, `stores-card-skeleton.tsx`, `stores-service-preview.tsx`, `stores-card.test.tsx`, `docs/features/customer-discovery.md`
+- **Summary:** Shortened phone hero; search + Near me as one sticky cluster (compact when pinned under nav on phone/tablet; `lg:static`); card actions match quick-pick (Open store primary + icon Call/WhatsApp, nowrap); md cover parallax; service peek max-height for 2-col alignment; gaps `gap-4` / `md:gap-5`. Still no discover compare filters; contact stays lazy via `useCardInView`; no debounce skeletons.
+- **Risks:** Sticky filter + bottom MarketingShell CTA coexist (top vs bottom); IntersectionObserver compact toggle needs visual QA on iOS Safari.
+- **Next:** Manual matrix 375 / 414 / 768 portrait+landscape, light+dark.
+- **Refs:** User request — upgrade /stores for phone and tablet
+
+---
+
+## 2026-07-29 — Nearby stores quick-pick redesign polish
+
+- **Type:** feat
+- **Scope:** Marketing sticky Stores quick-pick Drawer
+- **Files:** `stores-quick-pick-sheet.tsx`, `quick-pick-spotlight.tsx`, `quick-pick-compact-row.tsx`, `quick-pick-skeleton.tsx`, `stores-quick-pick.test.tsx`, `docs/features/customer-discovery.md`, `docs/product/offline-booking-ui-map.md`
+- **Summary:** Locked the approved spotlight + compact-row layout with a layout-matched loading skeleton, geo-aware DrawerDescription, rating-only-when-present, and city·distance meta. Tablet sheet stays `max-w-lg` / `md:max-w-2xl` centered; contact still uses `stores_quick_pick` + login redirect. RTL covers spotlight/row/skeleton; e2e still asserts Nearby stores + See all stores.
+- **Risks:** Featured→nearest reorder when GPS arrives can change which store is spotlight without a full remount (acceptable per spec).
+- **Next:** Visual QA at 375 / 768 light+dark; optional Playwright assert for Open store on spotlight.
+- **Refs:** Approved Nearby Stores quick-pick redesign
+
+---
+
 ## 2026-07-29 — Stores redesign test lock-in + QA
 
 - **Type:** test

@@ -14,9 +14,21 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   projects: [
-    { name: 'chromium-desktop', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile-chrome',    use: { ...devices['Pixel 7'] } },
-    { name: 'mobile-safari',    use: { ...devices['iPhone 13'] } },
+    {
+      name: 'chromium-desktop',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /offline-booking\.spec\.ts|online-booking-contact\.spec\.ts/,
+    },
+    {
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 7'] },
+      testIgnore: /offline-booking\.spec\.ts|online-booking-contact\.spec\.ts/,
+    },
+    {
+      name: 'mobile-safari',
+      use: { ...devices['iPhone 13'] },
+      testIgnore: /offline-booking\.spec\.ts|online-booking-contact\.spec\.ts/,
+    },
     {
       name: 'offline-booking',
       testMatch: /offline-booking\.spec\.ts/,
@@ -49,9 +61,11 @@ export default defineConfig({
           timeout: 120_000,
         },
         {
+          // Never reuse :3001 — an online-mode leftover flips sticky to Book nearest
+          // and breaks offline Stores / quick-pick coverage.
           command: 'npm run dev -- --port 3001',
           url: 'http://localhost:3001',
-          reuseExistingServer: true,
+          reuseExistingServer: false,
           timeout: 120_000,
           env: {
             ...process.env,
