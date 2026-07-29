@@ -108,11 +108,14 @@ class LaundryService:
         rows = await self._laundries.list_approved(city=city, limit=limit, offset=offset)
         hints = await self._hints_map([r.id for r in rows])
         items = [self._to_list_item(r, hints.get(r.id)) for r in rows]
-        await cache_set_json(
-            cache_key,
-            [item.model_dump(mode="json") for item in items],
-            ttl_seconds=settings.CACHE_LAUNDRIES_LIST_TTL_SEC,
-        )
+        # Never cache an empty public list — avoids sticky "no laundries" after a
+        # pre-seed request or temporary DB blip when CACHE_ENABLED=true.
+        if items:
+            await cache_set_json(
+                cache_key,
+                [item.model_dump(mode="json") for item in items],
+                ttl_seconds=settings.CACHE_LAUNDRIES_LIST_TTL_SEC,
+            )
         return items
 
     async def search_public(

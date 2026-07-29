@@ -8,6 +8,7 @@ import { SectionHeader } from '@/components/marketplace/section-header';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FadeIn } from '@/features/discover/marketplace/fade-in';
+import { enrichLaundry } from '@/features/discover/lib/laundry-meta';
 import { StoresCard } from '@/features/marketing/stores/stores-card';
 import { StoresCardSkeleton } from '@/features/marketing/stores/stores-card-skeleton';
 import {
@@ -28,7 +29,8 @@ export function FeaturedStoresTeaser() {
     staleTime: STALE.laundries,
   });
 
-  const preview = data?.slice(0, PREVIEW_COUNT) ?? [];
+  const preview =
+    data?.slice(0, PREVIEW_COUNT).map((laundry, index) => enrichLaundry(laundry, index)) ?? [];
 
   return (
     <section
@@ -46,9 +48,9 @@ export function FeaturedStoresTeaser() {
             className="mb-10"
           />
 
-          {isLoading && (
+          {isLoading && preview.length === 0 && (
             <div
-              className="mx-auto max-w-3xl space-y-3 rounded-2xl border border-border/50 bg-card/60 p-3 sm:p-4"
+              className="grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6"
               role="status"
               aria-busy="true"
             >
@@ -84,10 +86,10 @@ export function FeaturedStoresTeaser() {
           )}
 
           {preview.length > 0 && (
-            <ul className="mx-auto max-w-3xl space-y-3">
-              {preview.map((laundry) => (
-                <li key={laundry.id}>
-                  <StoresCard laundry={laundry} />
+            <ul className="grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6">
+              {preview.map((laundry, index) => (
+                <li key={laundry.id} className="min-w-0">
+                  <StoresCard laundry={laundry} index={index} />
                 </li>
               ))}
             </ul>

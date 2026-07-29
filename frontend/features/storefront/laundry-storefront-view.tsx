@@ -11,6 +11,7 @@ import {
   MapPin,
   Shield,
   Star,
+  Truck,
   Wrench,
 } from 'lucide-react';
 
@@ -30,7 +31,12 @@ import { OrderSummaryMobile } from '@/features/discover/detail/order-summary-mob
 import { OrderSummarySidebar, SignInPrompt } from '@/features/discover/detail/order-summary-sidebar';
 import { getLaundryInitials } from '@/features/discover/detail/service-icons';
 import { goToCheckout } from '@/features/checkout/lib/navigate';
-import { minServicePrice } from '@/features/discover/lib/laundry-meta';
+import {
+  deliveryLabel,
+  getLaundryImage,
+  getLaundryMeta,
+  minServicePrice,
+} from '@/features/discover/lib/laundry-meta';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import { useOnlineBookingEnabled } from '@/lib/hooks/use-online-booking-enabled';
@@ -38,7 +44,6 @@ import { listReviews } from '@/services/laundries';
 import {
   getPublicStorefront,
   resolveStorefrontImage,
-  type PublicStorefront,
 } from '@/services/storefront';
 import { trackStoreView } from '@/services/customer-experience';
 import type { LaundryServiceItem } from '@/services/laundries';
@@ -108,11 +113,31 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
   const services = laundry.services.filter((s) => s.is_active) as LaundryServiceItem[];
   const startPrice = minServicePrice(services);
   const rating = Number(laundry.avg_rating);
+  const meta = getLaundryMeta(laundry.slug);
   const primary = sf.brand_primary ?? '#1e3a5f';
   const secondary = sf.brand_secondary ?? '#c9a227';
   const cover = resolveStorefrontImage(sf.cover_url) || resolveStorefrontImage(sf.gallery[0]?.url);
   const featured = sf.gallery.find((g) => g.is_featured) ?? sf.gallery[0];
-  const coverSrc = cover || (featured ? resolveStorefrontImage(featured.url) : '');
+  const coverSrc =
+    cover ||
+    (featured ? resolveStorefrontImage(featured.url) : '') ||
+    getLaundryImage(laundry.slug, 0);
+  const todayHours = (() => {
+    if (!sf.working_hours) return null;
+    const day = new Date().toLocaleDateString('en-IN', { weekday: 'long' });
+    return sf.working_hours[day] ?? sf.working_hours[day.toLowerCase()] ?? null;
+  })();
+
+  const offlineMode = !onlineBookingLoading && !onlineBookingEnabled;
+  const onlineMode = !onlineBookingLoading && onlineBookingEnabled;
+  const showMobileSummary = onlineMode && selectedCount > 0;
+  const showOfflineMobileBar = offlineMode;
+  const bookCtaLabel = onlineBookingLoading
+    ? 'See full menu'
+    : onlineMode
+      ? 'Schedule pickup'
+      : 'See full menu';
+  const heroCtaLabel = onlineMode && !onlineBookingLoading ? 'Schedule pickup' : 'See full menu';
 
   function startCheckout() {
     if (!onlineBookingEnabled) return;
@@ -127,11 +152,6 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
     document.getElementById('storefront-services')?.scrollIntoView({ behavior: 'smooth' });
   }
 
-  const offlineMode = !onlineBookingLoading && !onlineBookingEnabled;
-  const onlineMode = !onlineBookingLoading && onlineBookingEnabled;
-  const showMobileSummary = onlineMode && selectedCount > 0;
-  const showOfflineMobileBar = offlineMode;
-
   return (
     <div
       className={`min-h-screen bg-background ${showMobileSummary || showOfflineMobileBar ? 'pb-[max(4.5rem,calc(4rem+env(safe-area-inset-bottom,0px)))] sm:pb-0' : ''}`}
@@ -142,17 +162,24 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
         } as React.CSSProperties
       }
     >
-      {/* Hero */}
-      <section className="relative">
-        <div className="relative aspect-[5/3] max-h-[320px] w-full bg-muted sm:aspect-[21/9] sm:max-h-[380px]">
+      {/* Hero — who is this laundry */}
+      <section className="relative" aria-labelledby="storefront-title">
+        <div className="relative aspect-[5/3] max-h-[320px] w-full overflow-hidden bg-muted sm:aspect-[21/9] sm:max-h-[380px]">
           {coverSrc ? (
-            <Image src={coverSrc} alt="" fill className="object-cover" priority sizes="100vw" />
+            <Image
+              src={coverSrc}
+              alt=""
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
           ) : (
             <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--store-primary)] to-[var(--store-accent)]/80 text-primary-foreground">
               <span className="text-6xl font-bold">{getLaundryInitials(laundry.name)}</span>
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/75 via-foreground/25 to-transparent" aria-hidden />
         </div>
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="-mt-16 relative flex flex-col gap-4 sm:-mt-20 sm:flex-row sm:items-end sm:justify-between">
@@ -160,6 +187,7 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
               <div
                 className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border-4 border-background text-lg font-bold text-primary-foreground shadow-lg"
                 style={{ background: primary }}
+                aria-hidden
               >
                 {sf.logo_url ? (
                   <Image
@@ -174,25 +202,44 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
                 )}
               </div>
               <div className="min-w-0 pb-1">
-                {laundry.is_verified && (
-                  <Badge className="mb-2 border-0 bg-card/90 text-foreground">
-                    <BadgeCheck className="mr-1 h-3.5 w-3.5 text-success" />
-                    Verified partner
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  {laundry.is_verified && (
+                    <Badge className="border-0 bg-card/90 text-foreground">
+                      <BadgeCheck className="mr-1 h-3.5 w-3.5 text-success" aria-hidden />
+                      Verified partner
+                    </Badge>
+                  )}
+                  <Badge variant="success" className="border-0">
+                    <Truck className="mr-1 h-3.5 w-3.5" aria-hidden />
+                    Free pickup
                   </Badge>
-                )}
-                <h1 className="page-title">{laundry.name}</h1>
+                </div>
+                <h1 id="storefront-title" className="page-title">
+                  {laundry.name}
+                </h1>
                 {sf.tagline && (
                   <p className="mt-1 text-sm text-muted-foreground sm:text-base">{sf.tagline}</p>
                 )}
-                <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
+                <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+                  <span>
+                    {laundry.address_line}, {laundry.city}
+                  </span>
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
                   <span className="rating-pill">
-                    <Star className="h-3.5 w-3.5 fill-rating text-rating" />
+                    <Star className="h-3.5 w-3.5 fill-rating text-rating" aria-hidden />
                     {rating.toFixed(1)} ({laundry.review_count})
                   </span>
-                  <span className="text-muted-foreground">
-                    <ClientLocaleNumber value={orders_completed} />+ orders completed
+                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
+                    {deliveryLabel(meta.deliveryHours)}
+                    {todayHours ? ` · Today ${todayHours}` : ''}
                   </span>
-                  <span className="text-muted-foreground">From ₹{startPrice}</span>
+                  <span className="text-muted-foreground">
+                    <ClientLocaleNumber value={orders_completed} />+ orders
+                  </span>
+                  <span className="font-medium text-foreground">From ₹{startPrice}</span>
                 </div>
               </div>
             </div>
@@ -203,13 +250,108 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
               style={{ background: primary }}
               onClick={scrollToServices}
             >
-              {onlineBookingLoading ? 'View prices' : onlineMode ? 'Book now' : 'View prices'}
+              {heroCtaLabel}
             </Button>
           </div>
         </div>
       </section>
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-10 sm:px-6">
+        {/* What they serve + booking */}
+        <section id="storefront-services" aria-labelledby="services-heading">
+          <div className="mb-4">
+            <h2 id="services-heading" className="text-xl font-bold">
+              Full menu
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Prices in ₹ — browse by category, then schedule pickup when you&apos;re ready.
+            </p>
+          </div>
+          {offlineMode && (
+            <OfflineBookingContactPanel
+              laundryId={laundryId}
+              laundryName={laundry.name}
+              className="mb-6 lg:hidden"
+            />
+          )}
+          <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+            <div className="lg:col-span-2">
+              <ServiceCatalogBrowser
+                laundryId={laundryId}
+                quantities={quantities}
+                onSelect={(svc) => setQuantity(svc, 1)}
+                onIncrement={(svc) => setQuantity(svc, (quantities[svc.id] ?? 0) + 1)}
+                onDecrement={(svc) => setQuantity(svc, (quantities[svc.id] ?? 0) - 1)}
+                onQuantityChange={setQuantity}
+                browseOnly={onlineBookingLoading || offlineMode}
+              />
+              {onlineMode && selectedCount > 0 && (
+                <div className="mt-6 hidden lg:block">
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="h-12 w-full rounded-2xl"
+                    onClick={startCheckout}
+                  >
+                    {accessToken ? 'Continue to checkout' : 'Sign in to checkout'}
+                  </Button>
+                </div>
+              )}
+            </div>
+            <aside className="mt-8 hidden lg:block">
+              <div className="sticky top-24 space-y-4">
+                {offlineMode ? (
+                  <OfflineBookingContactPanel
+                    laundryId={laundryId}
+                    laundryName={laundry.name}
+                    variant="sidebar"
+                  />
+                ) : (
+                  <>
+                    <OrderSummarySidebar services={services} quantities={quantities}>
+                      {!accessToken && selectedCount > 0 && <SignInPrompt />}
+                    </OrderSummarySidebar>
+                    {selectedCount > 0 && (
+                      <Button
+                        type="button"
+                        size="lg"
+                        className="w-full"
+                        onClick={startCheckout}
+                      >
+                        {accessToken ? 'Schedule pickup' : 'Sign in to schedule'}
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        {/* Garment price list */}
+        <section id="storefront-prices" aria-labelledby="prices-heading">
+          <LaundryPriceListSection
+            laundryId={laundryId}
+            services={services}
+            headingId="prices-heading"
+            onBook={scrollToServices}
+            bookLabel={bookCtaLabel}
+          />
+        </section>
+
+        {/* Trust — reviews */}
+        <section aria-labelledby="reviews-heading">
+          <h2 id="reviews-heading" className="mb-4 text-xl font-bold">
+            Why customers trust this store
+          </h2>
+          <LaundryReviewsTab
+            reviews={reviewsQ.data}
+            isLoading={reviewsQ.isLoading}
+            avgRating={rating}
+            reviewCount={laundry.review_count}
+          />
+        </section>
+
         {/* Gallery */}
         {sf.gallery.length > 0 && (
           <section aria-labelledby="gallery-heading">
@@ -340,102 +482,6 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
             </div>
           </section>
         )}
-
-        {/* Garment price list */}
-        <section id="storefront-prices" aria-labelledby="prices-heading">
-          <LaundryPriceListSection
-            laundryId={laundryId}
-            services={services}
-            headingId="prices-heading"
-            onBook={scrollToServices}
-            bookLabel={
-              onlineBookingLoading
-                ? 'View services'
-                : onlineMode
-                  ? 'Schedule pickup'
-                  : 'Book pickup'
-            }
-          />
-        </section>
-
-        {/* Services */}
-        <section id="storefront-services" aria-labelledby="services-heading">
-          <h2 id="services-heading" className="mb-4 text-xl font-bold">
-            Services & booking
-          </h2>
-          {offlineMode && (
-            <OfflineBookingContactPanel
-              laundryId={laundryId}
-              laundryName={laundry.name}
-              className="mb-6 lg:hidden"
-            />
-          )}
-          <div className="lg:grid lg:grid-cols-3 lg:gap-8">
-            <div className="lg:col-span-2">
-              <ServiceCatalogBrowser
-                laundryId={laundryId}
-                quantities={quantities}
-                onSelect={(svc) => setQuantity(svc, 1)}
-                onIncrement={(svc) => setQuantity(svc, (quantities[svc.id] ?? 0) + 1)}
-                onDecrement={(svc) => setQuantity(svc, (quantities[svc.id] ?? 0) - 1)}
-                onQuantityChange={setQuantity}
-                browseOnly={onlineBookingLoading || offlineMode}
-              />
-              {onlineMode && selectedCount > 0 && (
-                <div className="mt-6 hidden lg:block">
-                  <Button
-                    type="button"
-                    size="lg"
-                    className="h-12 w-full rounded-2xl"
-                    onClick={startCheckout}
-                  >
-                    {accessToken ? 'Continue to checkout' : 'Sign in to checkout'}
-                  </Button>
-                </div>
-              )}
-            </div>
-            <aside className="mt-8 hidden lg:block">
-              <div className="sticky top-24 space-y-4">
-                {offlineMode ? (
-                  <OfflineBookingContactPanel
-                    laundryId={laundryId}
-                    laundryName={laundry.name}
-                    variant="sidebar"
-                  />
-                ) : (
-                  <>
-                    <OrderSummarySidebar services={services} quantities={quantities}>
-                      {!accessToken && selectedCount > 0 && <SignInPrompt />}
-                    </OrderSummarySidebar>
-                    {selectedCount > 0 && (
-                      <Button
-                        type="button"
-                        size="lg"
-                        className="w-full"
-                        onClick={startCheckout}
-                      >
-                        {accessToken ? 'Continue to checkout' : 'Sign in to checkout'}
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
-            </aside>
-          </div>
-        </section>
-
-        {/* Reviews */}
-        <section aria-labelledby="reviews-heading">
-          <h2 id="reviews-heading" className="mb-4 text-xl font-bold">
-            Customer reviews
-          </h2>
-          <LaundryReviewsTab
-            reviews={reviewsQ.data}
-            isLoading={reviewsQ.isLoading}
-            avgRating={rating}
-            reviewCount={laundry.review_count}
-          />
-        </section>
 
         {/* Team */}
         {sf.team.length > 0 && (

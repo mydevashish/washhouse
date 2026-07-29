@@ -30,13 +30,16 @@ export function StoresPageView() {
   const {
     filtered,
     enriched,
-    isLoading,
+    isPending,
     isError,
     refetch,
     isFetching,
     isSearching,
     isDebouncing,
   } = useLaundryDiscovery(filters, { userLocation: geo.position });
+
+  // Initial paint only — never skeleton on search debounce / background refetch (discover bug class).
+  const showSkeletons = !isError && enriched.length === 0 && (isPending || isFetching);
 
   const handleNearMe = async () => {
     const pos = await geo.request();
@@ -62,14 +65,14 @@ export function StoresPageView() {
       <StoresHero />
 
       <section id="stores" className="scroll-mt-20 bg-surface-gradient py-12 sm:py-16 lg:py-20">
-        <div className="mx-auto max-w-3xl space-y-8 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl space-y-8 px-4 sm:px-6 lg:px-8">
           <SectionHeader
             eyebrow="Partner directory"
             title="WashHouse stores"
             description="Find a verified partner near you by name or neighbourhood. Services and pricing are the same across stores — pick the location that works for you."
           />
 
-          <div className="space-y-3">
+          <div className="mx-auto max-w-3xl space-y-3">
             <HomeSearchBar
               value={filters.search}
               onChange={(search) => setFilters((f) => ({ ...f, search }))}
@@ -83,8 +86,12 @@ export function StoresPageView() {
             />
           </div>
 
-          {isLoading && (
-            <div className="space-y-3" role="status" aria-busy="true">
+          {showSkeletons && (
+            <div
+              className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6"
+              role="status"
+              aria-busy="true"
+            >
               <span className="sr-only">Loading stores</span>
               {Array.from({ length: 6 }).map((_, i) => (
                 <StoresCardSkeleton key={i} />
@@ -104,7 +111,7 @@ export function StoresPageView() {
             />
           )}
 
-          {!isLoading && !isError && enriched.length === 0 && !isSearching && (
+          {!showSkeletons && !isError && enriched.length === 0 && !isSearching && (
             <EmptyState
               icon={MapPin}
               title="No stores in your area yet"
@@ -113,7 +120,7 @@ export function StoresPageView() {
             />
           )}
 
-          {!isLoading && !isError && isSearching && filtered.length === 0 && (
+          {!showSkeletons && !isError && isSearching && filtered.length === 0 && (
             <EmptyState
               icon={Search}
               title="No stores match your search"
@@ -126,10 +133,13 @@ export function StoresPageView() {
           )}
 
           {filtered.length > 0 && (
-            <ul className="space-y-3" aria-label="WashHouse partner stores">
-              {filtered.map((laundry) => (
-                <li key={laundry.id}>
-                  <StoresCard laundry={laundry} />
+            <ul
+              className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6"
+              aria-label="WashHouse partner stores"
+            >
+              {filtered.map((laundry, index) => (
+                <li key={laundry.id} className="min-w-0">
+                  <StoresCard laundry={laundry} index={index} />
                 </li>
               ))}
             </ul>

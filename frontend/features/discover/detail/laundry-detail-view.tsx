@@ -155,7 +155,7 @@ export function LaundryDetailView({ laundryId }: { laundryId: string }) {
                   services={services}
                   onBook={() => setTab('services')}
                   bookLabel={
-                    onlineMode ? 'Schedule pickup' : offlineMode ? 'Book pickup' : 'View services'
+                    onlineMode ? 'Schedule pickup' : offlineMode ? 'Book pickup' : 'See full menu'
                   }
                 />
               </div>
@@ -178,6 +178,7 @@ export function LaundryDetailView({ laundryId }: { laundryId: string }) {
                   />
                 )}
                 <LaundryServicesTab
+                  laundryId={laundryId}
                   services={services}
                   quantities={quantities}
                   onSelect={(svc) => setQuantity(svc, 1)}

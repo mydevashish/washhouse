@@ -4,6 +4,87 @@
 
 ---
 
+## 2026-07-29 — Stores redesign test lock-in + QA
+
+- **Type:** test
+- **Scope:** `/stores` marketing directory + `StoresCard` browse quality
+- **Files:** `frontend/tests/e2e/marketing-homepage.spec.ts`, `frontend/features/marketing/stores/stores-card.test.tsx`, `logs/implementation-log.md`
+- **Summary:** Locked the premium stores gallery with an updated Playwright describe (hero + directory/empty, name/city, Open store → `/discover/:id`, rating|cover|service signals, no discovery filter chrome, lazy Call/WhatsApp) and a lightweight RTL unit test for `StoresCard` key fields from mock `EnrichedLaundry`.
+- **Risks:** E2E still depends on seeded approved laundries + contact API for channel assertions; cold Next compile can slow first `/stores` paint (hero expect now 15s).
+- **Next:** Human visual pass for Near me GPS permission on device; optional LHCI spot-check.
+- **Refs:** Stores gallery redesign (2026-07-29)
+
+---
+
+## 2026-07-29 — Stores gallery + storefront motion/perf polish
+
+- **Type:** polish
+- **Scope:** `/stores` marketing gallery + `/discover/[id]` storefront
+- **Files:** `stores-card.tsx`, `stores-card-visual.ts`, `stores-page-view.tsx`, `stores-card-skeleton.tsx`, `stores-service-preview.tsx`, `featured-stores-teaser.tsx`, `laundry-storefront-view.tsx`, `storefront-contact-section.tsx`, `laundry-detail-view.tsx`, `docs/features/customer-discovery.md`, logs
+- **Summary:** Premium card motion (stagger fade/slide, hover lift + image scale, verified/rating nudge) with `prefers-reduced-motion`; slug-hash cover overlays + muted fallbacks; `rounded-xl` + roomier gaps; skeletons only on true empty pending (not search debounce). Storefront CTAs → See full menu / Schedule pickup; contact GET deferred until near viewport.
+- **Risks:** Framer Motion on every card — capped stagger (≤6) and transform/opacity only; low-end Android still needs a quick visual pass.
+- **Next:** Optional LHCI spot-check `/stores` on prod build; visual QA 375 / 1280 light+dark.
+
+---
+
+## 2026-07-29 — Laundry storefront full catalogue UX
+
+- **Type:** feat
+- **Scope:** `/discover/[id]` storefront + shared service catalogue
+- **Files:** `laundry-storefront-view.tsx`, `service-catalog-browser.tsx`, `service-card.tsx`, `service-category-chips.tsx`, `laundry-services-tab.tsx`, `discover/detail/lib/*`, `catalog-garment-thumb.tsx`, `docs/features/customer-discovery.md`, tests
+- **Summary:** Storefront now leads with who/what/how-much/trust: immersive hero (address, hours, turnaround), grouped service catalogue with sticky scroll-spy chips, garment photos, search live region, `?category=` deep-link, and honest empty CTA to `/stores`. Booking/order-summary architecture preserved; StoresCard still prefetches `queryKeys.laundry`.
+- **Risks:** Category slug normalize (`dry_clean` ↔ `dry-clean`) must stay aligned with seed data; scroll-spy sticky offset may need tweak under taller browse headers.
+- **Next:** Visual QA on 375 / desktop light+dark; optional e2e assert for category chips.
+
+---
+
+## 2026-07-29 — Premium marketing stores gallery cards
+
+- **Type:** feat
+- **Scope:** `/stores` marketing directory UI
+- **Files:** `frontend/features/marketing/stores/stores-card.tsx`, `stores-card-skeleton.tsx`, `stores-page-view.tsx`, `stores-service-preview.tsx`, `use-card-in-view.ts`, `frontend/features/marketing/home/featured-stores-teaser.tsx`, `frontend/tests/e2e/marketing-homepage.spec.ts`, `logs/implementation-log.md`
+- **Summary:** Redesigned store cards as a photo-led gallery (cover, verified, rating, delivery, service peek, Open store) with md 2-col grid. Contact GETs are lazy via IntersectionObserver when the card nears the viewport to avoid N+1 storms. E2e now asserts gallery signals while still forbidding discovery filter/compare chrome.
+- **Risks:** Homepage featured teaser shares the taller card; contact buttons appear slightly later until the card is in view.
+- **Next:** Optional visual QA pass on mobile 375 / desktop 1280 / dark mode.
+
+---
+
+## 2026-07-29 — QA diagnose re-run: stores/discover · GET /laundries
+
+- **Type:** qa
+- **Scope:** `.cursor/prompts/diagnose-api-errors.md` (local); pages `/stores`, `/discover`
+- **Files:** `logs/bug-tracker.md` (diagnostic run section)
+- **Summary:** Captured status/body/traceback for `GET /api/v1/laundries`. Live result **200**, 14 items, envelope OK, CORS ACAO for `:3002`, migrations at head. No request 500/traceback. Classified **no live A–H**; prior A + H fixes already in place. Re-verified `test_laundry_list_public_cache.py` (2 passed). No additional code fix applied.
+- **Risks:** None for this endpoint while API stays up and approved seed present.
+- **Next:** Commit pending H hardenings when ready; no further diagnose phase needed unless UI regresses.
+- **Refs:** BUG-2026-07-29-001, BUG-2026-07-29-002
+
+---
+
+## 2026-07-29 — Harden empty public laundry list (discovery)
+
+- **Type:** fix
+- **Scope:** `list_public` cache + demo seed repair; QA verification of `/stores` `/discover`
+- **Files:** `backend/app/services/laundry_service.py`, `backend/app/db/seed_demo.py`, `backend/tests/unit/test_laundry_list_public_cache.py`, `logs/bug-tracker.md`
+- **Summary:** Investigated empty `GET /laundries` checklist. Live local DB already had 14 approved rows and correct `{data:[]}` envelope; Redis/cache off. Hardened against sticky empty Redis cache and demo status drift (re-approve + invalidate discovery cache on seed repair).
+- **Risks:** Empty list still returned when genuinely no approved laundries (correct); search empty results still cached.
+- **Next:** Optional enable Redis locally with `CACHE_ENABLED=true` smoke; keep `AUTO_SEED_DEMO=true` for local.
+- **Refs:** BUG-2026-07-29-002
+
+---
+
+## 2026-07-29 — Restore local API connectivity (laundries / stores)
+
+- **Type:** infra
+- **Scope:** local backend bring-up, CORS, migrations
+- **Files:** `backend/.env` (`CORS_ALLOW_ORIGINS`), `backend/scripts/run_dev.ps1` (started), `logs/bug-tracker.md`
+- **Summary:** Port 8000 was not listening so discover/stores hit connection refused. Started uvicorn via `run_dev.ps1`; auto-migrations applied through `20260729_0036`; added `http://localhost:3002` to CORS for Next alt port.
+- **Risks:** CORS allow-list must stay in sync when Next binds a non-3000 port; `.env` edits need API restart (reloader does not watch env).
+- **Next:** Keep `backend/scripts/run_dev.ps1` in local pre-flight; optional Redis when enabling rate limit/cache.
+- **Refs:** BUG-2026-07-29-001; `.cursor/prompts/fix-api-connectivity-env.md`
+
+---
+
 ## 2026-07-29 — Marketing navbar desktop Stores CTA
 
 - **Type:** feat

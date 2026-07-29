@@ -19,6 +19,12 @@ jest.mock('@/lib/online-booking', () => {
   };
 });
 
+const useMountedMock = jest.fn(() => true);
+
+jest.mock('@/lib/hooks/use-mounted', () => ({
+  useMounted: () => useMountedMock(),
+}));
+
 const getPublicAppConfigMock = getPublicAppConfig as jest.MockedFunction<typeof getPublicAppConfig>;
 const isOnlineBookingEnabledFromEnv = onlineBooking.isOnlineBookingEnabledFromEnv as jest.MockedFunction<
   typeof onlineBooking.isOnlineBookingEnabledFromEnv
@@ -34,6 +40,7 @@ function wrapper({ children }: { children: ReactNode }) {
 describe('useMarketingBookingCtaMode', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    useMountedMock.mockReturnValue(true);
   });
 
   it('stays offline when env disables online booking', () => {
@@ -44,6 +51,17 @@ describe('useMarketingBookingCtaMode', () => {
     expect(result.current.onlineBooking).toBe(false);
     expect(result.current.isLoading).toBe(false);
     expect(getPublicAppConfigMock).not.toHaveBeenCalled();
+  });
+
+  it('uses env before mount so SSR matches hydration', () => {
+    useMountedMock.mockReturnValue(false);
+    isOnlineBookingEnabledFromEnv.mockReturnValue(true);
+    getPublicAppConfigMock.mockResolvedValue({ online_booking_enabled: false });
+
+    const { result } = renderHook(() => useMarketingBookingCtaMode(), { wrapper });
+
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.onlineBooking).toBe(true);
   });
 
   it('optimistically uses env while /config loads', async () => {

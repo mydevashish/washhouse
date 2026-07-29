@@ -693,7 +693,9 @@ test.describe('marketing Book Now dialog', () => {
 });
 
 test.describe('marketing stores directory', () => {
-  test('/stores is a simple name + city directory without compare chrome', async ({ page }) => {
+  test('/stores gallery loads hero + directory (or empty) without discovery filter chrome', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
 
     const contactResponsePromise = page.waitForResponse(
@@ -709,34 +711,71 @@ test.describe('marketing stores directory', () => {
     await page.goto('/stores');
     await page.waitForLoadState('domcontentloaded');
 
+    // Hero + directory chrome (longer timeout: cold Next compile can exceed default 5s)
     await expect(
       page.getByRole('heading', { name: /find a washhouse store near you/i }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
     await expect(
       page.getByText(/services and pricing are shared across stores/i).first(),
     ).toBeVisible();
     await expect(page.getByRole('heading', { name: /washhouse stores/i })).toBeVisible();
-
-    // No compare / filter / price chrome from the old discovery-style stores UI
-    await expect(page.getByText(/compare/i)).toHaveCount(0);
-    await expect(page.getByText(/from ₹/i)).toHaveCount(0);
-    await expect(page.getByText(/free pickup/i)).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /filters/i })).toHaveCount(0);
-    await expect(page.getByLabel(/min rating|max distance|sort by/i)).toHaveCount(0);
-
     await expect(page.getByLabel(/search laundries/i)).toBeVisible();
+
+    // No discovery-style compare / filter chrome (Near Me + search remain OK)
+    await expect(page.getByText(/compare stores/i)).toHaveCount(0);
+    await expect(page.getByText(/free pickup/i)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^filters$/i })).toHaveCount(0);
+    await expect(page.getByLabel(/min rating/i)).toHaveCount(0);
+    await expect(page.getByLabel(/max distance/i)).toHaveCount(0);
+    await expect(page.getByLabel(/sort by/i)).toHaveCount(0);
 
     const directory = page.getByRole('list', { name: /washhouse partner stores/i });
     const empty = page.getByRole('heading', { name: /no stores/i });
     await expect(directory.or(empty)).toBeVisible({ timeout: 15_000 });
 
     if (await directory.isVisible()) {
-      const firstCard = directory.getByRole('listitem').first();
-      const viewStore = firstCard.getByRole('link', { name: /view store/i });
-      await expect(viewStore).toBeVisible();
-      await expect(viewStore).toHaveAttribute('href', /\/discover\/.+/);
+      const cards = directory.getByRole('listitem');
+      const cardCount = await cards.count();
+      expect(cardCount).toBeGreaterThan(0);
 
-      // Compact Call / WhatsApp icons when contact API exposes channels (no tel:/wa hrefs in markup)
+      const firstCard = cards.first();
+      const article = firstCard.getByRole('article').first();
+      await expect(article).toBeVisible();
+
+      // Name + city (article aria-label is "{name}, {city}")
+      const articleLabel = (await article.getAttribute('aria-label')) ?? '';
+      expect(articleLabel).toMatch(/,\s*\S+/);
+      const [storeName] = articleLabel.split(',').map((s) => s.trim());
+      expect(storeName.length).toBeGreaterThan(0);
+      await expect(firstCard.getByRole('heading', { name: storeName, exact: true })).toBeVisible();
+      const city = articleLabel.slice(articleLabel.indexOf(',') + 1).trim();
+      // City may stand alone or appear as "X.X km · City" when Near Me is active
+      await expect(firstCard.getByText(new RegExp(city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeVisible();
+
+      // Open store / cover link → storefront
+      const openStore = firstCard.getByRole('link', { name: /open store|view store/i });
+      await expect(openStore).toBeVisible();
+      await expect(openStore).toHaveAttribute('href', /\/discover\/[^/?#]+/);
+      await expect(
+        firstCard.getByRole('link', { name: new RegExp(`open ${storeName}`, 'i') }),
+      ).toHaveAttribute('href', /\/discover\/[^/?#]+/);
+
+      // Attractive signals: rating OR cover image OR service preview (any one is enough)
+      const hasRating = (await firstCard.getByText(/reviews/i).count()) > 0;
+      const hasCover = (await firstCard.locator('img').count()) > 0;
+      const hasServicePreview =
+        (await firstCard
+          .getByRole('list', {
+            name: /washhouse services available|service prices|from ₹/i,
+          })
+          .count()) > 0 ||
+        (await firstCard.getByLabel(/from ₹|see full menu/i).count()) > 0;
+      expect(
+        hasRating || hasCover || hasServicePreview,
+        'store card should show rating, cover image, or service preview',
+      ).toBe(true);
+
+      // Compact Call / WhatsApp when contact API exposes channels (lazy on viewport)
       const contactRes = await contactResponsePromise.catch(() => null);
       if (contactRes) {
         const body = await contactRes.json();
@@ -764,6 +803,8 @@ test.describe('marketing stores directory', () => {
           await expect(firstCard.locator('a[href*="wa.me"]')).toHaveCount(0);
         }
       }
+    } else {
+      await expect(empty).toBeVisible();
     }
   });
 });

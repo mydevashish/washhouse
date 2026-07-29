@@ -157,7 +157,7 @@ test.describe('laundry price list (store detail)', () => {
     await expect(panel.getByText('₹79').first()).toBeVisible();
 
     await expect(
-      panel.getByRole('button', { name: /Book pickup|Schedule pickup|View services/i }).first(),
+      panel.getByRole('button', { name: /Book pickup|Schedule pickup|See full menu|View services/i }).first(),
     ).toBeVisible();
   });
 });

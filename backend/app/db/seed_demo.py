@@ -97,13 +97,33 @@ DEMO_CUSTOMER = {
 async def ensure_demo_data() -> None:
     async with AsyncSessionLocal() as session:
         created = 0
+        repaired = 0
         for spec in DEMO_LAUNDRIES:
             existing = await session.execute(
                 select(Laundry)
                 .where(Laundry.slug == spec["slug"])
                 .options(selectinload(Laundry.services)),
             )
-            if existing.scalar_one_or_none():
+            laundry_row = existing.scalar_one_or_none()
+            if laundry_row:
+                # Public list_public only returns approved rows — keep demo shops discoverable.
+                changed = False
+                if laundry_row.status != LaundryStatus.approved:
+                    laundry_row.status = LaundryStatus.approved
+                    changed = True
+                if not laundry_row.is_verified:
+                    laundry_row.is_verified = True
+                    changed = True
+                if laundry_row.deleted_at is not None:
+                    laundry_row.deleted_at = None
+                    changed = True
+                if changed:
+                    repaired += 1
+                    log.info(
+                        "db.seed.laundry_repaired",
+                        slug=spec["slug"],
+                        status=laundry_row.status.value,
+                    )
                 continue
 
             owner_result = await session.execute(
@@ -158,8 +178,15 @@ async def ensure_demo_data() -> None:
         customer_created = await _seed_demo_customer(session)
         await session.commit()
 
-        if created:
-            log.info("db.seed.demo_laundries", count=created)
+        if created or repaired:
+            from app.services.laundry_service import invalidate_laundry_discovery_cache
+
+            await invalidate_laundry_discovery_cache()
+            log.info(
+                "db.seed.demo_laundries",
+                created=created,
+                repaired=repaired,
+            )
         else:
             log.info("db.seed.demo_laundries_exists")
         if customer_created:

@@ -5,11 +5,11 @@ import { cn } from '@/lib/utils';
 
 type CatalogGarmentThumbProps = {
   photo: WashhouseCatalogPhoto;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 };
 
-const SIZE_PX = { sm: 32, md: 40 } as const;
+const SIZE_PX = { sm: 32, md: 40, lg: 56 } as const;
 
 /** Compact catalog garment tile for price lists and compare hints.
  * Intentionally static — no hang sway (sway is for atelier product frames only). */
@@ -23,7 +23,9 @@ export function CatalogGarmentThumb({
     <span
       className={cn(
         'relative inline-flex shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border/60',
-        size === 'sm' ? 'h-8 w-8' : 'h-10 w-10',
+        size === 'sm' && 'h-8 w-8',
+        size === 'md' && 'h-10 w-10',
+        size === 'lg' && 'h-14 w-14 rounded-2xl',
         className,
       )}
     >

@@ -18,6 +18,14 @@
 
 ## History
 
+### 2026-07-29 — `/stores` gallery: lazy contact + no debounce skeletons
+
+- **Area:** frontend `/stores`, storefront contact
+- **Hypothesis:** Debounce-tied `isLoading` and eager contact GETs inflate TBT / risk infinite-skeleton class bugs; contact on storefront mount competes with LCP.
+- **Change:** Skeletons only when list pending/empty; card contact via IntersectionObserver; storefront contact enabled only near viewport. Images keep fixed aspect + muted fallback (CLS-safe). Motion limited to opacity/transform with reduced-motion off-ramp.
+- **Outcome:** Expected fewer parallel contact requests above the fold; no skeleton flash while typing in search. Remeasure LHCI when convenient.
+- **Follow-up:** Prod `next start` Lighthouse on `/stores` if CI budget allows.
+
 ### 2026-07-28 — Perf + a11y review: Lighthouse mobile, lean dashboards, touch/axe
 
 - **Area:** frontend (/, /discover, /partner, /admin)

@@ -38,7 +38,10 @@ export function useOnlineBookingEnabled() {
     return { enabled: false, isLoading: false };
   }
 
-  if (configQ.isLoading) {
+  // Use isPending (not only isLoading): on SSR, queries are pending+idle so
+  // isLoading is false even though there is no data yet — that used to make
+  // marketing CTAs disagree between server HTML and the first client paint.
+  if (configQ.isPending || configQ.isLoading) {
     return { enabled: false, isLoading: true };
   }
 

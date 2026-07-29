@@ -1,11 +1,12 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ServiceCard } from '@/features/discover/detail/service-card';
+import { ServiceCatalogBrowser } from '@/features/discover/detail/service-catalog-browser';
 import type { LaundryServiceItem } from '@/services/laundries';
 
 type LaundryServicesTabProps = {
+  laundryId: string;
+  /** Kept for callers / order summary; catalogue loads via API. */
   services: LaundryServiceItem[];
   quantities: Record<string, number>;
   onSelect: (svc: LaundryServiceItem) => void;
@@ -17,8 +18,9 @@ type LaundryServicesTabProps = {
   browseOnly?: boolean;
 };
 
+/** Services panel — reuses storefront ServiceCatalogBrowser (chips, search, photos). */
 export function LaundryServicesTab({
-  services,
+  laundryId,
   quantities,
   onSelect,
   onIncrement,
@@ -37,33 +39,19 @@ export function LaundryServicesTab({
         <p className="mt-1 text-sm text-muted-foreground">
           {browseOnly
             ? 'All prices in INR. Contact the shop by phone or WhatsApp to place your order.'
-            : 'Transparent per-kg pricing. Add to cart, then continue to schedule free pickup.'}
+            : 'Browse every category this store offers, add what you need, then schedule free pickup.'}
         </p>
       </div>
 
-      {services.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center text-muted-foreground">
-            No services listed for this laundry yet.
-          </CardContent>
-        </Card>
-      ) : (
-        <ul className="grid gap-6 sm:grid-cols-2">
-          {services.map((svc) => (
-            <li key={svc.id}>
-              <ServiceCard
-                service={svc}
-                quantity={quantities[svc.id] ?? 0}
-                onSelect={() => onSelect(svc)}
-                onIncrement={() => onIncrement(svc)}
-                onDecrement={() => onDecrement(svc)}
-                onQuantityChange={(qty) => onQuantityChange(svc, qty)}
-                browseOnly={browseOnly}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
+      <ServiceCatalogBrowser
+        laundryId={laundryId}
+        quantities={quantities}
+        onSelect={onSelect}
+        onIncrement={onIncrement}
+        onDecrement={onDecrement}
+        onQuantityChange={onQuantityChange}
+        browseOnly={browseOnly}
+      />
 
       {!browseOnly && selectedCount > 0 && (
         <div className="hidden lg:block">

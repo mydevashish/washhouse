@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, Minus, Plus, ShoppingBag } from 'lucide-react';
+import { Clock, Minus, Plus, ShoppingBag, Truck, Zap } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getServiceMeta } from '@/features/discover/detail/service-icons';
 import { formatInr } from '@/features/discover/detail/order-pricing';
+import { resolveServicePhoto } from '@/features/discover/detail/lib/resolve-service-photo';
+import { CatalogGarmentThumb } from '@/features/laundry-price-list/components/catalog-garment-thumb';
 import type { LaundryServiceItem } from '@/services/laundries';
 import { cn } from '@/lib/utils';
 
@@ -30,10 +32,12 @@ export function ServiceCard({
   onQuantityChange,
   browseOnly = false,
 }: ServiceCardProps) {
-  const { icon: Icon, description, deliveryText, unitLabel } = getServiceMeta(service);
+  const { description, deliveryText, unitLabel } = getServiceMeta(service);
   const selected = quantity > 0;
   const unitPrice = Number(service.price_inr);
   const lineTotal = unitPrice * quantity;
+  const photo = resolveServicePhoto(service.name, service.category);
+  const blurb = service.description?.trim() || description;
 
   function handleQuantityInput(raw: string) {
     const n = parseInt(raw, 10);
@@ -55,9 +59,7 @@ export function ServiceCard({
     >
       <CardContent className="flex flex-1 flex-col p-5 sm:p-6">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-sky-500/10 text-primary">
-            <Icon className="h-7 w-7" aria-hidden />
-          </div>
+          <CatalogGarmentThumb photo={photo} size="lg" />
           {selected && !browseOnly && (
             <span className="rounded-full bg-success-muted px-3 py-1 text-xs font-bold text-success">
               In cart
@@ -66,14 +68,29 @@ export function ServiceCard({
         </div>
 
         <h3 className="mt-4 text-xl font-bold text-foreground">{service.name}</h3>
-        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-          {service.description || description}
-        </p>
-        {service.express_available && (
-          <span className="mt-2 inline-flex rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-700 dark:text-amber-400">
-            Express available
-          </span>
-        )}
+        {blurb ? (
+          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{blurb}</p>
+        ) : null}
+
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {service.express_available && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+              <Zap className="h-3 w-3" aria-hidden />
+              Express
+            </span>
+          )}
+          {service.pickup_available && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-400">
+              <Truck className="h-3 w-3" aria-hidden />
+              Pickup
+            </span>
+          )}
+          {service.delivery_available && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+              Delivery
+            </span>
+          )}
+        </div>
 
         <div className="mt-5 flex items-end justify-between gap-2 rounded-2xl bg-muted/60 p-4">
           <div>

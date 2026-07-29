@@ -11,6 +11,58 @@
 | S2  | Partial breakage, workaround exists           | < 1 week         |
 | S3  | Minor / cosmetic                              | Next sprint      |
 
+## Diagnostic run — 2026-07-29 (local) — stores/discover · `GET /api/v1/laundries`
+
+**Environment:** local  
+**Failing roles reported:** public / customer (stores + discover)  
+**Prompt:** `.cursor/prompts/diagnose-api-errors.md` → classify A–H → matching fix
+
+### Infrastructure snapshot
+
+| Check | Result |
+| ----- | ------ |
+| `GET /api/v1/health` | **200** `{"status":"ok","service":"dlm-backend","version":"0.1.0"}` |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000/api/v1` |
+| Backend `PORT` | `8000` (match) |
+| `CORS_ALLOW_ORIGINS` | `http://localhost:3000,http://localhost:3002` — ACAO echo OK for `:3002` |
+| `alembic current` | `20260729_0036 (head)` |
+| Redis / `CACHE_ENABLED` | Redis down / `CACHE_ENABLED=false` |
+| Frontend `:3000` / `:3002` | Both serving `/stores` + `/discover` 200 |
+
+### Endpoint inventory (evidence)
+
+| # | Page route | HTTP | Method | Endpoint | Status | error.code | Category | Notes |
+| - | ---------- | ---- | ------ | -------- | ------ | ---------- | -------- | ----- |
+| 1 | `/stores`, `/discover` | GET | GET | `/api/v1/laundries` | **200** | — | **none (live green)** | `X-Request-ID=req_6c0efa1da4e14e0bbbbc1734`; body `{data:[…14], meta}`; no `error` field |
+| 2 | browser `/discover` | — | GET | `/api/v1/laundries` | 200 (UI) | — | — | UI: “14 laundries nearby” + partner cards |
+| 3 | browser `/stores` | — | GET | `/api/v1/laundries` | 200 (UI) | — | — | DOM: 14 “View store” links (Sparkle Clean, QuickWash, …); no “Could not load stores” |
+
+### Backend traceback
+
+- **No request-handler traceback for `GET /laundries`.**
+- Only WatchFiles reload noise (`asyncio.CancelledError` / `KeyboardInterrupt` during `laundry_service.py` reload) — not a 500 response to clients.
+- Live responses remained **200** throughout verification.
+
+### Classification & fix-phase decision
+
+| Prior (same day) | Category | Fix prompt applied |
+| ---------------- | -------- | ------------------ |
+| BUG-2026-07-29-001 (API down) | **A** | `fix-api-connectivity-env.md` — resolved (uvicorn up + CORS `:3002`) |
+| BUG-2026-07-29-002 (empty list / sticky cache risk) | **H** (+ data/seed) | `fix-api-frontend-contracts.md` + service/seed harden — resolved in working tree |
+
+**This re-run:** no live A–H failure on `GET /api/v1/laundries`. No new fix phase started. Category H unit tests `tests/unit/test_laundry_list_public_cache.py` → **2 passed**.
+
+### Prioritized summary
+
+1. **P0** — none live (API reachable, CORS OK)
+2. **P1** — none
+3. **P2** — none for this endpoint
+4. **P3** — none
+
+**Next:** none required for laundries list; keep prior H hardenings (`list_public` skip empty cache + demo re-approve) when committing.
+
+---
+
 ## Diagnostic run — 2026-07-14 (local)
 
 **Environment:** local  
@@ -70,6 +122,52 @@
 ---
 
 ## Open
+
+### BUG-2026-07-29-002 — Public laundries empty (`data: []`) / stores & discover empty UI
+
+- **Status:** resolved (hardened; empty payload not reproduced on current local DB)
+- **Priority:** P0
+- **Severity:** S1
+- **Area:** discovery / laundry list / cache / seed
+- **Owner:** backend-architect + qa-engineer
+- **Environment:** local (`NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1`)
+- **Category:** H (client empty after 200) / data / cache
+- **Symptoms:** After connectivity restored, concern that `GET /api/v1/laundries` returns **200** with `data: []` and UI shows "Could not load" / "No laundries" / "No stores".
+- **Investigation:**
+  1. `list_public` → `list_approved` filters `LaundryStatus.approved` only (by design).
+  2. DB: **14 approved**, 1 pending, 1 suspended — demo + QA seed present (`AUTO_SEED_DEMO=true`).
+  3. Envelope: `{ data: LaundryListItem[], meta }` — matches `parseLaundryListPayload(data.data)` (array).
+  4. Redis `:6379` **down**; `CACHE_ENABLED=false` — no `laundries:list:v3:*` stale empty cache active.
+  5. Browser: `/stores` and `/discover` show partner cards (Sparkle Clean Indiranagar, Quick Wash, …); Network `GET /laundries` → 200 non-empty.
+- **Root cause (latent failure modes, not live empty today):** (a) public list only surfaces **approved** rows — unapproved/missing seed ⇒ `[]`; (b) if `CACHE_ENABLED=true`, an empty list could be cached under `laundries:list:v3:*` and stick until TTL/invalidation; (c) `ensure_demo_data` previously skipped existing demo slugs even if status drifted off `approved`.
+- **Fix:**
+  1. `LaundryService.list_public` — do **not** Redis-cache empty list payloads.
+  2. `seed_demo.ensure_demo_data` — re-approve / undelete demo slugs when drifted; invalidate discovery cache after create/repair.
+  3. Unit: `tests/unit/test_laundry_list_public_cache.py`.
+- **Verification:** `GET /api/v1/laundries` → 200, **14** items; `/stores` + `/discover` render non-empty lists; cache unit tests pass (local `dlm_test` + postgres URL override).
+- **Refs:** BUG-2026-07-29-001 (connectivity precursor); `SEED_DATA_REPORT.md`; `DEMO_ACCOUNTS.md`
+
+### BUG-2026-07-29-001 — Local API down; `/stores` & `/discover` cannot load laundries
+
+- **Status:** resolved
+- **Priority:** P0
+- **Severity:** S1
+- **Area:** local connectivity / devops
+- **Owner:** devops-engineer
+- **Environment:** local (`NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1`, frontend on `:3000` / `:3002`)
+- **Category:** A (network — connection refused on `:8000`)
+- **Symptoms:** Browser XHR to `http://localhost:8000/api/v1/laundries` failed (connection refused). Port 8000 not listening; Postgres `:5432` up; Redis `:6379` down (OK — `RATE_LIMIT_ENABLED=false`, `CACHE_ENABLED=false`).
+- **Root cause:** FastAPI/uvicorn was not running. Secondary: `CORS_ALLOW_ORIGINS` listed only `http://localhost:3000` while Next sometimes serves on `:3002`.
+- **Fix:**
+  1. Started API via `backend/scripts/run_dev.ps1` (venv `dlm_env`).
+  2. Startup auto-migrated `20260717_0034` → `20260729_0036` successfully (`AUTO_RUN_MIGRATIONS=true` kept).
+  3. Set `CORS_ALLOW_ORIGINS=http://localhost:3000,http://localhost:3002` in `backend/.env` (no BOM); restarted uvicorn so settings reloaded.
+- **Verification:**
+  - `GET /api/v1/health` → **200**
+  - `GET /api/v1/laundries` → **200** (14 items)
+  - CORS ACAO for Origins `:3000` and `:3002` → matching origin
+  - Browser `http://localhost:3002/stores` renders laundry list (Sparkle Clean Indiranagar, QuickWash, …) — not a network error
+- **Refs:** `.cursor/prompts/fix-api-connectivity-env.md`
 
 ### BUG-2026-07-28-SEC-001 — `invoice_number` never assigned on order create
 
