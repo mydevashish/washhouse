@@ -226,13 +226,13 @@ export function washhouseSuggestedFromItems(): MarketplaceFromItem[] {
   s += 10;
 
   const householdSingle: [string, string, number][] = [
-    ['household-blanket-4x6', 'Blanket 4×6', 169],
+    ['household-blanket-single', 'Blanket (Single)', 169],
     ['household-blanket-double', 'Blanket (Double)', 299],
     ['household-blanket-king', 'Blanket (King)', 349],
 
-    ['household-toy-s', 'Toy (Small)', 99],
-    ['household-toy-m', 'Toy (Medium)', 149],
-    ['household-toy-l', 'Toy (Large)', 299],
+    ['household-toy-small', 'Toy (Small)', 99],
+    ['household-toy-medium', 'Toy (Medium)', 149],
+    ['household-toy-large', 'Toy (Large)', 299],
 
     ['household-bag-small', 'Bag (Small)', 149],
     ['household-bag-large', 'Bag (Large)', 299],
