@@ -755,9 +755,13 @@ test.describe('marketing stores directory', () => {
       // City may stand alone or appear as "X.X km · City" when Near Me is active
       await expect(firstCard.getByText(new RegExp(city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeVisible();
 
-      // Contact-only card: no discover / Open store links
-      await expect(firstCard.getByRole('link', { name: /open store|view store/i })).toHaveCount(0);
-      await expect(firstCard.locator('a[href*="/discover/"]')).toHaveCount(0);
+      // Cover/name links to storefront; Call / Message / Get Location stay separate
+      const discoverLink = firstCard.locator('a[href*="/discover/"]').first();
+      await expect(discoverLink).toBeVisible();
+      await expect(discoverLink).toHaveAttribute('href', /\/discover\/.+/);
+      await expect(
+        firstCard.getByRole('link', { name: new RegExp(`open ${storeName}`, 'i') }),
+      ).toBeVisible();
 
       // Cover image is the visual plane
       await expect(firstCard.locator('img').first()).toBeVisible();

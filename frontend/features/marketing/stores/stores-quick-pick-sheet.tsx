@@ -39,6 +39,8 @@ const PREVIEW_COUNT = 3;
 type StoresQuickPickSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Optional extra callback when a store cover/name navigates to the storefront. */
+  onNavigate?: () => void;
 };
 
 function quickPickSubtitle(
@@ -66,9 +68,18 @@ function quickPickSubtitle(
  * Mount only after first open — keeps sticky CTA bundle light (no maps SDK).
  * Phone: spotlight + compact rows. Tablet md+: 2-column curated picker.
  */
-export function StoresQuickPickSheet({ open, onOpenChange }: StoresQuickPickSheetProps) {
+export function StoresQuickPickSheet({
+  open,
+  onOpenChange,
+  onNavigate,
+}: StoresQuickPickSheetProps) {
   const reduceMotion = usePrefersReducedMotion();
   const geo = useGeolocation();
+
+  const handleStoreNavigate = () => {
+    onNavigate?.();
+    onOpenChange(false);
+  };
 
   const listQ = useQuery({
     queryKey: queryKeys.laundries(),
@@ -167,7 +178,10 @@ export function StoresQuickPickSheet({ open, onOpenChange }: StoresQuickPickShee
               )}
               aria-label="Quick pick stores"
             >
-              <QuickPickSpotlight laundry={spotlight} />
+              <QuickPickSpotlight
+                laundry={spotlight}
+                onNavigate={handleStoreNavigate}
+              />
 
               {secondary.length > 0 && (
                 <ul
@@ -179,6 +193,7 @@ export function StoresQuickPickSheet({ open, onOpenChange }: StoresQuickPickShee
                       key={laundry.id}
                       laundry={laundry}
                       index={i}
+                      onNavigate={handleStoreNavigate}
                     />
                   ))}
                 </ul>

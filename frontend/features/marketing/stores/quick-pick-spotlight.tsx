@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import Link from 'next/link';
+import { useState, type MouseEvent } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { BadgeCheck, MessageCircle, Navigation, Phone, Star } from 'lucide-react';
 
@@ -25,6 +26,8 @@ const CONTACT_SOURCE = 'stores_quick_pick' as const;
 
 type QuickPickSpotlightProps = {
   laundry: EnrichedLaundry;
+  /** Called when the cover/name link navigates (e.g. close the quick-pick drawer). */
+  onNavigate?: () => void;
   className?: string;
 };
 
@@ -36,9 +39,13 @@ function formatFromPrice(laundry: EnrichedLaundry): string | null {
 
 /**
  * Primary store card in the quick-pick sheet — cover, trust, Call / Message / Get Location.
- * Name, image, and location are display-only; only contact actions navigate or open apps.
+ * Cover + name link to the storefront; contact actions stay separate buttons.
  */
-export function QuickPickSpotlight({ laundry, className }: QuickPickSpotlightProps) {
+export function QuickPickSpotlight({
+  laundry,
+  onNavigate,
+  className,
+}: QuickPickSpotlightProps) {
   const reduce = useReducedMotion();
   const [imgFailed, setImgFailed] = useState(false);
   const rating = Number(laundry.avg_rating);
@@ -47,6 +54,7 @@ export function QuickPickSpotlight({ laundry, className }: QuickPickSpotlightPro
   const fallbackClass = getStoreCardFallbackClass(laundry.slug);
 
   const {
+    storeHref,
     showCall,
     showWhatsApp,
     showDirections,
@@ -66,6 +74,12 @@ export function QuickPickSpotlight({ laundry, className }: QuickPickSpotlightPro
 
   const showDistance = !laundry.distanceIsApproximate;
 
+  const stopAnd =
+    (action: () => void | Promise<void>) => (e: MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      void action();
+    };
+
   return (
     <motion.article
       className={cn(
@@ -77,18 +91,26 @@ export function QuickPickSpotlight({ laundry, className }: QuickPickSpotlightPro
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: reduce ? 0 : 0.22, ease: EASE_OUT }}
     >
-      <div
+      <Link
+        href={storeHref}
+        onClick={onNavigate}
         className={cn(
           'relative aspect-[16/9] max-h-[40vh] overflow-hidden md:aspect-[4/3] md:max-h-[36vh]',
+          'block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
           fallbackClass,
         )}
+        aria-label={`Open ${laundry.name}`}
       >
         {!imgFailed ? (
           <Image
             src={laundry.image}
             alt=""
             fill
-            className="object-cover"
+            className={cn(
+              'object-cover',
+              'motion-safe:transition-transform motion-safe:duration-300',
+              'motion-reduce:transform-none motion-reduce:transition-none',
+            )}
             sizes="(max-width: 768px) 100vw, 420px"
             onError={() => setImgFailed(true)}
             priority
@@ -130,7 +152,7 @@ export function QuickPickSpotlight({ laundry, className }: QuickPickSpotlightPro
             <p className="mt-0.5 text-sm tabular-nums text-white/85">{fromPrice}</p>
           )}
         </div>
-      </div>
+      </Link>
 
       {showContactActions ? (
         <div
@@ -145,7 +167,7 @@ export function QuickPickSpotlight({ laundry, className }: QuickPickSpotlightPro
               className="h-11 min-h-11 min-w-[8.5rem] flex-1 basis-[calc(50%-0.25rem)] gap-1.5 px-2.5 active:scale-[0.98] motion-reduce:active:scale-100"
               disabled={isPending}
               aria-label={callAriaLabel}
-              onClick={() => void handleCall()}
+              onClick={stopAnd(handleCall)}
             >
               <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
               <span className="truncate">Call Store</span>
@@ -162,7 +184,7 @@ export function QuickPickSpotlight({ laundry, className }: QuickPickSpotlightPro
               )}
               disabled={isPending}
               aria-label={whatsappAriaLabel}
-              onClick={() => void handleWhatsApp()}
+              onClick={stopAnd(handleWhatsApp)}
             >
               <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />
               <span className="truncate">Message Store</span>
@@ -176,7 +198,7 @@ export function QuickPickSpotlight({ laundry, className }: QuickPickSpotlightPro
               className="h-11 min-h-11 min-w-[8.5rem] flex-1 basis-[calc(50%-0.25rem)] gap-1.5 px-2.5 active:scale-[0.98] motion-reduce:active:scale-100"
               disabled={isPending}
               aria-label={directionsAriaLabel}
-              onClick={() => void handleGetLocation()}
+              onClick={stopAnd(handleGetLocation)}
             >
               <Navigation className="h-3.5 w-3.5 shrink-0" aria-hidden />
               <span className="truncate">Get Location</span>

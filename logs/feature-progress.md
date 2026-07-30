@@ -22,7 +22,7 @@
 - CI / CD baseline: **in-progress** (frontend workflow fixed 2026-07-13; verify GitHub Actions green)
 
 ## Phase 2 — Customer MVP
-- Laundry discovery: **shipped** (API + FE list + detail; search/filter/sort on `/discover` PartnersSection 2026-07-28; list/search expose optional lat/lng for client Near me 2026-07-29; storefront catalogue chips/photos/search 2026-07-29; `/stores` gallery motion/perf polish 2026-07-29; `/stores` phone/tablet sticky filter cluster + quick-pick-aligned card actions 2026-07-29)
+- Laundry discovery: **shipped** (API + FE list + detail; search/filter/sort on `/discover` PartnersSection 2026-07-28; list/search expose optional lat/lng for client Near me 2026-07-29; storefront catalogue chips/photos/search 2026-07-29; `/stores` gallery motion/perf polish 2026-07-29; `/stores` phone/tablet sticky filter cluster + quick-pick-aligned card actions 2026-07-29; sticky quick-pick + directory `StoresCard` cover/name → `/discover/[id]` 2026-07-30)
 - Order placement: **shipped** (API + FE booking; GST fields on create)
 - Order tracking: **shipped** (events API + FE polling; WS deferred; customer cancel within window 2026-07-28)
 - Reviews: **shipped** (API + FE on delivered orders)

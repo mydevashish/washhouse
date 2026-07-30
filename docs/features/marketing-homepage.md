@@ -54,7 +54,7 @@ Primary marketing **Book Now** / **Book pickup** CTAs open a shared Radix Dialog
 | `BookPickupForm` | RHF + Zod; POSTs via `useSubmitContact()` with subject `order-help` |
 | `BookNowDialog` | Focus trap, Esc, `aria-labelledby`, mobile full-viewport, mounted in `MarketingShellOverlays` |
 | `/?book=1` | Deep link opens the same dialog; closing strips the query param |
-| `/stores` | Slim partner directory (name + city + Call Store / Message Store / Get Location) with optional **Near me** (browser geolocation → client haversine when list items include lat/lng); desktop navbar **Stores** (nav link + CTA) navigates here; mobile sticky **Stores** opens a deferred quick-pick sheet. No per-store price/rating compare UX; cards do not link to `/discover/[id]`. |
+| `/stores` | Slim partner directory (name + city + Call Store / Message Store / Get Location) with optional **Near me** (browser geolocation → client haversine when list items include lat/lng); desktop navbar **Stores** (nav link + CTA) navigates here; mobile sticky **Stores** opens a deferred quick-pick sheet. No per-store price/rating compare UX; cover/name links to `/discover/[id]`; contact buttons stay separate. |
 
 Form fields map into the existing contact API message body (service + preferred time + notes). No parallel book endpoint.
 

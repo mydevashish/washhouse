@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import Link from 'next/link';
+import { useState, type MouseEvent } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { MessageCircle, Navigation, Phone, Star } from 'lucide-react';
 
@@ -22,16 +23,19 @@ type QuickPickCompactRowProps = {
   laundry: EnrichedLaundry;
   /** Stagger index among secondary rows (0-based). */
   index?: number;
+  /** Called when the thumb/name link navigates (e.g. close the quick-pick drawer). */
+  onNavigate?: () => void;
   className?: string;
 };
 
 /**
  * Dense secondary store row for the quick-pick sheet.
- * Name, image, and location are display-only; Call / Message / Get Location open apps.
+ * Thumb + name link to the storefront; Call / Message / Get Location stay separate.
  */
 export function QuickPickCompactRow({
   laundry,
   index = 0,
+  onNavigate,
   className,
 }: QuickPickCompactRowProps) {
   const reduce = useReducedMotion();
@@ -40,6 +44,7 @@ export function QuickPickCompactRow({
   const fallbackClass = getStoreCardFallbackClass(laundry.slug);
 
   const {
+    storeHref,
     showCall,
     showWhatsApp,
     showDirections,
@@ -61,6 +66,12 @@ export function QuickPickCompactRow({
   const ratingLabel =
     Number.isFinite(rating) && rating > 0 ? rating.toFixed(1) : null;
 
+  const stopAnd =
+    (action: () => void | Promise<void>) => (e: MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      void action();
+    };
+
   return (
     <motion.li
       className={cn(
@@ -76,7 +87,15 @@ export function QuickPickCompactRow({
         ease: EASE_OUT,
       }}
     >
-      <div className="flex min-w-0 items-center gap-3">
+      <Link
+        href={storeHref}
+        onClick={onNavigate}
+        className={cn(
+          'flex min-w-0 items-center gap-3 rounded-lg',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        )}
+        aria-label={`Open ${laundry.name}`}
+      >
         <span
           className={cn(
             'relative h-12 w-12 shrink-0 overflow-hidden rounded-lg sm:h-14 sm:w-14',
@@ -88,7 +107,11 @@ export function QuickPickCompactRow({
               src={laundry.image}
               alt=""
               fill
-              className="object-cover"
+              className={cn(
+                'object-cover',
+                'motion-safe:transition-transform motion-safe:duration-300',
+                'motion-reduce:transform-none motion-reduce:transition-none',
+              )}
               sizes="56px"
               onError={() => setImgFailed(true)}
             />
@@ -119,7 +142,7 @@ export function QuickPickCompactRow({
             </span>
           </span>
         </span>
-      </div>
+      </Link>
 
       {showContactActions ? (
         <div
@@ -134,7 +157,7 @@ export function QuickPickCompactRow({
               className="h-11 min-h-11 min-w-[8.5rem] flex-1 basis-[calc(50%-0.25rem)] gap-1.5 px-2.5 active:scale-[0.98] motion-reduce:active:scale-100"
               disabled={isPending}
               aria-label={callAriaLabel}
-              onClick={() => void handleCall()}
+              onClick={stopAnd(handleCall)}
             >
               <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
               <span className="truncate">Call Store</span>
@@ -151,7 +174,7 @@ export function QuickPickCompactRow({
               )}
               disabled={isPending}
               aria-label={whatsappAriaLabel}
-              onClick={() => void handleWhatsApp()}
+              onClick={stopAnd(handleWhatsApp)}
             >
               <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />
               <span className="truncate">Message Store</span>
@@ -165,7 +188,7 @@ export function QuickPickCompactRow({
               className="h-11 min-h-11 min-w-[8.5rem] flex-1 basis-[calc(50%-0.25rem)] gap-1.5 px-2.5 active:scale-[0.98] motion-reduce:active:scale-100"
               disabled={isPending}
               aria-label={directionsAriaLabel}
-              onClick={() => void handleGetLocation()}
+              onClick={stopAnd(handleGetLocation)}
             >
               <Navigation className="h-3.5 w-3.5 shrink-0" aria-hidden />
               <span className="truncate">Get Location</span>

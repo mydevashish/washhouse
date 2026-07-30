@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-07-30 — StoresCard cover navigates to storefront
+
+- **Type:** fix
+- **Scope:** Marketing `/stores` directory `StoresCard`
+- **Files:** `stores-card.tsx`, `stores-card.test.tsx`, `marketing-homepage.spec.ts`, `docs/features/marketing-homepage.md`, `docs/features/customer-discovery.md`
+- **Summary:** Cover + name area is now a Link to `/discover/[id]` (same pattern as sticky quick-pick). Call / Message / Get Location remain the only contact actions, with `stopPropagation`. Unit + e2e + docs updated from “zero discover links” to assert the cover link.
+- **Risks:** Nested interactive content a11y — link wraps media/title only; action buttons remain siblings.
+- **Next:** Optional Playwright assert tap cover → storefront URL.
+- **Refs:** User report — same bug as quick-pick; StoresCard was display-only
+
+---
+
+## 2026-07-30 — Quick-pick store cover navigates to storefront
+
+- **Type:** fix
+- **Scope:** Marketing sticky Stores Near Me quick-pick sheet
+- **Files:** `quick-pick-spotlight.tsx`, `quick-pick-compact-row.tsx`, `stores-quick-pick-sheet.tsx`, `stores-quick-pick.test.tsx`, `docs/features/customer-discovery.md`
+- **Summary:** Cover + name areas now link to `/discover/[id]` with keyboard/focus rings; sheet closes via optional `onNavigate` → `onOpenChange(false)`. Call / Message / Get Location stay separate with `stopPropagation`; contact gating unchanged.
+- **Risks:** Nested interactive content a11y — link wraps media/title only; action buttons remain siblings.
+- **Next:** Optional Playwright assert tap cover → storefront URL.
+- **Refs:** User report — tapping store name/image in quick-pick did nothing
+
+---
+
 ## 2026-07-30 — Store-card simplification finalize
 
 - **Type:** chore

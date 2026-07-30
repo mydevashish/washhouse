@@ -25,7 +25,7 @@ async function fillEmailLogin(page: Page, creds: AuthCredentials) {
   await expect(page.locator('#login-email')).toBeVisible({ timeout: 30_000 });
   await page.locator('#login-email').fill(creds.email);
   await page.locator('#login-password').fill(creds.password);
-  // Prefer the form submit — navbar also has a "Sign in" link.
+  // Prefer the form submit — customer navbar has no guest Sign in link.
   const submit = page.locator('form').getByRole('button', { name: /^sign in$/i });
   await expect(submit).toBeEnabled();
   const loginResponsePromise = page.waitForResponse(

@@ -138,7 +138,7 @@ describe('StoresCard', () => {
     mockGetContactInfo.mockResolvedValue({ ...CONTACT_WITH_ACTIONS });
   });
 
-  it('renders name, city, cover image, and contact actions — no discover links', async () => {
+  it('renders name, city, cover image, discover link, and contact actions', async () => {
     renderCard();
 
     expect(
@@ -162,15 +162,9 @@ describe('StoresCard', () => {
       screen.queryByRole('list', { name: /washhouse services available/i }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/wash\s*&\s*fold/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /open store/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /open sparkle clean hub/i })).not.toBeInTheDocument();
 
-    const discoverLinks = screen.queryAllByRole('link').filter((el) => {
-      const href = el.getAttribute('href') ?? '';
-      return /\/discover\//.test(href);
-    });
-    expect(discoverLinks).toHaveLength(0);
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    const discoverLink = screen.getByRole('link', { name: /open sparkle clean hub/i });
+    expect(discoverLink).toHaveAttribute('href', `/discover/${mockLaundry.id}`);
 
     await waitFor(() => {
       expect(

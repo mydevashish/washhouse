@@ -58,6 +58,11 @@ export function NavbarUserMenu({
   }
 
   if (!user) {
+    // Customer guests use the hamburger menu (Sign in) — same pattern as marketing pages.
+    // Keep a header Sign in only for partner/admin shells (no customer menu).
+    if (app === 'customer') {
+      return null;
+    }
     return (
       <Button asChild size="sm" className="h-7 px-2 text-xs">
         <Link href="/login">Sign in</Link>

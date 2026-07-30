@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import Link from 'next/link';
+import { useState, type MouseEvent } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { BadgeCheck, MapPin, MessageCircle, Navigation, Phone } from 'lucide-react';
 
@@ -35,8 +36,8 @@ type StoresCardProps = {
 
 /**
  * Marketing directory card — cover, name, location, Call / Message / Get Location.
- * Contact info is fetched only when the card enters the viewport (lazy; see useCardInView).
- * Non-interactive article body; only the three action buttons navigate or open apps.
+ * Cover + name link to the storefront; contact info is fetched only when the card
+ * enters the viewport (lazy; see useCardInView). Contact buttons stay separate.
  */
 export function StoresCard({
   laundry,
@@ -52,6 +53,7 @@ export function StoresCard({
   const isFeatured = variant === 'featured';
 
   const {
+    storeHref,
     showCall,
     showWhatsApp,
     showDirections,
@@ -71,6 +73,12 @@ export function StoresCard({
   });
 
   const showDistance = !laundry.distanceIsApproximate;
+
+  const stopAnd =
+    (action: () => void | Promise<void>) => (e: MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      void action();
+    };
 
   return (
     <motion.article
@@ -93,12 +101,15 @@ export function StoresCard({
         ease: EASE_OUT,
       }}
     >
-      <div
+      <Link
+        href={storeHref}
         className={cn(
           'relative overflow-hidden',
+          'block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
           isFeatured ? 'aspect-[4/3] md:aspect-[21/9]' : 'aspect-[5/3]',
           fallbackClass,
         )}
+        aria-label={`Open ${laundry.name}`}
       >
         {!imgFailed ? (
           <Image
@@ -166,7 +177,7 @@ export function StoresCard({
             </span>
           </p>
         </div>
-      </div>
+      </Link>
 
       {showContactActions ? (
         <div className="mt-auto flex flex-1 flex-col justify-end p-3 sm:p-4">
@@ -182,7 +193,7 @@ export function StoresCard({
                 className="h-11 min-h-11 min-w-[8.5rem] flex-1 basis-[calc(50%-0.25rem)] gap-1.5 px-2.5 active:scale-[0.98] motion-reduce:active:scale-100"
                 disabled={isPending}
                 aria-label={callAriaLabel}
-                onClick={() => void handleCall()}
+                onClick={stopAnd(handleCall)}
               >
                 <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span className="truncate">Call Store</span>
@@ -199,7 +210,7 @@ export function StoresCard({
                 )}
                 disabled={isPending}
                 aria-label={whatsappAriaLabel}
-                onClick={() => void handleWhatsApp()}
+                onClick={stopAnd(handleWhatsApp)}
               >
                 <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span className="truncate">Message Store</span>
@@ -213,7 +224,7 @@ export function StoresCard({
                 className="h-11 min-h-11 min-w-[8.5rem] flex-1 basis-[calc(50%-0.25rem)] gap-1.5 px-2.5 active:scale-[0.98] motion-reduce:active:scale-100"
                 disabled={isPending}
                 aria-label={directionsAriaLabel}
-                onClick={() => void handleGetLocation()}
+                onClick={stopAnd(handleGetLocation)}
               >
                 <Navigation className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span className="truncate">Get Location</span>

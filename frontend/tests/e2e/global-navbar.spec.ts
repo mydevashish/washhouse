@@ -24,8 +24,7 @@ async function gotoDiscoverLoggedOut(page: Page) {
   );
   await page.goto('/discover');
   await page.waitForLoadState('domcontentloaded');
-  await expect(page.getByRole('heading', { name: 'Discover', level: 1 })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible({
+  await expect(page.getByRole('heading', { name: 'Discover', level: 1 })).toBeVisible({
     timeout: 15_000,
   });
 }
@@ -48,9 +47,21 @@ test.describe('customer GlobalNavbar', () => {
     });
   });
 
-  test('shows Sign in link when logged out', async ({ page }) => {
+  test('shows Open menu with Sign in for guests', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await gotoDiscoverLoggedOut(page);
-    await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
+
+    const openMenu = page.getByRole('button', { name: 'Open menu' });
+    await expect(openMenu).toBeVisible();
+    await openMenu.click();
+
+    const siteMenu = page.getByRole('navigation', { name: 'Site menu' });
+    await expect(siteMenu).toBeVisible();
+    await expect(siteMenu.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
+    await expect(siteMenu.getByRole('link', { name: 'Home', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('navigation', { name: 'Mobile navigation' }).getByRole('link', { name: 'Account' }),
+    ).toBeVisible();
   });
 
   test('theme toggle changes html.dark class', async ({ page }) => {
