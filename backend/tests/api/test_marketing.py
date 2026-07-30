@@ -146,6 +146,37 @@ async def test_submit_contact_success(client: AsyncClient) -> None:
     assert "id" in body
 
 
+async def test_submit_contact_order_help_book_pickup_subject(client: AsyncClient) -> None:
+    """Book Pickup dialog posts subject=order-help (hyphen value, not order_help name)."""
+    payload = {
+        **CONTACT_PAYLOAD,
+        "phone": "+919876543299",
+        "subject": "order-help",
+        "message": (
+            "Book pickup request (marketing)\n"
+            "Service: Wash & Fold\n"
+            "Preferred time: Flexible — call me to confirm"
+        ),
+    }
+    response = await client.post("/api/v1/marketing/contact", json=payload)
+
+    assert response.status_code == 201
+    assert response.json()["data"]["status"] == "received"
+
+
+async def test_submit_contact_legal_privacy_subject(client: AsyncClient) -> None:
+    payload = {
+        **CONTACT_PAYLOAD,
+        "phone": "+919876543298",
+        "subject": "legal-privacy",
+        "message": "I have a question about how WashHouse stores customer data in India.",
+    }
+    response = await client.post("/api/v1/marketing/contact", json=payload)
+
+    assert response.status_code == 201
+    assert response.json()["data"]["status"] == "received"
+
+
 async def test_submit_contact_rejects_invalid_phone(client: AsyncClient) -> None:
     payload = {**CONTACT_PAYLOAD, "phone": "12345"}
     response = await client.post("/api/v1/marketing/contact", json=payload)

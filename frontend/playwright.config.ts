@@ -62,7 +62,7 @@ export default defineConfig({
         },
         {
           // Never reuse :3001 — an online-mode leftover flips sticky to Book nearest
-          // and breaks offline Stores / quick-pick coverage.
+          // and breaks offline Book Pickup sticky coverage.
           command: 'npm run dev -- --port 3001',
           url: 'http://localhost:3001',
           reuseExistingServer: false,

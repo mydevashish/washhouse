@@ -11,6 +11,124 @@
 | S2  | Partial breakage, workaround exists           | < 1 week         |
 | S3  | Minor / cosmetic                              | Next sprint      |
 
+## BUG-2026-07-30-002 — `/stores` Near me does nothing useful
+
+- **Status:** resolved (code)
+- **Severity:** S2
+- **Reporter:** user
+- **Date opened:** 2026-07-30
+- **Area:** marketing / stores / geolocation
+- **Environment:** local + production-shaped (HTTPS)
+
+### Summary
+
+Near me either emptied the directory (`maxDistance: 50` after GPS) or looked like a no-op when laundry `latitude`/`longitude` were null (slug-hash “nearest” sort, no distance badges).
+
+### Fix
+
+Directory uses `ANY_DISTANCE_KM` (sort only); approximate distances never radius-gate; partial pins messaging; secure-context fail-fast; demo seed backfills coords.
+
+### Refs
+
+`logs/implementation-log.md` — 2026-07-30 Near me fix
+
+---
+
+## BUG-2026-07-30-001 — Book Pickup shows network error on production
+
+- **Status:** resolved (code); **awaiting Render deploy** for live verify
+- **Severity:** SEV1
+- **Reporter:** user / production washhouse.vercel.app
+- **Date opened:** 2026-07-30
+- **Area:** marketing / book-now / API
+- **Environment:** production (Vercel FE + Render BE)
+
+### Summary
+
+Book Pickup / Schedule a pickup shows “We couldn't reach our servers…” even though the API is up — browser never sees a CORS-readable response for the failing POST.
+
+### Steps to reproduce
+
+1. Open https://washhouse.vercel.app/?book=1
+2. Enter name + phone; submit Schedule pickup
+3. Observe toast + inline red error with network copy
+
+### Expected
+
+201 + success toast + dialog close.
+
+### Actual
+
+Network error copy from `getMarketingSubmitErrorMessage` / `isNetworkError`.
+
+### Evidence
+
+| Check | Result |
+| ----- | ------ |
+| `GET /api/v1/health` | 200 |
+| OPTIONS + Origin vercel | 200, ACAO `https://washhouse.vercel.app` |
+| `POST .../contact` subject=`general` | **201** + ACAO |
+| `POST .../contact` subject=`order-help` | **500** INTERNAL_ERROR, **no ACAO** |
+| `POST .../contact` subject=`legal-privacy` | **500**, no ACAO |
+| `POST .../franchise-inquiries` investment=`25-50` | **500**, no ACAO |
+| Local DB enum labels (pre-fix) | `order_help`, `legal_privacy`, `range_25_50` (SQLAlchemy names) |
+| Alembic 0032 / prod labels | `order-help`, `legal-privacy`, `25-50` (API values) |
+
+### Classification
+
+| Layer | Category | Notes |
+| ----- | -------- | ----- |
+| Primary | **F — Server** | PG rejects enum label when ORM writes name vs value |
+| Symptom | **B — CORS** | CORSMiddleware was not outermost → 500s missing ACAO → axios `response === undefined` → false “network” UX |
+
+Not Category A (API reachable). Env URLs / CORS allow-list for success paths were already correct.
+
+### Root cause
+
+1. `sa.Enum(MarketingContactSubject, …)` default persistence uses member **names**; public API + migration use **values** with hyphens.
+2. Book Pickup always sends `order-help` → 500 on prod.
+3. Missing ACAO on 500 made FE classify as network error.
+
+### Fix
+
+- `values_callable` on marketing contact + investment enums
+- Alembic `20260730_0037` renames name-labels → value-labels when needed; `ADD VALUE IF NOT EXISTS` for safety
+- Add CORSMiddleware last (outermost) so error responses include ACAO
+- Tests: order-help / legal-privacy API cases; Jest asserts 500 ≠ network copy; unit enum label list
+
+### Deploy steps (remaining) — **live still broken until Render ships this branch**
+
+Verified 2026-07-30 (pre-deploy):
+| Check | Result |
+| ----- | ------ |
+| `GET …/health` | 200 |
+| OPTIONS + Origin vercel | 200 + ACAO |
+| `POST` subject=`general` | **201** + ACAO |
+| `POST` subject=`order-help` | **500** INTERNAL_ERROR, **no ACAO** |
+
+1. Confirm Render env: `CORS_ALLOW_ORIGINS` includes `https://washhouse.vercel.app`; `AUTO_RUN_MIGRATIONS=true`
+2. Deploy backend to Render (ships `values_callable` + CORS outermost + migration `20260730_0037`)
+3. Confirm: `POST https://washhouse.onrender.com/api/v1/marketing/contact` with `subject=order-help` → **201** and `Access-Control-Allow-Origin: https://washhouse.vercel.app`
+4. Smoke Book Pickup on washhouse.vercel.app (`/?book=1`) — no FE env change if `NEXT_PUBLIC_API_URL=https://washhouse.onrender.com/api/v1`
+
+PowerShell post-deploy smoke:
+
+```powershell
+$body = '{"name":"Verify User","phone":"+919876543210","subject":"order-help","message":"Book pickup smoke"}'
+$r = Invoke-WebRequest https://washhouse.onrender.com/api/v1/marketing/contact `
+  -Method POST -ContentType "application/json" -Body $body `
+  -Headers @{ Origin = "https://washhouse.vercel.app" } -UseBasicParsing
+$r.StatusCode  # expect 201
+$r.Headers["Access-Control-Allow-Origin"]  # expect https://washhouse.vercel.app
+```
+
+### Local verification
+
+- After restart: order-help + franchise-inquiries → 201; 422 includes ACAO
+- Browser `localhost:3000/?book=1` submit → dialog closed, URL `/`, backend `marketing.contact_submitted`
+
+---
+
 ## Diagnostic run — 2026-07-29 (local) — stores/discover · `GET /api/v1/laundries`
 
 **Environment:** local  

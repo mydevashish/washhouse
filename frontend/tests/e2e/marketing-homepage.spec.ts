@@ -477,7 +477,7 @@ test.describe('marketing contact form', () => {
 
 test.describe('mobile sticky CTA', () => {
   // Default Playwright webServer uses online booking (NEXT_PUBLIC_FEATURE_ONLINE_BOOKING default true).
-  // Offline sticky WhatsApp-primary + quick-pick coverage lives in offline-booking.spec.ts (:3001).
+  // Offline sticky Book Pickup + WhatsApp coverage lives in offline-booking.spec.ts (:3001).
 
   test('sticky CTA is visible at top of homepage on mobile (online booking)', async ({
     page,
@@ -495,6 +495,7 @@ test.describe('mobile sticky CTA', () => {
     );
     await expect(stickyCta.getByRole('link', { name: /chat on whatsapp/i })).toBeVisible();
     await expect(stickyCta.getByRole('link', { name: /call now/i })).toBeVisible();
+    await expect(stickyCta.getByRole('button', { name: /book pickup/i })).toHaveCount(0);
     await expect(stickyCta.getByRole('button', { name: /find stores/i })).toHaveCount(0);
     await expect(stickyCta).not.toHaveClass(/opacity-0/);
   });

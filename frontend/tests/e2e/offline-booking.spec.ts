@@ -107,7 +107,7 @@ test.describe('Offline booking mode', () => {
     await expect(page.getByRole('button', { name: /new entry/i })).toBeVisible();
   });
 
-  test('marketing sticky CTA emphasizes WhatsApp + Find stores + Call', async ({ page }) => {
+  test('marketing sticky CTA emphasizes Book Pickup + WhatsApp', async ({ page }) => {
     await page.setViewportSize({ width: 412, height: 915 });
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
@@ -115,33 +115,44 @@ test.describe('Offline booking mode', () => {
     const stickyCta = page.locator('[data-marketing-sticky-cta].fixed');
     await expect(stickyCta).toBeVisible();
     await expect(stickyCta).toHaveAttribute('data-booking-mode', 'offline');
-    await expect(stickyCta.getByRole('link', { name: /book on whatsapp/i })).toBeVisible();
-    await expect(stickyCta.getByRole('button', { name: /find stores/i })).toBeVisible();
-    await expect(stickyCta.getByRole('link', { name: /call now/i })).toBeVisible();
+    await expect(stickyCta.getByRole('button', { name: /book pickup/i })).toBeVisible();
+    await expect(stickyCta.getByRole('link', { name: /chat on whatsapp/i })).toBeVisible();
+    await expect(stickyCta.getByRole('button', { name: /find stores/i })).toHaveCount(0);
+    await expect(stickyCta.getByRole('link', { name: /call now/i })).toHaveCount(0);
     await expect(stickyCta.getByRole('link', { name: /book nearest/i })).toHaveCount(0);
   });
 
-  test('sticky Stores opens quick-pick sheet with See all stores', async ({ page }) => {
+  test('sticky Book Pickup opens Schedule a pickup dialog', async ({ page }) => {
     await page.setViewportSize({ width: 412, height: 915 });
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
     const stickyCta = page.locator('[data-marketing-sticky-cta].fixed');
-    await stickyCta.getByRole('button', { name: /find stores/i }).click();
+    await stickyCta.getByRole('button', { name: /book pickup/i }).click();
 
-    const sheet = page.getByRole('dialog');
-    await expect(sheet.getByRole('heading', { name: /nearby stores/i })).toBeVisible();
-    const seeAll = sheet.getByRole('link', { name: /see all stores/i });
-    await expect(seeAll).toHaveAttribute('href', '/stores');
+    const dialog = page.getByTestId('book-now-dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: /schedule a pickup/i })).toBeVisible();
+    // Radix Dialog moves focus into the modal (close control or first field).
+    await expect
+      .poll(async () =>
+        dialog.evaluate((el) => el.contains(document.activeElement) || el === document.activeElement),
+      )
+      .toBe(true);
+  });
 
-    // When seeded stores load, spotlight primary CTA is present.
-    await expect(
-      sheet.getByRole('link', { name: /^open store$/i }).or(
-        sheet.getByText(/no stores nearby yet|couldn't load/i),
-      ),
-    ).toBeVisible({ timeout: 15_000 });
+  test('Find stores remains reachable via floating FAB when sticky is visible', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
 
-    await seeAll.click();
+    const fab = page.getByRole('group', { name: /quick contact/i });
+    const findStores = fab.getByRole('link', { name: /find stores/i });
+    await expect(findStores).toBeVisible();
+    await expect(findStores).toHaveAttribute('href', '/stores');
+    await findStores.click();
     await expect(page).toHaveURL(/\/stores/);
   });
 

@@ -38,8 +38,8 @@ Render order from `frontend/features/marketing/home/marketing-homepage.tsx`:
 | 10 | Partner login | `PartnerLoginStrip` | static | Partner / staff entry |
 | 11 | App promo | `AppPromoSection` | static | Features + Coming Soon store badges first on mobile; compact phone mock (no tall empty gap) |
 | 12 | Final CTA band | `FinalCtaBand` | `useMarketingBookingCtaMode` | **Online:** Book nearest (`/discover`) primary + WhatsApp/Call secondary; **Offline:** WhatsApp primary + Find stores (`/stores`) + Call; `data-marketing-bottom-cta` + `data-booking-mode` |
-| Shell | Mobile sticky CTA | `MobileStickyCta` | same booking flag as `useOnlineBookingEnabled` | **Online:** Book nearest primary → `/discover`; WhatsApp/Call icon secondary. **Offline:** WhatsApp primary + Stores quick-pick + Call; hides when final CTA in view |
-| Shell | Floating FAB | `FloatingContactActions` | env contact config | WhatsApp + Find stores + Call; when sticky bar visible, hides Call + WhatsApp (keeps Find stores); full hide on final CTA / footer social |
+| Shell | Mobile sticky CTA | `MobileStickyCta` | same booking flag as `useOnlineBookingEnabled` | **Online:** Book nearest primary → `/discover`; WhatsApp/Call icon secondary. **Offline:** Book Pickup primary (`useBookNowStore` → `BookNowDialog`) + WhatsApp secondary; no Stores/Call on the bar; hides when final CTA in view |
+| Shell | Floating FAB | `FloatingContactActions` | env contact config | WhatsApp + Find stores + Call; when sticky visible: hide WhatsApp always; hide Call only in **online** mode (offline sticky has no Call — FAB keeps Call + Find stores); full hide on final CTA / footer social |
 | Shell | Book Now dialog | `BookNowDialog` | `POST /marketing/contact` | Shared modal; `?book=1` deep link; name/phone/service/time → `order-help` lead |
 | Shell | Footer | `MarketingFooter` | static groups | Company, Partner, Legal, Support links |
 
@@ -54,7 +54,7 @@ Primary marketing **Book Now** / **Book pickup** CTAs open a shared Radix Dialog
 | `BookPickupForm` | RHF + Zod; POSTs via `useSubmitContact()` with subject `order-help` |
 | `BookNowDialog` | Focus trap, Esc, `aria-labelledby`, mobile full-viewport, mounted in `MarketingShellOverlays` |
 | `/?book=1` | Deep link opens the same dialog; closing strips the query param |
-| `/stores` | Slim partner directory (name + city + Call Store / Message Store / Get Location) with optional **Near me** (browser geolocation → client haversine when list items include lat/lng); desktop navbar **Stores** (nav link + CTA) navigates here; mobile sticky **Stores** opens a deferred quick-pick sheet. No per-store price/rating compare UX; cover/name links to `/discover/[id]`; contact buttons stay separate. |
+| `/stores` | Slim partner directory (name + city + Call Store / Message Store / Get Location) with optional **Near me** (browser geolocation → client haversine when list items include lat/lng); navbar **Stores** and FAB **Find stores** navigate here. No per-store price/rating compare UX; cover/name links to `/discover/[id]`; contact buttons stay separate. |
 
 Form fields map into the existing contact API message body (service + preferred time + notes). No parallel book endpoint.
 
@@ -213,7 +213,7 @@ Regenerate marketing heroes: `python scripts/download-marketing-heroes.py` (sour
 | Suite | Path | Coverage |
 | ----- | ---- | -------- |
 | Playwright smoke | `frontend/tests/e2e/marketing-homepage.spec.ts` | Load, carousel nav, contact validation, Book Now dialog + submit, **online** sticky Book nearest + final CTA |
-| Playwright offline | `frontend/tests/e2e/offline-booking.spec.ts` (`offline-booking` project :3001) | Guest contact + **offline** sticky WhatsApp/Stores quick-pick + final CTA copy |
+| Playwright offline | `frontend/tests/e2e/offline-booking.spec.ts` (`offline-booking` project :3001) | Guest contact + **offline** sticky Book Pickup + WhatsApp + FAB Find stores + final CTA copy |
 | Playwright a11y | `frontend/tests/e2e/marketing-a11y.spec.ts` | Axe on `/`, `/services`, `/pricing`, `/stores`, `/contact` |
 | Playwright smoke (legacy) | `frontend/tests/e2e/smoke.spec.ts` | Homepage heading assertion |
 | Jest unit | `frontend/features/marketing/home/home-hero.test.tsx` | Mobile CTA placement |
@@ -267,8 +267,8 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 - [ ] Hero carousel: swipe, prev/next buttons, dot tabs advance slides; live region announces slide
 - [ ] WELCOME20 promo badge visible on welcome slide
 - [ ] Stats band shows 5 KPIs (API or fallback)
-- [ ] Mobile sticky CTA respects booking mode: **online** Book nearest (`/discover`) primary + WhatsApp/Call secondary; **offline** WhatsApp + Find stores (quick-pick) + Call; hides when scrolling to final CTA band
-- [ ] Floating FAB: while sticky CTA is visible, only **Find stores** remains (Call + WhatsApp live on sticky); full FAB hides for final CTA / footer social; no overlap with hero CTAs
+- [ ] Mobile sticky CTA respects booking mode: **online** Book nearest (`/discover`) primary + WhatsApp/Call secondary; **offline** Book Pickup (opens dialog) + WhatsApp; hides when scrolling to final CTA band
+- [ ] Floating FAB: while sticky CTA is visible, hide WhatsApp; hide Call only in online mode; keep Find stores; full FAB hides for final CTA / footer social; no overlap with hero CTAs
 - [ ] Footer social (Facebook/Instagram/etc.) fully visible & tappable above sticky CTA on mobile
 - [ ] Navbar hamburger opens/closes; links navigate; body scroll locked when open
 - [ ] All section headings visible; no horizontal scroll

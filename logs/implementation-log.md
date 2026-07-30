@@ -4,6 +4,42 @@
 
 ---
 
+## 2026-07-30 — Offline sticky CTA: Book Pickup replaces Stores + Call
+
+- **Type:** fix
+- **Scope:** Marketing mobile sticky bar (offline booking mode)
+- **Files:** `mobile-sticky-cta.tsx`, `floating-contact-actions.tsx`, `offline-booking.spec.ts`, `playwright.config.ts`, docs (`marketing-homepage.md`, `customer-discovery.md`, `offline-booking-ui-map.md`)
+- **Summary:** Offline sticky primary is now **Book Pickup** (`useBookNowStore` → `BookNowDialog`) with WhatsApp secondary. Removed Stores quick-pick + Call Now from the bar. Online sticky (Book nearest + WA + Call) unchanged. FAB hides WhatsApp when sticky is visible; Call hidden only in online mode so offline users still get Call + Find stores from FAB.
+- **Risks:** `StoresQuickPickSheet` is no longer mounted from sticky (component retained). Prod Book Pickup still needs Render deploy for `order-help` enum fix.
+- **Next:** Deploy FE to Vercel; smoke offline sticky on washhouse.vercel.app after FE ship.
+- **Refs:** User report — mobile sticky should open booking form
+
+---
+
+## 2026-07-30 — Fix `/stores` Near me (radius wipe + null coords)
+
+- **Type:** fix
+- **Scope:** Marketing `/stores` Near me + sticky quick-pick geo
+- **Files:** `filter-laundries.ts`, `stores-page-view.tsx`, `stores-near-me-control.tsx`, `stores-quick-pick-sheet.tsx`, `use-geolocation.ts`, `seed_demo.py`, tests, `docs/features/customer-discovery.md`
+- **Summary:** Root cause: directory Near me set `maxDistance: 50`, so GPS far from store pins emptied the list; null laundry coords also made “nearest” sort by slug-hash km (looked like a no-op). Directory now uses `ANY_DISTANCE_KM` (sort only), skips radius on approximate distances, ranks approx by rating, shows partial “pins not published” copy, fails fast on insecure origin, and demo seed backfills lat/lng.
+- **Risks:** Discover distance filter still applies to real GPS rows only — intentional. Prod partners without coords still get partial Near me until pins are published.
+- **Next:** Re-seed / restart local API so demo coords land; device check Near me on HTTPS with location allowed.
+- **Refs:** User report — Near me tap does nothing useful / silent geo fail
+
+---
+
+## 2026-07-30 — Book Pickup prod "couldn't reach servers" (enum + CORS)
+
+- **Type:** fix
+- **Scope:** Marketing Book Now / `POST /marketing/contact` + franchise inquiries
+- **Files:** `backend/app/models/marketing.py`, `backend/app/main.py`, `backend/alembic/versions/20260730_0037_align_marketing_enum_values.py`, `backend/tests/api/test_marketing.py`, `backend/tests/unit/test_marketing_enum_values.py`, `frontend/lib/api-error-message.test.ts`, `logs/bug-tracker.md`
+- **Summary:** Prod Book Pickup posted `subject=order-help` and got `INTERNAL_ERROR` because SQLAlchemy persisted enum *names* (`order_help`) while Alembic 0032 created *values* (`order-help`). 500 responses lacked ACAO (CORS was not outermost), so the browser surfaced `isNetworkError` copy. Fixed with `values_callable`, migration 0037 (rename name→value labels where needed), and CORS outermost.
+- **Risks:** Render must redeploy backend so `AUTO_RUN_MIGRATIONS` applies 0037 (no-op on already-hyphenated prod labels) and ships `values_callable`. Franchise inquiries had the same investment_range name/value bug.
+- **Next:** Deploy backend to Render; re-verify `POST .../marketing/contact` with `order-help` → 201 + ACAO from washhouse.vercel.app.
+- **Refs:** BUG-2026-07-30-001; user report washhouse.vercel.app Book Pickup
+
+---
+
 ## 2026-07-30 — StoresCard cover navigates to storefront
 
 - **Type:** fix

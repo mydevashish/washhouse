@@ -70,9 +70,19 @@ export function useGeolocation(): UseGeolocationResult {
     setStatus('idle');
     setPosition(null);
     setErrorMessage(null);
+    inFlight.current = null;
   }, []);
 
   const request = useCallback(async (): Promise<GeoPoint | null> => {
+    if (typeof window !== 'undefined' && window.isSecureContext === false) {
+      setStatus('unavailable');
+      setPosition(null);
+      setErrorMessage(
+        'Location needs a secure connection (HTTPS). Search by area instead.',
+      );
+      return null;
+    }
+
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setStatus('unavailable');
       setPosition(null);

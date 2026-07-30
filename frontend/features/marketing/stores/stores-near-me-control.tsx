@@ -11,6 +11,11 @@ type StoresNearMeControlProps = {
   errorMessage: string | null;
   onRequest: () => void;
   onClear: () => void;
+  /**
+   * GPS granted but no published store coords — directory stays browsable;
+   * distance sort cannot run.
+   */
+  partialMessage?: string | null;
   /** Compact pill for sticky / cluster rows — status text stays polite but tighter. */
   compact?: boolean;
   className?: string;
@@ -21,6 +26,7 @@ export function StoresNearMeControl({
   errorMessage,
   onRequest,
   onClear,
+  partialMessage = null,
   compact = false,
   className,
 }: StoresNearMeControlProps) {
@@ -28,6 +34,9 @@ export function StoresNearMeControl({
   const isActive = status === 'granted';
   const failed =
     status === 'denied' || status === 'unavailable' || status === 'error';
+  const activeHint = isActive
+    ? partialMessage || 'Sorted by distance from your location.'
+    : null;
 
   return (
     <div className={cn(compact ? 'space-y-1.5' : 'space-y-2', className)}>
@@ -64,14 +73,14 @@ export function StoresNearMeControl({
             {isPending ? 'Finding…' : isActive ? 'Near me · on' : 'Near me'}
           </span>
         </Button>
-        {isActive && !compact && (
+        {activeHint && !compact && (
           <p className="text-sm text-muted-foreground" role="status">
-            Sorted by distance from your location.
+            {activeHint}
           </p>
         )}
-        {isActive && compact && (
+        {activeHint && compact && (
           <span className="sr-only" role="status">
-            Sorted by distance from your location.
+            {activeHint}
           </span>
         )}
       </div>
@@ -86,6 +95,16 @@ export function StoresNearMeControl({
         >
           <MapPinOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <span>{errorMessage}</span>
+        </p>
+      )}
+      {isActive && partialMessage && compact && (
+        <p
+          className="flex items-start gap-2 text-xs text-muted-foreground"
+          role="status"
+          aria-live="polite"
+        >
+          <MapPinOff className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span>{partialMessage}</span>
         </p>
       )}
     </div>

@@ -48,4 +48,22 @@ describe('getMarketingSubmitErrorMessage', () => {
     expect(message).toMatch(/email/i);
     expect(message).not.toBe('Network Error');
   });
+
+  it('does not treat HTTP 500 as a network failure when a response exists', () => {
+    const err = new axios.AxiosError('Request failed');
+    err.response = {
+      status: 500,
+      statusText: 'Internal Server Error',
+      headers: {},
+      config: { headers: {} } as never,
+      data: {
+        error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' },
+      },
+    };
+
+    const message = getMarketingSubmitErrorMessage(err, 'Could not send your request.');
+
+    expect(message).toBe('An unexpected error occurred');
+    expect(message).not.toMatch(/couldn.?t reach our servers/i);
+  });
 });

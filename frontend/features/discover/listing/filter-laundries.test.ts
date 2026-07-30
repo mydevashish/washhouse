@@ -7,6 +7,7 @@ import type { LaundryListItem } from '@/services/laundries';
 
 import {
   ANY_DELIVERY_HOURS,
+  ANY_DISTANCE_KM,
   ANY_PRICE_INR,
   applyClientFilters,
   DEFAULT_FILTERS,
@@ -121,11 +122,13 @@ describe('applyClientFilters', () => {
     expect(applyClientFilters(demoEnriched(), stringFilters)).toHaveLength(3);
   });
 
-  it('respects strict distance cap when set intentionally', () => {
+  it('respects strict distance cap when set intentionally on real GPS distances', () => {
+    const nearKoramangala = { latitude: 12.9352, longitude: 77.6245 };
     const strict = { ...DEFAULT_FILTERS, maxDistance: 3 };
-    const result = applyClientFilters(demoEnriched(), strict);
+    const result = applyClientFilters(demoEnriched(nearKoramangala), strict);
 
-    expect(result).toHaveLength(2);
+    // a is 0km; b ~5km filtered; c has no coords (approx) and is kept
+    expect(result.map((l) => l.id).sort()).toEqual(['a', 'c']);
   });
 
   it('skips delivery and price caps for sentinel "any" values', () => {
@@ -173,6 +176,83 @@ describe('applyClientFilters', () => {
     });
 
     expect(result.map((l) => l.id)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('sorts nearest by haversine when user location + store coords exist', () => {
+    const nearKoramangala = { latitude: 12.9352, longitude: 77.6245 };
+    const result = applyClientFilters(demoEnriched(nearKoramangala), {
+      ...DEFAULT_FILTERS,
+      maxDistance: ANY_DISTANCE_KM,
+      sort: 'nearest',
+    });
+
+    expect(result.map((l) => l.id)).toEqual(['a', 'b', 'c']);
+    expect(result[0]!.distanceIsApproximate).toBe(false);
+    expect(result[0]!.distanceKm).toBe(0);
+  });
+
+  it('does not radius-filter the directory when maxDistance is ANY_DISTANCE_KM', () => {
+    const farAway = { latitude: 28.6139, longitude: 77.209 }; // Delhi
+    const result = applyClientFilters(demoEnriched(farAway), {
+      ...DEFAULT_FILTERS,
+      maxDistance: ANY_DISTANCE_KM,
+      sort: 'nearest',
+    });
+
+    expect(result).toHaveLength(3);
+    const real = result.filter((l) => !l.distanceIsApproximate);
+    expect(real.map((l) => l.id).sort()).toEqual(['a', 'b']);
+    expect(real.every((l) => Number(l.distanceKm) > 50)).toBe(true);
+  });
+
+  it('keeps far stores when sentinel is used; 50km cap drops real GPS rows', () => {
+    const farAway = { latitude: 28.6139, longitude: 77.209 };
+    const capped = applyClientFilters(demoEnriched(farAway), {
+      ...DEFAULT_FILTERS,
+      maxDistance: 50,
+      sort: 'nearest',
+    });
+    expect(capped.map((l) => l.id)).toEqual(['c']);
+
+    const open = applyClientFilters(demoEnriched(farAway), {
+      ...DEFAULT_FILTERS,
+      maxDistance: ANY_DISTANCE_KM,
+      sort: 'nearest',
+    });
+    expect(open.map((l) => l.id).sort()).toEqual(['a', 'b', 'c']);
+  });
+
+  it('falls back to rating when nearest sort has only approximate distances', () => {
+    const enriched = demoEnriched();
+    for (const row of enriched) {
+      row.distanceIsApproximate = true;
+      row.distanceKm = 9;
+    }
+    // Force distinctive fake distances that would invert rating order if used
+    enriched[0]!.distanceKm = 1;
+    enriched[1]!.distanceKm = 9;
+    enriched[2]!.distanceKm = 2;
+
+    const result = applyClientFilters(enriched, {
+      ...DEFAULT_FILTERS,
+      maxDistance: ANY_DISTANCE_KM,
+      sort: 'nearest',
+    });
+
+    expect(result.map((l) => l.id)).toEqual(['b', 'a', 'c']);
+  });
+
+  it('skips radius filter for approximate distances', () => {
+    const enriched = demoEnriched();
+    enriched[0]!.distanceKm = 99;
+    enriched[0]!.distanceIsApproximate = true;
+
+    const result = applyClientFilters(enriched, {
+      ...DEFAULT_FILTERS,
+      maxDistance: 5,
+    });
+
+    expect(result.map((l) => l.id)).toContain('a');
   });
 });
 

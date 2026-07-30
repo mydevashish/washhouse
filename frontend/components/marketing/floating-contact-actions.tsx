@@ -22,19 +22,26 @@ const WHATSAPP_MESSAGE = 'Hi WashHouse — I have a question.';
 /** Hide FABs when these regions would sit under the floating stack. */
 const BOTTOM_CTA_SELECTOR = '[data-marketing-bottom-cta]';
 const FOOTER_SOCIAL_SELECTOR = '[data-marketing-footer-social]';
-/** Mobile sticky bar already exposes WhatsApp + Call — keep Find stores only. */
+/**
+ * Sticky bar channels by `data-booking-mode`:
+ * - online: Book nearest + WhatsApp + Call → hide WhatsApp + Call on FAB
+ * - offline: Book Pickup + WhatsApp → hide WhatsApp only; keep Call + Find stores
+ */
 const STICKY_BAR_SELECTOR = '[data-marketing-sticky-cta].fixed';
 
 type FabOverlapState = {
   /** Fully hide stack (final CTA / footer social). */
   obscured: boolean;
-  /** Sticky CTA visible — drop redundant Call + WhatsApp. */
-  contactRedundant: boolean;
+  /** Sticky already shows WhatsApp. */
+  hideWhatsApp: boolean;
+  /** Sticky already shows Call (online mode only). */
+  hideCall: boolean;
 };
 
 function useFabOverlap(): FabOverlapState {
   const [obscured, setObscured] = useState(false);
-  const [contactRedundant, setContactRedundant] = useState(false);
+  const [hideWhatsApp, setHideWhatsApp] = useState(false);
+  const [hideCall, setHideCall] = useState(false);
 
   useEffect(() => {
     const bottomCtas = Array.from(document.querySelectorAll(BOTTOM_CTA_SELECTOR));
@@ -49,7 +56,16 @@ function useFabOverlap(): FabOverlapState {
 
     const sync = () => {
       setObscured(fullHide.size > 0);
-      setContactRedundant(stickyVisible.size > 0);
+      if (stickyVisible.size === 0) {
+        setHideWhatsApp(false);
+        setHideCall(false);
+        return;
+      }
+      const sticky = stickyVisible.values().next().value as Element | undefined;
+      const mode = sticky?.getAttribute('data-booking-mode');
+      setHideWhatsApp(true);
+      // Online sticky still exposes Call; offline sticky does not.
+      setHideCall(mode === 'online');
     };
 
     const onFullHide = (entries: IntersectionObserverEntry[]) => {
@@ -116,7 +132,7 @@ function useFabOverlap(): FabOverlapState {
     };
   }, []);
 
-  return { obscured, contactRedundant };
+  return { obscured, hideWhatsApp, hideCall };
 }
 
 type ContactActionButtonProps = {
@@ -162,18 +178,21 @@ function ContactActionButton({
 
 function ContactActionButtons({
   size,
-  hideContactChannels = false,
+  hideWhatsApp = false,
+  hideCall = false,
 }: {
   size: 'fab' | 'inline';
-  /** When sticky CTA already shows WhatsApp + Call. */
-  hideContactChannels?: boolean;
+  /** When sticky CTA already shows WhatsApp. */
+  hideWhatsApp?: boolean;
+  /** When sticky CTA already shows Call (online booking sticky). */
+  hideCall?: boolean;
 }) {
   const telHref = buildTelHref(CONTACT_CONFIG.phone);
   const whatsappHref = buildWhatsAppHref(CONTACT_CONFIG.whatsapp, WHATSAPP_MESSAGE);
 
   return (
     <>
-      {!hideContactChannels ? (
+      {!hideWhatsApp ? (
         <ContactActionButton
           href={whatsappHref}
           label="Chat on WhatsApp"
@@ -198,7 +217,7 @@ function ContactActionButtons({
           aria-hidden
         />
       </ContactActionButton>
-      {!hideContactChannels ? (
+      {!hideCall ? (
         <ContactActionButton
           href={telHref}
           label={`Call ${CONTACT_CONFIG.phone}`}
@@ -228,7 +247,7 @@ function FloatingContactActionsInline({ className }: { className?: string }) {
 }
 
 function FloatingContactActionsFab({ className }: { className?: string }) {
-  const { obscured, contactRedundant } = useFabOverlap();
+  const { obscured, hideWhatsApp, hideCall } = useFabOverlap();
 
   return (
     <div
@@ -244,7 +263,11 @@ function FloatingContactActionsFab({ className }: { className?: string }) {
         className,
       )}
     >
-      <ContactActionButtons size="fab" hideContactChannels={contactRedundant} />
+      <ContactActionButtons
+        size="fab"
+        hideWhatsApp={hideWhatsApp}
+        hideCall={hideCall}
+      />
     </div>
   );
 }

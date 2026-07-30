@@ -16,6 +16,10 @@ from app.models.enums import MarketingContactSubject, MarketingInvestmentRange
 
 MARKETING_STATS_SINGLETON_KEY = "default"
 
+def _enum_values(enum_cls: type) -> list[str]:
+    """Persist enum *values* (order-help) so ORM matches Alembic 20260713_0032 + public API."""
+    return [member.value for member in enum_cls]
+
 
 class MarketingContactSubmission(Base, TimestampMixin):
     __tablename__ = "marketing_contact_submissions"
@@ -25,7 +29,12 @@ class MarketingContactSubmission(Base, TimestampMixin):
     phone: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     email: Mapped[str | None] = mapped_column(String(320), nullable=True)
     subject: Mapped[MarketingContactSubject] = mapped_column(
-        Enum(MarketingContactSubject, name="marketing_contact_subject", native_enum=True),
+        Enum(
+            MarketingContactSubject,
+            name="marketing_contact_subject",
+            native_enum=True,
+            values_callable=_enum_values,
+        ),
         nullable=False,
         index=True,
     )
@@ -42,7 +51,12 @@ class MarketingFranchiseInquiry(Base, TimestampMixin):
     email: Mapped[str] = mapped_column(String(320), nullable=False)
     city: Mapped[str] = mapped_column(String(100), nullable=False)
     investment_range: Mapped[MarketingInvestmentRange] = mapped_column(
-        Enum(MarketingInvestmentRange, name="marketing_investment_range", native_enum=True),
+        Enum(
+            MarketingInvestmentRange,
+            name="marketing_investment_range",
+            native_enum=True,
+            values_callable=_enum_values,
+        ),
         nullable=False,
     )
     message: Mapped[str] = mapped_column(Text, nullable=False)

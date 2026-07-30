@@ -60,6 +60,9 @@ function quickPickSubtitle(
   ) {
     return "Picks I'd start with. Location off — see all stores to browse by area.";
   }
+  if (geoStatus === 'granted') {
+    return "Picks I'd start with. Store map pins aren't on file yet — see all stores to browse.";
+  }
   return "Picks I'd start with. Allow location for nearest, or see all stores.";
 }
 

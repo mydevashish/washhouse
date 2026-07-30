@@ -61,7 +61,14 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS
+    # Custom middleware (added before CORS so CORS stays outermost and tags 4xx/5xx too)
+    app.add_middleware(RequestIDMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(ServerSessionMiddleware)
+    app.add_middleware(RateLimitMiddleware)
+
+    # CORS must be outermost — otherwise exception responses lack ACAO and browsers
+    # treat failed marketing POSTs as opaque network errors.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_allow_origins_list,
@@ -70,12 +77,6 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
         expose_headers=["X-Server-Instance-Id"],
     )
-
-    # Custom middleware
-    app.add_middleware(RequestIDMiddleware)
-    app.add_middleware(SecurityHeadersMiddleware)
-    app.add_middleware(ServerSessionMiddleware)
-    app.add_middleware(RateLimitMiddleware)
 
     # Error handlers
     register_error_handlers(app)

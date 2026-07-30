@@ -37,6 +37,9 @@ DEMO_LAUNDRIES: list[dict] = [
         "tags": ["wash", "fold", "koramangala", "same-day", "eco-friendly"],
         "avg_rating": Decimal("4.60"),
         "review_count": 128,
+        # Client Near me (haversine) — Koramangala 4th Block
+        "latitude": Decimal("12.9352000"),
+        "longitude": Decimal("77.6245000"),
         "services": [
             ("Wash & Fold", "wash", "kg", Decimal("79")),
             ("Dry Clean", "dry_clean", "piece", Decimal("149")),
@@ -54,6 +57,8 @@ DEMO_LAUNDRIES: list[dict] = [
         "tags": ["premium", "dry-clean", "indiranagar", "formals"],
         "avg_rating": Decimal("4.80"),
         "review_count": 256,
+        "latitude": Decimal("12.9784000"),
+        "longitude": Decimal("77.6408000"),
         "services": [
             ("Wash & Fold", "wash", "kg", Decimal("89")),
             ("Premium Dry Clean", "dry_clean", "piece", Decimal("199")),
@@ -71,6 +76,8 @@ DEMO_LAUNDRIES: list[dict] = [
         "tags": ["budget", "hsr", "students", "family"],
         "avg_rating": Decimal("4.40"),
         "review_count": 89,
+        "latitude": Decimal("12.9116000"),
+        "longitude": Decimal("77.6389000"),
         "services": [
             ("Wash & Fold", "wash", "kg", Decimal("69")),
             ("Blanket / Quilt", "wash", "piece", Decimal("249")),
@@ -117,6 +124,13 @@ async def ensure_demo_data() -> None:
                 if laundry_row.deleted_at is not None:
                     laundry_row.deleted_at = None
                     changed = True
+                # Backfill coords for client Near me when missing on existing demo rows.
+                if laundry_row.latitude is None and spec.get("latitude") is not None:
+                    laundry_row.latitude = spec["latitude"]
+                    changed = True
+                if laundry_row.longitude is None and spec.get("longitude") is not None:
+                    laundry_row.longitude = spec["longitude"]
+                    changed = True
                 if changed:
                     repaired += 1
                     log.info(
@@ -157,6 +171,8 @@ async def ensure_demo_data() -> None:
                 is_verified=True,
                 avg_rating=spec["avg_rating"],
                 review_count=spec["review_count"],
+                latitude=spec.get("latitude"),
+                longitude=spec.get("longitude"),
             )
             session.add(laundry)
             await session.flush()

@@ -9,8 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLaundryDiscovery } from '@/features/discover/hooks/use-laundry-discovery';
 import {
+  ANY_DISTANCE_KM,
   DEFAULT_FILTERS,
   type LaundryFilters,
+  type SortOption,
 } from '@/features/discover/listing/filter-laundries';
 import { StoresCard } from '@/features/marketing/stores/stores-card';
 import { StoresCardSkeleton } from '@/features/marketing/stores/stores-card-skeleton';
@@ -19,6 +21,9 @@ import { StoresHero } from '@/features/marketing/stores/stores-hero';
 import { StoresNearMeControl } from '@/features/marketing/stores/stores-near-me-control';
 import { useGeolocation } from '@/hooks/use-geolocation';
 import { cn } from '@/lib/utils';
+
+const NEAR_ME_PARTIAL =
+  'Location on, but store map pins are not published yet. Search by area or browse the list.';
 
 /**
  * Search + Near me cluster. Sticky under marketing nav on phone/tablet.
@@ -30,6 +35,7 @@ function StoresFilterCluster({
   isSearching,
   geoStatus,
   geoError,
+  nearMePartial,
   onNearMe,
   onClearNearMe,
   compact,
@@ -39,6 +45,7 @@ function StoresFilterCluster({
   isSearching: boolean;
   geoStatus: ReturnType<typeof useGeolocation>['status'];
   geoError: string | null;
+  nearMePartial: string | null;
   onNearMe: () => void;
   onClearNearMe: () => void;
   compact: boolean;
@@ -108,6 +115,7 @@ function StoresFilterCluster({
           <StoresNearMeControl
             status={geoStatus}
             errorMessage={geoError}
+            partialMessage={nearMePartial}
             onRequest={onNearMe}
             onClear={onClearNearMe}
             compact={compact}
@@ -120,10 +128,11 @@ function StoresFilterCluster({
 
 export function StoresPageView() {
   const geo = useGeolocation();
+  const priorSortRef = useRef<SortOption>('top_rated');
   const [filters, setFilters] = useState<LaundryFilters>({
     ...DEFAULT_FILTERS,
-    // Directory mode: do not apply discovery compare caps (distance/price/rating UI removed)
-    maxDistance: 50,
+    // Directory mode: sort Near me by distance — never radius-filter the full list away
+    maxDistance: ANY_DISTANCE_KM,
     sort: 'top_rated',
   });
 
@@ -145,26 +154,38 @@ export function StoresPageView() {
   const showSkeletons = !isError && enriched.length === 0 && (isPending || isFetching);
 
   const isNearest = filters.sort === 'nearest';
-  const sectionDescription = isNearest
-    ? "Here's what's closest to you. Services and pricing are the same across stores — call, message, or get directions for the one that works."
-    : "Find a verified partner near you by name or neighbourhood. Services and pricing are the same across stores — call, message, or get directions when you're ready.";
+  const hasGpsDistance =
+    Boolean(geo.position) && enriched.some((l) => !l.distanceIsApproximate);
+  const nearMePartial =
+    isNearest && Boolean(geo.position) && !hasGpsDistance && enriched.length > 0
+      ? NEAR_ME_PARTIAL
+      : null;
+  const sectionDescription =
+    isNearest && hasGpsDistance
+      ? "Here's what's closest to you. Services and pricing are the same across stores — call, message, or get directions for the one that works."
+      : "Find a verified partner near you by name or neighbourhood. Services and pricing are the same across stores — call, message, or get directions when you're ready.";
 
   const handleNearMe = async () => {
     const pos = await geo.request();
     if (pos) {
-      setFilters((f) => ({
-        ...f,
-        sort: 'nearest',
-        maxDistance: 50,
-      }));
+      setFilters((f) => {
+        if (f.sort !== 'nearest') priorSortRef.current = f.sort;
+        return {
+          ...f,
+          sort: 'nearest',
+          maxDistance: ANY_DISTANCE_KM,
+        };
+      });
     }
   };
 
   const handleClearNearMe = () => {
     geo.clear();
+    const restore =
+      priorSortRef.current === 'nearest' ? 'top_rated' : priorSortRef.current;
     setFilters((f) => ({
       ...f,
-      sort: 'top_rated',
+      sort: restore,
     }));
   };
 
@@ -239,6 +260,7 @@ export function StoresPageView() {
               isSearching={isSearching && (isDebouncing || isFetching)}
               geoStatus={geo.status}
               geoError={geo.errorMessage}
+              nearMePartial={nearMePartial}
               onNearMe={() => void handleNearMe()}
               onClearNearMe={handleClearNearMe}
               compact={filtersCompact}
@@ -295,7 +317,7 @@ export function StoresPageView() {
               aria-label="WashHouse partner stores"
             >
               {filtered.map((laundry, index) => {
-                const featured = isNearest && index === 0;
+                const featured = isNearest && hasGpsDistance && index === 0;
                 return (
                   <li
                     key={laundry.id}

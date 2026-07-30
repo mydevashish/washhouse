@@ -14,6 +14,8 @@ export type LaundryFilters = {
 /** Sentinel values matching LaundryFiltersBar "any" options. */
 export const ANY_DELIVERY_HOURS = 999;
 export const ANY_PRICE_INR = 500;
+/** No distance radius — directory Near me sorts only, does not drop far stores. */
+export const ANY_DISTANCE_KM = 9999;
 
 export const DEFAULT_FILTERS: LaundryFilters = {
   search: '',
@@ -67,7 +69,15 @@ export function applyClientFilters(
     if (Number.isFinite(rating) && rating < f.minRating) return false;
 
     const distance = Number(l.distanceKm);
-    if (Number.isFinite(distance) && distance > f.maxDistance) return false;
+    // Approximate (slug-hash) distances are not real km — never use them as a radius gate.
+    if (
+      !l.distanceIsApproximate &&
+      Number.isFinite(distance) &&
+      f.maxDistance < ANY_DISTANCE_KM &&
+      distance > f.maxDistance
+    ) {
+      return false;
+    }
 
     const delivery = Number(l.deliveryHours);
     if (
@@ -98,6 +108,10 @@ export function applyClientFilters(
         const aApprox = a.distanceIsApproximate ? 1 : 0;
         const bApprox = b.distanceIsApproximate ? 1 : 0;
         if (aApprox !== bApprox) return aApprox - bApprox;
+        // Both fake — do not pretend slug-hash km is proximity; fall back to rating.
+        if (a.distanceIsApproximate && b.distanceIsApproximate) {
+          return Number(b.avg_rating) - Number(a.avg_rating);
+        }
         return Number(a.distanceKm) - Number(b.distanceKm);
       }
       case 'lowest_price': {

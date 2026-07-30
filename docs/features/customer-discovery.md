@@ -58,8 +58,9 @@ List/search items may include `wash_fold_from_*`, `shirt_dry_clean_from_*`, and 
 
 | Piece | Behavior |
 | ----- | -------- |
-| Control | **Near me** requests browser geolocation; deny/unavailable keeps search-by-area with a polite status message |
-| Distance | Client haversine (`lib/geo.ts`) when list/search items include `latitude`/`longitude`; otherwise approximate slug-hash distance (legacy) sorts after real GPS rows |
+| Control | **Near me** requests browser geolocation; deny/unavailable/insecure-origin keeps search-by-area with a polite status message; toggle off restores prior sort (`top_rated` by default) |
+| Distance | Client haversine (`lib/geo.ts`) when list/search items include `latitude`/`longitude`; directory uses `ANY_DISTANCE_KM` (sort only — no 50 km radius wipe); approximate slug-hash distances never gate the list and do not rank ahead of real GPS rows |
+| Partial | GPS on but no published store pins → **Near me · on** plus polite “map pins not published” status; list stays browsable (rating order among approx rows) |
 | APIs | Reuses `GET /laundries` + `GET /laundries/search` — no dedicated near-me endpoint |
 
 ### `/stores` card actions
@@ -71,19 +72,15 @@ List/search items may include `wash_fold_from_*`, `shirt_dry_clean_from_*`, and 
 | A11y | Article `aria-label="{name}, {city}"`; cover link `Open {name}`; action group `Actions for {name}`; button names match visible labels (`Call Store for {name}`, etc.); focus rings via `focus-within` / link inset ring |
 | Tracking | `POST .../contact/track` with `source: stores_directory` for signed-in customers |
 
-### Sticky stores quick-pick (offline booking)
+### Sticky CTA vs stores entry (offline booking)
 
 | Piece | Behavior |
 | ----- | -------- |
-| Trigger | Marketing sticky **Stores** → deferred Drawer (no maps SDK) |
-| Rank | Up to 3 via `pickNearestOrFeatured` + `enrichLaundry` (cover, distance when GPS) |
-| Layout | Phone: status chip + spotlight #1 + compact rows; tablet `md+`: 2-column (spotlight left / list right); sheet `max-w-lg` / `md:max-w-2xl` centered |
-| Loading | Layout-matched skeleton (spotlight + 2 rows) — not spinner-only |
-| Geo | Featured while location pending; subtitle tracks idle/pending/denied/near; swap to nearest when GPS resolves (same card shell) |
-| Contact | Labeled **Call Store** / **Message Store** / **Get Location** (same gating as directory cards); `source: stores_quick_pick`; cover + name link to `/discover/[id]` (closes drawer via `onNavigate`); contact buttons `stopPropagation` so they do not navigate |
-| Footer | **See all stores** → `/stores` + Close |
-| Motion | Entrance fade/slide + drawer scale off when `prefers-reduced-motion` |
-| `/stores` Near me | First card `variant="featured"` (“Closest to you”); `md:` spans full grid width |
+| Offline sticky | **Book Pickup** opens `BookNowDialog` via `useBookNowStore`; WhatsApp secondary — no Stores/Call on the bar |
+| Online sticky | Unchanged: Book nearest → `/discover` + WhatsApp + Call |
+| Find stores | Floating FAB **Find stores** → `/stores` (also navbar Stores) |
+| Quick-pick sheet | `StoresQuickPickSheet` remains available as a deferred Drawer component (spotlight + compact rows + GPS); not mounted from sticky anymore |
+| `/stores` Near me | Geo → `sort: nearest` + `ANY_DISTANCE_KM` (sort only, no radius wipe); first card `variant="featured"` when real GPS distances exist; `md:` spans full grid width |
 
 ## Acceptance criteria
 
@@ -98,5 +95,5 @@ List/search items may include `wash_fold_from_*`, `shirt_dry_clean_from_*`, and 
 - [x] `/stores` **Near me** uses browser geolocation + client haversine when laundry coords are published; graceful deny keeps area search
 - [x] Storefront (`/discover/[id]`) shows full service catalogue by category with prices, photos, sticky chips, search, and schedule-pickup CTA
 - [x] Storefront contact GET deferred until near viewport (does not block LCP)
-- [x] Sticky quick-pick: spotlight + compact rows, tablet 2-col, contact gating `stores_quick_pick`; cover/name → `/discover/[id]`
-- [x] `/stores` featured first card when Near me / nearest sort
+- [x] Offline sticky Book Pickup opens schedule dialog; Find stores via FAB; online sticky unchanged
+- [x] `/stores` featured first card when Near me has real GPS distances
