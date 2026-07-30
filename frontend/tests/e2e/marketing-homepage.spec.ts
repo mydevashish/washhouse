@@ -52,6 +52,12 @@ test.describe('marketing homepage smoke', () => {
     ).toBeVisible();
     await expect(page.getByRole('heading', { name: /how it works/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /why choose us/i })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /our laundry services/i }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('heading', { name: /what our customers say/i }),
+    ).toHaveCount(0);
   });
 
   test('special care section renders with catalog images', async ({ page }) => {
@@ -531,54 +537,51 @@ test.describe('mobile sticky CTA', () => {
   });
 });
 
-test.describe('marketing homepage services preview', () => {
-  function servicesSection(page: import('@playwright/test').Page) {
-    return page
+test.describe('marketing services (home no longer embeds preview)', () => {
+  test('home does not render Our Laundry Services section', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    await expect(
+      page.getByRole('heading', { name: /our laundry services/i }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('region', { name: /browse our laundry services/i }),
+    ).toHaveCount(0);
+  });
+
+  test('/services shows Wash & Fold with browse CTA, not Book Now', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/services');
+    await page.waitForLoadState('domcontentloaded');
+
+    const washCard = page
       .locator('section')
-      .filter({ has: page.getByRole('heading', { name: /our laundry services/i }) });
-  }
-
-  function visibleServiceCard(
-    page: import('@playwright/test').Page,
-    title: RegExp,
-  ) {
-    return servicesSection(page)
+      .filter({ has: page.getByRole('heading', { name: /pick a service, pick a laundry/i }) })
       .locator('li')
-      .filter({ has: page.getByRole('heading', { name: title }) })
-      .filter({ visible: true });
-  }
+      .filter({ has: page.getByRole('heading', { name: /^wash & fold$/i }) });
 
-  test('More Services has View services CTA to /services, not Book Now', async ({
+    await expect(washCard).toHaveCount(1);
+    await expect(washCard.getByRole('link', { name: /book now/i })).toHaveCount(0);
+
+    const browse = washCard.getByRole('link', { name: /browse laundries/i });
+    await expect(browse).toBeVisible();
+    await expect(browse).toHaveAttribute('href', '/stores');
+  });
+
+  test('/services More Services path remains via nav; page has dedicated grid', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/');
+    await page.goto('/services');
     await page.waitForLoadState('domcontentloaded');
 
-    const moreCard = visibleServiceCard(page, /^more services$/i);
-    await expect(moreCard).toHaveCount(1);
-    await expect(moreCard.getByRole('link', { name: /book now/i })).toHaveCount(0);
-
-    const viewServices = moreCard.getByRole('link', { name: /view services/i });
-    await expect(viewServices).toBeVisible();
-    await expect(viewServices).toHaveAttribute('href', '/services');
-  });
-
-  test('Wash & Fold Book Now opens pickup dialog', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
-
-    const washCard = visibleServiceCard(page, /^wash & fold$/i);
-    await expect(washCard).toHaveCount(1);
-
-    const bookNow = washCard.getByRole('link', { name: /book now/i });
-    await expect(bookNow).toBeVisible();
-    await bookNow.click();
-
-    const dialog = page.getByTestId('book-now-dialog');
-    await expect(dialog).toBeVisible({ timeout: 15_000 });
-    await expect(dialog.getByLabel(/^service/i)).toHaveValue('wash-fold');
+    await expect(
+      page.getByRole('heading', { name: /pick a service, pick a laundry/i }),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^dry cleaning$/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^steam iron \/ press$/i })).toBeVisible();
   });
 });
 
@@ -716,7 +719,7 @@ test.describe('marketing stores directory', () => {
       page.getByRole('heading', { name: /find a washhouse store near you/i }),
     ).toBeVisible({ timeout: 15_000 });
     await expect(
-      page.getByText(/services and pricing are shared across stores/i).first(),
+      page.getByText(/call, message, or get directions/i).first(),
     ).toBeVisible();
     await expect(page.getByRole('heading', { name: /washhouse stores/i })).toBeVisible();
     await expect(page.getByLabel(/search laundries/i)).toBeVisible();
@@ -752,30 +755,14 @@ test.describe('marketing stores directory', () => {
       // City may stand alone or appear as "X.X km · City" when Near Me is active
       await expect(firstCard.getByText(new RegExp(city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeVisible();
 
-      // Open store / cover link → storefront
-      const openStore = firstCard.getByRole('link', { name: /open store|view store/i });
-      await expect(openStore).toBeVisible();
-      await expect(openStore).toHaveAttribute('href', /\/discover\/[^/?#]+/);
-      await expect(
-        firstCard.getByRole('link', { name: new RegExp(`open ${storeName}`, 'i') }),
-      ).toHaveAttribute('href', /\/discover\/[^/?#]+/);
+      // Contact-only card: no discover / Open store links
+      await expect(firstCard.getByRole('link', { name: /open store|view store/i })).toHaveCount(0);
+      await expect(firstCard.locator('a[href*="/discover/"]')).toHaveCount(0);
 
-      // Attractive signals: rating OR cover image OR service preview (any one is enough)
-      const hasRating = (await firstCard.getByText(/reviews/i).count()) > 0;
-      const hasCover = (await firstCard.locator('img').count()) > 0;
-      const hasServicePreview =
-        (await firstCard
-          .getByRole('list', {
-            name: /washhouse services available|service prices|from ₹/i,
-          })
-          .count()) > 0 ||
-        (await firstCard.getByLabel(/from ₹|see full menu/i).count()) > 0;
-      expect(
-        hasRating || hasCover || hasServicePreview,
-        'store card should show rating, cover image, or service preview',
-      ).toBe(true);
+      // Cover image is the visual plane
+      await expect(firstCard.locator('img').first()).toBeVisible();
 
-      // Compact Call / WhatsApp when contact API exposes channels (lazy on viewport)
+      // Compact Call / Message / Get Location when contact API exposes channels (lazy on viewport)
       const contactRes = await contactResponsePromise.catch(() => null);
       if (contactRes) {
         const body = await contactRes.json();
@@ -783,13 +770,17 @@ test.describe('marketing stores directory', () => {
           contact_available?: boolean;
           show_call?: boolean;
           show_whatsapp?: boolean;
+          show_directions?: boolean;
+          map_url?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
           requires_login?: boolean;
           phone?: string | null;
         };
 
         if (contact.contact_available && contact.show_call) {
           await expect(
-            firstCard.getByRole('button', { name: /call |sign in to call /i }),
+            firstCard.getByRole('button', { name: /call store|sign in to call store/i }),
           ).toBeVisible();
           await expect(firstCard.locator('a[href^="tel:"]')).toHaveCount(0);
           if (contact.requires_login) {
@@ -798,9 +789,16 @@ test.describe('marketing stores directory', () => {
         }
         if (contact.contact_available && contact.show_whatsapp) {
           await expect(
-            firstCard.getByRole('button', { name: /whatsapp |sign in for whatsapp /i }),
+            firstCard.getByRole('button', { name: /message store|sign in to message store/i }),
           ).toBeVisible();
           await expect(firstCard.locator('a[href*="wa.me"]')).toHaveCount(0);
+        }
+        const hasDirections =
+          Boolean(contact.show_directions) || Boolean(contact.map_url);
+        if (contact.contact_available && hasDirections) {
+          await expect(
+            firstCard.getByRole('button', { name: /get location|sign in to get location/i }),
+          ).toBeVisible();
         }
       }
     } else {

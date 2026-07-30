@@ -109,20 +109,14 @@ test.describe('marketing catalog photos', () => {
 });
 
 test.describe('marketing catalog photos — mobile overflow', () => {
-  test('375px — no horizontal overflow at services and special-care scrollers', async ({
-    page,
-  }) => {
+  test('375px — no horizontal overflow at special-care on home', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
-    const servicesStrip = page.getByRole('region', {
-      name: /browse our laundry services/i,
-    });
-    await servicesStrip.scrollIntoViewIfNeeded();
-    await expect(servicesStrip).toBeVisible();
-    await waitForCatalogImageComplete(catalogImageLocator(servicesStrip).first());
-    await expectNoHorizontalOverflow(page);
+    await expect(
+      page.getByRole('region', { name: /browse our laundry services/i }),
+    ).toHaveCount(0);
 
     const specialCare = page
       .locator('section')

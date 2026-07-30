@@ -46,7 +46,7 @@ function quickPickSubtitle(
   usingNearMe: boolean,
 ): string {
   if (usingNearMe) {
-    return 'Closest partners — open one, or call / WhatsApp from the card.';
+    return 'Closest partners — call, message, or get location from the card.';
   }
   if (geoStatus === 'idle' || geoStatus === 'pending') {
     return 'Showing featured picks while we check your location…';

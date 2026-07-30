@@ -4,6 +4,42 @@
 
 ---
 
+## 2026-07-30 — Store-card simplification finalize
+
+- **Type:** chore
+- **Scope:** Marketing `/stores` directory cards + shared contact actions a11y/copy
+- **Files:** `stores-service-preview.tsx` (deleted), `use-store-contact-actions.ts`, `stores-hero.tsx`, `stores-page-view.tsx`, `stores-card.test.tsx`, `stores-quick-pick.test.tsx`, `marketing-homepage.spec.ts`, `docs/features/customer-discovery.md`, `docs/features/marketing-homepage.md`, logs
+- **Summary:** Removed unused `StoresServicePreview` (no barrel export). Aligned button `aria-label`s with visible Call Store / Message Store / Get Location copy. Softened hero/section microcopy to contact/location language. Docs + e2e updated for contact-only cards (no Open store / service peek).
+- **Risks:** Get Location still hidden when contact payload has no directions URL/`map_url`; action row omitted entirely when no channels resolve.
+- **Next:** Optional Playwright assert for keyboard Tab across three actions; visual QA at 360px wrap.
+- **Refs:** User request — finalize store-card simplification
+
+---
+
+## 2026-07-30 — Home: remove Services + Reviews sections
+
+- **Type:** chore
+- **Scope:** Marketing homepage `/` only
+- **Files:** `marketing-homepage.tsx`, `marketing-homepage.spec.ts`, `touch-scroll-mobile.spec.ts`, `marketing-catalog-photos.spec.ts`, `docs/features/marketing-homepage.md`
+- **Summary:** Dropped page-level `ServicesPreview` and `HomeTestimonials` from `MarketingHomepage`. Kept FeaturedStoresTeaser and the rest of the band stack. E2e no longer expects “Our Laundry Services” on `/`; coverage retargeted to `/services` grid, `/discover` testimonials, and `/pricing` rack touch-scroll.
+- **Risks:** `ServicesPreview` component remains unused on a route (still available for reuse); Book Now service pre-select from home tiles is gone (dialog default + navbar Book Now remain).
+- **Next:** Optional delete or re-home `services-preview.tsx` if unused long-term.
+- **Refs:** User request — remove Services/Reviews from Home only
+
+---
+
+## 2026-07-30 — Quick-pick contact-only actions (no store nav)
+
+- **Type:** feat
+- **Scope:** Marketing sticky Stores Near Me quick-pick sheet
+- **Files:** `quick-pick-spotlight.tsx`, `quick-pick-compact-row.tsx`, `stores-quick-pick-sheet.tsx`, `stores-quick-pick.test.tsx`, `docs/features/customer-discovery.md`
+- **Summary:** Aligned Near Me sheet with directory cards: removed Open store / row Links to `/discover/[id]`; name/image/location display-only; labeled Call Store / Message Store / Get Location via `useStoreContactActions` (`source: stores_quick_pick`); sheet subtitle no longer says “open one”. RTL asserts no discover links + three actions.
+- **Risks:** Compact rows are taller with three labeled buttons on narrow phones — still 44px targets; visual QA at 360px.
+- **Next:** Optional Playwright assert for contact-only quick-pick (no Open store).
+- **Refs:** User request — match StoresCard contact-only rule on quick-pick
+
+---
+
 ## 2026-07-29 — /stores phone + tablet gallery polish
 
 - **Type:** polish

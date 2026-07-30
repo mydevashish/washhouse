@@ -146,8 +146,8 @@ export function StoresPageView() {
 
   const isNearest = filters.sort === 'nearest';
   const sectionDescription = isNearest
-    ? "Here's what's closest to you. Services and pricing are the same across stores — pick the location that works."
-    : 'Find a verified partner near you by name or neighbourhood. Services and pricing are the same across stores — pick the location that works for you.';
+    ? "Here's what's closest to you. Services and pricing are the same across stores — call, message, or get directions for the one that works."
+    : "Find a verified partner near you by name or neighbourhood. Services and pricing are the same across stores — call, message, or get directions when you're ready.";
 
   const handleNearMe = async () => {
     const pos = await geo.request();

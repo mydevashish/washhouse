@@ -3,7 +3,12 @@
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
-import { getContactInfo, trackContactEvent } from '@/services/customer-experience';
+import { pickDirectionsUrl } from '@/lib/geo';
+import {
+  getContactInfo,
+  trackContactEvent,
+  type ContactInfo,
+} from '@/services/customer-experience';
 import { useAuthStore } from '@/store/auth.store';
 
 export type StoreContactSource = 'stores_quick_pick' | 'stores_directory';
@@ -23,9 +28,18 @@ type UseStoreContactActionsOptions = {
   enabled?: boolean;
 };
 
+function resolveDirectionsUrl(c: ContactInfo | undefined): string | null {
+  if (!c) return null;
+  if (c.show_directions) {
+    const picked = pickDirectionsUrl(c);
+    if (picked) return picked;
+  }
+  return c.map_url ?? null;
+}
+
 /**
- * Shared Call / WhatsApp gating + tracking for marketing store surfaces.
- * Never puts tel: / wa.me in markup for login-gated guests — handlers redirect instead.
+ * Shared Call / WhatsApp / Get Location gating + tracking for marketing store surfaces.
+ * Never puts tel: / wa.me / map URLs in markup for login-gated guests — handlers redirect instead.
  */
 export function useStoreContactActions({
   laundryId,
@@ -51,9 +65,11 @@ export function useStoreContactActions({
   });
 
   const c = contactQ.data;
-  const showCall = Boolean(c?.show_call);
-  const showWhatsApp = Boolean(c?.show_whatsapp);
-  const showContactActions = Boolean(c?.contact_available && (showCall || showWhatsApp));
+  const showCall = Boolean(c?.contact_available && c?.show_call);
+  const showWhatsApp = Boolean(c?.contact_available && c?.show_whatsapp);
+  const directionsUrl = resolveDirectionsUrl(c);
+  const showDirections = Boolean(directionsUrl);
+  const showContactActions = Boolean(showCall || showWhatsApp || showDirections);
 
   const requireLogin = () => {
     router.push(loginRedirect);
@@ -85,21 +101,38 @@ export function useStoreContactActions({
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const handleGetLocation = async () => {
+    if (c?.requires_login) {
+      requireLogin();
+      return;
+    }
+    if (user?.role === 'customer' && c?.show_directions) {
+      await trackM.mutateAsync('directions_click');
+    }
+    const url = resolveDirectionsUrl(c);
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return {
     storeHref,
     contact: c,
     showCall,
     showWhatsApp,
+    showDirections,
     showContactActions,
     isPending: trackM.isPending,
     isContactLoading: contactQ.isLoading,
     callAriaLabel: c?.requires_login
-      ? `Sign in to call ${laundryName}`
-      : `Call ${laundryName}`,
+      ? `Sign in to Call Store for ${laundryName}`
+      : `Call Store for ${laundryName}`,
     whatsappAriaLabel: c?.requires_login
-      ? `Sign in for WhatsApp with ${laundryName}`
-      : `WhatsApp ${laundryName}`,
+      ? `Sign in to Message Store for ${laundryName}`
+      : `Message Store for ${laundryName}`,
+    directionsAriaLabel: c?.requires_login
+      ? `Sign in to Get Location for ${laundryName}`
+      : `Get Location for ${laundryName}`,
     handleCall,
     handleWhatsApp,
+    handleGetLocation,
   };
 }

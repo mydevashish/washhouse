@@ -29,7 +29,7 @@ export function StoresHero() {
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:mt-5 sm:text-base lg:text-lg">
           Browse verified partners in your neighbourhood. Same services and pricing across stores —
-          pick a location, then book when you&apos;re ready.
+          call, message, or get directions when you&apos;re ready.
         </p>
       </div>
     </header>

@@ -27,14 +27,6 @@ const StatsBand = dynamic(
   { loading: () => <section className="min-h-[8rem] bg-brand-900/20" aria-hidden /> },
 );
 
-const ServicesPreview = dynamic(
-  () =>
-    import('@/features/marketing/home/services-preview').then((m) => ({
-      default: m.ServicesPreview,
-    })),
-  { loading: () => <section className="min-h-[24rem] bg-card" aria-hidden /> },
-);
-
 const SpecialCareSection = dynamic(
   () =>
     import('@/features/marketing/home/special-care-section').then((m) => ({
@@ -75,14 +67,6 @@ const PartnerLoginStrip = dynamic(
   { loading: () => <section className="min-h-[12rem] border-y border-border/60" aria-hidden /> },
 );
 
-const HomeTestimonials = dynamic(
-  () =>
-    import('@/features/discover/homepage/home-testimonials').then((m) => ({
-      default: m.HomeTestimonials,
-    })),
-  { loading: () => <section className="min-h-[20rem] bg-card" aria-hidden /> },
-);
-
 const AppPromoSection = dynamic(
   () =>
     import('@/features/marketing/home/app-promo-section').then((m) => ({
@@ -109,13 +93,11 @@ export function MarketingHomepage() {
       <HowItWorksSection />
       <WhyChooseSection />
 
-      <ServicesPreview />
       <SpecialCareSection />
       <DeliveryOptionsBand />
       <FeaturedStoresTeaser />
       <FranchiseTeaser />
       <PartnerLoginStrip />
-      <HomeTestimonials />
       <AppPromoSection />
       <FinalCtaBand />
     </div>

@@ -55,50 +55,42 @@ test.describe('touch scroll — marketing hero carousel', () => {
   }
 });
 
-test.describe('touch scroll — testimonials carousel', () => {
-  test('mobile testimonials carousel is touch-scroll friendly', async ({ page }) => {
-    await page.route(/marketing\/testimonials/, (route) => route.abort());
-
+test.describe('touch scroll — discover reviews (home no longer embeds testimonials)', () => {
+  test('mobile /discover still renders customer testimonials', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('/');
+    await page.goto('/discover');
     await page.waitForLoadState('domcontentloaded');
 
-    const heading = page.getByRole('heading', { name: /what our customers say/i });
-    await heading.scrollIntoViewIfNeeded();
-    await expect(heading).toBeVisible({ timeout: 20_000 });
+    const reviews = page.getByRole('region', { name: /customer testimonials/i });
+    await reviews.scrollIntoViewIfNeeded();
+    await expect(reviews).toBeVisible({ timeout: 20_000 });
+    await expect(
+      page.getByRole('heading', { name: /trusted by thousands/i }),
+    ).toBeVisible();
 
-    const carousel = page.getByRole('region', { name: /customer reviews/i });
-    await expect(carousel).toBeVisible({ timeout: 10_000 });
-
-    await assertTouchFriendlyHorizontalRegion(carousel);
-    await assertVerticalScrollOverTarget(page, carousel);
+    await expect(
+      page.getByRole('heading', { name: /what our customers say/i }),
+    ).toHaveCount(0);
   });
 });
 
-test.describe('touch scroll — services preview strip', () => {
-  test('mobile services strip scrolls horizontally without blocking vertical page scroll', async ({
+test.describe('touch scroll — pricing rack strip', () => {
+  test('mobile pricing rack scrolls horizontally without blocking vertical page scroll', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/');
+    await page.goto('/pricing');
     await page.waitForLoadState('domcontentloaded');
 
-    const strip = page.getByRole('region', {
-      name: /browse our laundry services/i,
+    const menHeading = page.getByRole('heading', { name: /^men$/i });
+    await menHeading.scrollIntoViewIfNeeded();
+    await expect(menHeading).toBeVisible({ timeout: 20_000 });
+
+    const rack = page.locator('.pricing-category-rack').filter({
+      has: page.getByRole('heading', { name: /^men$/i }),
     });
-    await strip.scrollIntoViewIfNeeded();
+    const strip = rack.locator('.pricing-rack-scroller');
     await expect(strip).toBeVisible();
-
-    await expect(strip).toHaveClass(/horizontal-scroll-native/);
-    await expect(strip).not.toHaveClass(/horizontal-scroll-touch/);
-
-    const touchAction = await strip.evaluate((el) => getComputedStyle(el).touchAction);
-    // Browsers may serialize `pan-x pan-y pinch-zoom` as the `manipulation` keyword.
-    expect(
-      /pan-x|manipulation/i.test(touchAction),
-      `native overflow-x strips must allow horizontal pan (got: ${touchAction})`,
-    ).toBe(true);
-    expect(touchAction).not.toMatch(/^pan-y(\s|$)/);
 
     const metrics = await strip.evaluate((el) => {
       el.scrollLeft = 0;
@@ -114,7 +106,7 @@ test.describe('touch scroll — services preview strip', () => {
 
     expect(
       metrics.scrollWidth,
-      'carousel content must overflow so swipe/keyboard can scroll',
+      'rack content must overflow so swipe/keyboard can scroll',
     ).toBeGreaterThan(metrics.clientWidth + 8);
     expect(
       metrics.scrollLeftAfter,
@@ -128,8 +120,9 @@ test.describe('touch scroll — services preview strip', () => {
 /**
  * Manual QA — required for real touch devices (Playwright touch synthesis is unreliable):
  * 1. DevTools device toolbar → 390×844, 375, 414, 768 widths.
- * 2. Visit /, scroll to “Our Laundry Services”; swipe cards horizontally; then swipe vertically.
- * 3. Also touch hero carousel / testimonials / tab bar / filter chips; swipe vertically.
- * 4. Page must scroll; horizontal swipe moves services strip / carousel when clearly horizontal.
+ * 2. Visit /pricing, scroll to Men rack; swipe tags horizontally; then swipe vertically.
+ * 3. Also touch hero carousel on /; /discover reviews; tab bar / filter chips; swipe vertically.
+ * 4. Page must scroll; horizontal swipe moves rack / carousel when clearly horizontal.
  * 5. No stuck scroll on nested overflow-x regions.
+ * Home `/` no longer embeds Services preview or testimonials carousel.
  */

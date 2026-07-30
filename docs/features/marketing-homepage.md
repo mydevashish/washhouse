@@ -1,7 +1,7 @@
 # Feature: Marketing homepage v2
 
 > Status: shipped  
-> Last updated: 2026-07-29 (homepage polish: service tiles, FAB overlap, Special Care)  
+> Last updated: 2026-07-30 (home: drop page-level Services preview + Reviews; keep FeaturedStoresTeaser)  
 > Route: `/`  
 > Related: [offline-booking-whatsapp.md](offline-booking-whatsapp.md), [customer-discovery.md](customer-discovery.md)
 
@@ -13,10 +13,10 @@ The public landing page must convert visitors into WhatsApp bookings or franchis
 
 | In scope | Out of scope |
 | -------- | ------------ |
-| Hero carousel (4 slides), stats, services, special care, testimonials | Inline contact form on `/` (lives on `/contact`) |
-| Sticky navbar, mobile sticky CTA, floating FAB | Theme toggle in marketing navbar (uses system / app shell elsewhere) |
-| Marketing APIs: stats, testimonials, contact, franchise | Full Lighthouse CI gate on `/` (manual verify documented) |
-| Playwright smoke + a11y specs | |
+| Hero carousel (4 slides), stats, special care, featured stores teaser | Page-level Services preview / Reviews on `/` (Services → `/services`; reviews → `/discover` testimonials + laundry detail) |
+| Sticky navbar, mobile sticky CTA, floating FAB | Inline contact form on `/` (lives on `/contact`) |
+| Marketing APIs: stats, testimonials, contact, franchise | Theme toggle in marketing navbar (uses system / app shell elsewhere) |
+| Playwright smoke + a11y specs | Full Lighthouse CI gate on `/` (manual verify documented) |
 
 ## Section map
 
@@ -31,15 +31,13 @@ Render order from `frontend/features/marketing/home/marketing-homepage.tsx`:
 | 3 | Trust strip | `TrustStrip` | static | Verified / pickup / express badges |
 | 4 | How it works | `HowItWorksSection` | static steps | 5-step process in glass card |
 | 5 | Why choose us | `WhyChooseSection` | static | 6 benefit blocks |
-| 6 | Services preview | `ServicesPreview` | `services-data.ts` | 7 cards; **single DOM** list (CSS carousel → 2-col → 12-col); `object-cover` + bounded `sizes`; Book Now → pickup dialog except More Services → `/services` |
-| 6b | Special care | `SpecialCareSection` | `special-care-items.ts` | Delicate-item tiles → `/services#…`; wired in homepage |
+| 6 | Special care | `SpecialCareSection` | `special-care-items.ts` | Delicate-item tiles → `/services#…`; wired in homepage |
 | 7 | Delivery options | `DeliveryOptionsBand` | static | Equal Regular / Express cards; Popular corner ribbon; Book Now → pickup dialog |
 | 8 | Featured stores | `FeaturedStoresTeaser` | `GET /laundries` (top 3) | Skeleton / error / empty never blank; CTA → `/stores` |
 | 9 | Franchise teaser | `FranchiseTeaser` | static | Apply → `/franchise#apply`; brochure → `/brochures/washhouse-franchise.pdf` (`FRANCHISE_BROCHURE_PDF_HREF`, `download`). Content wrapper must be `relative` so glass panel sits above absolute photo/gradient (same as FranchiseHero / FinalCtaBand). |
 | 10 | Partner login | `PartnerLoginStrip` | static | Partner / staff entry |
-| 11 | Testimonials | `HomeTestimonials` | `GET /marketing/testimonials` + fallback | Mobile carousel + desktop 3-col grid |
-| 12 | App promo | `AppPromoSection` | static | Features + Coming Soon store badges first on mobile; compact phone mock (no tall empty gap) |
-| 13 | Final CTA band | `FinalCtaBand` | `useMarketingBookingCtaMode` | **Online:** Book nearest (`/discover`) primary + WhatsApp/Call secondary; **Offline:** WhatsApp primary + Find stores (`/stores`) + Call; `data-marketing-bottom-cta` + `data-booking-mode` |
+| 11 | App promo | `AppPromoSection` | static | Features + Coming Soon store badges first on mobile; compact phone mock (no tall empty gap) |
+| 12 | Final CTA band | `FinalCtaBand` | `useMarketingBookingCtaMode` | **Online:** Book nearest (`/discover`) primary + WhatsApp/Call secondary; **Offline:** WhatsApp primary + Find stores (`/stores`) + Call; `data-marketing-bottom-cta` + `data-booking-mode` |
 | Shell | Mobile sticky CTA | `MobileStickyCta` | same booking flag as `useOnlineBookingEnabled` | **Online:** Book nearest primary → `/discover`; WhatsApp/Call icon secondary. **Offline:** WhatsApp primary + Stores quick-pick + Call; hides when final CTA in view |
 | Shell | Floating FAB | `FloatingContactActions` | env contact config | WhatsApp + Find stores + Call; when sticky bar visible, hides Call + WhatsApp (keeps Find stores); full hide on final CTA / footer social |
 | Shell | Book Now dialog | `BookNowDialog` | `POST /marketing/contact` | Shared modal; `?book=1` deep link; name/phone/service/time → `order-help` lead |
@@ -56,7 +54,7 @@ Primary marketing **Book Now** / **Book pickup** CTAs open a shared Radix Dialog
 | `BookPickupForm` | RHF + Zod; POSTs via `useSubmitContact()` with subject `order-help` |
 | `BookNowDialog` | Focus trap, Esc, `aria-labelledby`, mobile full-viewport, mounted in `MarketingShellOverlays` |
 | `/?book=1` | Deep link opens the same dialog; closing strips the query param |
-| `/stores` | Slim partner directory (name + city + Call / WhatsApp / View store) with optional **Near me** (browser geolocation → client haversine when list items include lat/lng); desktop navbar **Stores** (nav link + CTA) navigates here; mobile sticky **Stores** opens a deferred quick-pick sheet. No per-store price/rating compare UX on the directory itself. |
+| `/stores` | Slim partner directory (name + city + Call Store / Message Store / Get Location) with optional **Near me** (browser geolocation → client haversine when list items include lat/lng); desktop navbar **Stores** (nav link + CTA) navigates here; mobile sticky **Stores** opens a deferred quick-pick sheet. No per-store price/rating compare UX; cards do not link to `/discover/[id]`. |
 
 Form fields map into the existing contact API message body (service + preferred time + notes). No parallel book endpoint.
 
@@ -193,7 +191,7 @@ Regenerate marketing heroes: `python scripts/download-marketing-heroes.py` (sour
 | Hero slide 3 — franchise | Partner storefront | `/marketing/heroes/franchise.webp` |
 | Hero slide 4 — delivery | Doorstep pickup / courier | `/marketing/heroes/delivery.webp` |
 | Delivery slide phone mock | On-time delivery tile | `/catalog/services/on-time-delivery.webp` |
-| Services preview (7 cards) | Unique catalog/service tiles | `services-data.ts` → `/catalog/**` |
+| Special care tiles | Catalog / specialty garments | `special-care-items.ts` → `/catalog/**` |
 | Franchise teaser banner | Franchise hero (decorative) | `/marketing/heroes/franchise.webp` |
 | Final CTA band | Services hero (decorative) | `/marketing/heroes/services.webp` |
 | `/services` page hero | Welcome hero (decorative) | `/marketing/heroes/welcome.webp` |
@@ -285,8 +283,7 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 
 - [ ] Hero carousel two-column layout; images load on active + next slide only
 - [ ] Sticky CTA hidden (`lg:hidden`); footer contact actions visible
-- [ ] Testimonials: carousel or grid renders without overflow
-- [ ] Featured stores cards tappable; link to `/stores` (and laundry detail `/discover/[id]`) works
+- [ ] Reviews live on `/discover` (not home); Featured stores cards tappable; link to `/stores` works
 - [ ] Franchise teaser CTAs navigate to `/franchise` and brochure → `/brochures/washhouse-franchise.pdf` (download)
 
 ### Desktop
@@ -294,7 +291,7 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 - [ ] Navbar inline links (incl. Stores) + Book Now / Stores / Call Now visible (no hamburger)
 - [ ] Hero per-slide CTAs inside carousel (no duplicate global mobile CTAs)
 - [ ] How it works / Why choose grids align; glass cards readable
-- [ ] Services preview: every card shows a real product image (`object-cover`); More Services → `/services`; other cards Book Now → pickup dialog
+- [ ] `/services`: service grid (Wash & Fold, Dry Cleaning, …) with Browse laundries CTAs — not embedded on `/`
 - [ ] Special care tiles link to `/services#…`; Delivery Popular ribbon fully visible; both delivery Book Now open dialog
 - [ ] Featured stores: loading skeleton / error / empty never a blank white slab; Browse → `/stores`
 - [ ] Final CTA band matches mode: **online** Book nearest + WhatsApp + Call; **offline** WhatsApp + Find stores + Call
@@ -303,7 +300,7 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 
 ### Cross-cutting
 
-- [ ] `prefers-reduced-motion`: carousel autoplay paused (manual nav still works); section bodies (Delivery, Services, App promo, Featured stores, Final CTA) visible immediately — no opacity-0 trap
+- [ ] `prefers-reduced-motion`: carousel autoplay paused (manual nav still works); section bodies (Delivery, App promo, Featured stores, Final CTA) visible immediately — no opacity-0 trap
 - [ ] Scroll `/` mobile + desktop: Delivery cards, Services cards, App promo features + store badges, Featured stores, Franchise teaser, Final CTA all visible under headers (no blank bands)
 - [ ] Offline / API error: stats and testimonials show fallback content (no blank sections)
 - [ ] WhatsApp links use correct `NEXT_PUBLIC_WHATSAPP` number

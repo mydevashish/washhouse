@@ -2,13 +2,14 @@
  * @jest-environment jsdom
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 import type { EnrichedLaundry } from '@/features/discover/lib/laundry-meta';
 import { QuickPickCompactRow } from '@/features/marketing/stores/quick-pick-compact-row';
 import { QuickPickSkeleton } from '@/features/marketing/stores/quick-pick-skeleton';
 import { QuickPickSpotlight } from '@/features/marketing/stores/quick-pick-spotlight';
+import { getContactInfo } from '@/services/customer-experience';
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn(), prefetch: jest.fn() }),
@@ -72,16 +73,30 @@ jest.mock('@/store/auth.store', () => ({
 }));
 
 jest.mock('@/services/customer-experience', () => ({
-  getContactInfo: jest.fn().mockResolvedValue({
-    contact_available: true,
-    show_call: true,
-    show_whatsapp: true,
-    requires_login: false,
-    phone: '+919999999999',
-    whatsapp_url: 'https://wa.me/919999999999',
-  }),
+  getContactInfo: jest.fn(),
   trackContactEvent: jest.fn(),
 }));
+
+const mockGetContactInfo = getContactInfo as jest.MockedFunction<typeof getContactInfo>;
+
+const CONTACT_WITH_ACTIONS = {
+  can_contact: true,
+  contact_available: true,
+  requires_login: false,
+  show_call: true,
+  show_whatsapp: true,
+  show_callback: false,
+  show_directions: true,
+  phone: '+919999999999',
+  whatsapp_number: '+919999999999',
+  whatsapp_url: 'https://wa.me/919999999999',
+  latitude: 12.9716,
+  longitude: 77.5946,
+  map_url: 'https://maps.example/sparkle',
+  google_maps_url: 'https://www.google.com/maps/dir/?api=1&destination=12.9716,77.5946',
+  apple_maps_url: 'https://maps.apple.com/?daddr=12.9716,77.5946',
+  geo_url: 'geo:12.9716,77.5946',
+};
 
 const mockLaundry: EnrichedLaundry = {
   id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -109,7 +124,12 @@ function withQuery(ui: ReactNode) {
 }
 
 describe('QuickPickSpotlight', () => {
-  it('renders Open store, place line, from-price, and rating when present', () => {
+  beforeEach(() => {
+    mockGetContactInfo.mockReset();
+    mockGetContactInfo.mockResolvedValue({ ...CONTACT_WITH_ACTIONS });
+  });
+
+  it('renders place line, from-price, rating, and contact actions — no discover links', async () => {
     withQuery(<QuickPickSpotlight laundry={mockLaundry} />);
 
     expect(
@@ -121,11 +141,32 @@ describe('QuickPickSpotlight', () => {
     expect(screen.getByText('From ₹149')).toBeInTheDocument();
     expect(screen.getByText('4.8')).toBeInTheDocument();
 
-    const open = screen.getByRole('link', { name: /open store/i });
-    expect(open).toHaveAttribute(
-      'href',
-      '/discover/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    );
+    expect(screen.queryByRole('link', { name: /open store/i })).not.toBeInTheDocument();
+    const discoverLinks = screen.queryAllByRole('link').filter((el) => {
+      const href = el.getAttribute('href') ?? '';
+      return /\/discover\//.test(href);
+    });
+    expect(discoverLinks).toHaveLength(0);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /call store for sparkle clean hub/i }),
+      ).toBeInTheDocument();
+    });
+
+    expect(mockGetContactInfo).toHaveBeenCalledWith(mockLaundry.id);
+    expect(
+      screen.getByRole('group', { name: /actions for sparkle clean hub/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /call store for sparkle clean hub/i }),
+    ).toHaveTextContent('Call Store');
+    expect(
+      screen.getByRole('button', { name: /message store for sparkle clean hub/i }),
+    ).toHaveTextContent('Message Store');
+    expect(
+      screen.getByRole('button', { name: /get location for sparkle clean hub/i }),
+    ).toHaveTextContent('Get Location');
   });
 
   it('hides rating badge when rating is missing', () => {
@@ -139,20 +180,55 @@ describe('QuickPickSpotlight', () => {
 });
 
 describe('QuickPickCompactRow', () => {
-  it('renders name, city + distance, and open link', () => {
+  beforeEach(() => {
+    mockGetContactInfo.mockReset();
+    mockGetContactInfo.mockResolvedValue({ ...CONTACT_WITH_ACTIONS });
+  });
+
+  it('renders name, city + distance, and contact actions — no open link', async () => {
     withQuery(
       <ul>
         <QuickPickCompactRow laundry={mockLaundry} index={0} />
       </ul>,
     );
 
-    expect(screen.getByRole('link', { name: /open sparkle clean hub/i })).toHaveAttribute(
-      'href',
-      '/discover/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    );
+    expect(
+      screen.getByRole('listitem', { name: /sparkle clean hub, bengaluru/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /open sparkle clean hub/i })).not.toBeInTheDocument();
+    const discoverLinks = screen.queryAllByRole('link').filter((el) => {
+      const href = el.getAttribute('href') ?? '';
+      return /\/discover\//.test(href);
+    });
+    expect(discoverLinks).toHaveLength(0);
+
     expect(screen.getByText('Sparkle Clean Hub')).toBeInTheDocument();
     expect(screen.getByText('2.4 km')).toBeInTheDocument();
-    expect(screen.getByText((_, el) => el?.classList.contains('truncate') && el.textContent?.includes('Bengaluru') === true)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_, el) =>
+          el?.classList.contains('truncate') && el.textContent?.includes('Bengaluru') === true,
+      ),
+    ).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /call store for sparkle clean hub/i }),
+      ).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByRole('group', { name: /actions for sparkle clean hub/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /call store for sparkle clean hub/i }),
+    ).toHaveTextContent('Call Store');
+    expect(
+      screen.getByRole('button', { name: /message store for sparkle clean hub/i }),
+    ).toHaveTextContent('Message Store');
+    expect(
+      screen.getByRole('button', { name: /get location for sparkle clean hub/i }),
+    ).toHaveTextContent('Get Location');
   });
 });
 

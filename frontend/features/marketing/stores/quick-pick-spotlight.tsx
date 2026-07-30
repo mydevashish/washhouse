@@ -1,10 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { BadgeCheck, MessageCircle, Phone, Star, Store } from 'lucide-react';
+import { BadgeCheck, MessageCircle, Navigation, Phone, Star } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,7 +35,8 @@ function formatFromPrice(laundry: EnrichedLaundry): string | null {
 }
 
 /**
- * Primary store card in the quick-pick sheet — cover, trust, Open store + icon contact.
+ * Primary store card in the quick-pick sheet — cover, trust, Call / Message / Get Location.
+ * Name, image, and location are display-only; only contact actions navigate or open apps.
  */
 export function QuickPickSpotlight({ laundry, className }: QuickPickSpotlightProps) {
   const reduce = useReducedMotion();
@@ -47,15 +47,17 @@ export function QuickPickSpotlight({ laundry, className }: QuickPickSpotlightPro
   const fallbackClass = getStoreCardFallbackClass(laundry.slug);
 
   const {
-    storeHref,
     showCall,
     showWhatsApp,
+    showDirections,
     showContactActions,
     isPending,
     callAriaLabel,
     whatsappAriaLabel,
+    directionsAriaLabel,
     handleCall,
     handleWhatsApp,
+    handleGetLocation,
   } = useStoreContactActions({
     laundryId: laundry.id,
     laundryName: laundry.name,
@@ -130,49 +132,60 @@ export function QuickPickSpotlight({ laundry, className }: QuickPickSpotlightPro
         </div>
       </div>
 
-      <div
-        className="flex flex-wrap items-center gap-2 p-3 sm:p-4"
-        role="group"
-        aria-label={`Actions for ${laundry.name}`}
-      >
-        <Button
-          type="button"
-          size="sm"
-          className="h-11 min-h-11 min-w-[7.5rem] flex-1 gap-1.5 px-4 active:scale-[0.98] motion-reduce:active:scale-100"
-          asChild
+      {showContactActions ? (
+        <div
+          className="flex flex-wrap gap-2 p-3 sm:p-4"
+          role="group"
+          aria-label={`Actions for ${laundry.name}`}
         >
-          <Link href={storeHref}>
-            <Store className="h-3.5 w-3.5" aria-hidden />
-            Open store
-          </Link>
-        </Button>
-        {showContactActions && showCall && (
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            className="h-11 w-11 shrink-0"
-            disabled={isPending}
-            aria-label={callAriaLabel}
-            onClick={() => void handleCall()}
-          >
-            <Phone className="h-4 w-4" aria-hidden />
-          </Button>
-        )}
-        {showContactActions && showWhatsApp && (
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            className={cn('h-11 w-11 shrink-0', STORE_WHATSAPP_OUTLINE_CLASS)}
-            disabled={isPending}
-            aria-label={whatsappAriaLabel}
-            onClick={() => void handleWhatsApp()}
-          >
-            <MessageCircle className="h-4 w-4" aria-hidden />
-          </Button>
-        )}
-      </div>
+          {showCall && (
+            <Button
+              type="button"
+              size="sm"
+              className="h-11 min-h-11 min-w-[8.5rem] flex-1 basis-[calc(50%-0.25rem)] gap-1.5 px-2.5 active:scale-[0.98] motion-reduce:active:scale-100"
+              disabled={isPending}
+              aria-label={callAriaLabel}
+              onClick={() => void handleCall()}
+            >
+              <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <span className="truncate">Call Store</span>
+            </Button>
+          )}
+          {showWhatsApp && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className={cn(
+                'h-11 min-h-11 min-w-[8.5rem] flex-1 basis-[calc(50%-0.25rem)] gap-1.5 px-2.5 active:scale-[0.98] motion-reduce:active:scale-100',
+                STORE_WHATSAPP_OUTLINE_CLASS,
+              )}
+              disabled={isPending}
+              aria-label={whatsappAriaLabel}
+              onClick={() => void handleWhatsApp()}
+            >
+              <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <span className="truncate">Message Store</span>
+            </Button>
+          )}
+          {showDirections && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-11 min-h-11 min-w-[8.5rem] flex-1 basis-[calc(50%-0.25rem)] gap-1.5 px-2.5 active:scale-[0.98] motion-reduce:active:scale-100"
+              disabled={isPending}
+              aria-label={directionsAriaLabel}
+              onClick={() => void handleGetLocation()}
+            >
+              <Navigation className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <span className="truncate">Get Location</span>
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="min-h-3 sm:min-h-4" aria-hidden />
+      )}
     </motion.article>
   );
 }
