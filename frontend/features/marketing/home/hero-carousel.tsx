@@ -94,17 +94,20 @@ function HeroSlideImage({
         <GlassSurface
           variant="strong"
           className={cn(
-            'absolute bottom-4 right-4 z-10 hidden max-w-[11rem] rounded-xl p-3 shadow-pop sm:block lg:bottom-8 lg:right-8 lg:max-w-[12rem] lg:p-4',
+            // Visible on all breakpoints — sits on the banner image (not the text column)
+            'absolute bottom-3 right-3 z-10 max-w-[9.5rem] rounded-xl p-2.5 shadow-pop sm:bottom-4 sm:right-4 sm:max-w-[11rem] sm:p-3 lg:bottom-8 lg:right-8 lg:max-w-[12rem] lg:p-4',
             GLASS_MOBILE_SOLID_CARD,
           )}
         >
           <p className="text-xs font-bold uppercase tracking-wide text-success sm:text-sm">
             {slide.promo.badge}
           </p>
-          <p className="mt-1 font-mono text-sm font-bold text-foreground sm:text-base">
-            {slide.promo.code}
-          </p>
-          <p className="mt-1 text-xs leading-snug text-foreground/80">
+          {slide.promo.code ? (
+            <p className="mt-1 font-mono text-sm font-bold text-foreground sm:text-base">
+              {slide.promo.code}
+            </p>
+          ) : null}
+          <p className="mt-1 text-[11px] leading-snug text-foreground/80 sm:text-xs">
             On Your FIRST THREE Orders
           </p>
         </GlassSurface>
@@ -191,18 +194,6 @@ function WelcomeSlideContent({
           </li>
         ))}
       </ul>
-
-      <GlassSurface
-        variant="strong"
-        className={cn('mt-4 rounded-xl p-3 shadow-pop sm:hidden', GLASS_MOBILE_SOLID_CARD)}
-      >
-        <p className="text-xs font-bold uppercase tracking-wide text-success">
-          {slide.promo.badge}
-        </p>
-        <p className="mt-0.5 font-mono text-sm font-bold text-foreground">
-          {slide.promo.code}
-        </p>
-      </GlassSurface>
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         <Button

@@ -11,6 +11,29 @@
 | S2  | Partial breakage, workaround exists           | < 1 week         |
 | S3  | Minor / cosmetic                              | Next sprint      |
 
+## BUG-2026-07-31-001 — `/stores` Near me race + sticky status clip
+
+- **Status:** resolved (code)
+- **Severity:** S2
+- **Reporter:** user
+- **Date opened:** 2026-07-31
+- **Area:** marketing / stores / geolocation
+- **Environment:** local + production-shaped (HTTPS)
+
+### Summary
+
+Clear/cancel during an in-flight geolocation request could still apply a late GPS fix and re-arm `sort: nearest`. Sticky phone/tablet status/errors lived in a `shrink-0` column and could clip under marketing `overflow-x-clip`. Home FeaturedStoresTeaser title claimed “near you” without GPS.
+
+### Fix
+
+Generation-token cancel in `useGeolocation`; sort sync from granted position; full-width cluster status; Home copy softened.
+
+### Refs
+
+`logs/implementation-log.md` — 2026-07-31 Near me race + sticky status
+
+---
+
 ## BUG-2026-07-30-002 — `/stores` Near me does nothing useful
 
 - **Status:** resolved (code)

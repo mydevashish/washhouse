@@ -28,19 +28,24 @@ describe('StoresNearMeControl', () => {
     expect(onClear).not.toHaveBeenCalled();
   });
 
-  it('shows pending Finding… and disables the control', () => {
+  it('shows Cancel while pending and clears on click', async () => {
+    const user = userEvent.setup();
+    const onClear = jest.fn();
+
     render(
       <StoresNearMeControl
         status="pending"
         errorMessage={null}
         onRequest={jest.fn()}
-        onClear={jest.fn()}
+        onClear={onClear}
       />,
     );
 
-    const button = screen.getByRole('button', { name: /finding/i });
-    expect(button).toBeDisabled();
+    const button = screen.getByRole('button', { name: /cancel/i });
     expect(button).toHaveAttribute('aria-busy', 'true');
+    expect(button).not.toBeDisabled();
+    await user.click(button);
+    expect(onClear).toHaveBeenCalledTimes(1);
   });
 
   it('shows Near me · on when granted and clears on click', async () => {
@@ -63,6 +68,38 @@ describe('StoresNearMeControl', () => {
     await user.click(button);
     expect(onClear).toHaveBeenCalledTimes(1);
     expect(onRequest).not.toHaveBeenCalled();
+  });
+
+  it('respects nearMeActive=false even when status is granted', () => {
+    render(
+      <StoresNearMeControl
+        status="granted"
+        nearMeActive={false}
+        errorMessage={null}
+        onRequest={jest.fn()}
+        onClear={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /^near me$/i })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(screen.queryByText(/sorted by distance/i)).not.toBeInTheDocument();
+  });
+
+  it('hides inline messages when hideMessages is set', () => {
+    render(
+      <StoresNearMeControl
+        status="denied"
+        errorMessage="Location access was denied. Search by area instead."
+        hideMessages
+        onRequest={jest.fn()}
+        onClear={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByText(/location access was denied/i)).not.toBeInTheDocument();
   });
 
   it('shows partial message when GPS is on but pins are missing', () => {
@@ -89,7 +126,7 @@ describe('StoresNearMeControl', () => {
     render(
       <StoresNearMeControl
         status="denied"
-        errorMessage="Location access was denied. Search by area instead."
+        errorMessage="Location access was denied. Search by area, or enable location in browser settings and try again."
         onRequest={onRequest}
         onClear={jest.fn()}
       />,

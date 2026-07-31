@@ -42,7 +42,7 @@ export function FeaturedStoresTeaser() {
         <FadeIn>
           <SectionHeader
             eyebrow="Stores"
-            title="Premium laundries near you"
+            title="Verified WashHouse partners"
             description="Every partner is verified before going live. Find a store by neighbourhood and book pickup in minutes."
             align="center"
             className="mb-10"

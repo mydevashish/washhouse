@@ -1,7 +1,7 @@
 # Feature: Marketing homepage v2
 
 > Status: shipped  
-> Last updated: 2026-07-30 (home: drop page-level Services preview + Reviews; keep FeaturedStoresTeaser)  
+> Last updated: 2026-07-31 (FeaturedStoresTeaser: no GPS “near you” claim; Near me lives on `/stores`)  
 > Route: `/`  
 > Related: [offline-booking-whatsapp.md](offline-booking-whatsapp.md), [customer-discovery.md](customer-discovery.md)
 
@@ -33,7 +33,7 @@ Render order from `frontend/features/marketing/home/marketing-homepage.tsx`:
 | 5 | Why choose us | `WhyChooseSection` | static | 6 benefit blocks |
 | 6 | Special care | `SpecialCareSection` | `special-care-items.ts` | Delicate-item tiles → `/services#…`; wired in homepage |
 | 7 | Delivery options | `DeliveryOptionsBand` | static | Equal Regular / Express cards; Popular corner ribbon; Book Now → pickup dialog |
-| 8 | Featured stores | `FeaturedStoresTeaser` | `GET /laundries` (top 3) | Skeleton / error / empty never blank; CTA → `/stores` |
+| 8 | Featured stores | `FeaturedStoresTeaser` | `GET /laundries` (top 3) | Title **Verified WashHouse partners** (no GPS claim — Near me is on `/stores`); skeleton / error / empty never blank; CTA → `/stores` |
 | 9 | Franchise teaser | `FranchiseTeaser` | static | Apply → `/franchise#apply`; brochure → `/brochures/washhouse-franchise.pdf` (`FRANCHISE_BROCHURE_PDF_HREF`, `download`). Content wrapper must be `relative` so glass panel sits above absolute photo/gradient (same as FranchiseHero / FinalCtaBand). |
 | 10 | Partner login | `PartnerLoginStrip` | static | Partner / staff entry |
 | 11 | App promo | `AppPromoSection` | static | Features + Coming Soon store badges first on mobile; compact phone mock (no tall empty gap) |
@@ -54,7 +54,7 @@ Primary marketing **Book Now** / **Book pickup** CTAs open a shared Radix Dialog
 | `BookPickupForm` | RHF + Zod; POSTs via `useSubmitContact()` with subject `order-help` |
 | `BookNowDialog` | Focus trap, Esc, `aria-labelledby`, mobile full-viewport, mounted in `MarketingShellOverlays` |
 | `/?book=1` | Deep link opens the same dialog; closing strips the query param |
-| `/stores` | Slim partner directory (name + city + Call Store / Message Store / Get Location) with optional **Near me** (browser geolocation → client haversine when list items include lat/lng); navbar **Stores** and FAB **Find stores** navigate here. No per-store price/rating compare UX; cover/name links to `/discover/[id]`; contact buttons stay separate. |
+| `/stores` | Slim partner directory (name + city + Call Store / Message Store / Get Location) with optional **Near me** (browser geolocation → client haversine when list items include lat/lng); navbar **Stores** and FAB **Find stores** navigate here. No per-store price/rating compare UX; cover/name links to `/discover/[id]` on **`lg+` only** (temp: phone/tablet stay on page); contact buttons stay separate. |
 
 Form fields map into the existing contact API message body (service + preferred time + notes). No parallel book endpoint.
 
@@ -62,7 +62,7 @@ Form fields map into the existing contact API message body (service + preferred 
 
 | Slide | Headline | Variant |
 | ----- | -------- | ------- |
-| 1 | CLEAN CLOTHES. HAPPY LIFE. | welcome (WELCOME20 promo) |
+| 1 | CLEAN CLOTHES. HAPPY LIFE. | welcome (25% OFF on first 3 orders — glass overlay on banner image, all breakpoints; no coupon code) |
 | 2 | EXPERT CARE FOR EVERY FABRIC | services |
 | 3 | START YOUR OWN LAUNDRY BUSINESS | franchise — Apply → `/franchise#apply`; brochure → `/brochures/washhouse-franchise.pdf` |
 | 4 | WE PICK. WE CLEAN. WE DELIVER. | delivery |
@@ -265,7 +265,7 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 
 - [ ] `/` loads without layout shift; hero headline readable above fold
 - [ ] Hero carousel: swipe, prev/next buttons, dot tabs advance slides; live region announces slide
-- [ ] WELCOME20 promo badge visible on welcome slide
+- [ ] 25% OFF promo badge + “On Your FIRST THREE Orders” visible on welcome banner image (not only in text column)
 - [ ] Stats band shows 5 KPIs (API or fallback)
 - [ ] Mobile sticky CTA respects booking mode: **online** Book nearest (`/discover`) primary + WhatsApp/Call secondary; **offline** Book Pickup (opens dialog) + WhatsApp; hides when scrolling to final CTA band
 - [ ] Floating FAB: while sticky CTA is visible, hide WhatsApp; hide Call only in online mode; keep Find stores; full FAB hides for final CTA / footer social; no overlap with hero CTAs

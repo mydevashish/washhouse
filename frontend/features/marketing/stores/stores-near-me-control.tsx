@@ -16,6 +16,16 @@ type StoresNearMeControlProps = {
    * distance sort cannot run.
    */
   partialMessage?: string | null;
+  /**
+   * When false, button stays idle-looking even if geo status is granted
+   * (e.g. GPS applied but sort not yet `nearest`).
+   */
+  nearMeActive?: boolean;
+  /**
+   * Hide inline status / error copy — parent renders them full-width
+   * (sticky compact cluster on phone/tablet).
+   */
+  hideMessages?: boolean;
   /** Compact pill for sticky / cluster rows — status text stays polite but tighter. */
   compact?: boolean;
   className?: string;
@@ -27,16 +37,19 @@ export function StoresNearMeControl({
   onRequest,
   onClear,
   partialMessage = null,
+  nearMeActive,
+  hideMessages = false,
   compact = false,
   className,
 }: StoresNearMeControlProps) {
   const isPending = status === 'pending';
-  const isActive = status === 'granted';
+  const isActive = nearMeActive ?? status === 'granted';
   const failed =
     status === 'denied' || status === 'unavailable' || status === 'error';
   const activeHint = isActive
     ? partialMessage || 'Sorted by distance from your location.'
     : null;
+  const showInlineMessages = !hideMessages;
 
   return (
     <div className={cn(compact ? 'space-y-1.5' : 'space-y-2', className)}>
@@ -58,9 +71,8 @@ export function StoresNearMeControl({
           )}
           aria-pressed={isActive}
           aria-busy={isPending}
-          disabled={isPending}
           onClick={() => {
-            if (isActive) onClear();
+            if (isPending || isActive) onClear();
             else void onRequest();
           }}
         >
@@ -70,21 +82,21 @@ export function StoresNearMeControl({
             <LocateFixed className="h-4 w-4" aria-hidden />
           )}
           <span className={cn(compact && 'whitespace-nowrap')}>
-            {isPending ? 'Finding…' : isActive ? 'Near me · on' : 'Near me'}
+            {isPending ? 'Cancel' : isActive ? 'Near me · on' : 'Near me'}
           </span>
         </Button>
-        {activeHint && !compact && (
+        {showInlineMessages && activeHint && !compact && (
           <p className="text-sm text-muted-foreground" role="status">
             {activeHint}
           </p>
         )}
-        {activeHint && compact && (
+        {showInlineMessages && activeHint && compact && (
           <span className="sr-only" role="status">
             {activeHint}
           </span>
         )}
       </div>
-      {failed && errorMessage && (
+      {showInlineMessages && failed && errorMessage && (
         <p
           className={cn(
             'flex items-start gap-2 text-muted-foreground',
@@ -97,7 +109,7 @@ export function StoresNearMeControl({
           <span>{errorMessage}</span>
         </p>
       )}
-      {isActive && partialMessage && compact && (
+      {showInlineMessages && isActive && partialMessage && compact && (
         <p
           className="flex items-start gap-2 text-xs text-muted-foreground"
           role="status"

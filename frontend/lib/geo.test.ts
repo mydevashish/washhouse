@@ -31,6 +31,13 @@ describe('parseLaundryCoords', () => {
     expect(parseLaundryCoords(12, undefined)).toBeNull();
     expect(parseLaundryCoords(100, 77)).toBeNull();
   });
+
+  it('accepts numeric strings from JSON', () => {
+    expect(parseLaundryCoords('12.9', '77.6')).toEqual({
+      latitude: 12.9,
+      longitude: 77.6,
+    });
+  });
 });
 
 describe('distanceKmBetween', () => {

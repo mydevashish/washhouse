@@ -4,6 +4,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 
 import { useGeolocation } from '@/hooks/use-geolocation';
+import type { GeoPoint } from '@/lib/geo';
 
 type GeoSuccess = (pos: GeolocationPosition) => void;
 type GeoError = (err: GeolocationPositionError) => void;
@@ -92,6 +93,7 @@ describe('useGeolocation', () => {
     expect(result.current.status).toBe('denied');
     expect(result.current.position).toBeNull();
     expect(result.current.errorMessage).toMatch(/denied/i);
+    expect(result.current.errorMessage).toMatch(/browser settings/i);
   });
 
   it('fails fast on insecure context', async () => {
@@ -174,5 +176,57 @@ describe('useGeolocation', () => {
     expect(result.current.status).toBe('idle');
     expect(result.current.position).toBeNull();
     expect(result.current.errorMessage).toBeNull();
+  });
+
+  it('clear during pending ignores a late GPS success', async () => {
+    Object.defineProperty(window, 'isSecureContext', {
+      configurable: true,
+      value: true,
+    });
+
+    let lateSuccess: GeoSuccess | null = null;
+    mockGeolocation({
+      getCurrentPosition: (success) => {
+        lateSuccess = success;
+      },
+    });
+
+    const { result } = renderHook(() => useGeolocation());
+    let resolved: GeoPoint | null | undefined = undefined;
+
+    let pending!: Promise<void>;
+    act(() => {
+      pending = result.current.request().then((pos) => {
+        resolved = pos;
+      });
+    });
+
+    await waitFor(() => expect(result.current.status).toBe('pending'));
+
+    act(() => {
+      result.current.clear();
+    });
+
+    expect(result.current.status).toBe('idle');
+
+    await act(async () => {
+      lateSuccess?.({
+        coords: {
+          latitude: 12.9,
+          longitude: 77.6,
+          accuracy: 10,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      } as GeolocationPosition);
+      await pending;
+    });
+
+    expect(resolved).toBeNull();
+    expect(result.current.status).toBe('idle');
+    expect(result.current.position).toBeNull();
   });
 });

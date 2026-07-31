@@ -28,6 +28,7 @@ const NEAR_ME_PARTIAL =
 /**
  * Search + Near me cluster. Sticky under marketing nav on phone/tablet.
  * `compact` only tightens chrome (full-bleed, shadow, pill input) — same height, no IO thrash.
+ * Status/errors render full-width under the row so sticky ≤1023px does not clip them.
  */
 function StoresFilterCluster({
   search,
@@ -35,6 +36,7 @@ function StoresFilterCluster({
   isSearching,
   geoStatus,
   geoError,
+  nearMeActive,
   nearMePartial,
   onNearMe,
   onClearNearMe,
@@ -45,11 +47,21 @@ function StoresFilterCluster({
   isSearching: boolean;
   geoStatus: ReturnType<typeof useGeolocation>['status'];
   geoError: string | null;
+  nearMeActive: boolean;
   nearMePartial: string | null;
   onNearMe: () => void;
   onClearNearMe: () => void;
   compact: boolean;
 }) {
+  const failed =
+    geoStatus === 'denied' ||
+    geoStatus === 'unavailable' ||
+    geoStatus === 'error';
+  const clusterStatus =
+    (failed && geoError) ||
+    (nearMeActive && nearMePartial) ||
+    (nearMeActive ? 'Sorted by distance from your location.' : null);
+
   return (
     <div
       className={cn(
@@ -116,12 +128,27 @@ function StoresFilterCluster({
             status={geoStatus}
             errorMessage={geoError}
             partialMessage={nearMePartial}
+            nearMeActive={nearMeActive}
+            hideMessages
             onRequest={onNearMe}
             onClear={onClearNearMe}
             compact={compact}
           />
         </div>
       </div>
+
+      {clusterStatus && (
+        <p
+          className={cn(
+            'flex items-start gap-2 text-muted-foreground',
+            compact ? 'mt-1.5 text-xs' : 'mt-2 text-sm',
+          )}
+          role="status"
+          aria-live="polite"
+        >
+          <span className="min-w-0 flex-1 text-pretty">{clusterStatus}</span>
+        </p>
+      )}
     </div>
   );
 }
@@ -154,29 +181,20 @@ export function StoresPageView() {
   const showSkeletons = !isError && enriched.length === 0 && (isPending || isFetching);
 
   const isNearest = filters.sort === 'nearest';
+  const nearMeActive = geo.status === 'granted' && isNearest;
   const hasGpsDistance =
     Boolean(geo.position) && enriched.some((l) => !l.distanceIsApproximate);
   const nearMePartial =
-    isNearest && Boolean(geo.position) && !hasGpsDistance && enriched.length > 0
+    nearMeActive && Boolean(geo.position) && !hasGpsDistance && enriched.length > 0
       ? NEAR_ME_PARTIAL
       : null;
   const sectionDescription =
-    isNearest && hasGpsDistance
+    nearMeActive && hasGpsDistance
       ? "Here's what's closest to you. Services and pricing are the same across stores — call, message, or get directions for the one that works."
       : "Find a verified partner near you by name or neighbourhood. Services and pricing are the same across stores — call, message, or get directions when you're ready.";
 
-  const handleNearMe = async () => {
-    const pos = await geo.request();
-    if (pos) {
-      setFilters((f) => {
-        if (f.sort !== 'nearest') priorSortRef.current = f.sort;
-        return {
-          ...f,
-          sort: 'nearest',
-          maxDistance: ANY_DISTANCE_KM,
-        };
-      });
-    }
+  const handleNearMe = () => {
+    void geo.request();
   };
 
   const handleClearNearMe = () => {
@@ -189,6 +207,20 @@ export function StoresPageView() {
     }));
   };
 
+  // Single source of truth: granted GPS → nearest sort (ANY_DISTANCE_KM). Clear restores prior.
+  useEffect(() => {
+    if (geo.status !== 'granted' || !geo.position) return;
+    setFilters((f) => {
+      if (f.sort === 'nearest') return f;
+      priorSortRef.current = f.sort;
+      return {
+        ...f,
+        sort: 'nearest',
+        maxDistance: ANY_DISTANCE_KM,
+      };
+    });
+  }, [geo.status, geo.position]);
+
   // Compact sticky chrome once the filter cluster pins under the nav (phone/tablet only).
   // Top sticky only — MarketingShell bottom CTA stays at z-50 fixed bottom.
   useEffect(() => {
@@ -196,7 +228,8 @@ export function StoresPageView() {
     if (!el || typeof IntersectionObserver === 'undefined') return;
 
     const mq = window.matchMedia('(max-width: 1023px)');
-    const syncCompact = (stuck: boolean) => {
+    let stuck = false;
+    const syncCompact = () => {
       setFiltersCompact(mq.matches && stuck);
     };
 
@@ -212,7 +245,8 @@ export function StoresPageView() {
     const io = new IntersectionObserver(
       ([entry]) => {
         if (!entry) return;
-        syncCompact(!entry.isIntersecting);
+        stuck = !entry.isIntersecting;
+        syncCompact();
       },
       {
         rootMargin: `-${navPx}px 0px 0px 0px`,
@@ -222,7 +256,7 @@ export function StoresPageView() {
     io.observe(el);
 
     const onMqChange = () => {
-      if (!mq.matches) setFiltersCompact(false);
+      syncCompact();
     };
     mq.addEventListener('change', onMqChange);
 
@@ -260,8 +294,9 @@ export function StoresPageView() {
               isSearching={isSearching && (isDebouncing || isFetching)}
               geoStatus={geo.status}
               geoError={geo.errorMessage}
+              nearMeActive={nearMeActive}
               nearMePartial={nearMePartial}
-              onNearMe={() => void handleNearMe()}
+              onNearMe={handleNearMe}
               onClearNearMe={handleClearNearMe}
               compact={filtersCompact}
             />
@@ -317,7 +352,7 @@ export function StoresPageView() {
               aria-label="WashHouse partner stores"
             >
               {filtered.map((laundry, index) => {
-                const featured = isNearest && hasGpsDistance && index === 0;
+                const featured = nearMeActive && hasGpsDistance && index === 0;
                 return (
                   <li
                     key={laundry.id}

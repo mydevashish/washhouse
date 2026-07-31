@@ -158,7 +158,7 @@ describe('QuickPickSpotlight', () => {
     mockGetContactInfo.mockResolvedValue({ ...CONTACT_WITH_ACTIONS });
   });
 
-  it('renders place line, from-price, rating, discover link, and contact actions', async () => {
+  it('renders place line, from-price, rating, desktop-only discover link, and contact actions', async () => {
     withQuery(<QuickPickSpotlight laundry={mockLaundry} />);
 
     expect(
@@ -170,8 +170,10 @@ describe('QuickPickSpotlight', () => {
     expect(screen.getByText('From ₹149')).toBeInTheDocument();
     expect(screen.getByText('4.8')).toBeInTheDocument();
 
+    // TODO: re-enable store navigation on mobile when ready — link is CSS-gated (`max-lg:hidden`)
     const discoverLink = screen.getByRole('link', { name: /open sparkle clean hub/i });
     expect(discoverLink).toHaveAttribute('href', `/discover/${mockLaundry.id}`);
+    expect(discoverLink).toHaveClass('max-lg:hidden');
 
     await waitFor(() => {
       expect(
@@ -194,7 +196,7 @@ describe('QuickPickSpotlight', () => {
     ).toHaveTextContent('Get Location');
   });
 
-  it('invokes onNavigate when the store cover link is clicked', () => {
+  it('invokes onNavigate when the desktop store cover link is clicked', () => {
     const onNavigate = jest.fn();
     withQuery(
       <QuickPickSpotlight laundry={mockLaundry} onNavigate={onNavigate} />,
@@ -220,7 +222,7 @@ describe('QuickPickCompactRow', () => {
     mockGetContactInfo.mockResolvedValue({ ...CONTACT_WITH_ACTIONS });
   });
 
-  it('renders name, city + distance, discover link, and contact actions', async () => {
+  it('renders name, city + distance, desktop-only discover link, and contact actions', async () => {
     withQuery(
       <ul>
         <QuickPickCompactRow laundry={mockLaundry} index={0} />
@@ -231,8 +233,10 @@ describe('QuickPickCompactRow', () => {
       screen.getByRole('listitem', { name: /sparkle clean hub, bengaluru/i }),
     ).toBeInTheDocument();
 
+    // TODO: re-enable store navigation on mobile when ready — link is CSS-gated (`max-lg:hidden`)
     const discoverLink = screen.getByRole('link', { name: /open sparkle clean hub/i });
     expect(discoverLink).toHaveAttribute('href', `/discover/${mockLaundry.id}`);
+    expect(discoverLink).toHaveClass('max-lg:hidden');
 
     expect(screen.getByText('Sparkle Clean Hub')).toBeInTheDocument();
     expect(screen.getByText('2.4 km')).toBeInTheDocument();
@@ -263,7 +267,7 @@ describe('QuickPickCompactRow', () => {
     ).toHaveTextContent('Get Location');
   });
 
-  it('invokes onNavigate when the thumb/name link is clicked', () => {
+  it('invokes onNavigate when the desktop thumb/name link is clicked', () => {
     const onNavigate = jest.fn();
     withQuery(
       <ul>

@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { useState, type MouseEvent } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { BadgeCheck, MapPin, MessageCircle, Navigation, Phone } from 'lucide-react';
@@ -14,6 +13,7 @@ import {
   getStoreCardOverlayClass,
   storeCardStaggerDelay,
 } from '@/features/marketing/stores/stores-card-visual';
+import { StoreNavSurface } from '@/features/marketing/stores/store-nav-surface';
 import { useCardInView } from '@/features/marketing/stores/use-card-in-view';
 import { StoreDistanceBadge } from '@/features/marketing/stores/store-distance-badge';
 import {
@@ -36,8 +36,9 @@ type StoresCardProps = {
 
 /**
  * Marketing directory card — cover, name, location, Call / Message / Get Location.
- * Cover + name link to the storefront; contact info is fetched only when the card
- * enters the viewport (lazy; see useCardInView). Contact buttons stay separate.
+ * Cover + name link to the storefront on `lg+` only (temp gate — see StoreNavSurface);
+ * contact info is fetched only when the card enters the viewport (lazy; see useCardInView).
+ * Contact buttons stay separate.
  */
 export function StoresCard({
   laundry,
@@ -101,15 +102,15 @@ export function StoresCard({
         ease: EASE_OUT,
       }}
     >
-      <Link
+      <StoreNavSurface
         href={storeHref}
+        ariaLabel={`Open ${laundry.name}`}
         className={cn(
           'relative overflow-hidden',
-          'block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
+          'block',
           isFeatured ? 'aspect-[4/3] md:aspect-[21/9]' : 'aspect-[5/3]',
           fallbackClass,
         )}
-        aria-label={`Open ${laundry.name}`}
       >
         {!imgFailed ? (
           <Image
@@ -177,7 +178,7 @@ export function StoresCard({
             </span>
           </p>
         </div>
-      </Link>
+      </StoreNavSurface>
 
       {showContactActions ? (
         <div className="mt-auto flex flex-1 flex-col justify-end p-3 sm:p-4">

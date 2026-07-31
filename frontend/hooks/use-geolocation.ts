@@ -18,7 +18,7 @@ export type UseGeolocationResult = {
   errorMessage: string | null;
   /** Request browser geolocation. Safe to call repeatedly. */
   request: () => Promise<GeoPoint | null>;
-  /** Clear granted position and return to idle (keep search-by-area). */
+  /** Clear granted position and return to idle (keep search-by-area). Cancels in-flight. */
   clear: () => void;
 };
 
@@ -36,7 +36,8 @@ function mapError(err: GeolocationPositionError): {
     case err.PERMISSION_DENIED:
       return {
         status: 'denied',
-        message: 'Location access was denied. Search by area instead.',
+        message:
+          'Location access was denied. Search by area, or enable location in browser settings and try again.',
       };
     case err.POSITION_UNAVAILABLE:
       return {
@@ -59,18 +60,23 @@ function mapError(err: GeolocationPositionError): {
 /**
  * Browser geolocation for near-me sort. Deny / errors stay graceful —
  * callers keep search-by-area without blocking the directory.
+ *
+ * `clear()` bumps a generation token so a late getCurrentPosition success
+ * cannot re-apply GPS after the user cancels or toggles Near me off.
  */
 export function useGeolocation(): UseGeolocationResult {
   const [status, setStatus] = useState<GeolocationStatus>('idle');
   const [position, setPosition] = useState<GeoPoint | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inFlight = useRef<Promise<GeoPoint | null> | null>(null);
+  const generation = useRef(0);
 
   const clear = useCallback(() => {
+    generation.current += 1;
+    inFlight.current = null;
     setStatus('idle');
     setPosition(null);
     setErrorMessage(null);
-    inFlight.current = null;
   }, []);
 
   const request = useCallback(async (): Promise<GeoPoint | null> => {
@@ -92,12 +98,18 @@ export function useGeolocation(): UseGeolocationResult {
 
     if (inFlight.current) return inFlight.current;
 
+    const requestId = generation.current + 1;
+    generation.current = requestId;
     setStatus('pending');
     setErrorMessage(null);
 
     const promise = new Promise<GeoPoint | null>((resolve) => {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          if (generation.current !== requestId) {
+            resolve(null);
+            return;
+          }
           const next: GeoPoint = {
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
@@ -108,6 +120,10 @@ export function useGeolocation(): UseGeolocationResult {
           resolve(next);
         },
         (err) => {
+          if (generation.current !== requestId) {
+            resolve(null);
+            return;
+          }
           const mapped = mapError(err);
           setStatus(mapped.status);
           setPosition(null);
@@ -117,7 +133,9 @@ export function useGeolocation(): UseGeolocationResult {
         GEO_OPTIONS,
       );
     }).finally(() => {
-      inFlight.current = null;
+      if (inFlight.current === promise) {
+        inFlight.current = null;
+      }
     });
 
     inFlight.current = promise;

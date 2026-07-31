@@ -81,6 +81,18 @@ describe('enrichLaundry with user location', () => {
     const enriched = enrichLaundry(DEMO_LAUNDRIES[2]!, 0, near);
     expect(enriched.distanceIsApproximate).toBe(true);
   });
+
+  it('parses string lat/lng from API payloads', () => {
+    const near = { latitude: 12.9352, longitude: 77.6245 };
+    const laundry = {
+      ...DEMO_LAUNDRIES[0]!,
+      latitude: '12.9352' as unknown as number,
+      longitude: '77.6245' as unknown as number,
+    };
+    const enriched = enrichLaundry(laundry, 0, near);
+    expect(enriched.distanceIsApproximate).toBe(false);
+    expect(enriched.distanceKm).toBe(0);
+  });
 });
 
 describe('pickNearestOrFeatured', () => {

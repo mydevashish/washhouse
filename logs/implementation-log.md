@@ -4,6 +4,42 @@
 
 ---
 
+## 2026-07-31 — Fix `/stores` Near me race + sticky status
+
+- **Type:** fix
+- **Scope:** Marketing `/stores` Near me + Home featured teaser copy
+- **Files:** `use-geolocation.ts`, `stores-near-me-control.tsx`, `stores-page-view.tsx`, `featured-stores-teaser.tsx`, geo/enrich tests, `docs/features/customer-discovery.md`, `docs/features/marketing-homepage.md`
+- **Summary:** Generation-token cancel so late GPS cannot re-arm after toggle-off; granted position syncs `sort: nearest` via effect; sticky ≤1023px status/errors render full-width under the cluster; deny copy mentions browser settings; pending is cancellable; Home teaser no longer claims “near you” without GPS.
+- **Risks:** `/discover` “Nearest” sort still has no geolocation control (falls back to rating when all distances are approximate).
+- **Next:** Optional — wire Near me on `/discover` PartnersSection or hide Nearest without GPS.
+- **Refs:** User request — Near me / nearby location on stores discovery flow
+
+---
+
+## 2026-07-31 — Temp: disable store nav below lg on marketing cards
+
+- **Type:** fix
+- **Scope:** Marketing store cards (Home teaser, `/stores`, quick-pick)
+- **Files:** `store-nav-surface.tsx`, `stores-card.tsx`, `quick-pick-spotlight.tsx`, `quick-pick-compact-row.tsx`, unit + e2e tests, `docs/features/customer-discovery.md`, `docs/features/marketing-homepage.md`
+- **Summary:** Cover/name no longer navigates to `/discover/[id]` below Tailwind `lg` (<1024px). Desktop keeps an overlay Link (`max-lg:hidden`). Flip `STORE_NAVIGATION_ENABLED_BELOW_LG` (or remove gate) to re-enable. Call / Message / Get Location unchanged. PartnerCard / LaundryCard left alone (discover app, not marketing browse).
+- **Risks:** Empty overlay link relies on `aria-label`; dual-mode flag must stay documented so mobile nav is not forgotten.
+- **Next:** Re-enable below-lg store navigation when storefront mobile UX is ready.
+- **Refs:** User request — temporary UX gate on phone/tablet
+
+---
+
+## 2026-07-31 — Home hero: show 25% OFF promo on mobile banner
+
+- **Type:** fix
+- **Scope:** Marketing home hero (welcome slide)
+- **Files:** `hero-carousel.tsx`, `hero-static-fallback.tsx`, `home-hero.test.tsx`, `docs/features/marketing-homepage.md`
+- **Summary:** Welcome promo GlassSurface was `hidden sm:block` on the banner, so phones never saw “25% OFF / On Your FIRST THREE Orders” on the image. Overlay now shows at all breakpoints (tighter mobile sizing); empty `promo.code` is omitted; duplicate text-column mobile promo removed; static LCP fallback matched.
+- **Risks:** Compact overlay on short image columns could crowd bottom-right on very small screens — verify 360px.
+- **Next:** Visual smoke on phone viewport after deploy.
+- **Refs:** User report — first banner promo not visible on mobile
+
+---
+
 ## 2026-07-30 — Offline sticky CTA: Book Pickup replaces Stores + Call
 
 - **Type:** fix

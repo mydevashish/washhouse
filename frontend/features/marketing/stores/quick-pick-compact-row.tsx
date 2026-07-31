@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { useState, type MouseEvent } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { MessageCircle, Navigation, Phone, Star } from 'lucide-react';
@@ -9,6 +8,7 @@ import { MessageCircle, Navigation, Phone, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { EnrichedLaundry } from '@/features/discover/lib/laundry-meta';
 import { getStoreCardFallbackClass } from '@/features/marketing/stores/stores-card-visual';
+import { StoreNavSurface } from '@/features/marketing/stores/store-nav-surface';
 import { StoreDistanceBadge } from '@/features/marketing/stores/store-distance-badge';
 import {
   STORE_WHATSAPP_OUTLINE_CLASS,
@@ -30,7 +30,8 @@ type QuickPickCompactRowProps = {
 
 /**
  * Dense secondary store row for the quick-pick sheet.
- * Thumb + name link to the storefront; Call / Message / Get Location stay separate.
+ * Thumb + name link to the storefront on `lg+` only (temp gate — see StoreNavSurface);
+ * Call / Message / Get Location stay separate.
  */
 export function QuickPickCompactRow({
   laundry,
@@ -87,14 +88,11 @@ export function QuickPickCompactRow({
         ease: EASE_OUT,
       }}
     >
-      <Link
+      <StoreNavSurface
         href={storeHref}
         onClick={onNavigate}
-        className={cn(
-          'flex min-w-0 items-center gap-3 rounded-lg',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-        )}
-        aria-label={`Open ${laundry.name}`}
+        ariaLabel={`Open ${laundry.name}`}
+        className="flex min-w-0 items-center gap-3 rounded-lg"
       >
         <span
           className={cn(
@@ -142,7 +140,7 @@ export function QuickPickCompactRow({
             </span>
           </span>
         </span>
-      </Link>
+      </StoreNavSurface>
 
       {showContactActions ? (
         <div

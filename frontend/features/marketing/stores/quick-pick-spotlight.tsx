@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { useState, type MouseEvent } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { BadgeCheck, MessageCircle, Navigation, Phone, Star } from 'lucide-react';
@@ -14,6 +13,7 @@ import {
   getStoreCardFallbackClass,
   getStoreCardOverlayClass,
 } from '@/features/marketing/stores/stores-card-visual';
+import { StoreNavSurface } from '@/features/marketing/stores/store-nav-surface';
 import { StoreDistanceBadge } from '@/features/marketing/stores/store-distance-badge';
 import {
   STORE_WHATSAPP_OUTLINE_CLASS,
@@ -39,7 +39,8 @@ function formatFromPrice(laundry: EnrichedLaundry): string | null {
 
 /**
  * Primary store card in the quick-pick sheet — cover, trust, Call / Message / Get Location.
- * Cover + name link to the storefront; contact actions stay separate buttons.
+ * Cover + name link to the storefront on `lg+` only (temp gate — see StoreNavSurface);
+ * contact actions stay separate buttons.
  */
 export function QuickPickSpotlight({
   laundry,
@@ -91,15 +92,15 @@ export function QuickPickSpotlight({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: reduce ? 0 : 0.22, ease: EASE_OUT }}
     >
-      <Link
+      <StoreNavSurface
         href={storeHref}
         onClick={onNavigate}
+        ariaLabel={`Open ${laundry.name}`}
         className={cn(
           'relative aspect-[16/9] max-h-[40vh] overflow-hidden md:aspect-[4/3] md:max-h-[36vh]',
-          'block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
+          'block',
           fallbackClass,
         )}
-        aria-label={`Open ${laundry.name}`}
       >
         {!imgFailed ? (
           <Image
@@ -152,7 +153,7 @@ export function QuickPickSpotlight({
             <p className="mt-0.5 text-sm tabular-nums text-white/85">{fromPrice}</p>
           )}
         </div>
-      </Link>
+      </StoreNavSurface>
 
       {showContactActions ? (
         <div

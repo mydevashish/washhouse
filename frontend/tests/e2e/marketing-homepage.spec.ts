@@ -756,13 +756,22 @@ test.describe('marketing stores directory', () => {
       // City may stand alone or appear as "X.X km · City" when Near Me is active
       await expect(firstCard.getByText(new RegExp(city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeVisible();
 
-      // Cover/name links to storefront; Call / Message / Get Location stay separate
+      // Cover/name → storefront on lg+ only (temp: phone/tablet stay on page); contact stays separate
       const discoverLink = firstCard.locator('a[href*="/discover/"]').first();
-      await expect(discoverLink).toBeVisible();
-      await expect(discoverLink).toHaveAttribute('href', /\/discover\/.+/);
-      await expect(
-        firstCard.getByRole('link', { name: new RegExp(`open ${storeName}`, 'i') }),
-      ).toBeVisible();
+      const viewportWidth = page.viewportSize()?.width ?? 0;
+      if (viewportWidth >= 1024) {
+        await expect(discoverLink).toBeVisible();
+        await expect(discoverLink).toHaveAttribute('href', /\/discover\/.+/);
+        await expect(
+          firstCard.getByRole('link', { name: new RegExp(`open ${storeName}`, 'i') }),
+        ).toBeVisible();
+      } else {
+        // TODO: re-enable store navigation on mobile when ready
+        await expect(discoverLink).toBeHidden();
+        await expect(
+          firstCard.getByRole('link', { name: new RegExp(`open ${storeName}`, 'i') }),
+        ).toHaveCount(0);
+      }
 
       // Cover image is the visual plane
       await expect(firstCard.locator('img').first()).toBeVisible();

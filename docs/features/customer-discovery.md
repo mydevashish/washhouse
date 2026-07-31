@@ -2,7 +2,7 @@
 
 > Status: shipped (list + detail; Slice 5 compare price hints)  
 > Owner: frontend-architect + backend-architect  
-> Last updated: 2026-07-29  
+> Last updated: 2026-07-31  
 > Related: [partner-price-list.md](partner-price-list.md)
 
 ## Problem
@@ -34,7 +34,7 @@ List/search items may include `wash_fold_from_*`, `shirt_dry_clean_from_*`, and 
 
 ## Frontend surface
 
-- Route: `/stores` — marketing directory (`StoresCard`: cover, name/city, Call Store / Message Store / Get Location; contact lazy via `useCardInView`; search + optional **Near me**; no compare filters; cover/name → `/discover/[id]`; contact buttons `stopPropagation`)
+- Route: `/stores` — marketing directory (`StoresCard`: cover, name/city, Call Store / Message Store / Get Location; contact lazy via `useCardInView`; search + optional **Near me**; no compare filters; cover/name → `/discover/[id]` on **`lg+` only** (temp: phone/tablet do not navigate — see `StoreNavSurface` / `STORE_NAVIGATION_ENABLED_BELOW_LG`); contact buttons `stopPropagation`)
 - Route: `/discover`, `/discover/[id]` — discovery + **laundry storefront** (`LaundryStorefrontView`)
 - Storefront catalogue: `ServiceCatalogBrowser` — sticky category chips with scroll-spy, search (live region for result count), garment photos via `resolveServicePhoto` + `CatalogGarmentThumb`, optional `?category=` deep-link, empty CTA back to `/stores`
 - Detail / storefront contact: Call + WhatsApp; optional **Directions** when contact API `show_directions` (lat/lng present) — not on marketing sticky CTA; storefront contact GET deferred until near viewport
@@ -51,15 +51,17 @@ List/search items may include `wash_fold_from_*`, `shirt_dry_clean_from_*`, and 
 | Images | `next/image` with responsive `sizes`, fixed `aspect-[5/3]`, solid muted fallback on error (no CLS) |
 | Contact | Lazy `GET …/contact` via `useCardInView` — never on mount for all cards |
 | Density | `gap-4` / `md:gap-5` / `lg:gap-6`, card radius `rounded-xl` (`--radius-xl`); 1-col phone, 2-col `md` gallery with `items-stretch` |
-| Actions | Cover + name link to `/discover/[id]`; labeled **Call Store** / **Message Store** / **Get Location** (`flex-wrap`, 44px targets) with `stopPropagation` |
+| Actions | Cover + name → `/discover/[id]` on **`lg+` only** (temp gate; phone/tablet non-navigable); labeled **Call Store** / **Message Store** / **Get Location** (`flex-wrap`, 44px targets) with `stopPropagation` |
 | Loading | Skeletons only while list pending/empty — never on search debounce or background refetch |
 
 ### `/stores` Near me
 
 | Piece | Behavior |
 | ----- | -------- |
-| Control | **Near me** requests browser geolocation; deny/unavailable/insecure-origin keeps search-by-area with a polite status message; toggle off restores prior sort (`top_rated` by default) |
+| Control | **Near me** requests browser geolocation; pending shows **Cancel** (generation-token abort so late GPS cannot re-arm); deny/unavailable/insecure-origin keeps search-by-area with a polite status message (settings hint on deny); toggle off restores prior sort (`top_rated` by default) |
+| Sync | `status === 'granted' && position` drives `sort: nearest` + `ANY_DISTANCE_KM` via effect — control “on” only when `granted && sort === 'nearest'` |
 | Distance | Client haversine (`lib/geo.ts`) when list/search items include `latitude`/`longitude`; directory uses `ANY_DISTANCE_KM` (sort only — no 50 km radius wipe); approximate slug-hash distances never gate the list and do not rank ahead of real GPS rows |
+| Sticky | Phone/tablet (≤1023px) sticky cluster: status/error/partial copy renders **full-width under** the search+pill row so `overflow-x-clip` cannot clip it |
 | Partial | GPS on but no published store pins → **Near me · on** plus polite “map pins not published” status; list stays browsable (rating order among approx rows) |
 | APIs | Reuses `GET /laundries` + `GET /laundries/search` — no dedicated near-me endpoint |
 
@@ -69,7 +71,7 @@ List/search items may include `wash_fold_from_*`, `shirt_dry_clean_from_*`, and 
 | ------ | -------- |
 | **Call Store** / **Message Store** | Shown when `GET /laundries/{id}/contact` returns `show_call` / `show_whatsapp` and `contact_available`; same guest gating as storefront (`requires_login` → login redirect; no `tel:` / `wa.me` hrefs in markup for gated guests) |
 | **Get Location** | Shown when directions URL or `map_url` resolves; hidden when coords/map unavailable |
-| A11y | Article `aria-label="{name}, {city}"`; cover link `Open {name}`; action group `Actions for {name}`; button names match visible labels (`Call Store for {name}`, etc.); focus rings via `focus-within` / link inset ring |
+| A11y | Article `aria-label="{name}, {city}"`; cover link `Open {name}` on `lg+` only (hidden below `lg` via `max-lg:hidden`); action group `Actions for {name}`; button names match visible labels (`Call Store for {name}`, etc.); focus rings via `focus-within` / link inset ring |
 | Tracking | `POST .../contact/track` with `source: stores_directory` for signed-in customers |
 
 ### Sticky CTA vs stores entry (offline booking)
@@ -89,9 +91,9 @@ List/search items may include `wash_fold_from_*`, `shirt_dry_clean_from_*`, and 
 - [x] Only approved laundries in public list
 - [x] Discover store cards show owner-set “from ₹” compare hints when published (Slice 5)
 - [x] Price filter/sort on `/discover` uses real `start_price_inr` (not pseudo hash prices)
-- [x] Marketing `/stores` gallery cards: cover/name → `/discover/[id]`; Call Store / Message Store / Get Location (when contact API allows); no service peek
+- [x] Marketing `/stores` gallery cards: cover/name → `/discover/[id]` on `lg+` (temp: disabled below `lg`); Call Store / Message Store / Get Location (when contact API allows); no service peek
 - [x] `/stores` gallery polish: stagger motion (reduced-motion safe), slug-hash overlays, lazy contact, no debounce skeletons
-- [x] `/stores` phone/tablet: compact hero, sticky filter cluster, cover link + contact card actions, 2-col gallery
+- [x] `/stores` phone/tablet: compact hero, sticky filter cluster, contact card actions (no storefront nav), 2-col gallery
 - [x] `/stores` **Near me** uses browser geolocation + client haversine when laundry coords are published; graceful deny keeps area search
 - [x] Storefront (`/discover/[id]`) shows full service catalogue by category with prices, photos, sticky chips, search, and schedule-pickup CTA
 - [x] Storefront contact GET deferred until near viewport (does not block LCP)
