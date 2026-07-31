@@ -12,7 +12,7 @@ const SERVICE_CATEGORY_PHOTOS: Record<string, WashhouseCatalogPhoto> = {
   iron: WASHHOUSE_CATALOG_SUPPLEMENTAL_PHOTOS.steam_ironing,
   'dry-clean': WASHHOUSE_CATALOG_PHOTOS.shirt,
   'premium-care': WASHHOUSE_CATALOG_SUPPLEMENTAL_PHOTOS.professional_cleaning,
-  'home-linen': WASHHOUSE_CATALOG_PHOTOS.bedsheet,
+  'home-linen': WASHHOUSE_CATALOG_PHOTOS.bedsheet_double,
   specialty: WASHHOUSE_CATALOG_SUPPLEMENTAL_PHOTOS.curtain,
   special: WASHHOUSE_CATALOG_SUPPLEMENTAL_PHOTOS.curtain,
 };
