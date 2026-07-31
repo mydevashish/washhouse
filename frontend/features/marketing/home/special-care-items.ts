@@ -74,14 +74,14 @@ export const SPECIAL_CARE_ITEMS: SpecialCareItem[] = [
     id: 'blankets',
     slug: 'blankets',
     label: 'Blankets',
-    image: P.blanket.src,
-    imageAlt: specialCareAlt('Blankets', P.blanket),
+    image: P.blanket_king.src,
+    imageAlt: specialCareAlt('Blankets', P.blanket_king),
   },
   {
     id: 'soft-toys',
     slug: 'soft-toys',
     label: 'Soft Toys',
-    image: P.toy.src,
-    imageAlt: specialCareAlt('Soft Toys', P.toy),
+    image: P.toy_large.src,
+    imageAlt: specialCareAlt('Soft Toys', P.toy_large),
   },
 ];

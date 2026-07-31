@@ -34,6 +34,7 @@ export type CatalogPhotoKey =
   | 'tie'
   | 'cap_fabric'
   | 'cap_leather'
+  | 'winter_cap'
   | 'turban'
   | 'wallet'
   | 'hanky'
@@ -71,21 +72,38 @@ export type CatalogPhotoKey =
   | 'jacket_denim'
   | 'jacket_puffer'
   | 'jacket_leather'
+  | 'half_jacket_denim'
+  | 'half_jacket_puffer'
+  | 'half_jacket_leather'
   | 'hoodie'
   | 'shawl'
-  | 'bedsheet'
-  | 'blanket'
-  | 'comforter'
+  | 'bedsheet_single'
+  | 'bedsheet_double'
+  | 'blanket_single'
+  | 'blanket_double'
+  | 'blanket_king'
+  | 'comforter_single'
+  | 'comforter_double'
   | 'pillow'
   | 'shoes'
+  | 'shoes_sports'
+  | 'shoes_leather'
   | 'shoes_bag'
   | 'heels'
-  | 'bag'
-  | 'trolley'
-  | 'carpet'
+  | 'bag_small'
+  | 'bag_large'
+  | 'trolley_small'
+  | 'trolley_large'
+  | 'trolley_medium'
+  | 'carpet_small'
+  | 'carpet_medium'
+  | 'carpet_large'
   | 'towel'
-  | 'toy'
-  | 'gloves'
+  | 'toy_small'
+  | 'toy_medium'
+  | 'toy_large'
+  | 'cotton_gloves'
+  | 'leather_gloves'
   | 'membership'
   | 'burkha'
   | 'salwar'
@@ -119,27 +137,72 @@ const CATALOG_PHOTO_RULES: ReadonlyArray<{
     match: (s, n) => s.includes('overcoat') || n.includes('overcoat'),
   },
   {
+    key: 'kids_full_jacket_leather',
+    match: (s, n) => s.includes('kids-full-jacket-leather') || n.includes('full jacket (leather)'),
+  },
+  {
+    key: 'kids_full_jacket_normal',
+    match: (s, n) => s.includes('kids-full-jacket-normal') || n.includes('full jacket (normal)'),
+  },
+  {
+    key: 'kids_half_jacket_leather',
+    match: (s, n) => s.includes('kids-half-jacket-leather') || n.includes('half jacket (leather)'),
+  },
+  {
+    key: 'kids_half_jacket_normal',
+    match: (s, n) => s.includes('kids-half-jacket-normal') || n.includes('half jacket (normal)'),
+  },
+  {
     key: 'jacket_leather',
     match: (s, n) =>
-      (s.includes('jacket') && s.includes('leather')) ||
-      (n.includes('jacket') && n.includes('leather')),
+      (s.includes('jacket') && s.includes('leather') && !s.includes('half')) ||
+      (n.includes('jacket') && n.includes('leather') && !n.includes('half')),
   },
   {
     key: 'jacket_puffer',
     match: (s, n) =>
-      (s.includes('jacket') && s.includes('puffer')) ||
-      (n.includes('jacket') && n.includes('puffer')),
+      (s.includes('jacket') && s.includes('puffer') && !s.includes('half')) ||
+      (n.includes('jacket') && n.includes('puffer') && !n.includes('half')),
+  },
+  {
+  key: 'half_jacket_denim',
+    match: (s, n) =>
+      (
+        s.includes('half') &&
+        s.includes('jacket') &&
+        (s.includes('denim') || s.includes('cotton'))
+      ) ||
+      (
+        n.includes('half') &&
+        n.includes('jacket') &&
+        (n.includes('denim') || n.includes('cotton'))
+      ),
   },
   {
     key: 'jacket_denim',
     match: (s, n) =>
-      (s.includes('jacket') && (s.includes('denim') || s.includes('cotton'))) ||
-      (n.includes('jacket') && (n.includes('denim') || n.includes('cotton'))),
+      (
+        s.includes('jacket') &&
+        !s.includes('half') &&
+        (s.includes('denim') || s.includes('cotton'))
+      ) ||
+      (
+        n.includes('jacket') &&
+        !n.includes('half') &&
+        (n.includes('denim') || n.includes('cotton'))
+      ),
   },
   {
-    // Generic jacket / half-jacket without a material subtype
-    key: 'jacket_denim',
-    match: (s, n) => s.includes('jacket') || n.includes('jacket'),
+    key: 'half_jacket_leather',
+    match: (s, n) =>
+      (s.includes('half') && s.includes('jacket') && s.includes('leather')) ||
+      (n.includes('half') && n.includes('jacket') && n.includes('leather')),
+  },
+  {
+    key: 'half_jacket_puffer',
+    match: (s, n) =>
+      (s.includes('half') && s.includes('jacket') && s.includes('puffer')) ||
+      (n.includes('half') && n.includes('jacket') && n.includes('puffer')),
   },
   {
     key: 'hoodie',
@@ -170,14 +233,14 @@ const CATALOG_PHOTO_RULES: ReadonlyArray<{
   {
     key: 'coat_heavy',
     match: (s, n) => s.includes('coat_heavy') || n.includes('coat (heavy)'),
-  },
-  {
-    key: 'skirt_short',
-    match: (s, n) => s.includes('skirt-short') || n.includes('skirt-short'),
-  },
+  },  
   {
     key: 'skirt_long',
     match: (s, n) => s.includes('skirt-long') || n.includes('skirt-long'),
+  },
+  {
+    key: 'skirt_short',
+    match: (s, n) => s.includes('skirt') || n.includes('skirt-short'),
   },
   {
     key: 'burkha',
@@ -249,24 +312,8 @@ const CATALOG_PHOTO_RULES: ReadonlyArray<{
   },
   {
     key: 'girl_frock',
-    match: (s, n) => s.includes('girl-frock') || n.includes('girl-frock'),
-  },
-  {
-    key: 'kids_full_jacket_leather',
-    match: (s, n) => s.includes('kids-full-jacket-leather') || n.includes('kids-full-jacket-leather'),
-  },
-  {
-    key: 'kids_full_jacket_normal',
-    match: (s, n) => s.includes('kids-full-jacket-normal') || n.includes('kids-full-jacket-normal'),
-  },
-  {
-    key: 'kids_half_jacket_leather',
-    match: (s, n) => s.includes('kids-half-jacket-leather') || n.includes('kids-half-jacket-leather'),
-  },
-  {
-    key: 'kids_half_jacket_normal',
-    match: (s, n) => s.includes('kids-half-jacket-normal') || n.includes('kids-half-jacket-normal'),
-  },
+    match: (s, n) => s.includes('frock') || n.includes('frock'),
+  },  
   {
     key: 'frock_normal',
     match: (s, n) => s.includes('frock-normal') || n.includes('frock-normal'),
@@ -392,20 +439,50 @@ const CATALOG_PHOTO_RULES: ReadonlyArray<{
     match: (s, n) => s.includes('cap-leather') || n.includes('cap (leather)'),
   },
   {
+    key: 'winter_cap',
+    match: (s, n) => s.includes('winter-cap') || n.includes('Winter Cap'),
+  },
+  {
     key: 'hanky',
     match: (s, n) => s.includes('hanky') || n.includes('hanky'),
   },
   {
-    key: 'comforter',
-    match: (s, n) => s.includes('comforter') || n.includes('comforter'),
+    key: 'comforter_single',
+    match: (s, n) => s.includes('comforter-single') || n.includes('comforter (single)'),
   },
   {
-    key: 'blanket',
-    match: (s, n) => s.includes('blanket') || n.includes('blanket'),
+    key: 'comforter_double',
+    match: (s, n) => s.includes('comforter-double') || n.includes('comforter (double)'),
   },
   {
-    key: 'bedsheet',
-    match: (s, n) => s.includes('bedsheet') || n.includes('bedsheet'),
+    key: 'blanket_single',
+    match: (s, n) =>
+      s.includes('blanket-single') ||
+      n.includes('blanket (single)'),
+  },
+  {
+    key: 'blanket_double',
+    match: (s, n) =>
+      s.includes('blanket-double') ||
+      n.includes('blanket (double)'),
+  },
+  {
+    key: 'blanket_king',
+    match: (s, n) =>
+      s.includes('blanket-king') ||
+      n.includes('blanket (king)'),
+  },
+  {
+  key: 'bedsheet_single',
+    match: (s, n) =>
+      s.includes('bedsheet-single') ||
+      n.includes('bedsheet (single)'),
+  },
+  {
+    key: 'bedsheet_double',
+    match: (s, n) =>
+      s.includes('bedsheet-double') ||
+      n.includes('bedsheet (double)'),
   },
   {
     key: 'pillow',
@@ -420,32 +497,78 @@ const CATALOG_PHOTO_RULES: ReadonlyArray<{
     match: (s, n) => s.includes('heels') || n.includes('heels'),
   },
   {
+    key: 'shoes_sports',
+    match: (s, n) => s.includes('shoes-sports') || n.includes('shoes (sports)'),
+  },
+  {
+    key: 'shoes_leather',
+    match: (s, n) => s.includes('shoes-leather') || n.includes('shoes (leather)'),
+  },
+  {
     key: 'shoes',
     match: (s, n) => s.includes('shoes') || n.includes('shoes'),
+  },  
+  {
+    key: 'trolley_small',
+    match: (s, n) => s.includes('trolley-small') || n.includes('trolley (small)'),
   },
   {
-    key: 'trolley',
-    match: (s, n) => s.includes('trolley') || n.includes('trolley'),
+    key: 'trolley_medium',
+    match: (s, n) => s.includes('trolley-medium') || n.includes('trolley (medium)'),
   },
   {
-    key: 'bag',
-    match: (s, n) => s.includes('bag') || n.includes('bag'),
+    key: 'trolley_large',
+    match: (s, n) => s.includes('trolley-large') || n.includes('trolley (large)'),
   },
   {
-    key: 'carpet',
-    match: (s, n) => s.includes('carpet') || n.includes('carpet'),
+    key: 'bag_small',
+    match: (s, n) => s.includes('bag-small') || n.includes('bag (small)'),
+  },
+   {
+    key: 'bag_large',
+    match: (s, n) => s.includes('bag-large') || n.includes('bag (large)'),
+  },
+  {
+    key: 'carpet_small',
+    match: (s, n) => s.includes('carpet-small') || n.includes('carpet (small)'),
+  },
+  {
+    key: 'carpet_medium',
+    match: (s, n) => s.includes('carpet-medium') || n.includes('carpet (medium)'),
+  },
+  {
+    key: 'carpet_large',
+    match: (s, n) => s.includes('carpet-large') || n.includes('carpet (large)'),
   },
   {
     key: 'towel',
     match: (s, n) => s.includes('towel') || n.includes('towel'),
   },
   {
-    key: 'toy',
-    match: (s, n) => s.includes('toy') || n.includes('toy'),
+    key: 'toy_small',
+    match: (s, n) =>
+      s.includes('toy-small') ||
+      n.includes('toy (small)'),
   },
   {
-    key: 'gloves',
-    match: (s, n) => s.includes('gloves') || n.includes('gloves'),
+    key: 'toy_medium',
+    match: (s, n) =>
+      s.includes('toy-medium') ||
+      n.includes('toy (medium)'),
+  },
+  {
+    key: 'toy_large',
+    match: (s, n) =>
+      s.includes('toy-large') ||
+      n.includes('toy (large)'),
+  },
+  {
+    key: 'cotton_gloves',
+    match: (s, n) => s.includes('cotton-gloves') || n.includes('cotton gloves'),
+  },
+  {
+    key: 'leather_gloves',
+    match: (s, n) => s.includes('leather-gloves') || n.includes('leather gloves'),
   },
 ];
 
