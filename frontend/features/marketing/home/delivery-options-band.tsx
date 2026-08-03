@@ -22,7 +22,7 @@ const DELIVERY_OPTIONS = [
   {
     id: 'express',
     title: 'Express Delivery',
-    turnaround: '12 Hours',
+    turnaround: '12-24 Hours',
     pricing: 'Extra charges',
     icon: Zap,
     iconClassName: 'bg-warning-muted text-warning',

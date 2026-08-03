@@ -87,8 +87,8 @@ export function MarketingHomepage() {
   return (
     <div className="min-w-0 max-w-full overflow-x-hidden bg-background">
       <MarketingHomeHero />
-      <StatsBand />
-      <TrustStrip showOtpSubcopy />
+      {/* <StatsBand /> */}
+      <TrustStrip />
 
       <HowItWorksSection />
       <WhyChooseSection />
