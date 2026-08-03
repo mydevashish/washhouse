@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import { MapPin, MapPinned, Shirt, Star, Users } from 'lucide-react';
 
 import type { MarketingPublicStats } from '@/lib/api/marketing';
+import { PRELAUNCH_STATS, PRELAUNCH_STAT_VALUE, resolveStatValue } from '@/lib/prelaunch-stats';
 
 export type MarketingStat = {
   id: string;
@@ -10,12 +11,13 @@ export type MarketingStat = {
   icon: LucideIcon;
 };
 
+/** Used only when `PRELAUNCH_STATS` is false and the API errors. */
 export const MARKETING_STATS_FALLBACK_API: MarketingPublicStats = {
-  happy_customers: 100,
-  cities_covered: 1,
-  pickup_points: 1,
-  garments_cleaned: 500,
-  customer_satisfaction_percent: 98,
+  happy_customers: 0,
+  cities_covered: 0,
+  pickup_points: 0,
+  garments_cleaned: 0,
+  customer_satisfaction_percent: null,
 };
 
 function formatCountStat(value: number): string {
@@ -26,52 +28,52 @@ export function mapMarketingStatsToDisplay(stats: MarketingPublicStats): Marketi
   const items: MarketingStat[] = [
     {
       id: 'happy-customers',
-      // value: formatCountStat(stats.happy_customers),
-      value: '100+',
+      value: resolveStatValue(formatCountStat(stats.happy_customers)),
       label: 'Happy Customers',
       icon: Users,
     },
     {
       id: 'cities-covered',
-      value: '1+',
+      value: resolveStatValue(formatCountStat(stats.cities_covered)),
       label: 'Cities Covered',
       icon: MapPin,
     },
     {
       id: 'pickup-points',
-      value: '1+',
+      value: resolveStatValue(formatCountStat(stats.pickup_points)),
       label: 'Pickup Points',
       icon: MapPinned,
     },
     {
       id: 'garments-cleaned',
-      value: '500+',
+      value: resolveStatValue(formatCountStat(stats.garments_cleaned)),
       label: 'Garments Cleaned',
       icon: Shirt,
     },
-    {
-      id: 'customer-satisfaction',
-      value: '98%',
-      label: 'Customer Satisfaction',
-      icon: Star,
-    }
   ];
 
-  // if (stats.customer_satisfaction_percent != null) {
-  //   items.push({
-  //     id: 'customer-satisfaction',
-  //     value: `${stats.customer_satisfaction_percent}%`,
-  //     label: 'Customer Satisfaction',
-  //     icon: Star,
-  //   });
-  // } else if (stats.avg_review_rating != null) {
-  //   items.push({
-  //     id: 'avg-review-rating',
-  //     value: stats.avg_review_rating.toFixed(1),
-  //     label: 'Average Review Rating',
-  //     icon: Star,
-  //   });
-  // }
+  if (PRELAUNCH_STATS) {
+    items.push({
+      id: 'customer-satisfaction',
+      value: PRELAUNCH_STAT_VALUE,
+      label: 'Customer Satisfaction',
+      icon: Star,
+    });
+  } else if (stats.customer_satisfaction_percent != null) {
+    items.push({
+      id: 'customer-satisfaction',
+      value: `${stats.customer_satisfaction_percent}%`,
+      label: 'Customer Satisfaction',
+      icon: Star,
+    });
+  } else if (stats.avg_review_rating != null) {
+    items.push({
+      id: 'avg-review-rating',
+      value: stats.avg_review_rating.toFixed(1),
+      label: 'Average Review Rating',
+      icon: Star,
+    });
+  }
 
   return items;
 }

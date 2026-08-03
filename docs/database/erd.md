@@ -21,6 +21,11 @@ erDiagram
   ORDERS ||--o{ ORDER_STATUS_EVENTS : logs
   ORDERS ||--o{ PAYMENTS : has
 
+  BOOKING_REQUESTS ||--o{ BOOKING_REQUEST_MESSAGES : has
+  BOOKING_REQUESTS ||--o{ BOOKING_REQUEST_EVENTS : audits
+  LAUNDRIES ||--o{ BOOKING_REQUESTS : assigned
+  ORDERS ||--o| BOOKING_REQUESTS : converted_from
+
   USERS {
     UUID id PK
     string email
@@ -81,6 +86,15 @@ erDiagram
     string currency
     timestamptz scheduled_at
     timestamptz created_at
+  }
+
+  BOOKING_REQUESTS {
+    UUID id PK
+    string public_code UK
+    string phone_e164
+    enum status
+    UUID assigned_laundry_id FK
+    timestamptz deleted_at
   }
 ```
 

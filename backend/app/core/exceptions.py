@@ -126,6 +126,28 @@ class OrderCancellationWindowClosedError(ConflictError):
     message = "Cancellation window has closed"
 
 
+# ---------- Booking requests ----------
+class BookingRequestNotFoundError(NotFoundError):
+    code = "NOT_FOUND"
+    message = "Booking request not found"
+
+
+class BookingRequestInvalidTransitionError(ConflictError):
+    code = "INVALID_STATUS_TRANSITION"
+    message = "Cannot transition booking request to the requested status"
+
+
+class BookingRequestAlreadyTerminalError(ConflictError):
+    code = "ALREADY_TERMINAL"
+    message = "Booking request is already closed"
+
+
+class BookingRequestConvertNotImplementedError(DomainError):
+    code = "CONVERT_NOT_IMPLEMENTED"
+    status_code = 501
+    message = "Convert to order is not implemented yet"
+
+
 # ---------- Payments ----------
 class PaymentDeclinedError(ConflictError):
     code = "PAYMENT_DECLINED"

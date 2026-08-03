@@ -65,3 +65,14 @@
 - Walk-in status → WhatsApp notifications: **shipped** — §2A.3
 - Automated: `pnpm test:e2e --project=offline-booking`, `pytest backend/tests/api/test_walk_in_orders.py`
 - Doc supplements (root files locked in session): `docs/product/offline-booking-ui-map.md`, `docs/product/offline-booking-customer-experience.md`
+
+## Booking Requests (Book Now → admin/partner inbox)
+- Status: **in-progress** (Slice 1–6 polish shipped 2026-08-03; convert/expiry next)
+- Spec: `docs/features/booking-requests.md`
+- API: `docs/api/endpoints/booking-requests.md` (**implemented** — public/admin/partner + suggest-laundries)
+- Schema: `booking_requests` + `booking_request_messages` + `booking_request_events` in `docs/database/schema.md`
+- Ops: `docs/runbooks/booking-requests.md`
+- Why: Elevate marketing Book Now (no laundry selected) out of generic `order-help` contact leads into a first-class phone-CRM workflow with SLA, assign/transfer, WhatsApp deep link, and partner scoped CRUD
+- Done: data layer; services + HTTP APIs; Book Now FE → `POST /booking-requests` with confirmation `public_code` + WhatsApp/Call fallbacks; Jest mapping/form tests; Playwright happy path updated; **admin inbox** at `/admin/booking-requests`; **partner inbox** at `/partner/booking-requests`; **Slice 6** — create-dialog duplicate phone banner, `GET …/suggest-laundries` + assign chips, notify stubs (admin on public create; partner on assign), ops runbook
+- Next: convert-to-order; expiry job; Playwright partner inbox smoke
+- Non-goals: customer OTP self-serve portal; geo auto-assign as hard requirement; franchise/contact merge; CSV export / public track page (not in feature doc)

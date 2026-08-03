@@ -1,6 +1,16 @@
 import { api, type ApiEnvelope } from '@/lib/api';
 import { DISCOVERY_API_TIMEOUT_MS } from '@/lib/query-config';
 
+/** Keep in sync with backend PUBLIC_LIST_DEFAULT_LIMIT / PUBLIC_LIST_MAX_LIMIT. */
+export const PUBLIC_LAUNDRY_LIST_PAGE_SIZE = 100;
+/** Safety cap: 10 × 100 = 1000 approved stores (directory must not silently truncate). */
+const PUBLIC_LAUNDRY_LIST_MAX_PAGES = 10;
+
+type ListPaginationMeta = {
+  total?: number;
+  has_next?: boolean;
+};
+
 export interface LaundryListItem {
   id: string;
   name: string;
@@ -79,15 +89,39 @@ export function parseLaundryListPayload(payload: unknown): LaundryListItem[] {
   return [];
 }
 
+/**
+ * Fetch the full public approved directory.
+ * Pages via limit/offset until exhausted — Near me / discover must not drop
+ * newly approved low-rated stores that fall past the first page.
+ */
 export async function listLaundries(city?: string): Promise<LaundryListItem[]> {
-  const { data } = await api.get<ApiEnvelope<LaundryListItem[] | LaundrySearchResponse>>(
-    '/laundries',
-    {
-      params: city ? { city } : undefined,
-      timeout: DISCOVERY_API_TIMEOUT_MS,
-    },
-  );
-  return parseLaundryListPayload(data.data);
+  const all: LaundryListItem[] = [];
+  let offset = 0;
+
+  for (let page = 0; page < PUBLIC_LAUNDRY_LIST_MAX_PAGES; page++) {
+    const { data } = await api.get<ApiEnvelope<LaundryListItem[] | LaundrySearchResponse>>(
+      '/laundries',
+      {
+        params: {
+          ...(city ? { city } : {}),
+          limit: PUBLIC_LAUNDRY_LIST_PAGE_SIZE,
+          offset,
+        },
+        timeout: DISCOVERY_API_TIMEOUT_MS,
+      },
+    );
+    const items = parseLaundryListPayload(data.data);
+    all.push(...items);
+
+    const pagination = data.meta?.pagination as ListPaginationMeta | undefined;
+    if (pagination?.has_next === false) break;
+    if (pagination?.total != null && all.length >= pagination.total) break;
+    if (items.length < PUBLIC_LAUNDRY_LIST_PAGE_SIZE) break;
+
+    offset += PUBLIC_LAUNDRY_LIST_PAGE_SIZE;
+  }
+
+  return all;
 }
 
 export async function searchLaundries(params: {

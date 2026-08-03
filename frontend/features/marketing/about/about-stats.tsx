@@ -1,3 +1,6 @@
+import { PRELAUNCH_STATS, PRELAUNCH_STAT_VALUE } from '@/lib/prelaunch-stats';
+import { cn } from '@/lib/utils';
+
 const STATS = [
   { value: '12+', label: 'Cities served' },
   { value: '150+', label: 'Partner stores' },
@@ -15,7 +18,16 @@ export function AboutStats() {
         <ul className="grid grid-cols-2 gap-6 sm:grid-cols-4 sm:gap-8">
           {STATS.map(({ value, label }) => (
             <li key={label} className="text-center">
-              <p className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">{value}</p>
+              <p
+                className={cn(
+                  'font-bold tracking-tight text-primary',
+                  PRELAUNCH_STATS
+                    ? 'text-xl text-primary/90 sm:text-2xl'
+                    : 'text-3xl sm:text-4xl',
+                )}
+              >
+                {PRELAUNCH_STATS ? PRELAUNCH_STAT_VALUE : value}
+              </p>
               <p className="mt-1 text-sm font-medium text-muted-foreground sm:text-base">{label}</p>
             </li>
           ))}

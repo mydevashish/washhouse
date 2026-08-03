@@ -428,3 +428,79 @@ class CatalogUnit(str, enum.Enum):
     panel = "panel"
     set = "set"
     pair = "pair"
+
+
+class BookingRequestStatus(str, enum.Enum):
+    new = "new"
+    reviewing = "reviewing"
+    assigned = "assigned"
+    contacted = "contacted"
+    confirmed = "confirmed"
+    converted_to_order = "converted_to_order"
+    declined = "declined"
+    expired = "expired"
+    cancelled = "cancelled"
+
+
+class BookingRequestSource(str, enum.Enum):
+    marketing_home = "marketing_home"
+    stores = "stores"
+    services = "services"
+    deep_link = "deep_link"
+    admin_created = "admin_created"
+    partner_created = "partner_created"
+
+
+class BookingRequestPriority(str, enum.Enum):
+    normal = "normal"
+    high = "high"
+    urgent = "urgent"
+
+
+class BookingRequestServiceType(str, enum.Enum):
+    wash_fold = "wash-fold"
+    wash_iron = "wash-iron"
+    premium_laundry = "premium-laundry"
+    dry_clean = "dry-clean"
+    shoe_cleaning = "shoe-cleaning"
+    curtain_cleaning = "curtain-cleaning"
+    other = "other"
+
+
+class BookingRequestPreferredTime(str, enum.Enum):
+    morning = "morning"
+    afternoon = "afternoon"
+    evening = "evening"
+    flexible = "flexible"
+
+
+class BookingRequestCreatedByRole(str, enum.Enum):
+    public = "public"
+    admin = "admin"
+    partner = "partner"
+
+
+class BookingRequestMessageVisibility(str, enum.Enum):
+    customer_facing = "customer_facing"
+    internal = "internal"
+
+
+class BookingRequestMessageAuthorRole(str, enum.Enum):
+    admin = "admin"
+    partner = "partner"
+    system = "system"
+
+
+class BookingRequestEventType(str, enum.Enum):
+    created = "created"
+    updated = "updated"
+    status_changed = "status_changed"
+    assigned = "assigned"
+    transferred = "transferred"
+    released = "released"
+    responded = "responded"
+    note_added = "note_added"
+    soft_deleted = "soft_deleted"
+    restored = "restored"
+    converted = "converted"
+    expired = "expired"

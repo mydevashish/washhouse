@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     admin,
     auth,
+    booking_requests,
     catalog,
     revenue_analytics,
     dispute_analytics,
@@ -99,4 +100,7 @@ api_router.include_router(complaints.router)
 api_router.include_router(complaint_photos.router)
 api_router.include_router(loyalty.router)
 api_router.include_router(marketing.router)
+api_router.include_router(booking_requests.public_router)
+api_router.include_router(booking_requests.admin_router)
+api_router.include_router(booking_requests.partner_router)
 api_router.include_router(ws_orders.router)

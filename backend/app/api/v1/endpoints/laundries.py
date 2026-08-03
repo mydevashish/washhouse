@@ -15,6 +15,7 @@ from app.schemas.laundry_price_list import PublicLaundryPriceListResponse
 from app.schemas.review import ReviewCreateRequest, ReviewResponse
 from app.schemas.storefront import PublicStorefrontResponse, StorefrontResponse
 from app.services.laundry_price_list_service import LaundryPriceListService
+from app.repositories.laundry import PUBLIC_LIST_DEFAULT_LIMIT, PUBLIC_LIST_MAX_LIMIT
 from app.services.laundry_service import LaundryService
 from app.services.review_service import ReviewService
 from app.services.storefront_service import StorefrontService
@@ -53,11 +54,23 @@ async def list_laundries(
     request: Request,
     session: SessionDep,
     city: str | None = None,
-    limit: int = Query(default=20, le=100),
+    limit: int = Query(default=PUBLIC_LIST_DEFAULT_LIMIT, ge=1, le=PUBLIC_LIST_MAX_LIMIT),
     offset: int = Query(default=0, ge=0),
 ) -> dict:
-    data = await LaundryService(session).list_public(city=city, limit=limit, offset=offset)
-    return success_envelope(data, request)
+    """Public approved laundry directory.
+
+    Ordered by rating desc. Default page size is 100 (was 20) so newly approved
+    low-rated stores are not silently truncated from `/stores` Near me.
+    Use `meta.pagination` + `offset` to load further pages when total > limit.
+    """
+    data, total = await LaundryService(session).list_public(
+        city=city, limit=limit, offset=offset,
+    )
+    return success_envelope(
+        data,
+        request,
+        pagination=pagination_meta(total=total, limit=limit, offset=offset),
+    )
 
 
 @router.get("/{laundry_id}")

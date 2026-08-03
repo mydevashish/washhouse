@@ -29,5 +29,6 @@ Per-feature specs. Template: `.cursor/templates/feature-spec.md`.
 | Walk-in WhatsApp updates | scaffolded | [offline-booking-whatsapp.md](offline-booking-whatsapp.md) | 5 |
 | Loyalty / referrals | planned | [loyalty-referrals.md](loyalty-referrals.md) | 6 |
 | Marketing homepage v2 | shipped | [marketing-homepage.md](marketing-homepage.md) | 6 |
+| Booking requests (Book Now inbox) | in-progress | [booking-requests.md](booking-requests.md) | launch / offline |
 
 Product index: [../product/INDEX.md](../product/INDEX.md)

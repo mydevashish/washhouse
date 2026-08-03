@@ -245,7 +245,7 @@ Last aligned with `seed_washhouse_catalog.py`, `pricing-product-images.ts`, `spe
 | `sweater` | yes | — | Catalog-only (not in pricing map yet) |
 | `tie` | yes | — | Catalog-only (not in pricing map yet) |
 | `top` | yes | — | Catalog-only (not in pricing map yet) |
-| `towel` | yes | — | Catalog-only (not in pricing map yet) |
+| `towel` | yes | — | Pricing: `household-bath-towel` |
 | `toy` | yes | — | Catalog-only (not in pricing map yet) |
 | `trolley` | yes | — | Catalog-only (not in pricing map yet) |
 | `trouser` | yes | — | Catalog-only (not in pricing map yet) |

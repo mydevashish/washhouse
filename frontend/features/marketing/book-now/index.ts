@@ -14,3 +14,12 @@ export { useBookNowStore } from '@/features/marketing/book-now/book-now-store';
 export { BookNowDialog } from '@/features/marketing/book-now/book-now-dialog';
 export { BookNowCta, BookNowLink } from '@/features/marketing/book-now/book-now-cta';
 export { BookPickupForm } from '@/features/marketing/book-now/book-pickup-form';
+export { BookPickupSuccess } from '@/features/marketing/book-now/book-pickup-success';
+export {
+  mapBookPickupToBookingRequest,
+  resolveBookingRequestSource,
+} from '@/features/marketing/book-now/map-book-pickup-to-request';
+export type {
+  BookPickupSubmitValues,
+  BookingRequestPublicSource,
+} from '@/features/marketing/book-now/map-book-pickup-to-request';

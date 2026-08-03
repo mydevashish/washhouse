@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -18,9 +19,14 @@ import {
   type BookNowPreferredTime,
   type BookNowServiceId,
 } from '@/features/marketing/book-now/book-now-constants';
-import { useSubmitContact } from '@/features/marketing/hooks/use-marketing';
+import { BookPickupSuccess } from '@/features/marketing/book-now/book-pickup-success';
+import {
+  mapBookPickupToBookingRequest,
+  resolveBookingRequestSource,
+} from '@/features/marketing/book-now/map-book-pickup-to-request';
 import { getMarketingSubmitErrorMessage } from '@/features/marketing/lib/marketing-form-errors';
 import { applyApiFieldErrors } from '@/lib/api-field-errors';
+import { submitBookingRequest } from '@/lib/api/booking-requests';
 import { cn } from '@/lib/utils';
 
 const serviceValues = BOOK_NOW_SERVICES.map((s) => s.value) as [
@@ -98,42 +104,36 @@ function FormField({ id, label, error, required, children, hint }: FieldProps) {
   );
 }
 
-function buildContactMessage(values: BookPickupFormValues): string {
-  const serviceLabel =
-    BOOK_NOW_SERVICES.find((s) => s.value === values.service)?.label ?? values.service;
-  const timeLabel =
-    BOOK_NOW_PREFERRED_TIMES.find((t) => t.value === values.preferredTime)?.label ??
-    values.preferredTime;
-  const notes = values.message?.trim();
-
-  const lines = [
-    'Book pickup request (marketing)',
-    `Service: ${serviceLabel}`,
-    `Preferred time: ${timeLabel}`,
-  ];
-  if (notes) {
-    lines.push(`Notes: ${notes}`);
-  }
-  return lines.join('\n');
-}
+type SuccessState = {
+  publicCode: string;
+  duplicateWarning: boolean;
+};
 
 type BookPickupFormProps = {
   defaultService?: BookNowServiceId;
-  onSuccess?: () => void;
+  /** Called when the user dismisses the success confirmation (Done). */
+  onDone?: () => void;
+  /** Lets the parent dialog sync title/description with confirmation state. */
+  onConfirmationChange?: (showing: boolean) => void;
   idPrefix?: string;
 };
 
 /**
- * Lightweight book-pickup lead form — POSTs to POST /marketing/contact
- * with subject `order-help` (reuses existing marketing contact schema).
+ * Book Now pickup form — POSTs to POST /booking-requests.
+ * On success shows confirmation with public_code (e.g. BR-K7M2QX).
+ * General contact form still uses POST /marketing/contact.
  */
 export function BookPickupForm({
   defaultService,
-  onSuccess,
+  onDone,
+  onConfirmationChange,
   idPrefix = 'book',
 }: BookPickupFormProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const submitContact = useSubmitContact();
+  const [success, setSuccess] = useState<SuccessState | null>(null);
+  const submitBooking = useMutation({
+    mutationFn: submitBookingRequest,
+  });
   const resolvedService = defaultService ?? BOOK_NOW_SERVICES[0]?.value ?? 'wash-fold';
 
   const form = useForm<BookPickupFormValues>({
@@ -151,7 +151,7 @@ export function BookPickupForm({
   const { errors, isSubmitting } = form.formState;
   const { setValue } = form;
   const errorCount = Object.keys(errors).length;
-  const isPending = isSubmitting || submitContact.isPending;
+  const isPending = isSubmitting || submitBooking.isPending;
 
   useEffect(() => {
     if (defaultService) {
@@ -162,13 +162,12 @@ export function BookPickupForm({
   const onSubmit = async (values: BookPickupFormValues) => {
     setSubmitError(null);
     try {
-      await submitContact.mutateAsync({
-        name: values.name,
-        phone: values.phone,
-        subject: 'order-help',
-        message: buildContactMessage(values),
-      });
-      toast.success("Pickup request sent — we'll call or WhatsApp you shortly.");
+      const payload = mapBookPickupToBookingRequest(values, resolveBookingRequestSource());
+      const result = await submitBooking.mutateAsync(payload);
+      const publicCode = result.data.public_code;
+      const duplicateWarning = Boolean(result.meta.duplicate_warning);
+      setSuccess({ publicCode, duplicateWarning });
+      onConfirmationChange?.(true);
       form.reset({
         name: '',
         phone: '',
@@ -176,7 +175,13 @@ export function BookPickupForm({
         preferredTime: 'flexible',
         message: '',
       });
-      onSuccess?.();
+      if (duplicateWarning) {
+        toast.success(
+          `Request ${publicCode} sent — we already have an open request and will follow up on both.`,
+        );
+      } else {
+        toast.success(`Pickup request ${publicCode} sent — we'll call or WhatsApp you shortly.`);
+      }
     } catch (error) {
       const hasFieldErrors = applyApiFieldErrors(error, form.setError);
       const message = getMarketingSubmitErrorMessage(
@@ -193,6 +198,20 @@ export function BookPickupForm({
   const onInvalid = () => {
     setSubmitError('Please fix the highlighted fields and try again.');
   };
+
+  if (success) {
+    return (
+      <BookPickupSuccess
+        publicCode={success.publicCode}
+        duplicateWarning={success.duplicateWarning}
+        onDone={() => {
+          setSuccess(null);
+          onConfirmationChange?.(false);
+          onDone?.();
+        }}
+      />
+    );
+  }
 
   return (
     <form

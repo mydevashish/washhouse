@@ -2,32 +2,19 @@
 
 from __future__ import annotations
 
-import re
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models.enums import MarketingContactSubject, MarketingInvestmentRange
+from app.utils.phone import (  # noqa: F401 — re-export for existing imports
+    INDIAN_PHONE_PATTERN,
+    normalize_phone,
+    validate_indian_phone,
+)
 
-INDIAN_PHONE_PATTERN = re.compile(r"^(\+91[6-9]\d{9}|\+?[1-9]\d{9,14})$")
 CONTACT_MESSAGE_MAX = 2000
 CONTACT_MESSAGE_MIN = 10
-
-
-def normalize_phone(value: str) -> str:
-    cleaned = re.sub(r"\s+", "", value.strip())
-    if re.fullmatch(r"^[6-9]\d{9}$", cleaned):
-        return f"+91{cleaned}"
-    if re.fullmatch(r"^91[6-9]\d{9}$", cleaned):
-        return f"+{cleaned}"
-    return cleaned
-
-
-def validate_indian_phone(value: str) -> str:
-    normalized = normalize_phone(value)
-    if not INDIAN_PHONE_PATTERN.fullmatch(normalized):
-        raise ValueError("Enter a valid Indian mobile number (e.g. +919876543210)")
-    return normalized
 
 
 class MarketingContactCreate(BaseModel):

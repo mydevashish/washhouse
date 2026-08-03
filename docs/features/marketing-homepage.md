@@ -1,7 +1,7 @@
 # Feature: Marketing homepage v2
 
 > Status: shipped  
-> Last updated: 2026-07-31 (FeaturedStoresTeaser: no GPS “near you” claim; Near me lives on `/stores`)  
+> Last updated: 2026-08-03 (Book Now → booking request confirmation with public_code)  
 > Route: `/`  
 > Related: [offline-booking-whatsapp.md](offline-booking-whatsapp.md), [customer-discovery.md](customer-discovery.md)
 
@@ -40,7 +40,7 @@ Render order from `frontend/features/marketing/home/marketing-homepage.tsx`:
 | 12 | Final CTA band | `FinalCtaBand` | `useMarketingBookingCtaMode` | **Online:** Book nearest (`/discover`) primary + WhatsApp/Call secondary; **Offline:** WhatsApp primary + Find stores (`/stores`) + Call; `data-marketing-bottom-cta` + `data-booking-mode` |
 | Shell | Mobile sticky CTA | `MobileStickyCta` | same booking flag as `useOnlineBookingEnabled` | **Online:** Book nearest primary → `/discover`; WhatsApp/Call icon secondary. **Offline:** Book Pickup primary (`useBookNowStore` → `BookNowDialog`) + WhatsApp secondary; no Stores/Call on the bar; hides when final CTA in view |
 | Shell | Floating FAB | `FloatingContactActions` | env contact config | WhatsApp + Find stores + Call; when sticky visible: hide WhatsApp always; hide Call only in **online** mode (offline sticky has no Call — FAB keeps Call + Find stores); full hide on final CTA / footer social |
-| Shell | Book Now dialog | `BookNowDialog` | `POST /marketing/contact` | Shared modal; `?book=1` deep link; name/phone/service/time → `order-help` lead |
+| Shell | Book Now dialog | `BookNowDialog` | `POST /booking-requests` | Shared modal; `?book=1` deep link; name/phone/service/time → booking request; confirmation shows `public_code` + WhatsApp/Call |
 | Shell | Footer | `MarketingFooter` | static groups | Company, Partner, Legal, Support links |
 
 ### Book Now dialog
@@ -51,12 +51,13 @@ Primary marketing **Book Now** / **Book pickup** CTAs open a shared Radix Dialog
 | ----- | ---- |
 | `useBookNowStore` | Zustand open/close + optional service pre-select |
 | `BookNowCta` / `BookNowLink` | Buttons/links that open the dialog (no full-page nav) |
-| `BookPickupForm` | RHF + Zod; POSTs via `useSubmitContact()` with subject `order-help` |
-| `BookNowDialog` | Focus trap, Esc, `aria-labelledby`, mobile full-viewport, mounted in `MarketingShellOverlays` |
-| `/?book=1` | Deep link opens the same dialog; closing strips the query param |
-| `/stores` | Slim partner directory (name + city + Call Store / Message Store / Get Location) with optional **Near me** (browser geolocation → client haversine when list items include lat/lng); navbar **Stores** and FAB **Find stores** navigate here. No per-store price/rating compare UX; cover/name links to `/discover/[id]` on **`lg+` only** (temp: phone/tablet stay on page); contact buttons stay separate. |
+| `BookPickupForm` | RHF + Zod; maps fields via `mapBookPickupToBookingRequest()` → `submitBookingRequest()` → `POST /booking-requests` |
+| `BookPickupSuccess` | Confirmation panel: `public_code` (e.g. `BR-K7M2QX`), what happens next, WhatsApp / Call fallbacks; **Done** closes dialog |
+| `BookNowDialog` | Focus trap, Esc, `aria-labelledby`, mobile full-viewport, mounted in `MarketingShellOverlays`; title switches on confirmation |
+| `/?book=1` | Deep link opens the same dialog (`source: deep_link`); closing strips the query param |
+| `/stores` | Slim partner directory (name + city + Call Store / Message Store / Get Location) with optional **Near me** (browser geolocation → client haversine when list items include lat/lng); navbar **Stores** and FAB **Find stores** navigate here. No per-store price/rating compare UX; cover/name do not link to `/discover/[id]` (temp — see `StoreNavSurface`); contact buttons stay separate. |
 
-Form fields map into the existing contact API message body (service + preferred time + notes). No parallel book endpoint.
+Form fields map to booking-request API fields (`customer_name`, `phone`, `service_type`, `preferred_time_window`, `notes`, `source`). General `/contact` still uses `POST /marketing/contact`.
 
 ### Hero carousel slides
 
@@ -140,7 +141,7 @@ Public marketing KPIs for stats band.
 }
 ```
 
-Frontend falls back to static values in `stats-fallback.ts` when API errors or returns empty.
+Frontend maps API values in `stats-fallback.ts`. While `PRELAUNCH_STATS` / `NEXT_PUBLIC_PRELAUNCH_STATS` is on (default), the stats band shows **Coming Soon** per KPI (labels unchanged) and skips the stats fetch. Flip the flag to `false` at launch to show live API numbers; on API error the fallback uses zeros rather than invented marketing counts.
 
 ### `GET /testimonials`
 
@@ -206,7 +207,8 @@ Regenerate marketing heroes: `python scripts/download-marketing-heroes.py` (sour
 | `useMarketingStats()` | `features/marketing/hooks/use-marketing.ts` | `GET /marketing/stats` |
 | `useMarketingTestimonials()` | same | `GET /marketing/testimonials` |
 | `useSubmitContact()` | same | `POST /marketing/contact` |
-| `getMarketingStats()` etc. | `lib/api/marketing.ts` | Zod-validated API client |
+| `submitBookingRequest()` | `lib/api/booking-requests.ts` | `POST /booking-requests` (Book Now) |
+| `getMarketingStats()` etc. | `lib/api/marketing.ts` | Zod-validated marketing API client |
 
 ## Automated tests
 
@@ -219,6 +221,8 @@ Regenerate marketing heroes: `python scripts/download-marketing-heroes.py` (sour
 | Jest unit | `frontend/features/marketing/home/home-hero.test.tsx` | Mobile CTA placement |
 | Jest unit | `frontend/features/marketing/lib/use-marketing-booking-cta-mode.test.tsx` | Online/offline CTA mode + optimistic env while loading |
 | Jest unit | `frontend/features/discover/marketplace/fade-in.test.tsx` | FadeIn force-visible fallback + reduced-motion plain markup |
+| Jest unit | `frontend/features/marketing/book-now/map-book-pickup-to-request.test.ts` | Form → API field mapping + source resolution |
+| Jest unit | `frontend/features/marketing/book-now/book-pickup-form.test.tsx` | Submit calls booking-requests + shows public_code confirmation |
 | Backend API | `backend/tests/api/test_marketing.py` | Contact, franchise, stats, testimonials |
 
 ```bash
@@ -273,7 +277,7 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 - [ ] Navbar hamburger opens/closes; links navigate; body scroll locked when open
 - [ ] All section headings visible; no horizontal scroll
 - [ ] Navbar **Book Now** opens pickup dialog (no `/stores` navigation); Esc / close restores focus
-- [ ] `/?book=1` deep-links the same dialog; submit success toast + dialog closes
+- [ ] `/?book=1` deep-links the same dialog; submit shows confirmation with `public_code` (e.g. `BR-…`); Done closes; WhatsApp/Call still available
 - [ ] `/contact`: empty submit shows field errors; invalid phone rejected; valid submit shows success toast
 - [ ] Contact aside **Book a pickup** opens the same dialog
 - [ ] No console errors on `/` and `/contact`
@@ -324,3 +328,4 @@ Run on **phone (390×844)**, **tablet (768×1024)**, and **desktop (1280×800)**
 1. Bring `/` first-load JS within 180 kB budget (route-specific Providers)
 2. Add theme toggle to marketing navbar for explicit dark-mode QA on marketing-only sessions
 3. Run Lighthouse mobile on staging URL in CI
+4. **Booking Requests Slice 3:** Book Now uses `POST /booking-requests` with in-dialog confirmation (`public_code` + WhatsApp/Call). General contact still uses `POST /marketing/contact`. Admin/partner inbox UI remains — see [booking-requests.md](booking-requests.md).

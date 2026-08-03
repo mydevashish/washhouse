@@ -20,6 +20,10 @@ test.describe('a11y: homepage stats band', () => {
       const label = statsSection.getByText('Happy Customers');
       await expect(label).toBeVisible({ timeout: 10_000 });
 
+      // Pre-launch: KPI cells show “Coming Soon” (not invented live counts).
+      await expect(statsSection.getByText('Coming Soon').first()).toBeVisible();
+      await expect(statsSection.getByText(/100\+|98%/)).toHaveCount(0);
+
       const card = statsSection.locator('li > div').first();
       await expect(card).toHaveClass(/bg-brand-900/);
 

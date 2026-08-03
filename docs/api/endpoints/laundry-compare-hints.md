@@ -6,6 +6,17 @@ Public laundry list/search payloads include lightweight owner-set **compare hint
 
 **Base:** `/api/v1/laundries`, `/api/v1/laundries/search`
 
+## List pagination
+
+| Param | Default | Max | Notes |
+| ----- | ------- | --- | ----- |
+| `limit` | **100** | 100 | Raised from 20 so directory / Near me does not drop newly approved low-rated stores |
+| `offset` | 0 | — | Use with `meta.pagination.has_next` / `total` for further pages |
+
+`data` remains a **JSON array** of list items (backward compatible). Totals live on `meta.pagination`.
+
+Redis list keys: `laundries:list:v4:{city}:{limit}:{offset}` (payload `{items, total}`). Invalidate via `invalidate_laundry_discovery_cache()` on approve / reject / price changes (also clears legacy v1–v3 prefixes).
+
 ## Extra fields on each list item
 
 | Field | Meaning |
@@ -18,7 +29,7 @@ Rules:
 
 - Only **owner-set**, `is_offered=true` rows — **never** platform suggested defaults
 - Disabled / missing catalog overrides → fields are `null` (cards omit “from ₹” or show “Prices on store page”)
-- List/search Redis keys: `laundries:list:v2:*`, `laundries:search:v2:*` — invalidated when partner prices change or laundry is approved/rejected
+- List/search Redis keys: `laundries:list:v4:*` (+ legacy v1–v3 cleared on invalidate), `laundries:search:v3:*` — invalidated when partner prices change or laundry is approved/rejected
 
 ## Frontend
 

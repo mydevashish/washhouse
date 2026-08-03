@@ -6,6 +6,8 @@ import { motion, useInView, useReducedMotion } from 'framer-motion';
 import { FadeIn, FadeInItem } from '@/features/discover/marketplace/fade-in';
 import { Section } from '@/features/discover/marketplace/section';
 import { useMounted } from '@/lib/hooks/use-mounted';
+import { PRELAUNCH_STATS, PRELAUNCH_STAT_VALUE } from '@/lib/prelaunch-stats';
+import { cn } from '@/lib/utils';
 
 const STATS = [
   { value: 10000, suffix: '+', label: 'Orders completed' },
@@ -13,6 +15,15 @@ const STATS = [
   { value: 50, suffix: '+', label: 'Cities' },
   { value: 98, suffix: '%', label: 'Customer satisfaction' },
 ] as const;
+
+function statValueClassName(prelaunch: boolean) {
+  return cn(
+    'font-bold tracking-tight text-on-hero',
+    prelaunch
+      ? 'text-lg text-on-hero/90 sm:text-xl lg:text-2xl'
+      : 'text-2xl tabular-nums sm:text-3xl lg:text-4xl',
+  );
+}
 
 function AnimatedStat({
   value,
@@ -30,6 +41,7 @@ function AnimatedStat({
   const [display, setDisplay] = useState(0);
 
   useEffect(() => {
+    if (PRELAUNCH_STATS) return;
     if (!mounted) return;
     if (!inView || reduce) {
       setDisplay(value);
@@ -50,9 +62,13 @@ function AnimatedStat({
 
   return (
     <div ref={ref} className="text-center">
-      <p className="text-2xl font-bold tabular-nums text-on-hero sm:text-3xl lg:text-4xl" aria-live="polite">
-        {mounted ? display.toLocaleString('en-IN') : '0'}
-        {suffix}
+      <p
+        className={statValueClassName(PRELAUNCH_STATS)}
+        aria-live={PRELAUNCH_STATS ? undefined : 'polite'}
+      >
+        {PRELAUNCH_STATS
+          ? PRELAUNCH_STAT_VALUE
+          : `${mounted ? display.toLocaleString('en-IN') : '0'}${suffix}`}
       </p>
       <p className="mt-1.5 text-sm font-medium text-on-hero-muted">{label}</p>
     </div>

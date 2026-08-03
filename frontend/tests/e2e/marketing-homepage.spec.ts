@@ -639,12 +639,12 @@ test.describe('marketing Book Now dialog', () => {
     }
   });
 
-  test('Book Now submit happy path posts contact lead and closes dialog', async ({
+  test('Book Now submit happy path posts booking request and shows confirmation code', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
 
-    await page.route('**/api/v1/marketing/contact', async (route) => {
+    await page.route('**/api/v1/booking-requests', async (route) => {
       if (route.request().method() !== 'POST') {
         await route.continue();
         return;
@@ -653,8 +653,12 @@ test.describe('marketing Book Now dialog', () => {
         status: 201,
         contentType: 'application/json',
         body: JSON.stringify({
-          data: { id: '11111111-1111-4111-8111-111111111111', status: 'received' },
-          meta: {},
+          data: {
+            id: '11111111-1111-4111-8111-111111111111',
+            public_code: 'BR-K7M2QX',
+            status: 'new',
+          },
+          meta: { duplicate_warning: false, open_request_ids: [] },
         }),
       });
     });
@@ -675,23 +679,32 @@ test.describe('marketing Book Now dialog', () => {
 
     const requestPromise = page.waitForRequest(
       (req) =>
-        req.url().includes('/api/v1/marketing/contact') && req.method() === 'POST',
+        req.url().includes('/api/v1/booking-requests') && req.method() === 'POST',
     );
 
     await dialog.getByRole('button', { name: /schedule pickup/i }).click();
 
     const request = await requestPromise;
     const body = request.postDataJSON() as {
-      name: string;
+      customer_name: string;
       phone: string;
-      subject: string;
-      message: string;
+      service_type: string;
+      preferred_time_window: string;
+      notes?: string;
+      source?: string;
     };
-    expect(body.name).toBe('Playwright Tester');
-    expect(body.subject).toBe('order-help');
-    expect(body.message).toMatch(/Wash & Fold/i);
-    expect(body.message).toMatch(/Morning/i);
+    expect(body.customer_name).toBe('Playwright Tester');
+    expect(body.service_type).toBe('wash-fold');
+    expect(body.preferred_time_window).toBe('morning');
+    expect(body.notes).toMatch(/Near metro/i);
+    expect(body.source).toBe('marketing_home');
 
+    await expect(dialog.getByTestId('book-pickup-success')).toBeVisible({ timeout: 10_000 });
+    await expect(dialog.getByTestId('book-pickup-public-code')).toHaveTextContent('BR-K7M2QX');
+    await expect(dialog.getByRole('link', { name: /whatsapp us/i })).toBeVisible();
+    await expect(dialog.getByRole('link', { name: /call us/i })).toBeVisible();
+
+    await dialog.getByRole('button', { name: /^done$/i }).click();
     await expect(dialog).toBeHidden({ timeout: 10_000 });
   });
 });
@@ -756,22 +769,11 @@ test.describe('marketing stores directory', () => {
       // City may stand alone or appear as "X.X km · City" when Near Me is active
       await expect(firstCard.getByText(new RegExp(city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeVisible();
 
-      // Cover/name → storefront on lg+ only (temp: phone/tablet stay on page); contact stays separate
-      const discoverLink = firstCard.locator('a[href*="/discover/"]').first();
-      const viewportWidth = page.viewportSize()?.width ?? 0;
-      if (viewportWidth >= 1024) {
-        await expect(discoverLink).toBeVisible();
-        await expect(discoverLink).toHaveAttribute('href', /\/discover\/.+/);
-        await expect(
-          firstCard.getByRole('link', { name: new RegExp(`open ${storeName}`, 'i') }),
-        ).toBeVisible();
-      } else {
-        // TODO: re-enable store navigation on mobile when ready
-        await expect(discoverLink).toBeHidden();
-        await expect(
-          firstCard.getByRole('link', { name: new RegExp(`open ${storeName}`, 'i') }),
-        ).toHaveCount(0);
-      }
+      // TODO: re-enable store navigation when ready — cover/name must not link at any breakpoint
+      await expect(firstCard.locator('a[href*="/discover/"]')).toHaveCount(0);
+      await expect(
+        firstCard.getByRole('link', { name: new RegExp(`open ${storeName}`, 'i') }),
+      ).toHaveCount(0);
 
       // Cover image is the visual plane
       await expect(firstCard.locator('img').first()).toBeVisible();

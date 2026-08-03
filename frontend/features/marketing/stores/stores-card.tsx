@@ -36,7 +36,7 @@ type StoresCardProps = {
 
 /**
  * Marketing directory card — cover, name, location, Call / Message / Get Location.
- * Cover + name link to the storefront on `lg+` only (temp gate — see StoreNavSurface);
+ * Cover + name do not navigate (temp gate — see StoreNavSurface);
  * contact info is fetched only when the card enters the viewport (lazy; see useCardInView).
  * Contact buttons stay separate.
  */

@@ -4,37 +4,50 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import asc, desc, select
+from sqlalchemy import asc, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.enums import LaundryStatus
 from app.models.laundry import Laundry, LaundryService
 
+# Directory / discovery page size. Keep in sync with FE PUBLIC_LAUNDRY_LIST_PAGE_SIZE.
+PUBLIC_LIST_DEFAULT_LIMIT = 100
+PUBLIC_LIST_MAX_LIMIT = 100
+
 
 class LaundryRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    def _approved_filters(self, *, city: str | None = None):
+        clauses = [
+            Laundry.deleted_at.is_(None),
+            Laundry.status == LaundryStatus.approved,
+        ]
+        if city:
+            clauses.append(Laundry.city.ilike(f"%{city.strip()}%"))
+        return clauses
+
+    async def count_approved(self, *, city: str | None = None) -> int:
+        q = select(func.count()).select_from(Laundry).where(*self._approved_filters(city=city))
+        result = await self._session.execute(q)
+        return int(result.scalar_one())
+
     async def list_approved(
         self,
         *,
         city: str | None = None,
-        limit: int = 20,
+        limit: int = PUBLIC_LIST_DEFAULT_LIMIT,
         offset: int = 0,
     ) -> list[Laundry]:
         q = (
             select(Laundry)
-            .where(
-                Laundry.deleted_at.is_(None),
-                Laundry.status == LaundryStatus.approved,
-            )
+            .where(*self._approved_filters(city=city))
             .order_by(desc(Laundry.avg_rating), asc(Laundry.name))
             .limit(limit)
             .offset(offset)
         )
-        if city:
-            q = q.where(Laundry.city.ilike(f"%{city.strip()}%"))
         result = await self._session.execute(q)
         return list(result.scalars().all())
 

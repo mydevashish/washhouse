@@ -18,6 +18,7 @@ import {
   AlertOctagon,
   Wallet,
   Star,
+  CalendarClock,
 } from 'lucide-react';
 
 import { isPathNavLinkActive } from '@/lib/navigation/nav-active';
@@ -26,7 +27,7 @@ export type AdminNavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
-  badgeKey?: 'approvals' | 'complaints' | 'inventoryChanges' | 'fraudAlerts';
+  badgeKey?: 'approvals' | 'complaints' | 'inventoryChanges' | 'fraudAlerts' | 'bookingRequests';
 };
 
 export type AdminNavSection = {
@@ -51,6 +52,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       { href: '/admin/laundries', label: 'Laundries', icon: Store },
       { href: '/admin/customers', label: 'Customers', icon: Users },
       { href: '/admin/orders', label: 'Orders', icon: Package },
+      {
+        href: '/admin/booking-requests',
+        label: 'Booking requests',
+        icon: CalendarClock,
+        badgeKey: 'bookingRequests',
+      },
     ],
   },
   {

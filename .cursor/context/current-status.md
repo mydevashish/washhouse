@@ -2,7 +2,7 @@
 
 > Updated whenever a major milestone shifts. The source of truth for "where are we?".
 
-**Last updated:** 2026-07-13
+**Last updated:** 2026-08-03
 
 ## Phase
 
@@ -17,6 +17,7 @@
 ## Currently shipping
 
 - Customer booking + tracking UI, partner/admin dashboards, review + commission APIs
+- **Booking Requests Slice 6 polish** (2026-08-03): create-time duplicate phone banner; admin `suggest-laundries` + assign chips; notify stubs (admin on public create, partner on assign); ops runbook. Convert-to-order + expiry job remain next.
 
 ## Blocked / Waiting
 
@@ -37,4 +38,4 @@
 
 ## Active feature flags
 
-- (none yet)
+- `PRELAUNCH_STATS` / `NEXT_PUBLIC_PRELAUNCH_STATS` (default `true`) — marketing/discover/about KPI bands show “Coming Soon” instead of invented live counts; set `false` at launch.

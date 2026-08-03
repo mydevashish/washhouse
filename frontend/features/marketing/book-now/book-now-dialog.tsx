@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 import {
@@ -43,6 +43,7 @@ export function BookNowDialog() {
   const defaultService = useBookNowStore((s) => s.defaultService);
   const setOpen = useBookNowStore((s) => s.setOpen);
   const close = useBookNowStore((s) => s.close);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -66,9 +67,11 @@ export function BookNowDialog() {
 
   const handleOpenChange = (open: boolean) => {
     if (open) {
+      setShowConfirmation(false);
       setOpen(true);
       return;
     }
+    setShowConfirmation(false);
     close();
     if (readBookQuery()) {
       router.replace(stripBookQuery(pathname), { scroll: false });
@@ -90,17 +93,21 @@ export function BookNowDialog() {
         )}
       >
         <DialogHeader className="w-full shrink-0 text-left">
-          <DialogTitle>Schedule a pickup</DialogTitle>
+          <DialogTitle>
+            {showConfirmation ? 'Request received' : 'Schedule a pickup'}
+          </DialogTitle>
           <DialogDescription>
-            Leave your details and we&apos;ll call or WhatsApp you to confirm a free pickup. No
-            account needed.
+            {showConfirmation
+              ? 'Keep your request code handy for call or WhatsApp follow-up.'
+              : "Leave your details and we'll call or WhatsApp you to confirm a free pickup. No account needed."}
           </DialogDescription>
         </DialogHeader>
 
         <BookPickupForm
-          key={defaultService ?? 'default'}
+          key={`${isOpen ? 'open' : 'closed'}-${defaultService ?? 'default'}`}
           defaultService={defaultService}
-          onSuccess={() => handleOpenChange(false)}
+          onConfirmationChange={setShowConfirmation}
+          onDone={() => handleOpenChange(false)}
           idPrefix="book-now"
         />
       </DialogContent>

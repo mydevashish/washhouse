@@ -1,6 +1,11 @@
 """ORM models — import all for Alembic autogenerate."""
 
 from app.models.announcement import Announcement, AnnouncementEvent
+from app.models.booking_request import (
+    BookingRequest,
+    BookingRequestEvent,
+    BookingRequestMessage,
+)
 from app.models.customer_experience import (
     CallbackRequest,
     CustomerQuestion,
@@ -59,6 +64,9 @@ __all__ = [
     "Announcement",
     "AnnouncementEvent",
     "AuditLog",
+    "BookingRequest",
+    "BookingRequestEvent",
+    "BookingRequestMessage",
     "CallbackRequest",
     "Complaint",
     "CustomerQuestion",

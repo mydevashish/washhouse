@@ -7,6 +7,7 @@ WashHouse sends email for:
 | Flow | Behavior when SMTP unset |
 | ---- | ------------------------ |
 | Marketing contact / franchise | Lead **saved to DB**; support notify skipped (warning log) |
+| Booking request (Book Now) | Request **saved**; admin in-app + support email best-effort; WhatsApp stub |
 | Forgot password | **503** `EMAIL_NOT_CONFIGURED` unless `OTP_DEBUG=true` (local) |
 | Announcement `channel_email` | Still stubbed (logs only; bulk sender TBD) |
 

@@ -13,14 +13,15 @@ from app.core.exceptions import NotFoundError, ValidationError
 from app.models.enums import LaundryStatus, UserRole
 from app.models.laundry import Laundry
 from app.repositories.catalog import CatalogRepository, LaundryComparePriceHints
-from app.repositories.laundry import LaundryRepository
+from app.repositories.laundry import PUBLIC_LIST_DEFAULT_LIMIT, LaundryRepository
 from app.repositories.laundry_search import LaundrySearchRepository, SearchSort
 from app.repositories.user import UserRepository
 from app.schemas.laundry import LaundryListItem, LaundrySearchItem, LaundrySearchResult
 from app.utils.money import format_inr, inr_to_paise
 
 # v3 includes optional latitude/longitude for client near-me sort.
-_LIST_CACHE_PREFIX = "laundries:list:v3:"
+# v4: cache payload is {items, total} so clients can page without silent truncation.
+_LIST_CACHE_PREFIX = "laundries:list:v4:"
 _SEARCH_CACHE_PREFIX = "laundries:search:v3:"
 
 
@@ -28,7 +29,8 @@ async def invalidate_laundry_discovery_cache() -> None:
     """Drop list/search caches after partner prices (or laundry status) change."""
     await cache_delete_pattern(_LIST_CACHE_PREFIX)
     await cache_delete_pattern(_SEARCH_CACHE_PREFIX)
-    # Legacy keys (compare hints v2, pre-hints v1)
+    # Legacy keys (compare hints v2/v3, pre-hints v1)
+    await cache_delete_pattern("laundries:list:v3:")
     await cache_delete_pattern("laundries:list:v2:")
     await cache_delete_pattern("laundries:search:v2:")
     await cache_delete_pattern("laundries:list:v1:")
@@ -97,14 +99,17 @@ class LaundryService:
         self,
         *,
         city: str | None = None,
-        limit: int = 20,
+        limit: int = PUBLIC_LIST_DEFAULT_LIMIT,
         offset: int = 0,
-    ) -> list[LaundryListItem]:
+    ) -> tuple[list[LaundryListItem], int]:
+        """Return approved laundry page + total count (for pagination meta)."""
         cache_key = f"{_LIST_CACHE_PREFIX}{city or ''}:{limit}:{offset}"
         cached = await cache_get_json(cache_key)
         if cached is not None:
-            return [LaundryListItem.model_validate(row) for row in cached]
+            items = [LaundryListItem.model_validate(row) for row in cached["items"]]
+            return items, int(cached["total"])
 
+        total = await self._laundries.count_approved(city=city)
         rows = await self._laundries.list_approved(city=city, limit=limit, offset=offset)
         hints = await self._hints_map([r.id for r in rows])
         items = [self._to_list_item(r, hints.get(r.id)) for r in rows]
@@ -113,10 +118,13 @@ class LaundryService:
         if items:
             await cache_set_json(
                 cache_key,
-                [item.model_dump(mode="json") for item in items],
+                {
+                    "items": [item.model_dump(mode="json") for item in items],
+                    "total": total,
+                },
                 ttl_seconds=settings.CACHE_LAUNDRIES_LIST_TTL_SEC,
             )
-        return items
+        return items, total
 
     async def search_public(
         self,

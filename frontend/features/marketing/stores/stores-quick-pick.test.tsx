@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 import type { EnrichedLaundry } from '@/features/discover/lib/laundry-meta';
@@ -158,7 +158,7 @@ describe('QuickPickSpotlight', () => {
     mockGetContactInfo.mockResolvedValue({ ...CONTACT_WITH_ACTIONS });
   });
 
-  it('renders place line, from-price, rating, desktop-only discover link, and contact actions', async () => {
+  it('renders place line, from-price, rating, no discover link, and contact actions', async () => {
     withQuery(<QuickPickSpotlight laundry={mockLaundry} />);
 
     expect(
@@ -170,10 +170,13 @@ describe('QuickPickSpotlight', () => {
     expect(screen.getByText('From ₹149')).toBeInTheDocument();
     expect(screen.getByText('4.8')).toBeInTheDocument();
 
-    // TODO: re-enable store navigation on mobile when ready — link is CSS-gated (`max-lg:hidden`)
-    const discoverLink = screen.getByRole('link', { name: /open sparkle clean hub/i });
-    expect(discoverLink).toHaveAttribute('href', `/discover/${mockLaundry.id}`);
-    expect(discoverLink).toHaveClass('max-lg:hidden');
+    // TODO: re-enable store navigation when ready — cover/name must not link at any breakpoint
+    expect(
+      screen.queryByRole('link', { name: /open sparkle clean hub/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      document.querySelector(`a[href="/discover/${mockLaundry.id}"]`),
+    ).toBeNull();
 
     await waitFor(() => {
       expect(
@@ -196,16 +199,6 @@ describe('QuickPickSpotlight', () => {
     ).toHaveTextContent('Get Location');
   });
 
-  it('invokes onNavigate when the desktop store cover link is clicked', () => {
-    const onNavigate = jest.fn();
-    withQuery(
-      <QuickPickSpotlight laundry={mockLaundry} onNavigate={onNavigate} />,
-    );
-
-    fireEvent.click(screen.getByRole('link', { name: /open sparkle clean hub/i }));
-    expect(onNavigate).toHaveBeenCalledTimes(1);
-  });
-
   it('hides rating badge when rating is missing', () => {
     withQuery(
       <QuickPickSpotlight laundry={{ ...mockLaundry, avg_rating: '' }} />,
@@ -222,7 +215,7 @@ describe('QuickPickCompactRow', () => {
     mockGetContactInfo.mockResolvedValue({ ...CONTACT_WITH_ACTIONS });
   });
 
-  it('renders name, city + distance, desktop-only discover link, and contact actions', async () => {
+  it('renders name, city + distance, no discover link, and contact actions', async () => {
     withQuery(
       <ul>
         <QuickPickCompactRow laundry={mockLaundry} index={0} />
@@ -233,10 +226,13 @@ describe('QuickPickCompactRow', () => {
       screen.getByRole('listitem', { name: /sparkle clean hub, bengaluru/i }),
     ).toBeInTheDocument();
 
-    // TODO: re-enable store navigation on mobile when ready — link is CSS-gated (`max-lg:hidden`)
-    const discoverLink = screen.getByRole('link', { name: /open sparkle clean hub/i });
-    expect(discoverLink).toHaveAttribute('href', `/discover/${mockLaundry.id}`);
-    expect(discoverLink).toHaveClass('max-lg:hidden');
+    // TODO: re-enable store navigation when ready — cover/name must not link at any breakpoint
+    expect(
+      screen.queryByRole('link', { name: /open sparkle clean hub/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      document.querySelector(`a[href="/discover/${mockLaundry.id}"]`),
+    ).toBeNull();
 
     expect(screen.getByText('Sparkle Clean Hub')).toBeInTheDocument();
     expect(screen.getByText('2.4 km')).toBeInTheDocument();
@@ -265,22 +261,6 @@ describe('QuickPickCompactRow', () => {
     expect(
       screen.getByRole('button', { name: /get location for sparkle clean hub/i }),
     ).toHaveTextContent('Get Location');
-  });
-
-  it('invokes onNavigate when the desktop thumb/name link is clicked', () => {
-    const onNavigate = jest.fn();
-    withQuery(
-      <ul>
-        <QuickPickCompactRow
-          laundry={mockLaundry}
-          index={0}
-          onNavigate={onNavigate}
-        />
-      </ul>,
-    );
-
-    fireEvent.click(screen.getByRole('link', { name: /open sparkle clean hub/i }));
-    expect(onNavigate).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -9,6 +9,7 @@ import { useMarketingStats } from '@/features/marketing/hooks/use-marketing';
 import type { MarketingStat } from '@/features/marketing/home/stats-fallback';
 import { MARKETING_STATS_FALLBACK } from '@/features/marketing/home/stats-fallback';
 import { WASHHOUSE_BRAND_NAME } from '@/components/brand/washhouse-logo';
+import { PRELAUNCH_STATS } from '@/lib/prelaunch-stats';
 import { cn } from '@/lib/utils';
 
 export type { MarketingStat } from '@/features/marketing/home/stats-fallback';
@@ -47,7 +48,14 @@ function StatsGrid({
             >
               <Icon className="h-5 w-5" />
             </div>
-            <p className="text-xl font-bold tabular-nums tracking-tight text-on-hero sm:text-2xl lg:text-3xl">
+            <p
+              className={cn(
+                'font-bold tracking-tight text-on-hero',
+                PRELAUNCH_STATS
+                  ? 'text-base text-on-hero/90 sm:text-lg lg:text-xl'
+                  : 'text-xl tabular-nums sm:text-2xl lg:text-3xl',
+              )}
+            >
               {value}
             </p>
             <p className="mt-1.5 text-xs font-medium leading-snug text-on-hero-muted sm:text-sm">

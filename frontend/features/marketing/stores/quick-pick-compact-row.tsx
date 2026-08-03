@@ -30,7 +30,7 @@ type QuickPickCompactRowProps = {
 
 /**
  * Dense secondary store row for the quick-pick sheet.
- * Thumb + name link to the storefront on `lg+` only (temp gate — see StoreNavSurface);
+ * Thumb + name do not navigate (temp gate — see StoreNavSurface);
  * Call / Message / Get Location stay separate.
  */
 export function QuickPickCompactRow({

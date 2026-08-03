@@ -7,6 +7,8 @@ import { useState } from 'react';
 
 import { GlobalNavbar } from '@/components/layout/global-navbar';
 import { AnnouncementBannerStack } from '@/components/announcements/announcement-banner';
+import { usePartnerBookingRequestsBadge } from '@/features/partner/booking-requests/hooks';
+import { partnerBookingRequestsBadgeCount } from '@/features/partner/booking-requests/lib/partner-booking-status';
 import { partnerBadges } from '@/features/partner/lib/partner-derive';
 import {
   PARTNER_NAV_SECTIONS,
@@ -27,7 +29,12 @@ function PartnerSidebar({
   onNavigate,
 }: {
   pathname: string;
-  badges: { orders: number; pickups: number; notifications: number };
+  badges: {
+    orders: number;
+    pickups: number;
+    notifications: number;
+    bookingRequests: number;
+  };
   laundryName?: string;
   userName?: string;
   onNavigate?: () => void;
@@ -56,7 +63,9 @@ function PartnerSidebar({
                       ? badges.pickups
                       : badgeKey === 'notifications'
                         ? badges.notifications
-                        : 0;
+                        : badgeKey === 'bookingRequests'
+                          ? badges.bookingRequests
+                          : 0;
                 return (
                   <li key={href}>
                     <Link
@@ -102,9 +111,19 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
   const mounted = useMounted();
   // Badges from analytics only — avoid polling full orders list on every partner route.
   const analyticsQ = usePartnerAnalytics();
-  const badges = mounted
+  const bookingBadgeQ = usePartnerBookingRequestsBadge();
+  const baseBadges = mounted
     ? partnerBadges(analyticsQ.data, undefined, Date.now())
     : { orders: 0, pickups: 0, notifications: 0 };
+  const badges = {
+    ...baseBadges,
+    bookingRequests: mounted
+      ? partnerBookingRequestsBadgeCount({
+          assignedTotal: bookingBadgeQ.data?.total,
+          inbox: bookingBadgeQ.data?.inbox,
+        })
+      : 0,
+  };
   const laundryName = mounted ? analyticsQ.data?.laundry_name : undefined;
   const userName = mounted ? user?.full_name : undefined;
 

@@ -19,6 +19,15 @@
 
 ## History
 
+### 2026-08-03 — Booking requests Slice 2 authz
+- **Source:** internal review (feature implementation)
+- **Severity:** info
+- **Affected:** `POST /booking-requests`, `/admin/booking-requests/*`, `/partner/booking-requests/*`
+- **Description:** Public create never accepts client `laundry_id` (`extra=forbid`). Partner reads/writes enforced by assigned laundry scope (foreign ids → `404`). Assign/transfer admin-only; partner may release only. Phone timeline partner-scoped to current/historical assignment via events. Full phone E.164 returned to staff (ops need WhatsApp/call).
+- **Fix:** Service-layer checks in `BookingRequestService`; covered by `tests/api/test_booking_requests.py`
+- **Verification:** pytest authz/IDOR/assign/phone matrix green
+- **Disclosed:** internal
+
 ### 2026-07-28 — Prod-readiness security checklist (auth / IDOR / payments / CORS / secrets)
 
 - **Source:** internal review (security-reviewer + qa-engineer)

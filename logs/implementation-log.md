@@ -4,6 +4,131 @@
 
 ---
 
+## 2026-08-03 — Slice 6: Booking requests polish
+
+- **Type:** feat
+- **Scope:** booking_requests polish (SLA already shipped; dup banner; suggest; notify stubs)
+- **Files:** `booking_request_notifier.py`, `booking_request_service.py`, schemas/endpoints/tests; admin/partner create dialogs + detail drawer suggest chips; `docs/runbooks/booking-requests.md`; feature/API/status logs
+- **Summary:** Live duplicate open-request banner on admin/partner create (debounced by-phone lookup); `GET /admin/booking-requests/{id}/suggest-laundries` ranked by pincode/city → rating → recently active with assign-drawer chips; best-effort notify stubs (in-app + support email + WhatsApp stub on public create; partner in-app/email/WhatsApp stub on assign). Ops runbook added.
+- **Risks:** Suggest ranking is heuristic (no customer lat/lng); notify depends on SMTP / channel flags.
+- **Mitigation:** Never fail create/assign on notify errors; empty suggestions fall back to manual picker.
+- **Next:** Convert-to-order; expiry Celery job; Playwright partner smoke. Deferred (not in feature doc): public track page, CSV export, admin overview KPI cards.
+- **Refs:** `docs/features/booking-requests.md` Slice 6 / user task
+
+---
+
+## 2026-08-03 — Slice 5: Partner booking requests inbox UI
+
+- **Type:** feat
+- **Scope:** partner booking_requests FE
+- **Files:** `frontend/features/partner/booking-requests/*`, `frontend/app/(partner)/partner/booking-requests/page.tsx`, `partner-nav.ts`, `partner-shell.tsx`, `query-keys.ts`, Jest status/params tests, feature docs + status
+- **Summary:** Partner inbox at `/partner/booking-requests` — scoped list/detail, partner-legal status transitions, respond + internal notes, release to admin, phone timeline create-on-phone, WhatsApp/Call links, Operations nav entry + assigned badge. Client strips laundry/IDOR filters; server remains source of truth for scope.
+- **Risks:** Convert-to-order still stubbed; no Playwright partner inbox smoke yet.
+- **Mitigation:** Reuses admin SLA/badge presentational pieces; unit tests cover transitions + param stripping.
+- **Next:** Convert-to-order; expiry job; Playwright partner smoke.
+- **Refs:** `docs/features/booking-requests.md` Slice 5 / user task
+
+---
+
+## 2026-08-03 — Slice 3: Book Now → booking request confirmation UX
+
+- **Type:** feat
+- **Scope:** marketing Book Now / booking_requests (customer FE)
+- **Files:** `frontend/lib/api/booking-requests.ts` (existing), `book-pickup-form.tsx`, `book-pickup-success.tsx`, `map-book-pickup-to-request.ts`, `book-now-dialog.tsx`, Jest + Playwright tests, `docs/features/booking-requests.md`, `docs/features/marketing-homepage.md`
+- **Summary:** Book Now already POSTs `/booking-requests`; Slice 3 adds in-dialog confirmation with `public_code`, what-happens-next copy, WhatsApp/Call fallbacks (code in WhatsApp prefills), and pure form→API mapping helpers + unit tests. Dialog no longer auto-closes on submit; Done dismisses.
+- **Risks:** Ops still lack admin/partner inbox UI to triage new rows.
+- **Mitigation:** Public create + confirmation code give customers a quoteable reference; API already returns duplicate_warning meta.
+- **Next:** Admin + partner booking-request inbox UI; expiry Celery job; convert-to-order.
+- **Refs:** `docs/features/booking-requests.md` Slice 3 / user task
+
+---
+
+## 2026-08-03 — Slice 2: Booking Requests services + HTTP APIs
+
+- **Type:** feat
+- **Scope:** booking_requests (schemas, service, public/admin/partner endpoints, Book Now FE switch)
+- **Files:** `backend/app/schemas/booking_request.py`, `backend/app/services/booking_request_service.py`, `backend/app/api/v1/endpoints/booking_requests.py`, repo release/rate-limit helpers, `frontend/lib/api/booking-requests.ts`, `book-pickup-form.tsx`, `tests/api/test_booking_requests.py`, API/feature docs
+- **Summary:** Public create (rate-limited, duplicate warning meta), admin CRUD/claim/assign/release/messages/soft-delete/restore/phone timeline, partner scoped CRUD/respond/release/create, convert stub `501`. Book Now **replaces** `order-help` marketing contact; general contact form unchanged.
+- **Risks:** Admin/partner inbox UI not yet built — ops still need a surface to triage. Convert-to-order intentionally stubbed.
+- **Mitigation:** pytest authz/IDOR/assign/phone matrix green; WhatsApp URL + SLA badge computed server-side for when UI lands.
+- **Next:** Admin + partner booking-request inbox UI; expiry Celery job; convert implementation when online booking path is ready.
+- **Refs:** `docs/features/booking-requests.md` Slice 2 / user task
+
+---
+
+## 2026-08-03 — Slice 1: Booking Requests data layer
+
+- **Type:** feat
+- **Scope:** booking_requests (schema + repository)
+- **Files:** `backend/app/models/booking_request.py`, `backend/app/models/enums.py`, `backend/app/repositories/booking_request.py`, `backend/app/utils/phone.py`, `backend/alembic/versions/20260803_0038_booking_requests.py`, unit tests, `docs/database/schema.md`
+- **Summary:** Added `booking_requests` + messages/events tables, India phone E.164 helper (digits-only for search/WhatsApp), and repository CRUD (list/filter, soft-delete/restore, assign/transfer, phone timeline, messages). No API/endpoints yet.
+- **Risks:** Enum value labels with hyphens (`wash-fold`) must stay aligned across Alembic + ORM `values_callable`.
+- **Mitigation:** Idempotent enum create in migration; unit tests for phone helper + repository paths; schema notes single `phone_e164` CRM key (no redundant `phone_normalized` column).
+- **Next:** Slice A services/endpoints — public create + admin list/assign/messages.
+- **Refs:** `docs/features/booking-requests.md` Slice 1 / implementation slices A
+
+---
+
+## 2026-08-03 — Spec: Booking Requests workflow (docs only)
+
+- **Type:** docs
+- **Scope:** Booking requests (Book Now → admin/partner inbox)
+- **Files:** `docs/features/booking-requests.md`, `docs/api/endpoints/booking-requests.md`, `docs/database/schema.md`, `logs/feature-progress.md`, `docs/features/README.md`, `docs/features/marketing-homepage.md`
+- **Summary:** Planned first-class booking-request aggregate (separate from marketing contact leads) with phone CRM, SLA badges, assign/transfer, messages/events, partner scoped CRUD, and API contract. No code/migrations yet.
+- **Risks:** None (docs only). Product may tweak nav placement or convert stub (`501`) before Slice A.
+- **Next:** Implement Slice A — Alembic + public create + admin list/assign/messages.
+- **Refs:** User request — elevate Book Now into Booking Request workflow
+
+---
+
+## 2026-08-03 — Pre-launch: hide fabricated KPI counts
+
+- **Type:** fix
+- **Scope:** Marketing / discover / about stats bands
+- **Files:** `frontend/lib/prelaunch-stats.ts`, `stats-fallback.ts`, `stats-band.tsx`, `stats-section.tsx`, `about-stats.tsx`, `use-marketing.ts`, unit + a11y tests, `docs/features/marketing-homepage.md`
+- **Summary:** Replaced invented live KPIs (10000+, 98%, 150+ shops, etc.) with consistent “Coming Soon” copy behind `PRELAUNCH_STATS` / `NEXT_PUBLIC_PRELAUNCH_STATS` (default true). Count-up animation and stats API fetch disabled while the flag is on; labels unchanged.
+- **Risks:** Low — flip flag to `false` at launch to restore API-backed numbers.
+- **Next:** Set `NEXT_PUBLIC_PRELAUNCH_STATS=false` when production metrics are trustworthy.
+- **Refs:** User request — pre-launch stats messaging
+
+---
+
+## 2026-08-03 — Fix Pricing Household Bath Towel missing WebP
+
+- **Type:** fix
+- **Scope:** Marketing Pricing rack photo for `household-bath-towel`
+- **Files:** `frontend/public/catalog/household/towel.webp` (added), `frontend/features/marketing/pricing/lib/resolve-product-photo.test.ts`, `frontend/public/catalog/README.md` (one-line coverage note)
+- **Summary:** Manifest and resolver already pointed at `/catalog/household/towel.webp`, but only `towel.png` existed on disk, so Next/Image hit `onError`. Encoded a proper 1200×900 WebP q85 from the PNG via `prepare-catalog-stock-photo.py`. Left the PNG as source; did not change the `.webp` resolver convention.
+- **Risks:** None — static asset fill; ATTRIBUTION already listed `household/towel.webp`.
+- **Next:** Optional — drop leftover `towel.png` once no import pipeline needs it.
+- **Refs:** User bug — Bath Towel image blank on Pricing → Household
+
+---
+
+## 2026-08-03 — Fix `/stores` Near me missing newly approved stores
+
+- **Type:** fix
+- **Scope:** Public laundry discovery list (`/stores` Near me + `/discover`)
+- **Files:** `backend/app/repositories/laundry.py`, `backend/app/services/laundry_service.py`, `backend/app/api/v1/endpoints/laundries.py`, `frontend/services/laundries.ts`, unit/API/FE tests, `docs/features/customer-discovery.md`, `docs/api/endpoints/laundry-compare-hints.md`
+- **Summary:** Root cause was silent truncation: `GET /laundries` defaulted to limit 20 ordered by rating, and the FE never raised it — Near me only re-sorted that page, so new 0★ approved stores looked missing. Default limit is now 100 with pagination meta; FE pages until exhausted. Approve/reject already calls `invalidate_laundry_discovery_cache()`; list cache bumped to `v4` with `{items,total}`. Stores without lat/lng still appear (sorted after GPS rows).
+- **Risks:** Directory with >100 stores costs an extra list round-trip; list cache key version change cold-starts Redis entries.
+- **Next:** Optional UI “Showing all N stores” when total is large; consider lowering React Query staleTime after admin approval from the same browser.
+- **Refs:** User bug — newly added store missing under Near me on `/stores`
+
+---
+
+## 2026-08-03 — Temp: disable store nav on all breakpoints
+
+- **Type:** fix
+- **Scope:** Marketing store cards (Home teaser, `/stores`, quick-pick)
+- **Files:** `store-nav-surface.tsx`, `stores-card.tsx`, quick-pick surfaces, unit + e2e tests, `docs/features/customer-discovery.md`, `docs/features/marketing-homepage.md`
+- **Summary:** Cover/name no longer navigates to `/discover/[id]` at any breakpoint. Flip `STORE_NAVIGATION_ENABLED` (or remove gate) to re-enable. Call / Message / Get Location unchanged.
+- **Risks:** Users cannot open storefront from marketing cards until the flag is flipped; discover app cards (`PartnerCard` / `LaundryCard`) still navigate.
+- **Next:** Re-enable store navigation when storefront UX is ready.
+- **Refs:** User request — disable desktop/laptop store card navigation too
+
+---
+
 ## 2026-07-31 — Fix `/stores` Near me race + sticky status
 
 - **Type:** fix

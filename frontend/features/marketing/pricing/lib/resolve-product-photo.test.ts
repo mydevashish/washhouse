@@ -1,9 +1,27 @@
+import fs from 'fs';
+
 import {
   PRICING_PRODUCT_PHOTOS,
+  resolvePricingProductImage,
   resolveProductPhotoKey,
 } from '@/features/marketing/pricing/pricing-product-images';
 
 describe('resolveProductPhotoKey', () => {
+  it('maps household bath towel to an on-disk catalog WebP', () => {
+    expect(resolveProductPhotoKey('household-bath-towel', 'Bath Towel')).toBe('towel');
+    const image = resolvePricingProductImage(
+      'household-bath-towel',
+      'Bath Towel',
+      'household',
+    );
+    expect(image.src).toBe('/catalog/household/towel.webp');
+    const diskPath = `public${image.src}`;
+    expect(fs.existsSync(diskPath)).toBe(true);
+    const buf = fs.readFileSync(diskPath);
+    expect(buf.toString('ascii', 0, 4)).toBe('RIFF');
+    expect(buf.toString('ascii', 8, 12)).toBe('WEBP');
+  });
+
   it('maps winter jackets to distinct garment frames', () => {
     expect(
       resolveProductPhotoKey('winter-jacket-cotton-denim', 'Jacket (cotton/denim)'),

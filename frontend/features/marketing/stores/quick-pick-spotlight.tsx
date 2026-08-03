@@ -39,7 +39,7 @@ function formatFromPrice(laundry: EnrichedLaundry): string | null {
 
 /**
  * Primary store card in the quick-pick sheet — cover, trust, Call / Message / Get Location.
- * Cover + name link to the storefront on `lg+` only (temp gate — see StoreNavSurface);
+ * Cover + name do not navigate (temp gate — see StoreNavSurface);
  * contact actions stay separate buttons.
  */
 export function QuickPickSpotlight({

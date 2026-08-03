@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import { getAdminDashboard } from '@/services/admin';
+import { listAdminBookingRequests } from '@/features/admin/booking-requests/api';
 import { useAuthStore } from '@/store/auth.store';
 
 function SidebarNav({
@@ -28,7 +29,7 @@ function SidebarNav({
   onNavigate,
 }: {
   pathname: string;
-  badges: { approvals: number; complaints: number };
+  badges: { approvals: number; complaints: number; bookingRequests: number };
   onNavigate?: () => void;
 }) {
   return (
@@ -46,7 +47,9 @@ function SidebarNav({
                   ? badges.approvals
                   : badgeKey === 'complaints'
                     ? badges.complaints
-                    : 0;
+                    : badgeKey === 'bookingRequests'
+                      ? badges.bookingRequests
+                      : 0;
               return (
                 <li key={href}>
                   <Link
@@ -92,7 +95,7 @@ function SidebarContent({
   onNavigate,
 }: {
   pathname: string;
-  badges: { approvals: number; complaints: number };
+  badges: { approvals: number; complaints: number; bookingRequests: number };
   user: { full_name?: string | null; email?: string | null } | null;
   onNavigate?: () => void;
 }) {
@@ -134,12 +137,23 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     staleTime: STALE.adminDashboard,
   });
 
+  const bookingInboxQ = useQuery({
+    queryKey: queryKeys.adminBookingRequests({ page: 1, page_size: 1, sort: 'sla' }),
+    queryFn: () => listAdminBookingRequests({ page: 1, page_size: 1, sort: 'sla' }),
+    enabled: mounted && Boolean(accessToken),
+    staleTime: 60_000,
+  });
+
+  const bookingOpen =
+    (bookingInboxQ.data?.inbox.new ?? 0) + (bookingInboxQ.data?.inbox.reviewing ?? 0);
+
   const badges = mounted
     ? {
         approvals: dashboardQ.data?.laundries_pending ?? 0,
         complaints: dashboardQ.data?.complaints_open ?? 0,
+        bookingRequests: bookingOpen,
       }
-    : { approvals: 0, complaints: 0 };
+    : { approvals: 0, complaints: 0, bookingRequests: 0 };
 
   const sidebarUser = mounted ? user : null;
 

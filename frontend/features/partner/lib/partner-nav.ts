@@ -24,7 +24,7 @@ export type PartnerNavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
-  badgeKey?: 'orders' | 'pickups' | 'notifications';
+  badgeKey?: 'orders' | 'pickups' | 'notifications' | 'bookingRequests';
 };
 
 export type PartnerNavSection = {
@@ -46,6 +46,12 @@ export const PARTNER_NAV_SECTIONS: PartnerNavSection[] = [
       { href: '/partner/operations', label: 'Operations center', icon: Radio },
       { href: '/partner/orders', label: 'Orders', icon: Package, badgeKey: 'orders' },
       { href: '/partner/walk-in-orders', label: 'Walk-in orders', icon: Store },
+      {
+        href: '/partner/booking-requests',
+        label: 'Booking requests',
+        icon: ClipboardList,
+        badgeKey: 'bookingRequests',
+      },
       { href: '/partner/pickups', label: 'Pickup requests', icon: ClipboardList, badgeKey: 'pickups' },
       { href: '/partner/deliveries', label: 'Deliveries', icon: Truck },
       { href: '/partner/customers', label: 'Customer insights', icon: Users },

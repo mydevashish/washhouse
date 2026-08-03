@@ -26,6 +26,17 @@ export const queryKeys = {
   adminDisputeAssignees: () => ['admin-dispute-assignees'] as const,
   adminDisputeDetail: (id: string) => ['admin-dispute-detail', id] as const,
   adminDispute: (id: string) => ['admin-dispute', id] as const,
+  adminBookingRequests: (filters?: object) => ['admin-booking-requests', filters ?? {}] as const,
+  adminBookingRequestDetail: (id: string) => ['admin-booking-request-detail', id] as const,
+  adminBookingRequestsByPhone: (phone: string) =>
+    ['admin-booking-requests-by-phone', phone] as const,
+  adminBookingRequestSuggestLaundries: (id: string) =>
+    ['admin-booking-request-suggest-laundries', id] as const,
+  partnerBookingRequests: (filters?: object) =>
+    ['partner-booking-requests', filters ?? {}] as const,
+  partnerBookingRequestDetail: (id: string) => ['partner-booking-request-detail', id] as const,
+  partnerBookingRequestsByPhone: (phone: string) =>
+    ['partner-booking-requests-by-phone', phone] as const,
   adminTrustScores: () => ['admin-trust-scores'] as const,
   adminTrustScore: (userId: string) => ['admin-trust-score', userId] as const,
   adminLaundryTrustScores: () => ['admin-laundry-trust-scores'] as const,

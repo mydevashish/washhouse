@@ -41,6 +41,9 @@
 | `marketing_franchise_inquiries` | Franchise partnership applications    | `marketing`             |
 | `marketing_site_stats` | Singleton curated stat overrides            | `marketing`             |
 | `marketing_testimonials` | Curated featured testimonials for marketing | `marketing`         |
+| `booking_requests` | Marketplace Book Now / phone CRM booking leads (admin + partner inbox) | `booking_requests` |
+| `booking_request_messages` | Customer-facing responses + internal notes timeline | `booking_requests` |
+| `booking_request_events` | Append-only audit (assign/status/transfer/…) | `booking_requests` |
 
 ## Conventions
 
@@ -75,6 +78,75 @@ See [`erd.md`](erd.md).
 | `marketing_contact_submissions` | `ix_marketing_contact_submissions_phone_created_at` | contact rate limiting   |
 | `marketing_franchise_inquiries` | `ix_marketing_franchise_inquiries_client_ip_created_at` | franchise rate limiting |
 | `marketing_testimonials` | `ix_marketing_testimonials_featured_active_sort` | featured homepage list |
+| `booking_requests` | `uq_booking_requests_public_code` | human-facing code |
+| `booking_requests` | `ix_booking_requests_phone_e164_created_at` | CRM timeline + rate limit |
+| `booking_requests` | `ix_booking_requests_status_created_at` (partial `deleted_at IS NULL`) | admin inbox |
+| `booking_requests` | `ix_booking_requests_assigned_laundry_id_status` (partial active) | partner queue |
+| `booking_request_messages` | `ix_booking_request_messages_request_id_created_at` | timeline |
+| `booking_request_events` | `ix_booking_request_events_request_id_created_at` | audit trail |
+
+## Booking requests
+
+> Spec: [booking-requests.md](../features/booking-requests.md) · API: [booking-requests.md](../api/endpoints/booking-requests.md)  
+> Migrated: Alembic `20260803_0038` — models in `backend/app/models/booking_request.py`.
+
+### `booking_requests`
+
+| Column | Type | Notes |
+| ------ | ---- | ----- |
+| `id` | `UUID` PK | `gen_random_uuid()` |
+| `public_code` | `VARCHAR(16)` UK | e.g. `BR-K7M2QX` |
+| `customer_name` | `VARCHAR(100)` | required |
+| `phone_e164` | `VARCHAR(20)` | canonical `+91XXXXXXXXXX`; **indexed, not unique** |
+| `service_type` | enum `booking_request_service_type` | wash-fold, dry-clean, … |
+| `preferred_time_window` | enum `booking_request_preferred_time` | morning / afternoon / evening / flexible |
+| `address_text` | `VARCHAR(500)` NULL | landmark / free text |
+| `city` | `VARCHAR(100)` NULL | |
+| `pincode` | `VARCHAR(10)` NULL | |
+| `notes` | `TEXT` NULL | |
+| `source` | enum `booking_request_source` | marketing_home, stores, services, deep_link, admin_created, partner_created |
+| `status` | enum `booking_request_status` | new → … → converted_to_order \| declined \| expired \| cancelled |
+| `priority` | enum `booking_request_priority` | normal / high / urgent; default normal |
+| `assigned_laundry_id` | `UUID` NULL FK → `laundries.id` | `ON DELETE SET NULL` |
+| `assigned_at` | `TIMESTAMPTZ` NULL | |
+| `assigned_by_user_id` | `UUID` NULL FK → `users.id` | `ON DELETE SET NULL` |
+| `converted_order_id` | `UUID` NULL FK → `orders.id` | `ON DELETE SET NULL` |
+| `created_by_role` | enum `booking_request_created_by_role` | public / admin / partner |
+| `created_by_user_id` | `UUID` NULL FK → `users.id` | null for public |
+| `client_ip` | `VARCHAR(45)` NULL | public abuse review |
+| `last_response_at` | `TIMESTAMPTZ` NULL | last customer-facing message |
+| `closed_at` | `TIMESTAMPTZ` NULL | set on terminal statuses |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | TimestampMixin |
+| `deleted_at` | `TIMESTAMPTZ` NULL | soft delete (admin) |
+
+**Design note:** Do **not** add a separate `phone_normalized` column — E.164 from shared `normalize_phone` / `validate_indian_phone` is the CRM key. Partial unique on open phone is intentionally **avoided** so duplicates can exist with API warnings.
+
+### `booking_request_messages`
+
+| Column | Type | Notes |
+| ------ | ---- | ----- |
+| `id` | `UUID` PK | |
+| `booking_request_id` | `UUID` FK → `booking_requests.id` | `ON DELETE CASCADE` |
+| `author_user_id` | `UUID` NULL FK → `users.id` | null only if system |
+| `author_role` | enum | admin / partner / system |
+| `visibility` | enum `booking_request_message_visibility` | `customer_facing` \| `internal` |
+| `body` | `TEXT` | max 4000 enforced in schema |
+| `created_at` | `TIMESTAMPTZ` | immutable; no updates |
+
+### `booking_request_events`
+
+| Column | Type | Notes |
+| ------ | ---- | ----- |
+| `id` | `UUID` PK | |
+| `booking_request_id` | `UUID` FK → `booking_requests.id` | `ON DELETE CASCADE` |
+| `event_type` | enum `booking_request_event_type` | created, assigned, transferred, … |
+| `actor_user_id` | `UUID` NULL FK → `users.id` | |
+| `from_status` | enum NULL | |
+| `to_status` | enum NULL | |
+| `from_laundry_id` | `UUID` NULL | transfer audit |
+| `to_laundry_id` | `UUID` NULL | |
+| `payload` | `JSONB` NULL | small structured extras |
+| `created_at` | `TIMESTAMPTZ` | append-only |
 
 ## Platform catalog price shape (chosen)
 

@@ -138,7 +138,7 @@ describe('StoresCard', () => {
     mockGetContactInfo.mockResolvedValue({ ...CONTACT_WITH_ACTIONS });
   });
 
-  it('renders name, city, cover image, desktop-only discover link, and contact actions', async () => {
+  it('renders name, city, cover image, no discover link, and contact actions', async () => {
     renderCard();
 
     expect(
@@ -163,10 +163,13 @@ describe('StoresCard', () => {
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/wash\s*&\s*fold/i)).not.toBeInTheDocument();
 
-    // TODO: re-enable store navigation on mobile when ready — link is CSS-gated (`max-lg:hidden`)
-    const discoverLink = screen.getByRole('link', { name: /open sparkle clean hub/i });
-    expect(discoverLink).toHaveAttribute('href', `/discover/${mockLaundry.id}`);
-    expect(discoverLink).toHaveClass('max-lg:hidden');
+    // TODO: re-enable store navigation when ready — cover/name must not link at any breakpoint
+    expect(
+      screen.queryByRole('link', { name: /open sparkle clean hub/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      document.querySelector(`a[href="/discover/${mockLaundry.id}"]`),
+    ).toBeNull();
 
     await waitFor(() => {
       expect(

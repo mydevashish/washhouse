@@ -17,6 +17,7 @@ import {
   type MarketingContactCreate,
   type MarketingFranchiseInquiryCreate,
 } from '@/lib/api/marketing';
+import { PRELAUNCH_STATS } from '@/lib/prelaunch-stats';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 
@@ -30,18 +31,19 @@ export function useMarketingStats() {
     queryKey: queryKeys.marketingStats(),
     queryFn: getMarketingStats,
     staleTime: STALE.marketingStats,
+    enabled: !PRELAUNCH_STATS,
   });
 
   const stats = useMemo(() => {
+    if (PRELAUNCH_STATS) return MARKETING_STATS_FALLBACK;
     if (query.data) return mapMarketingStatsToDisplay(query.data);
-    if (query.isError) return MARKETING_STATS_FALLBACK;
     return MARKETING_STATS_FALLBACK;
-  }, [query.data, query.isError]);
+  }, [query.data]);
 
   return {
     stats,
-    isLoading: query.isLoading,
-    isError: query.isError,
+    isLoading: !PRELAUNCH_STATS && query.isLoading,
+    isError: !PRELAUNCH_STATS && query.isError,
     refetch: query.refetch,
   };
 }
