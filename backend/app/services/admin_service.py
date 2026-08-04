@@ -418,6 +418,17 @@ class AdminService:
         )
         if params.status:
             stmt = stmt.where(Order.status == OrderStatus(params.status))
+        if params.customer_phone:
+            from app.utils.phone import normalize_phone
+
+            phone = normalize_phone(params.customer_phone)
+            stmt = stmt.where(Order.customer_phone == phone)
+        if params.user_id:
+            try:
+                uid = UUID(params.user_id)
+            except ValueError:
+                raise ValidationError("Invalid user_id") from None
+            stmt = stmt.where(Order.user_id == uid)
         if params.search:
             term = f"%{params.search}%"
             stmt = stmt.where(
@@ -425,6 +436,7 @@ class AdminService:
                     Order.tracking_code.ilike(term),
                     User.full_name.ilike(term),
                     Laundry.name.ilike(term),
+                    Order.customer_phone.ilike(term),
                 ),
             )
         sort_map = {

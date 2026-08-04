@@ -83,5 +83,8 @@ export const TERMINAL_BOOKING_STATUSES = new Set<BookingRequestStatus>([
   'cancelled',
 ]);
 
-export const CONVERT_NOT_READY_TOOLTIP =
-  'Order conversion is not ready yet. Confirm the pickup and create a walk-in order if needed.';
+/** Statuses that can open Convert → assisted order. */
+export const CONVERTIBLE_BOOKING_STATUSES = new Set<BookingRequestStatus>([
+  'confirmed',
+  'contacted',
+]);

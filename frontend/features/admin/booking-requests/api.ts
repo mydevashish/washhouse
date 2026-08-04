@@ -157,3 +157,43 @@ export async function suggestAdminBookingRequestLaundries(
   );
   return data.data ?? { suggestions: [] };
 }
+
+export type BookingRequestConvertPayload = {
+  force?: boolean;
+  laundry_id?: string;
+  address?: {
+    line1: string;
+    line2?: string;
+    city: string;
+    pincode: string;
+    landmark?: string;
+  };
+  address_id?: string;
+  pickup_at: string;
+  delivery_at: string;
+  items: { service_id: string; quantity: number }[];
+  notes?: string;
+  payment_method?: 'cod';
+};
+
+export type BookingRequestConvertResult = {
+  booking_request_id: string;
+  public_code: string;
+  status: string;
+  converted_order_id: string;
+  tracking_code: string;
+  order_source: string;
+  total_inr: string;
+  currency?: string;
+};
+
+export async function convertAdminBookingRequest(
+  id: string,
+  payload: BookingRequestConvertPayload,
+): Promise<BookingRequestConvertResult> {
+  const { data } = await api.post<ApiEnvelope<BookingRequestConvertResult>>(
+    `/admin/booking-requests/${id}/convert`,
+    payload,
+  );
+  return data.data;
+}

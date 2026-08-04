@@ -19,6 +19,8 @@ class AdminUserListParams(ListQueryParams):
 @dataclass(frozen=True)
 class AdminOrderListParams(ListQueryParams):
     status: str | None = None
+    customer_phone: str | None = None
+    user_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -62,6 +64,8 @@ def get_admin_order_list_params(
     sort_by: str | None = Query(default="created_at", max_length=64),
     sort_order: str = Query(default="desc", pattern="^(asc|desc)$"),
     status: str | None = Query(default=None),
+    customer_phone: str | None = Query(default=None, max_length=20),
+    user_id: str | None = Query(default=None, max_length=36),
 ) -> AdminOrderListParams:
     base = ListQueryParams.from_query(
         page=page,
@@ -77,6 +81,8 @@ def get_admin_order_list_params(
         sort_by=base.sort_by,
         sort_order=base.sort_order,
         status=status,
+        customer_phone=customer_phone.strip() if customer_phone and customer_phone.strip() else None,
+        user_id=user_id.strip() if user_id and user_id.strip() else None,
     )
 
 

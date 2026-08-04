@@ -8,6 +8,7 @@ import {
   addAdminBookingRequestMessage,
   assignAdminBookingRequest,
   claimAdminBookingRequest,
+  convertAdminBookingRequest,
   createAdminBookingRequest,
   getAdminBookingRequest,
   getAdminBookingRequestsByPhone,
@@ -17,6 +18,7 @@ import {
   softDeleteAdminBookingRequest,
   suggestAdminBookingRequestLaundries,
   updateAdminBookingRequest,
+  type BookingRequestConvertPayload,
 } from '@/features/admin/booking-requests/api';
 import type {
   BookingRequestAdminCreatePayload,
@@ -196,5 +198,14 @@ export function useBookingRequestMutations(options?: {
     onError: (e) => toast.error(getApiErrorMessage(e, 'Restore failed')),
   });
 
-  return { createM, updateM, claimM, assignM, releaseM, messageM, deleteM, restoreM };
+  const convertM = useMutation({
+    mutationFn: (payload: BookingRequestConvertPayload) => convertAdminBookingRequest(id!, payload),
+    onSuccess: (data) => {
+      toast.success(`Converted to order ${data.tracking_code}`);
+      bump();
+    },
+    onError: (e) => toast.error(getApiErrorMessage(e, 'Convert failed')),
+  });
+
+  return { createM, updateM, claimM, assignM, releaseM, messageM, deleteM, restoreM, convertM };
 }

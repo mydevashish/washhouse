@@ -10,6 +10,7 @@ import {
 } from '@/features/admin/booking-requests/booking-request-duplicate-banner';
 import {
   addPartnerBookingRequestMessage,
+  convertPartnerBookingRequest,
   createPartnerBookingRequest,
   getPartnerBookingRequest,
   getPartnerBookingRequestsByPhone,
@@ -23,6 +24,7 @@ import type {
   BookingRequestPartnerCreatePayload,
   BookingRequestUpdatePayload,
 } from '@/features/partner/booking-requests/types';
+import type { BookingRequestConvertPayload } from '@/features/admin/booking-requests/api';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { STALE } from '@/lib/query-config';
@@ -165,5 +167,15 @@ export function usePartnerBookingRequestMutations(options?: {
     onError: (e) => toast.error(getApiErrorMessage(e, 'Could not save message')),
   });
 
-  return { createM, updateM, releaseM, messageM };
+  const convertM = useMutation({
+    mutationFn: (payload: BookingRequestConvertPayload) =>
+      convertPartnerBookingRequest(id!, payload),
+    onSuccess: (data) => {
+      toast.success(`Converted to order ${data.tracking_code}`);
+      bump();
+    },
+    onError: (e) => toast.error(getApiErrorMessage(e, 'Convert failed')),
+  });
+
+  return { createM, updateM, releaseM, messageM, convertM };
 }

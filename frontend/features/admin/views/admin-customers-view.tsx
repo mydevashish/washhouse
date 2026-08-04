@@ -1,9 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
+import Link from 'next/link';
+import { Headset } from 'lucide-react';
 
 import { ServerListToolbar } from '@/components/data-table/server-list-toolbar';
 import { VirtualDataTable, type VirtualColumnDef } from '@/components/data-table/virtual-data-table';
+import { Button } from '@/components/ui/button';
 import { AdminPanel } from '@/features/admin/components/admin-panel';
 import { AdminContent } from '@/features/admin/components/admin-content';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
@@ -38,6 +41,21 @@ export function AdminCustomersView() {
         className: 'text-muted-foreground',
         cell: (u) => formatIndiaDate(u.created_at),
       },
+      {
+        id: 'desk',
+        header: 'Desk',
+        cell: (u) => (
+          <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+            <Link
+              href={`/admin/customer-desk?user_id=${encodeURIComponent(u.id)}`}
+              aria-label={`Open customer desk for ${u.full_name}`}
+            >
+              <Headset className="h-3.5 w-3.5" aria-hidden />
+              Open desk
+            </Link>
+          </Button>
+        ),
+      },
     ],
     [],
   );
@@ -46,7 +64,15 @@ export function AdminCustomersView() {
     <AdminContent className="space-y-5">
       <AdminPageHeader
         title="Customers"
-        description="Registered customers, verification status, and order history."
+        description="Registered customers and verification status. Use Customer Desk for phone lookup and order history."
+        actions={
+          <Button asChild size="sm" className="gap-1.5">
+            <Link href="/admin/customer-desk">
+              <Headset className="h-3.5 w-3.5" aria-hidden />
+              Customer Desk
+            </Link>
+          </Button>
+        }
       />
 
       <AdminPanel

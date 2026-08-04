@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   AlertTriangle,
   Crown,
+  Headset,
   IndianRupee,
   RefreshCw,
   Star,
@@ -12,9 +13,11 @@ import {
   Users,
   UserX,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ClientDate } from '@/components/ui/client-date';
 import { EmptyState } from '@/components/ui/empty-state';
 import { QueryErrorState } from '@/components/feedback/query-error-state';
@@ -87,7 +90,7 @@ function retentionBarClass(score: number): string {
 function CustomerTable({ rows }: { rows: CustomerInsightRow[] }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[720px] text-sm">
+      <table className="w-full min-w-[800px] text-sm">
         <thead className="border-b border-border/60 bg-muted/40 text-left text-xs uppercase text-muted-foreground">
           <tr>
             <th className="px-4 py-2.5">Customer</th>
@@ -98,6 +101,7 @@ function CustomerTable({ rows }: { rows: CustomerInsightRow[] }) {
             <th className="px-4 py-2.5">Last order</th>
             <th className="px-4 py-2.5">Retention</th>
             <th className="px-4 py-2.5">Risk</th>
+            <th className="px-4 py-2.5">Desk</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border/50">
@@ -135,6 +139,14 @@ function CustomerTable({ rows }: { rows: CustomerInsightRow[] }) {
                 <Badge variant="outline" className={cn('font-normal', riskBadgeClass(c.risk_label))}>
                   {c.risk_label}
                 </Badge>
+              </td>
+              <td className="px-4 py-3">
+                <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+                  <Link href={`/partner/customer-desk?user_id=${encodeURIComponent(c.user_id)}`}>
+                    <Headset className="h-3.5 w-3.5" aria-hidden />
+                    Open desk
+                  </Link>
+                </Button>
               </td>
             </tr>
           ))}
@@ -187,7 +199,15 @@ export function PartnerCustomersView() {
     <PartnerContent className="space-y-5">
       <PartnerPageHeader
         title="Customer Insights Dashboard"
-        description="Top customers, VIPs, repeat buyers, inactive accounts, and high-risk flags — with lifetime spend and retention scores."
+        description="Top customers, VIPs, repeat buyers, inactive accounts, and high-risk flags — with lifetime spend and retention scores. Open desk shows only this laundry’s past orders."
+        actions={
+          <Button asChild variant="outline" size="sm" className="gap-1.5">
+            <Link href="/partner/customer-desk">
+              <Headset className="h-3.5 w-3.5" aria-hidden />
+              Customer Desk
+            </Link>
+          </Button>
+        }
       />
 
       {dashboardQ.isError && (

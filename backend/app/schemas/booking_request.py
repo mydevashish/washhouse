@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models.enums import (
     BookingRequestCreatedByRole,
@@ -18,7 +19,10 @@ from app.models.enums import (
     BookingRequestServiceType,
     BookingRequestSource,
     BookingRequestStatus,
+    OrderSource,
+    PaymentMethod,
 )
+from app.schemas.customer_desk import AssistedOrderAddress, AssistedOrderLineItem
 from app.utils.phone import validate_strict_indian_mobile
 
 _PINCODE_RE = re.compile(r"^\d{6}$")
@@ -233,9 +237,42 @@ class BookingRequestMessageCreate(BaseModel):
 
 
 class BookingRequestConvert(BaseModel):
+    """Convert confirmed (or force) booking request → assisted doorstep order.
+
+    Phone/name always come from the booking request. Address may be supplied
+    explicitly or derived from BR ``address_text`` / city / pincode.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     force: bool = False
+    laundry_id: UUID | None = None
+    address_id: UUID | None = None
+    address: AssistedOrderAddress | None = None
+    pickup_at: datetime
+    delivery_at: datetime
+    items: list[AssistedOrderLineItem] = Field(min_length=1)
+    notes: str | None = Field(default=None, max_length=2000)
+    payment_method: PaymentMethod = PaymentMethod.cod
+
+    @model_validator(mode="after")
+    def address_xor_and_slots(self) -> BookingRequestConvert:
+        if self.address_id is not None and self.address is not None:
+            raise ValueError("Provide at most one of address_id or address snapshot")
+        if self.delivery_at <= self.pickup_at:
+            raise ValueError("Delivery time must be after pickup time")
+        return self
+
+
+class BookingRequestConvertResult(BaseModel):
+    booking_request_id: UUID
+    public_code: str
+    status: BookingRequestStatus
+    converted_order_id: UUID
+    tracking_code: str
+    order_source: OrderSource
+    total_inr: Decimal
+    currency: str = "INR"
 
 
 class BookingRequestPublicCreated(BaseModel):

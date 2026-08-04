@@ -15,7 +15,9 @@
 
 ## Frontend
 
-- `frontend/app/(partner)/`, `frontend/features/partner-dashboard/`
+- `frontend/app/(partner)/`, `frontend/features/partner/`
+- Customer Desk (**review**): `/partner/customer-desk` — name/phone search (laundry-scoped, max 20), paginated own-laundry history, assisted doorstep create + walk-in handoff — [customer-desk.md](customer-desk.md); insights row **Open desk**; Orders/Walk-in **Find customer**
+- Walk-in (shipped): `/partner/walk-in-orders` (desk deep-link prefill `?phone=&name=&new=1`)
 
 ## Acceptance criteria
 

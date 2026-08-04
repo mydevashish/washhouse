@@ -13,7 +13,7 @@
 | `platform_catalog_items` | Platform master garment/kg catalog (WashHouse suggested defaults) | `laundries` / admin |
 | `laundry_item_prices` | Per-laundry prices + `is_offered` for catalog items | `laundries`      |
 | `laundry_pricing`     | *(superseded)* use `laundry_item_prices` — see [partner-price-list.md](../features/partner-price-list.md) | `laundries` |
-| `orders`              | Customer orders                              | `orders`                |
+| `orders`              | Customer orders (+ Customer Desk assisted columns — § Customer Desk) | `orders` |
 | `order_items`         | Line items per order                         | `orders`                |
 | `order_status_events` | Append-only state changes                    | `orders`                |
 | `pickup_evidence_photos` | Immutable pickup photo records          | `orders`                |
@@ -68,6 +68,9 @@ See [`erd.md`](erd.md).
 | `orders`           | `ix_orders_user_id_status`                  | customer list by status            |
 | `orders`           | `ix_orders_laundry_id_status`               | partner list by status             |
 | `orders`           | `ix_orders_scheduled_at`                    | calendar / dispatch                |
+| `orders`           | `ix_orders_customer_phone_created_at`       | Customer Desk history by phone     |
+| `orders`           | `ix_orders_laundry_id_customer_phone`       | Partner-scoped desk history        |
+| `orders`           | `ix_orders_created_by_user_id`              | Assisted create audit              |
 | `laundries`        | `ix_laundries_city_is_approved`             | discovery + admin                  |
 | `laundries`        | GIN on `(name, city)` tsvector              | search                             |
 | `reviews`          | `ix_reviews_laundry_id_created_at`          | latest reviews                     |
@@ -148,6 +151,44 @@ See [`erd.md`](erd.md).
 | `payload` | `JSONB` NULL | small structured extras |
 | `created_at` | `TIMESTAMPTZ` | append-only |
 
+## Customer Desk / assisted orders
+
+> Spec: [customer-desk.md](../features/customer-desk.md) · API: [customer-desk.md](../api/endpoints/customer-desk.md)  
+> Migration: `20260804_0039` — extend `order_source` + assisted audit / guest address columns on `orders`.
+
+### `order_source` enum (extended)
+
+| Value | Meaning |
+| ----- | ------- |
+| `online` | Customer self-serve app create |
+| `walk_in` | Partner in-shop create (existing) |
+| `assisted_admin` | Admin Customer Desk doorstep create |
+| `assisted_partner` | Partner Customer Desk doorstep create |
+
+### `orders` — new / clarified columns
+
+| Column | Type | Notes |
+| ------ | ---- | ----- |
+| `order_source` | enum `order_source` | **extend** with `assisted_admin`, `assisted_partner` (Alembic `ALTER TYPE … ADD VALUE`) |
+| `created_by_user_id` | `UUID` NULL FK → `users.id` `ON DELETE SET NULL` | Admin/partner actor for assisted (and optionally walk-in backfill later); null for classic customer online |
+| `customer_phone` | `VARCHAR(20)` NULL | Already exists; canonical E.164 for desk key |
+| `customer_name` | `VARCHAR(200)` NULL | Already exists |
+| `address_id` | `UUID` NULL FK → `user_addresses.id` | Registered doorstep; null for guest assisted / walk-in |
+| `address_line1` | `VARCHAR(255)` NULL | Guest (or override) snapshot for assisted doorstep |
+| `address_line2` | `VARCHAR(255)` NULL | Optional |
+| `address_city` | `VARCHAR(100)` NULL | Guest snapshot |
+| `address_pincode` | `VARCHAR(10)` NULL | Guest snapshot; required by service when snapshot used |
+| `address_landmark` | `VARCHAR(200)` NULL | Optional |
+| `idempotency_key` | `VARCHAR(128)` NULL UNIQUE (partial) | Assisted create `Idempotency-Key`; null for non-assisted |
+
+**Indexes (desk):** `ix_orders_customer_phone_created_at`, `ix_orders_laundry_id_customer_phone` (partner: filter `laundry_id` first), existing `ix_orders_user_id_created_at`.
+
+**Service rule:** assisted create requires (`address_id`) XOR (`address_line1` + `address_city` + `address_pincode`).
+
+**Lifecycle:** `assisted_*` follows the online doorstep status path (pickup evidence, inventory, delivery OTP) — not the walk-in shortcut.
+
+**Audit:** on create, write `order_status_events` note + `order_custody_events` with `actor_user_id=created_by_user_id` and metadata `{ "order_source", "phone_e164" }`. No separate `customer_desk_events` table in v1.
+
 ## Platform catalog price shape (chosen)
 
 Money is always `NUMERIC(12,2)` + `currency` (`INR`). Two mutually exclusive modes per row
@@ -185,4 +226,6 @@ Until Slice E ships, regression: walk-in + `/partner/services` paths must stay g
 - All schema changes via Alembic
 - Reversible by default
 - Latest catalog migration: `20260717_0034_platform_catalog_and_laundry_item_prices`
+- Booking requests: `20260803_0038_booking_requests`
+- Customer Desk: migration `20260804_0039` — extend `order_source` + `orders.created_by_user_id` + guest address snapshot columns + desk indexes; lookup/history APIs shipped (Slice 1)
 - See `.cursor/checklists/new-migration.md`

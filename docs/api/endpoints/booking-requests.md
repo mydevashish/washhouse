@@ -1,6 +1,6 @@
 # Booking Requests API
 
-> Status: **implemented** (Slice 2–6 — services + HTTP APIs + suggest-laundries + notify stubs; convert stub `501`)  
+> Status: **implemented** (Slice 2–6 — services + HTTP APIs + suggest-laundries + notify stubs + **convert → assisted order**)
 > Last updated: 2026-08-03  
 > Feature: [booking-requests.md](../../features/booking-requests.md)  
 > Envelope: standard `{ "data": …, "meta": … }` per `.cursor/rules/05-api-standards.md`
@@ -296,13 +296,29 @@ Phone may be raw or E.164; server normalizes.
 
 ```json
 {
-  "force": false
+  "force": false,
+  "laundry_id": "uuid (optional — defaults to assigned_laundry_id)",
+  "address": {
+    "line1": "12 MG Road",
+    "city": "Bengaluru",
+    "pincode": "560034"
+  },
+  "pickup_at": "2026-08-05T10:00:00+05:30",
+  "delivery_at": "2026-08-06T18:00:00+05:30",
+  "items": [{ "service_id": "uuid", "quantity": 2 }],
+  "notes": "optional",
+  "payment_method": "cod"
 }
 ```
 
-- Requires `status=confirmed` unless `force=true` (admin only)
-- Creates or links order (implementation slice D); sets `converted_order_id`, status `converted_to_order`, `closed_at`
-- Until order factory ready: return `501` with `code: CONVERT_NOT_IMPLEMENTED` **or** accept and store intent — **default: `501` stub** so clients can gate UI
+- Requires `status=confirmed` unless `force=true` (admin only; `force` allows `contacted` or `confirmed`)
+- Calls Customer Desk `create_assisted` (`order_source=assisted_admin`); phone/name from BR
+- Address: body `address` / `address_id`, else BR `address_text` + city + pincode
+- Sets `converted_order_id`, status `converted_to_order`, `closed_at`, event `converted`
+- Idempotency key: `br-convert-{booking_request_id}`
+- Response: `{ booking_request_id, public_code, status, converted_order_id, tracking_code, order_source, total_inr }`
+- Already converted / terminal → `409 ALREADY_TERMINAL`
+- Invalid status without force → `409 INVALID_STATUS_TRANSITION`
 
 ### `POST /admin/booking-requests/{id}/release`
 
@@ -346,7 +362,7 @@ Only returns requests (and messages) **for this laundry** involving that phone. 
 
 ### `POST /partner/booking-requests/{id}/convert`
 
-Same as admin without `force` (or `force` ignored). `501` until implemented.
+Same body as admin **without** `force` (ignored if sent). Uses `assisted_partner` and the partner’s laundry.
 
 ---
 
@@ -357,11 +373,10 @@ Same as admin without `force` (or `force` ignored). `501` until implemented.
 | 401 | `AUTH_FAILED` | Missing/invalid JWT |
 | 403 | `FORBIDDEN` | Wrong role |
 | 404 | `NOT_FOUND` | Missing or out-of-scope |
-| 409 | `INVALID_STATUS_TRANSITION` | Illegal status move |
-| 409 | `ALREADY_TERMINAL` | Mutate closed request |
-| 422 | `VALIDATION_FAILED` | Pydantic / laundry inactive |
+| 409 | `INVALID_STATUS_TRANSITION` | Illegal status move / convert without confirmed |
+| 409 | `ALREADY_TERMINAL` | Mutate closed request / already converted |
+| 422 | `VALIDATION_FAILED` | Pydantic / laundry inactive / missing address |
 | 429 | `RATE_LIMITED` | Public create |
-| 501 | `CONVERT_NOT_IMPLEMENTED` | Convert stub |
 
 ## WhatsApp script (server default)
 
@@ -399,4 +414,6 @@ Digits for `wa.me`: strip non-digits from `phone_e164` (e.g. `919876543210`).
 | Message → `contacted` | status bump |
 | Soft delete / restore | list visibility |
 | Claim | `new` → `reviewing` |
-| Convert stub | 501 |
+| Convert happy (confirmed) | 200 + `converted_to_order` + order |
+| Convert invalid status | 409 `INVALID_STATUS_TRANSITION` |
+| Convert already converted | 409 `ALREADY_TERMINAL` |

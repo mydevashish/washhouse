@@ -1,6 +1,6 @@
 # Offline booking — UI feature map supplement
 
-**Last updated:** 2026-07-30  
+**Last updated:** 2026-08-04  
 **Canonical map:** merge into root `UI_FEATURE_MAP.md` when writable.
 
 ## Offline booking mode (`FEATURE_ONLINE_BOOKING=false`)
@@ -16,7 +16,11 @@
 | Checkout redirect | `/checkout/[laundryId]` | Public | Laundry id | Redirects to `/discover/[id]` with offline banner | ✅ |
 | Partner walk-in orders | `/partner/walk-in-orders` | Partner | Partner laundry + services | `POST /partner/walk-in-orders` | ✅ |
 | Walk-in status → WhatsApp | Partner → Orders / walk-in list | Partner | Walk-in order + customer phone | Status patch + `send_order_status_whatsapp` | ✅ |
+| Partner Customer Desk | `/partner/customer-desk` (also Customers insights **Open desk**, Orders/Walk-in **Find customer**) | Partner | Partner JWT + optional past own-laundry orders | Name/phone search + lookup/history + assisted create | ✅ |
+| Admin Customer Desk | `/admin/customer-desk` | Admin | Admin JWT | Name/phone search + lookup/history + assisted create + BR handoff | ✅ |
 
 **Guest contact in offline mode:** no login required; phone/WhatsApp returned by public contact API. Online mode still gates contact behind customer login.
 
-**Partner dashboard:** add **Walk-in orders** row at `/partner/walk-in-orders`.
+**Partner dashboard:** **Walk-in orders** at `/partner/walk-in-orders`; **Customer Desk** at `/partner/customer-desk` (counter phone lookup — laundry-scoped history only).
+
+**Assisted doorstep vs walk-in:** Desk **Place doorstep** uses assisted create (`order_source=assisted_partner` when Slice 2 lands) and **bypasses** `FEATURE_ONLINE_BOOKING`. Walk-in remains the in-shop short path from the same desk.

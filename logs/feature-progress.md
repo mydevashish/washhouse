@@ -67,12 +67,30 @@
 - Doc supplements (root files locked in session): `docs/product/offline-booking-ui-map.md`, `docs/product/offline-booking-customer-experience.md`
 
 ## Booking Requests (Book Now → admin/partner inbox)
-- Status: **in-progress** (Slice 1–6 polish shipped 2026-08-03; convert/expiry next)
+- Status: **in-progress** (Slice 1–6 polish + **convert-to-order shipped** 2026-08-04; expiry job next)
 - Spec: `docs/features/booking-requests.md`
-- API: `docs/api/endpoints/booking-requests.md` (**implemented** — public/admin/partner + suggest-laundries)
+- API: `docs/api/endpoints/booking-requests.md` (**implemented** — public/admin/partner + suggest-laundries + convert→assisted)
 - Schema: `booking_requests` + `booking_request_messages` + `booking_request_events` in `docs/database/schema.md`
 - Ops: `docs/runbooks/booking-requests.md`
 - Why: Elevate marketing Book Now (no laundry selected) out of generic `order-help` contact leads into a first-class phone-CRM workflow with SLA, assign/transfer, WhatsApp deep link, and partner scoped CRUD
-- Done: data layer; services + HTTP APIs; Book Now FE → `POST /booking-requests` with confirmation `public_code` + WhatsApp/Call fallbacks; Jest mapping/form tests; Playwright happy path updated; **admin inbox** at `/admin/booking-requests`; **partner inbox** at `/partner/booking-requests`; **Slice 6** — create-dialog duplicate phone banner, `GET …/suggest-laundries` + assign chips, notify stubs (admin on public create; partner on assign), ops runbook
-- Next: convert-to-order; expiry job; Playwright partner inbox smoke
+- Done: data layer; services + HTTP APIs; Book Now FE → `POST /booking-requests` with confirmation `public_code` + WhatsApp/Call fallbacks; Jest mapping/form tests; Playwright happy path updated; **admin inbox** at `/admin/booking-requests`; **partner inbox** at `/partner/booking-requests`; **Slice 6** — create-dialog duplicate phone banner, `GET …/suggest-laundries` + assign chips, notify stubs (admin on public create; partner on assign), ops runbook; **convert** → Customer Desk assisted factory (`converted_order_id` + event); FE Convert dialog → desk
+- Next: expiry job; Playwright partner inbox smoke
 - Non-goals: customer OTP self-serve portal; geo auto-assign as hard requirement; franchise/contact merge; CSV export / public track page (not in feature doc)
+
+## Customer Desk (assisted order lookup & create)
+- Status: **review** (Slices 1–5 complete 2026-08-04)
+- Spec: `docs/features/customer-desk.md`
+- API: `docs/api/endpoints/customer-desk.md` (lookup under `/admin|partner/customers/*`; create under `/admin|partner/customer-desk/orders`)
+- Schema: migration `20260804_0039` — `assisted_*` sources; `created_by_user_id`; guest address snapshot; `idempotency_key`; desk indexes (`customer_phone,created_at`, `laundry_id,customer_phone,created_at`); `user_id,created_at` from `0003`
+- Why: Admin/Partner phone CRM + doorstep assisted create (walk-in remains separate).
+- Personas: Admin (platform-wide), Partner (own laundry only). Primary key: `phone_e164`.
+- Non-goals v1: order-for-friend; password/wallet; auto-assign laundry; SMS blast; **mass PII export**.
+- Slices:
+  - **Slice 1 — Lookup + history:** ✅
+  - **Slice 2 — Assisted create API:** ✅ quote + create, guest snapshot, audit, Idempotency-Key, `FEATURE_ONLINE_BOOKING` bypass
+  - **Slice 3 — Admin UI:** ✅
+  - **Slice 4 — Partner UI:** ✅
+  - **Slice 5 — Tests / a11y / docs:** ✅ pytest role/IDOR/assisted matrix; Playwright admin+partner; a11y tab keyboard + labels; security checklist; perf indexes
+- Done: Full desk path admin+partner (lookup → history → assisted create → walk-in/BR handoffs); name/phone search results (max 20); FE order history Prev/Next pagination
+- Next: ops runbook polish
+- Synergy: booking-request convert calls the same assisted order factory (**shipped**)

@@ -1,9 +1,9 @@
 # Feature: Booking Requests (Admin + Partner inbox)
 
-> Status: **in-progress** (Slice 1–6 polish shipped: data + APIs + Book Now + admin/partner inbox + **SLA/dup/suggest/notify polish**; convert/expiry pending)  
+> Status: **in-progress** (Slice 1–6 polish shipped; **convert-to-order via Customer Desk assisted factory shipped** 2026-08-04; expiry job pending)  
 > Owner: product-manager + backend-architect + frontend-architect  
-> Last updated: 2026-08-03  
-> Related: [marketing-homepage.md](marketing-homepage.md) (Book Now dialog), [offline-booking-whatsapp.md](offline-booking-whatsapp.md), [order-placement.md](order-placement.md), [complaints.md](complaints.md) (SLA / drawer UX patterns), [admin-approvals.md](admin-approvals.md)  
+> Last updated: 2026-08-04  
+> Related: [marketing-homepage.md](marketing-homepage.md) (Book Now dialog), [offline-booking-whatsapp.md](offline-booking-whatsapp.md), [order-placement.md](order-placement.md), [customer-desk.md](customer-desk.md) (assisted order factory / convert target), [complaints.md](complaints.md) (SLA / drawer UX patterns), [admin-approvals.md](admin-approvals.md)  
 > Ops: [booking-requests runbook](../runbooks/booking-requests.md)
 
 ## Problem
@@ -29,7 +29,7 @@ Call-to-book / offline mode is the live launch path. Book Now already converts, 
 - [x] Partner has CRUD on **assigned** requests only + respond + create for their laundry on a phone
 - [x] Phone (E.164) is the customer key: timeline of all requests/messages for that number
 - [x] Mobile-first India UX: SLA urgency, one-click WhatsApp deep link, duplicate-open warning
-- [ ] Hook to convert a confirmed request → real `orders` row when online booking is ready
+- [x] Hook to convert a confirmed request → real `orders` row when online booking is ready
 
 ## Non-goals
 
@@ -51,7 +51,7 @@ Call-to-book / offline mode is the live launch path. Book Now already converts, 
 | Partner soft-delete | **Admin only** | Partners may `cancel` / `decline`; cannot hide leads from platform |
 | Partner transfer | **Admin only**; partner may **release** (unassign → admin inbox) | Prevents partner↔partner lead poaching |
 | Duplicate on public create | Allow create; response `meta.duplicate_warning` + `open_request_ids` | India marketplace: never lose the lead |
-| Convert → order | Status `converted_to_order` + `converted_order_id`; API stub until order factory ready | Spec the contract now; implement when online booking flag is on |
+| Convert → order | Status `converted_to_order` + `converted_order_id`; calls Customer Desk assisted factory (`assisted_admin` / `assisted_partner`) | Shared pricing/audit path with desk create ([customer-desk.md](customer-desk.md)) |
 | Book Now API switch | `BookPickupForm` → `POST /booking-requests` (break from `POST /marketing/contact`) | Clean cut; optional one-time backfill of historical `order-help` rows |
 | Events table | **Include** `booking_request_events` | Audit like disputes/custody; keep messages human-readable |
 
@@ -144,7 +144,7 @@ Ship these; do not bloat beyond:
 3. **Duplicate detection** — same `phone_e164` + open status → warn on create + banner on detail  
 4. **Customer timeline drawer** — all booking requests + messages for a phone (admin full; partner scoped)  
 5. **Soft delete + restore** — admin only  
-6. **Convert → order** — contract + UI gated; implementation may stub until online booking path is stable  
+6. **Convert → order** — confirmed (admin may `force` from `contacted`) → assisted doorstep order via Customer Desk factory; UI enabled in admin/partner drawers  
 
 **v1.1 (document, don’t block v1):**
 
@@ -351,6 +351,6 @@ None blocking. Defaults above stand unless product overrides:
 | **A** | Schema + public create + admin list/detail/assign/messages |
 | **B** | Partner list/detail/respond/release/create; WhatsApp + SLA UI |
 | **C** | Phone timeline, soft delete/restore, duplicate warning, expiry job |
-| **D** | Convert-to-order + bulk assign + suggest-nearest |
+| **D** | Convert-to-order (**shipped** 2026-08-04 via Customer Desk assisted factory) + bulk assign + suggest-nearest (suggest shipped Slice 6) |
 | **E / Slice 3** | Switch Book Now FE + confirmation with `public_code` (**shipped**); Playwright; retire order-help path for pickup |
 | **Slice 6** | Polish: create-time duplicate banner, suggest-laundries, notify stubs, ops runbook (**shipped** 2026-08-03) |

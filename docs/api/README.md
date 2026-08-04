@@ -56,6 +56,8 @@ Per-resource pages (filled in as endpoints are implemented):
 - `endpoints/laundry-price-list.md` — public per-laundry garment prices (Slice C)
 - `endpoints/marketplace-from.md` — marketplace “from ₹” aggregates for `/pricing` (Slice D)
 - `endpoints/laundry-compare-hints.md` — list/search compare price hints for store cards (Slice 5)
+- `endpoints/booking-requests.md` — Book Now + admin/partner booking request inbox
+- `endpoints/customer-desk.md` — Customer Desk lookup + assisted doorstep create (admin + partner)
 
 ## Deprecations
 

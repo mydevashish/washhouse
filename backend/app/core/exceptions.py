@@ -142,12 +142,6 @@ class BookingRequestAlreadyTerminalError(ConflictError):
     message = "Booking request is already closed"
 
 
-class BookingRequestConvertNotImplementedError(DomainError):
-    code = "CONVERT_NOT_IMPLEMENTED"
-    status_code = 501
-    message = "Convert to order is not implemented yet"
-
-
 # ---------- Payments ----------
 class PaymentDeclinedError(ConflictError):
     code = "PAYMENT_DECLINED"

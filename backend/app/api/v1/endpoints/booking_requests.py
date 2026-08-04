@@ -343,18 +343,21 @@ async def admin_add_booking_request_message(
 
 @admin_router.post(
     "/{booking_request_id}/convert",
-    summary="Convert confirmed booking request to an order (stub)",
-    responses={501: {"description": "Convert not implemented"}},
+    summary="Convert confirmed booking request to an assisted doorstep order",
 )
 async def admin_convert_booking_request(
     body: BookingRequestConvert,
     request: Request,
     session: SessionDep,
-    _: Annotated[dict, Depends(get_current_admin)],
+    payload: Annotated[dict, Depends(get_current_admin)],
     booking_request_id: UUID,
 ) -> dict:
-    await BookingRequestService(session).admin_convert(booking_request_id, force=body.force)
-    return success_envelope({"ok": True}, request)
+    data = await BookingRequestService(session).admin_convert(
+        booking_request_id,
+        body,
+        admin_user_id=UUID(payload["sub"]),
+    )
+    return success_envelope(data.model_dump(mode="json"), request)
 
 
 # ---------- Partner ----------
@@ -503,14 +506,18 @@ async def partner_add_booking_request_message(
 
 @partner_router.post(
     "/{booking_request_id}/convert",
-    summary="Convert confirmed booking request to an order (stub)",
-    responses={501: {"description": "Convert not implemented"}},
+    summary="Convert confirmed booking request to an assisted doorstep order",
 )
 async def partner_convert_booking_request(
+    body: BookingRequestConvert,
     request: Request,
     session: SessionDep,
     payload: Annotated[dict, Depends(get_current_partner)],
     booking_request_id: UUID,
 ) -> dict:
-    await BookingRequestService(session).partner_convert(UUID(payload["sub"]), booking_request_id)
-    return success_envelope({"ok": True}, request)
+    data = await BookingRequestService(session).partner_convert(
+        UUID(payload["sub"]),
+        booking_request_id,
+        body,
+    )
+    return success_envelope(data.model_dump(mode="json"), request)

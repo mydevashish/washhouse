@@ -15,10 +15,14 @@ Maps historical product docs → roadmap phase → feature spec.
 | Reviews & ratings | 2 | [reviews.md](../features/reviews.md) |
 | Partner registration, KYC | 3 | [partner-onboarding.md](../features/partner-onboarding.md) |
 | Partner order management | 3 | [partner-dashboard.md](../features/partner-dashboard.md) |
+| Partner walk-in / offline booking | launch | [offline-booking-whatsapp.md](../features/offline-booking-whatsapp.md), [order-placement.md](../features/order-placement.md) |
+| Book Now / phone CRM booking requests | launch | [booking-requests.md](../features/booking-requests.md) |
+| Customer Desk — assisted lookup & doorstep create (admin + partner) | launch / ops | [customer-desk.md](../features/customer-desk.md) |
 | Inventory (cloth count, missing) | 3 | [partner-inventory.md](../features/partner-inventory.md) |
 | QR / barcode tracking | 3 | [partner-qr-tracking.md](../features/partner-qr-tracking.md) |
 | Staff roles | 3 | [partner-staff.md](../features/partner-staff.md) |
 | Admin laundry approval | 4 | [admin-approvals.md](../features/admin-approvals.md) |
+| Admin customers / ops console | 4 | [admin-dashboard.md](../features/admin-dashboard.md), [customer-desk.md](../features/customer-desk.md) |
 | Commission 5–10% | 4 | [commission.md](../features/commission.md) |
 | Complaints / disputes | 4 | [complaints.md](../features/complaints.md) |
 | Area / city management | 4 | [admin-approvals.md](../features/admin-approvals.md) |

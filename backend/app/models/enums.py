@@ -33,6 +33,8 @@ class LaundryStatus(str, enum.Enum):
 class OrderSource(str, enum.Enum):
     online = "online"
     walk_in = "walk_in"
+    assisted_admin = "assisted_admin"
+    assisted_partner = "assisted_partner"
 
 
 class OrderStatus(str, enum.Enum):

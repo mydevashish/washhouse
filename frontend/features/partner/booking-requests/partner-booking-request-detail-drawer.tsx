@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ExternalLink,
   Loader2,
@@ -8,6 +8,7 @@ import {
   Phone,
   Unlink,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { ClientDate } from '@/components/ui/client-date';
@@ -28,6 +29,7 @@ import {
   BookingRequestPriorityBadge,
   BookingRequestStatusBadge,
 } from '@/features/admin/booking-requests/booking-request-badges';
+import { BookingRequestConvertDialog } from '@/features/admin/booking-requests/booking-request-convert-dialog';
 import { BookingRequestSlaCell } from '@/features/admin/booking-requests/booking-request-sla-cell';
 import {
   BOOKING_REQUEST_PREFERRED_TIMES,
@@ -37,7 +39,6 @@ import {
   BOOKING_REQUEST_SERVICE_LABELS,
   BOOKING_REQUEST_STATUS_LABELS,
   BOOKING_REQUEST_TIME_LABELS,
-  CONVERT_NOT_READY_TOOLTIP,
   type BookingRequestStatus,
 } from '@/features/admin/booking-requests/constants';
 import {
@@ -51,6 +52,7 @@ import {
 } from '@/features/partner/booking-requests/lib/partner-booking-status';
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import type { AdminLaundryRow } from '@/services/admin';
 
 type Props = {
   requestId: string | null;
@@ -80,10 +82,11 @@ export function PartnerBookingRequestDetailDrawer({
   onOpenChange,
   onViewPhoneTimeline,
 }: Props) {
+  const router = useRouter();
   const detailQ = usePartnerBookingRequestDetail(requestId, open);
   const d = detailQ.data;
 
-  const { updateM, releaseM, messageM } = usePartnerBookingRequestMutations({
+  const { updateM, releaseM, messageM, convertM } = usePartnerBookingRequestMutations({
     requestId,
     phone: d?.phone_e164,
     onSettledSuccess: () => {
@@ -105,6 +108,7 @@ export function PartnerBookingRequestDetailDrawer({
   const [internalNote, setInternalNote] = useState('');
   const [confirmRelease, setConfirmRelease] = useState(false);
   const [confirmStatus, setConfirmStatus] = useState<BookingRequestStatus | null>(null);
+  const [convertOpen, setConvertOpen] = useState(false);
 
   useEffect(() => {
     if (!d) return;
@@ -121,7 +125,20 @@ export function PartnerBookingRequestDetailDrawer({
   }, [d]);
 
   const isTerminal = d ? isPartnerBookingTerminal(d.status) : false;
+  const canConvert = Boolean(d) && !isTerminal && d!.status === 'confirmed';
   const quickStatuses = d ? partnerQuickStatusesFor(d.status) : [];
+  const laundryOptions = useMemo<AdminLaundryRow[]>(() => {
+    if (!d?.assigned_laundry_id) return [];
+    return [
+      {
+        id: d.assigned_laundry_id,
+        name: d.assigned_laundry_name ?? 'My laundry',
+        city: d.city ?? '',
+        status: 'approved',
+        is_verified: true,
+      },
+    ];
+  }, [d?.assigned_laundry_id, d?.assigned_laundry_name, d?.city]);
 
   const saveFields = () => {
     updateM.mutate({
@@ -219,11 +236,16 @@ export function PartnerBookingRequestDetailDrawer({
                   >
                     View customer timeline
                   </Button>
-                  <span className="inline-flex" title={CONVERT_NOT_READY_TOOLTIP}>
-                    <Button type="button" size="sm" variant="outline" className="h-8 text-xs" disabled>
-                      Convert to order
-                    </Button>
-                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs"
+                    disabled={!canConvert || convertM.isPending}
+                    onClick={() => setConvertOpen(true)}
+                  >
+                    Convert to order
+                  </Button>
                   {!isTerminal && (
                     <Button
                       type="button"
@@ -527,6 +549,30 @@ export function PartnerBookingRequestDetailDrawer({
           );
         }}
       />
+
+      {d ? (
+        <BookingRequestConvertDialog
+          open={convertOpen}
+          onOpenChange={setConvertOpen}
+          detail={d}
+          laundries={laundryOptions}
+          pending={convertM.isPending}
+          onSubmit={(payload) => {
+            convertM.mutate(
+              { ...payload, force: false },
+              {
+                onSuccess: () => {
+                  setConvertOpen(false);
+                  onOpenChange(false);
+                  router.push(
+                    `/partner/customer-desk?phone=${encodeURIComponent(d.phone_e164)}&tab=orders`,
+                  );
+                },
+              },
+            );
+          }}
+        />
+      ) : null}
     </>
   );
 }

@@ -2,7 +2,7 @@
 
 > Updated whenever a major milestone shifts. The source of truth for "where are we?".
 
-**Last updated:** 2026-08-03
+**Last updated:** 2026-08-04
 
 ## Phase
 
@@ -17,7 +17,8 @@
 ## Currently shipping
 
 - Customer booking + tracking UI, partner/admin dashboards, review + commission APIs
-- **Booking Requests Slice 6 polish** (2026-08-03): create-time duplicate phone banner; admin `suggest-laundries` + assign chips; notify stubs (admin on public create, partner on assign); ops runbook. Convert-to-order + expiry job remain next.
+- **Booking Requests convert-to-order** (2026-08-04): confirmed/`force` contacted → Customer Desk assisted factory; FE Convert enabled; expiry job remains next.
+- **Customer Desk Slices 1–5** (2026-08-04): lookup/history + assisted create API + Admin/Partner UI + QA matrix (IDOR, role 403, guest→registered link), Playwright smoke, a11y, security checklist (PII/audit/no mass export), desk indexes. Status: **review**.
 
 ## Blocked / Waiting
 

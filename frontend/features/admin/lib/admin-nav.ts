@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   FileText,
+  Headset,
   IndianRupee,
   LayoutDashboard,
   Megaphone,
@@ -51,6 +52,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     items: [
       { href: '/admin/laundries', label: 'Laundries', icon: Store },
       { href: '/admin/customers', label: 'Customers', icon: Users },
+      { href: '/admin/customer-desk', label: 'Customer Desk', icon: Headset },
       { href: '/admin/orders', label: 'Orders', icon: Package },
       {
         href: '/admin/booking-requests',

@@ -10,6 +10,7 @@ import {
   Trash2,
   Unlink,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ import {
   BookingRequestPriorityBadge,
   BookingRequestStatusBadge,
 } from '@/features/admin/booking-requests/booking-request-badges';
+import { BookingRequestConvertDialog } from '@/features/admin/booking-requests/booking-request-convert-dialog';
 import { BookingRequestSlaCell } from '@/features/admin/booking-requests/booking-request-sla-cell';
 import {
   BOOKING_REQUEST_PREFERRED_TIMES,
@@ -42,7 +44,7 @@ import {
   BOOKING_REQUEST_SERVICE_LABELS,
   BOOKING_REQUEST_STATUS_LABELS,
   BOOKING_REQUEST_TIME_LABELS,
-  CONVERT_NOT_READY_TOOLTIP,
+  CONVERTIBLE_BOOKING_STATUSES,
   TERMINAL_BOOKING_STATUSES,
   type BookingRequestStatus,
 } from '@/features/admin/booking-requests/constants';
@@ -92,11 +94,12 @@ export function BookingRequestDetailDrawer({
   laundries,
   onViewPhoneTimeline,
 }: Props) {
+  const router = useRouter();
   const detailQ = useAdminBookingRequestDetail(requestId, open);
   const d = detailQ.data;
   const suggestQ = useAdminBookingRequestSuggestLaundries(requestId, open);
 
-  const { updateM, claimM, assignM, releaseM, messageM, deleteM, restoreM } =
+  const { updateM, claimM, assignM, releaseM, messageM, deleteM, restoreM, convertM } =
     useBookingRequestMutations({
       requestId,
       phone: d?.phone_e164,
@@ -118,6 +121,7 @@ export function BookingRequestDetailDrawer({
   const [internalNote, setInternalNote] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmStatus, setConfirmStatus] = useState<BookingRequestStatus | null>(null);
+  const [convertOpen, setConvertOpen] = useState(false);
   const [claimedFor, setClaimedFor] = useState<string | null>(null);
 
   useEffect(() => {
@@ -147,6 +151,10 @@ export function BookingRequestDetailDrawer({
   const approved = laundries.filter((l) => l.status === 'approved');
   const isTerminal = d ? TERMINAL_BOOKING_STATUSES.has(d.status as BookingRequestStatus) : false;
   const isDeleted = Boolean(d?.deleted_at);
+  const canConvert =
+    Boolean(d) &&
+    !isDeleted &&
+    CONVERTIBLE_BOOKING_STATUSES.has(d!.status as BookingRequestStatus);
 
   const saveFields = () => {
     updateM.mutate({
@@ -267,20 +275,16 @@ export function BookingRequestDetailDrawer({
                   >
                     View customer timeline
                   </Button>
-                  <span
-                    className="inline-flex"
-                    title={CONVERT_NOT_READY_TOOLTIP}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs"
+                    disabled={!canConvert || convertM.isPending}
+                    onClick={() => setConvertOpen(true)}
                   >
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="h-8 text-xs"
-                      disabled
-                    >
-                      Convert to order
-                    </Button>
-                  </span>
+                    Convert to order
+                  </Button>
                 </div>
 
                 <AdminPanel title="SLA & summary" bodyClassName="grid gap-2 p-3 sm:grid-cols-2">
@@ -683,6 +687,27 @@ export function BookingRequestDetailDrawer({
           );
         }}
       />
+
+      {d ? (
+        <BookingRequestConvertDialog
+          open={convertOpen}
+          onOpenChange={setConvertOpen}
+          detail={d}
+          laundries={laundries}
+          pending={convertM.isPending}
+          onSubmit={(payload) => {
+            convertM.mutate(payload, {
+              onSuccess: () => {
+                setConvertOpen(false);
+                onOpenChange(false);
+                router.push(
+                  `/admin/customer-desk?phone=${encodeURIComponent(d.phone_e164)}&tab=orders`,
+                );
+              },
+            });
+          }}
+        />
+      ) : null}
     </>
   );
 }

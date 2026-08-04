@@ -19,6 +19,7 @@ Covers the QA matrix:
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -32,7 +33,7 @@ from uuid import UUID
 
 from app.models.booking_request import BookingRequest
 from app.models.enums import LaundryStatus, UserRole
-from app.models.laundry import Laundry
+from app.models.laundry import Laundry, LaundryService
 from app.models.user import User
 
 pytestmark = pytest.mark.asyncio
@@ -1142,9 +1143,9 @@ class TestAuthMatrix:
 
 
 # ---------------------------------------------------------------------------
-# Extra: claim, convert stub, suggest (kept from prior coverage)
+# Extra: claim, convert → assisted order, suggest
 # ---------------------------------------------------------------------------
-class TestClaimAndConvertStub:
+class TestClaimAndConvert:
     async def test_admin_claim(self, client: AsyncClient, admin_headers: dict[str, str]) -> None:
         created = await client.post(
             "/api/v1/booking-requests",
@@ -1159,43 +1160,217 @@ class TestClaimAndConvertStub:
         assert claimed.status_code == 200
         assert claimed.json()["data"]["status"] == "reviewing"
 
-    async def test_convert_stub_returns_501(
+    async def _seed_confirmed_request(
         self,
         client: AsyncClient,
+        db_session: AsyncSession,
         admin_headers: dict[str, str],
-    ) -> None:
+        *,
+        status: str = "confirmed",
+        phone: str | None = None,
+    ) -> tuple[str, Laundry, LaundryService]:
+        _, laundry, _ = await _make_partner_with_laundry(db_session, prefix="br.convert")
+        service = LaundryService(
+            laundry_id=laundry.id,
+            name="Wash & Fold",
+            category="wash",
+            unit="kg",
+            price_inr=Decimal("100"),
+            is_active=True,
+            catalog_status="active",
+        )
+        db_session.add(service)
+        await db_session.flush()
+
+        phone_e164 = phone or _unique_phone()
         created = await client.post(
             "/api/v1/admin/booking-requests",
             headers=admin_headers,
             json={
                 "customer_name": "Convert Me",
-                "phone": _unique_phone(),
+                "phone": phone_e164,
                 "service_type": "wash-iron",
                 "preferred_time_window": "flexible",
-                "status": "confirmed",
+                "address_text": "12 MG Road",
+                "city": "Bengaluru",
+                "pincode": "560034",
+                "assigned_laundry_id": str(laundry.id),
+                "status": status,
             },
         )
         assert created.status_code == 201
         request_id = created.json()["data"]["id"]
-
-        if created.json()["data"]["status"] != "confirmed":
-            # Walk legal transitions if create status was coerced
-            for status_value in ("reviewing", "assigned", "contacted", "confirmed"):
-                patched = await client.patch(
+        data = created.json()["data"]
+        if data["status"] != status:
+            # Walk legal transitions when create status was coerced
+            path = ["reviewing", "assigned", "contacted", "confirmed"]
+            if status == "contacted":
+                path = ["reviewing", "assigned", "contacted"]
+            for status_value in path:
+                await client.patch(
                     f"/api/v1/admin/booking-requests/{request_id}",
                     headers=admin_headers,
                     json={"status": status_value},
                 )
-                if patched.status_code not in (200, 409):
-                    break
+        return request_id, laundry, service
 
+    def _convert_body(self, *, laundry_id, service_id, force: bool = False) -> dict:
+        return {
+            "force": force,
+            "laundry_id": str(laundry_id),
+            "pickup_at": (datetime.now(UTC) + timedelta(hours=2)).isoformat(),
+            "delivery_at": (datetime.now(UTC) + timedelta(days=1)).isoformat(),
+            "items": [{"service_id": str(service_id), "quantity": 2}],
+            "payment_method": "cod",
+            "notes": "Converted from BR",
+        }
+
+    async def test_convert_happy_path(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        admin_headers: dict[str, str],
+    ) -> None:
+        request_id, laundry, service = await self._seed_confirmed_request(
+            client, db_session, admin_headers
+        )
         response = await client.post(
             f"/api/v1/admin/booking-requests/{request_id}/convert",
             headers=admin_headers,
-            json={"force": True},
+            json=self._convert_body(laundry_id=laundry.id, service_id=service.id),
         )
-        assert response.status_code == 501
-        assert response.json()["error"]["code"] == "CONVERT_NOT_IMPLEMENTED"
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert data["status"] == "converted_to_order"
+        assert data["converted_order_id"]
+        assert data["tracking_code"]
+        assert data["order_source"] == "assisted_admin"
+
+        detail = await client.get(
+            f"/api/v1/admin/booking-requests/{request_id}",
+            headers=admin_headers,
+        )
+        assert detail.status_code == 200
+        body = detail.json()["data"]
+        assert body["status"] == "converted_to_order"
+        assert body["converted_order_id"] == data["converted_order_id"]
+        assert any(e["event_type"] == "converted" for e in body["events"])
+
+    async def test_convert_invalid_status(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        admin_headers: dict[str, str],
+    ) -> None:
+        _, laundry, _ = await _make_partner_with_laundry(db_session, prefix="br.convert.bad")
+        service = LaundryService(
+            laundry_id=laundry.id,
+            name="Wash",
+            category="wash",
+            unit="kg",
+            price_inr=Decimal("80"),
+            is_active=True,
+            catalog_status="active",
+        )
+        db_session.add(service)
+        await db_session.flush()
+        created = await client.post(
+            "/api/v1/admin/booking-requests",
+            headers=admin_headers,
+            json={
+                "customer_name": "Too Early",
+                "phone": _unique_phone(),
+                "service_type": "wash-fold",
+                "preferred_time_window": "morning",
+                "address_text": "1 Road",
+                "city": "Bengaluru",
+                "pincode": "560001",
+                "assigned_laundry_id": str(laundry.id),
+            },
+        )
+        assert created.status_code == 201
+        rid = created.json()["data"]["id"]
+        assert created.json()["data"]["status"] == "assigned"
+
+        response = await client.post(
+            f"/api/v1/admin/booking-requests/{rid}/convert",
+            headers=admin_headers,
+            json=self._convert_body(laundry_id=laundry.id, service_id=service.id),
+        )
+        assert response.status_code == 409
+        assert response.json()["error"]["code"] == "INVALID_STATUS_TRANSITION"
+
+    async def test_convert_already_converted(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        admin_headers: dict[str, str],
+    ) -> None:
+        request_id, laundry, service = await self._seed_confirmed_request(
+            client, db_session, admin_headers
+        )
+        body = self._convert_body(laundry_id=laundry.id, service_id=service.id)
+        first = await client.post(
+            f"/api/v1/admin/booking-requests/{request_id}/convert",
+            headers=admin_headers,
+            json=body,
+        )
+        assert first.status_code == 200
+
+        second = await client.post(
+            f"/api/v1/admin/booking-requests/{request_id}/convert",
+            headers=admin_headers,
+            json=body,
+        )
+        assert second.status_code == 409
+        assert second.json()["error"]["code"] == "ALREADY_TERMINAL"
+
+    async def test_convert_force_from_contacted(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        admin_headers: dict[str, str],
+    ) -> None:
+        # Seed assigned then walk to contacted
+        _, laundry, _ = await _make_partner_with_laundry(db_session, prefix="br.convert.force")
+        service = LaundryService(
+            laundry_id=laundry.id,
+            name="Iron",
+            category="iron",
+            unit="pc",
+            price_inr=Decimal("50"),
+            is_active=True,
+            catalog_status="active",
+        )
+        db_session.add(service)
+        await db_session.flush()
+        created = await client.post(
+            "/api/v1/admin/booking-requests",
+            headers=admin_headers,
+            json={
+                "customer_name": "Force Convert",
+                "phone": _unique_phone(),
+                "service_type": "wash-iron",
+                "preferred_time_window": "evening",
+                "address_text": "9 Ring Road",
+                "city": "Bengaluru",
+                "pincode": "560095",
+                "assigned_laundry_id": str(laundry.id),
+            },
+        )
+        rid = created.json()["data"]["id"]
+        await client.patch(
+            f"/api/v1/admin/booking-requests/{rid}",
+            headers=admin_headers,
+            json={"status": "contacted"},
+        )
+        response = await client.post(
+            f"/api/v1/admin/booking-requests/{rid}/convert",
+            headers=admin_headers,
+            json=self._convert_body(laundry_id=laundry.id, service_id=service.id, force=True),
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["data"]["status"] == "converted_to_order"
 
 
 class TestSuggestLaundries:

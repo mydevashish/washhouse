@@ -1,8 +1,10 @@
 'use client';
 
-import { Store } from 'lucide-react';
+import { Headset, Store } from 'lucide-react';
+import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -11,7 +13,11 @@ import { InfoBanner } from '@/components/ui/info-banner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
 import { WalkInOrderCard } from '@/features/partner/components/walk-in-order-card';
-import { WalkInOrderForm, type WalkInFormValues } from '@/features/partner/components/walk-in-order-form';
+import {
+  WalkInOrderForm,
+  type WalkInFormPrefill,
+  type WalkInFormValues,
+} from '@/features/partner/components/walk-in-order-form';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { getWalkInNextStatus } from '@/features/partner/lib/partner-status';
 import { queryKeys } from '@/lib/query-keys';
@@ -25,8 +31,25 @@ import {
 export function PartnerWalkInOrdersView() {
   const enabled = usePartnerQueriesEnabled();
   const queryClient = useQueryClient();
-  const [showForm, setShowForm] = useState(false);
+  const searchParams = useSearchParams();
+  const phoneParam = searchParams.get('phone');
+  const nameParam = searchParams.get('name');
+  const newParam = searchParams.get('new');
+
+  const deskPrefill = useMemo<WalkInFormPrefill | null>(() => {
+    if (!phoneParam && !nameParam) return null;
+    return {
+      customer_phone: phoneParam ?? undefined,
+      customer_name: nameParam ?? undefined,
+    };
+  }, [phoneParam, nameParam]);
+
+  const [showForm, setShowForm] = useState(Boolean(newParam === '1' || deskPrefill));
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (newParam === '1' || deskPrefill) setShowForm(true);
+  }, [newParam, deskPrefill]);
 
   const ordersQ = useQuery({
     queryKey: queryKeys.partnerWalkInOrders(),
@@ -63,7 +86,8 @@ export function PartnerWalkInOrdersView() {
   });
 
   const advanceMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => advanceWalkInOrderStatus(id, status),
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      advanceWalkInOrderStatus(id, status),
     onMutate: ({ id }) => setBusyOrderId(id),
     onSuccess: () => {
       toast.success('Status updated');
@@ -94,14 +118,27 @@ export function PartnerWalkInOrdersView() {
         title="Walk-in orders"
         description="Record in-shop customers. No online payment — track status and notify customers on WhatsApp."
         actions={
-          <Button type="button" className="min-h-[44px]" onClick={() => setShowForm((v) => !v)}>
-            {showForm ? 'Hide form' : 'New entry'}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
+              <Link href="/partner/customer-desk">
+                <Headset className="h-3.5 w-3.5" aria-hidden />
+                Find customer
+              </Link>
+            </Button>
+            <Button type="button" className="min-h-[44px]" onClick={() => setShowForm((v) => !v)}>
+              {showForm ? 'Hide form' : 'New entry'}
+            </Button>
+          </div>
         }
       />
 
       {showForm && (
         <div className="rounded-2xl border border-border bg-background p-4 shadow-sm">
+          {deskPrefill ? (
+            <InfoBanner variant="default" title="Prefill from Customer Desk" className="mb-4">
+              Phone and name were filled from the desk. Add services and save the walk-in.
+            </InfoBanner>
+          ) : null}
           {servicesQ.isPending && <Skeleton className="h-64 w-full rounded-xl" />}
           {servicesQ.isError && (
             <InfoBanner variant="destructive" title="Could not load services">
@@ -113,6 +150,7 @@ export function PartnerWalkInOrdersView() {
               services={servicesQ.data}
               onSubmit={handleCreate}
               isSubmitting={createMutation.isPending}
+              prefill={deskPrefill}
             />
           )}
         </div>

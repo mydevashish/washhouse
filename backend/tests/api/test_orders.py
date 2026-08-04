@@ -194,6 +194,13 @@ async def test_partner_cannot_list_customer_orders(
     client: AsyncClient,
     partner_headers: dict[str, str],
 ) -> None:
-    # Customer list route is role-gated to customers (or auth-only with empty for others).
+    """Partners must not use the customer self-serve GET /orders list.
+
+    Customer Desk (`/partner/customers/...`) is the intentional exception for
+    laundry-scoped history — covered in test_customer_desk.py IDOR matrix.
+    """
     resp = await client.get("/api/v1/orders", headers=partner_headers)
+    # Role gate: forbid customer list, or empty 200 if endpoint is auth-only.
     assert resp.status_code in (200, 403)
+    if resp.status_code == 200:
+        assert resp.json()["data"] == []

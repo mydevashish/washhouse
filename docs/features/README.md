@@ -30,5 +30,6 @@ Per-feature specs. Template: `.cursor/templates/feature-spec.md`.
 | Loyalty / referrals | planned | [loyalty-referrals.md](loyalty-referrals.md) | 6 |
 | Marketing homepage v2 | shipped | [marketing-homepage.md](marketing-homepage.md) | 6 |
 | Booking requests (Book Now inbox) | in-progress | [booking-requests.md](booking-requests.md) | launch / offline |
+| Customer Desk (assisted lookup & create) | review | [customer-desk.md](customer-desk.md) | launch / ops |
 
 Product index: [../product/INDEX.md](../product/INDEX.md)

@@ -1,7 +1,9 @@
 'use client';
 
-import { Package } from 'lucide-react';
+import { Headset, Package } from 'lucide-react';
+import Link from 'next/link';
 
+import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { InfoBanner } from '@/components/ui/info-banner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,7 +17,18 @@ export function PartnerOrdersView() {
 
   return (
     <PartnerContent className="space-y-5">
-      <PartnerPageHeader title="Orders" description="Accept, process, and deliver customer orders." />
+      <PartnerPageHeader
+        title="Orders"
+        description="Accept, process, and deliver customer orders."
+        actions={
+          <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
+            <Link href="/partner/customer-desk">
+              <Headset className="h-3.5 w-3.5" aria-hidden />
+              Find customer
+            </Link>
+          </Button>
+        }
+      />
 
       {ordersQ.isLoading && <Skeleton className="h-96 w-full rounded-2xl" />}
       {enabled && ordersQ.isError && (

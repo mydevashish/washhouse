@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { useEffect } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -29,25 +30,44 @@ const walkInFormSchema = z.object({
 
 export type WalkInFormValues = z.infer<typeof walkInFormSchema>;
 
+export type WalkInFormPrefill = {
+  customer_name?: string;
+  customer_phone?: string;
+};
+
 type WalkInOrderFormProps = {
   services: ServiceCatalogItem[];
   onSubmit: (values: WalkInFormValues) => void;
   isSubmitting?: boolean;
+  prefill?: WalkInFormPrefill | null;
 };
 
-export function WalkInOrderForm({ services, onSubmit, isSubmitting }: WalkInOrderFormProps) {
-  const activeServices = services.filter((s) => s.is_active && (s.catalog_status ?? 'active') === 'active');
+export function WalkInOrderForm({
+  services,
+  onSubmit,
+  isSubmitting,
+  prefill = null,
+}: WalkInOrderFormProps) {
+  const activeServices = services.filter(
+    (s) => s.is_active && (s.catalog_status ?? 'active') === 'active',
+  );
 
   const form = useForm<WalkInFormValues>({
     resolver: zodResolver(walkInFormSchema),
     defaultValues: {
-      customer_name: '',
-      customer_phone: '',
+      customer_name: prefill?.customer_name ?? '',
+      customer_phone: prefill?.customer_phone ?? '',
       notes: '',
       expected_ready_at: '',
       items: [{ service_id: '', quantity: 1 }],
     },
   });
+
+  useEffect(() => {
+    if (!prefill) return;
+    if (prefill.customer_name) form.setValue('customer_name', prefill.customer_name);
+    if (prefill.customer_phone) form.setValue('customer_phone', prefill.customer_phone);
+  }, [prefill, form]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -99,7 +119,10 @@ export function WalkInOrderForm({ services, onSubmit, isSubmitting }: WalkInOrde
           </Button>
         </div>
         {fields.map((field, index) => (
-          <div key={field.id} className="flex flex-col gap-2 rounded-xl border border-border p-3 sm:flex-row sm:items-end">
+          <div
+            key={field.id}
+            className="flex flex-col gap-2 rounded-xl border border-border p-3 sm:flex-row sm:items-end"
+          >
             <div className="min-w-0 flex-1 space-y-2">
               <Label htmlFor={`service-${index}`}>Service</Label>
               <select

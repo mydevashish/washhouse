@@ -12,7 +12,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
     BookingRequestAlreadyTerminalError,
-    BookingRequestConvertNotImplementedError,
     BookingRequestInvalidTransitionError,
     BookingRequestNotFoundError,
     ErrorDetail,
@@ -37,6 +36,7 @@ from app.models.enums import (
     BookingRequestSource,
     BookingRequestStatus,
     LaundryStatus,
+    OrderSource,
 )
 from app.models.laundry import Laundry
 from app.repositories.booking_request import BookingRequestRepository
@@ -44,6 +44,8 @@ from app.repositories.laundry import LaundryRepository
 from app.schemas.booking_request import (
     BookingRequestAdminCreate,
     BookingRequestAssign,
+    BookingRequestConvert,
+    BookingRequestConvertResult,
     BookingRequestDetailOut,
     BookingRequestEventOut,
     BookingRequestLaundrySuggestion,
@@ -57,6 +59,7 @@ from app.schemas.booking_request import (
     BookingRequestSuggestLaundriesOut,
     BookingRequestUpdate,
 )
+from app.services.customer_desk_service import CustomerDeskService
 from app.services.notifications.booking_request_notifier import BookingRequestNotifier
 from app.utils.phone import phone_digits, validate_strict_indian_mobile
 
@@ -427,13 +430,22 @@ class BookingRequestService:
         rows = await self._repo.list_by_phone(phone_e164, include_deleted=False, limit=50)
         return await self._phone_timeline(phone_e164, rows)
 
-    async def admin_convert(self, booking_request_id: UUID, *, force: bool = False) -> None:
+    async def admin_convert(
+        self,
+        booking_request_id: UUID,
+        payload: BookingRequestConvert,
+        *,
+        admin_user_id: UUID,
+    ) -> BookingRequestConvertResult:
         row = await self._require_row(booking_request_id)
-        if row.status != BookingRequestStatus.confirmed and not force:
-            raise BookingRequestInvalidTransitionError(
-                "Booking request must be confirmed before convert (or pass force=true)",
-            )
-        raise BookingRequestConvertNotImplementedError()
+        return await self._convert(
+            row,
+            payload,
+            actor_user_id=admin_user_id,
+            order_source=OrderSource.assisted_admin,
+            force=payload.force,
+            partner_laundry_id=None,
+        )
 
     # ---------- Partner ----------
     async def partner_list(
@@ -587,16 +599,154 @@ class BookingRequestService:
             laundry_names={laundry.id: laundry.name},
         )
 
-    async def partner_convert(self, partner_user_id: UUID, booking_request_id: UUID) -> None:
+    async def partner_convert(
+        self,
+        partner_user_id: UUID,
+        booking_request_id: UUID,
+        payload: BookingRequestConvert,
+    ) -> BookingRequestConvertResult:
         laundry = await self._require_partner_laundry(partner_user_id)
         row = await self._require_partner_row(booking_request_id, laundry.id)
-        if row.status != BookingRequestStatus.confirmed:
-            raise BookingRequestInvalidTransitionError(
-                "Booking request must be confirmed before convert",
-            )
-        raise BookingRequestConvertNotImplementedError()
+        # Partners cannot force; ignore client force flag.
+        safe = payload.model_copy(update={"force": False, "laundry_id": laundry.id})
+        return await self._convert(
+            row,
+            safe,
+            actor_user_id=partner_user_id,
+            order_source=OrderSource.assisted_partner,
+            force=False,
+            partner_laundry_id=laundry.id,
+        )
 
     # ---------- Internals ----------
+    async def _convert(
+        self,
+        row: BookingRequest,
+        payload: BookingRequestConvert,
+        *,
+        actor_user_id: UUID,
+        order_source: OrderSource,
+        force: bool,
+        partner_laundry_id: UUID | None,
+    ) -> BookingRequestConvertResult:
+        if row.status in BOOKING_REQUEST_TERMINAL_STATUSES or row.converted_order_id is not None:
+            raise BookingRequestAlreadyTerminalError(
+                "Booking request is already closed or converted",
+            )
+        if row.status != BookingRequestStatus.confirmed and not force:
+            raise BookingRequestInvalidTransitionError(
+                "Booking request must be confirmed before convert (or pass force=true)",
+            )
+        if force and row.status not in (
+            BookingRequestStatus.confirmed,
+            BookingRequestStatus.contacted,
+        ):
+            raise BookingRequestInvalidTransitionError(
+                "force=true only allows convert from contacted or confirmed",
+            )
+
+        laundry_id = payload.laundry_id or row.assigned_laundry_id
+        if laundry_id is None:
+            raise ValidationError("Assign a laundry (or pass laundry_id) before convert")
+        if partner_laundry_id is not None and laundry_id != partner_laundry_id:
+            raise ValidationError("Partner convert must use the assigned laundry")
+
+        address_id = payload.address_id
+        address_snap = payload.address.model_dump() if payload.address is not None else None
+        if address_id is None and address_snap is None:
+            address_snap = self._address_snapshot_from_request(row)
+
+        notes = payload.notes if payload.notes is not None else row.notes
+        if notes:
+            notes = f"{notes}\n[From booking request {row.public_code}]".strip()
+        else:
+            notes = f"[From booking request {row.public_code}]"
+
+        desk = CustomerDeskService(self._session)
+        order = await desk.create_assisted(
+            actor_user_id=actor_user_id,
+            order_source=order_source,
+            phone=row.phone_e164,
+            customer_name=row.customer_name,
+            laundry_id=laundry_id,
+            address_id=address_id,
+            address=address_snap,
+            pickup_at=payload.pickup_at,
+            delivery_at=payload.delivery_at,
+            items=[item.model_dump() for item in payload.items],
+            notes=notes,
+            payment_method=payload.payment_method,
+            idempotency_key=f"br-convert-{row.id}",
+            partner_laundry_id=partner_laundry_id,
+        )
+
+        from_status = row.status
+        await self._repo.update(
+            row,
+            fields={
+                "status": BookingRequestStatus.converted_to_order,
+                "converted_order_id": order.id,
+                "assigned_laundry_id": laundry_id,
+            },
+            actor_user_id=actor_user_id,
+            record_event=False,
+        )
+        await self._repo.add_event(
+            BookingRequestEvent(
+                booking_request_id=row.id,
+                event_type=BookingRequestEventType.converted,
+                actor_user_id=actor_user_id,
+                from_status=from_status,
+                to_status=BookingRequestStatus.converted_to_order,
+                to_laundry_id=laundry_id,
+                payload={
+                    "converted_order_id": str(order.id),
+                    "tracking_code": order.tracking_code,
+                    "order_source": order.order_source.value
+                    if hasattr(order.order_source, "value")
+                    else str(order.order_source),
+                    "force": force,
+                },
+            ),
+        )
+        log.info(
+            "booking_request.converted",
+            booking_request_id=str(row.id),
+            public_code=row.public_code,
+            order_id=str(order.id),
+            tracking_code=order.tracking_code,
+            force=force,
+        )
+        return BookingRequestConvertResult(
+            booking_request_id=row.id,
+            public_code=row.public_code,
+            status=BookingRequestStatus.converted_to_order,
+            converted_order_id=order.id,
+            tracking_code=order.tracking_code,
+            order_source=order.order_source,
+            total_inr=order.total_inr,
+            currency=order.currency or "INR",
+        )
+
+    @staticmethod
+    def _address_snapshot_from_request(row: BookingRequest) -> dict[str, str | None]:
+        line1 = (row.address_text or "").strip()
+        city = (row.city or "").strip()
+        pincode = (row.pincode or "").strip()
+        if not line1 or not city or not pincode:
+            raise ValidationError(
+                "Provide address (or address_id); booking request is missing address_text/city/pincode",
+            )
+        if not pincode.isdigit() or len(pincode) != 6:
+            raise ValidationError("Booking request pincode must be 6 digits for convert")
+        return {
+            "line1": line1,
+            "line2": None,
+            "city": city,
+            "pincode": pincode,
+            "landmark": None,
+        }
+
     async def _apply_update(
         self,
         row: BookingRequest,

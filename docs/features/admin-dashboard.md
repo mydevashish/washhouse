@@ -22,6 +22,7 @@ Admins understand platform health within **10 seconds** of login: laundries, cus
 | `/admin/approvals` | Approval center |
 | `/admin/laundries` | Laundry management + create |
 | `/admin/customers` | Customer table |
+| `/admin/customer-desk` | Customer Desk — name/phone search, order history, assisted doorstep create ([customer-desk.md](customer-desk.md)) |
 | `/admin/orders` | Orders table |
 | `/admin/revenue` | Revenue + transactions |
 | `/admin/commission` | Global + per-laundry commission |

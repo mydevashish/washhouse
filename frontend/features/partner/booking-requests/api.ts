@@ -1,3 +1,7 @@
+import type {
+  BookingRequestConvertPayload,
+  BookingRequestConvertResult,
+} from '@/features/admin/booking-requests/api';
 import { buildPartnerBookingListParams } from '@/features/partner/booking-requests/api-params';
 import type {
   BookingRequestDetail,
@@ -109,6 +113,17 @@ export async function getPartnerBookingRequestsByPhone(
   const encoded = encodeURIComponent(phone);
   const { data } = await api.get<ApiEnvelope<BookingRequestPhoneTimeline>>(
     `/partner/booking-requests/by-phone/${encoded}`,
+  );
+  return data.data;
+}
+
+export async function convertPartnerBookingRequest(
+  id: string,
+  payload: BookingRequestConvertPayload,
+): Promise<BookingRequestConvertResult> {
+  const { data } = await api.post<ApiEnvelope<BookingRequestConvertResult>>(
+    `/partner/booking-requests/${id}/convert`,
+    { ...payload, force: false },
   );
   return data.data;
 }

@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, Eye, MoreHorizontal, Plus } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 import { VirtualDataTable, type VirtualColumnDef } from '@/components/data-table/virtual-data-table';
 import { Button } from '@/components/ui/button';
@@ -38,11 +39,23 @@ const DEFAULT_FILTERS: BookingRequestListFilters = {
 };
 
 export function PartnerBookingRequestsInbox() {
-  const [filters, setFilters] = useState<BookingRequestListFilters>(DEFAULT_FILTERS);
+  const searchParams = useSearchParams();
+  const phoneFromUrl = searchParams.get('phone');
+
+  const [filters, setFilters] = useState<BookingRequestListFilters>(() => ({
+    ...DEFAULT_FILTERS,
+    phone: phoneFromUrl ?? undefined,
+  }));
   const [drawerId, setDrawerId] = useState<string | null>(null);
-  const [phoneTimeline, setPhoneTimeline] = useState<string | null>(null);
+  const [phoneTimeline, setPhoneTimeline] = useState<string | null>(phoneFromUrl);
   const [createOpen, setCreateOpen] = useState(false);
   const [createPrefill, setCreatePrefill] = useState<PartnerBookingCreatePrefill | null>(null);
+
+  useEffect(() => {
+    if (!phoneFromUrl) return;
+    setFilters((f) => ({ ...f, phone: phoneFromUrl, page: 1 }));
+    setPhoneTimeline(phoneFromUrl);
+  }, [phoneFromUrl]);
 
   const filterKey = useMemo(() => ({ ...filters }), [filters]);
   const tableQ = usePartnerBookingRequestsList(filterKey);

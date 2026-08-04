@@ -4,6 +4,97 @@
 
 ---
 
+## 2026-08-04 — Customer Desk gap close: pagination + search cap tests
+
+- **Type:** fix + test
+- **Scope:** customer-desk
+- **Files:** admin/partner `*-orders-tab.tsx` (Prev/Next), Jest results + pagination coverage, `test_customer_desk.py` search max-20, admin/partner dashboard docs
+- **Summary:** Desk API already had search (max 20), laundry-scoped history, and assisted create with IDOR. Closed FE gap where order history only loaded page 1 (hint text, no controls). Added search cap API test and results-list unit coverage.
+- **Risks:** None — pagination resets when desk profile changes.
+- **Mitigation:** Profile-key `useEffect` resets page to 1.
+- **Next:** ops runbook polish.
+- **Refs:** `docs/features/customer-desk.md` UX B (paginated orders)
+
+---
+
+## 2026-08-04 — Booking request convert → Customer Desk assisted order
+
+- **Type:** feat
+- **Scope:** booking-requests + customer-desk
+- **Files:** `booking_request_service.py` (`_convert` → `CustomerDeskService.create_assisted`), `schemas/booking_request.py` convert payload/result, `endpoints/booking_requests.py`, FE convert dialog + admin/partner drawers, `test_booking_requests.py` (happy/invalid/already-converted/force), docs/logs
+- **Summary:** Replaced `501 CONVERT_NOT_IMPLEMENTED` with real convert: validates confirmed (admin `force` from contacted), creates assisted doorstep order, sets `converted_order_id` + `converted_to_order` + `converted` event. FE enables Convert and navigates to Customer Desk on success.
+- **Risks:** Convert needs catalog line items + address; incomplete BR address without body snapshot → 422.
+- **Mitigation:** Convert dialog prefills BR address; tests cover status gates; idempotency key `br-convert-{id}`.
+- **Next:** Expiry Celery job; Playwright convert/partner smoke.
+- **Refs:** `docs/features/booking-requests.md` goal checkbox; `docs/api/endpoints/booking-requests.md`
+
+---
+
+## 2026-08-04 — Slice 2+5: Assisted create API + Customer Desk QA/security/perf
+
+- **Type:** feat + test
+- **Scope:** customer-desk
+- **Files:** `customer_desk_service.py` (create/quote), `endpoints/customer_desk.py` create routers, schemas, migration indexes + `idempotency_key`, `test_customer_desk.py` role/IDOR/assisted matrix, `test_orders.py` partner list clarification, Playwright admin+partner, drawer a11y, docs/logs
+- **Summary:** Shipped assisted doorstep create/quote for admin+partner (`assisted_*`, guest snapshot or `address_id`, audit custody/status, Idempotency-Key). Slice 5: parametrized AuthZ matrix, IDOR, guest→registered link, security checklist (PII/audit/no mass export), perf indexes + laundry_id-first queries, a11y tab keyboard + walk-in labels, Playwright smokes.
+- **Risks:** Partner create forces own laundry even if client sends another `laundry_id` (by design).
+- **Mitigation:** Pytest asserts forced laundry + empty cross-laundry history.
+- **Next:** BR convert → same factory; ops runbook.
+- **Refs:** `docs/features/customer-desk.md` Slices 2+5
+
+---
+
+## 2026-08-04 — Slice 4: Partner Customer Desk UI
+
+- **Type:** feat
+- **Scope:** customer-desk (partner UI)
+- **Files:** `frontend/features/partner/customer-desk/**`, `frontend/app/(partner)/partner/customer-desk/page.tsx`, partner customers/orders/walk-in views, `partner-nav.ts`, `query-keys.ts`, walk-in form prefill, booking-requests `?phone=`, partner lookup `user_id`, docs/logs, RTL + Playwright smoke
+- **Summary:** Shipped mobile-first `/partner/customer-desk` with big keypad phone search and primary **New order** CTA. Desk drawer shows laundry-scoped orders (explicit copy that other shops never appear), reorder→assisted form prefill, walk-in deep link, and booking-request tab. Insights **Open desk**, Orders/Walk-in **Find customer**. Partner lookup accepts `user_id` for insights deep links. Create still awaits Slice 2.
+- **Risks:** Assisted create submit 404 until Slice 2; reorder matches services by `item_summary` name (fragile if catalog renamed).
+- **Mitigation:** Guest stub on 404 phone lookup so counter can still create; warnings when catalog lines unavailable; walk-in path unchanged.
+- **Next:** Slice 2 assisted create API; Slice 5 a11y/docs polish.
+- **Refs:** `docs/features/customer-desk.md` Slice 4
+
+---
+
+## 2026-08-04 — Slice 3: Admin Customer Desk UI
+
+- **Type:** feat
+- **Scope:** customer-desk (admin UI)
+- **Files:** `frontend/features/admin/customer-desk/**`, `frontend/app/(admin)/admin/customer-desk/page.tsx`, `admin-customers-view.tsx`, `admin-nav.ts`, `query-keys.ts`, docs/logs
+- **Summary:** Shipped mobile-first `/admin/customer-desk` with E.164 phone lookup, focus-trapped desk drawer (Orders / Booking requests / Place order), Customers table “Open desk”, and Jest coverage for search + empty orders + form validation. Place-order client wires to Slice 2 create contract (backend create still pending).
+- **Risks:** Assisted create submit will 404 until Slice 2 lands; ops should use booking-request handoff meanwhile.
+- **Mitigation:** Form validates client-side; BR create dialog prefilled from desk; toast surfaces API errors.
+- **Next:** Slice 2 assisted create API; Slice 4 partner desk UI.
+- **Refs:** `docs/features/customer-desk.md` Slice 3
+
+---
+
+## 2026-08-04 — Slice 1: Customer Desk lookup + order history APIs
+
+- **Type:** feat
+- **Scope:** customer-desk (admin + partner)
+- **Files:** `customer_desk_service.py`, `schemas/customer_desk.py`, `endpoints/customer_desk.py`, `20260804_0039_customer_desk_assisted_orders.py`, `models/order.py`, `models/enums.py`, `admin_list_params.py`, `admin_service.py`, `tests/api/test_customer_desk.py`, docs/logs
+- **Summary:** Shipped phone/`user_id` lookup + paginated past-order history for admin (platform-wide) and partner (laundry-scoped). Migration adds `assisted_*` order_source values, `created_by_user_id`, guest address snapshot columns, and desk index — create API deferred to Slice 2. Admin `GET /orders` also accepts `customer_phone` / `user_id`.
+- **Risks:** Path surface uses `/admin|partner/customers/*` (user Slice 1 contract) rather than planned `/customer-desk/*`; keep docs aligned. Partner guest-with-only-other-laundry → 404 on lookup.
+- **Mitigation:** IDOR pytest matrix (16 tests green); guest history via `GET …/customers/orders?phone=`.
+- **Next:** Slice 2 — assisted create + quote + idempotency + shared pricing factory.
+- **Refs:** `docs/features/customer-desk.md` Slice 1; migration `20260804_0039`
+
+---
+
+## 2026-08-04 — Spec: Customer Desk (assisted lookup & create)
+
+- **Type:** docs
+- **Scope:** customer-desk (admin + partner)
+- **Files:** `docs/features/customer-desk.md`, `docs/api/endpoints/customer-desk.md`, `docs/database/schema.md`, `docs/product/traceability.md`, `docs/features/README.md`, `docs/api/README.md`, `logs/feature-progress.md`, `.cursor/context/current-status.md`
+- **Summary:** Specced Customer Desk so ops/partners can look up customers by phone and create real doorstep orders on their behalf (with walk-in + booking-request handoffs). Captured AuthZ, `order_source` extension, guest address snapshot, and five implementation slices — no code yet.
+- **Risks:** Future implementers may conflate assisted doorstep with walk-in lifecycle or skip IDOR tests.
+- **Mitigation:** Domain decisions table + API IDOR matrix + schema lifecycle note; Slice 1/5 require IDOR coverage.
+- **Next:** Slice 1 — migration + lookup/history APIs.
+- **Refs:** `docs/features/customer-desk.md`
+
+---
+
 ## 2026-08-03 — Slice 6: Booking requests polish
 
 - **Type:** feat

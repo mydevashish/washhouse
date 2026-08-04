@@ -32,6 +32,14 @@ export const queryKeys = {
     ['admin-booking-requests-by-phone', phone] as const,
   adminBookingRequestSuggestLaundries: (id: string) =>
     ['admin-booking-request-suggest-laundries', id] as const,
+  adminCustomerDeskLookup: (key: string) => ['admin-customer-desk', 'lookup', key] as const,
+  adminCustomerDeskSearch: (q: string) => ['admin-customer-desk', 'search', q] as const,
+  adminCustomerDeskOrders: (key: string, filters?: object) =>
+    ['admin-customer-desk', 'orders', key, filters ?? {}] as const,
+  partnerCustomerDeskLookup: (key: string) => ['partner-customer-desk', 'lookup', key] as const,
+  partnerCustomerDeskSearch: (q: string) => ['partner-customer-desk', 'search', q] as const,
+  partnerCustomerDeskOrders: (key: string, filters?: object) =>
+    ['partner-customer-desk', 'orders', key, filters ?? {}] as const,
   partnerBookingRequests: (filters?: object) =>
     ['partner-booking-requests', filters ?? {}] as const,
   partnerBookingRequestDetail: (id: string) => ['partner-booking-request-detail', id] as const,

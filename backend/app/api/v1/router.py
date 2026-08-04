@@ -23,6 +23,7 @@ from app.api.v1.endpoints import (
     admin_profit_sharing,
     admin_customer_experience,
     announcements,
+    customer_desk,
     customer_experience,
     partner_service_catalog,
     partner_price_list,
@@ -70,6 +71,10 @@ api_router.include_router(partner_walk_in_orders.router)
 api_router.include_router(pickup_evidence.router)
 api_router.include_router(storefront.router)
 api_router.include_router(admin.router)
+api_router.include_router(customer_desk.admin_router)
+api_router.include_router(customer_desk.partner_router)
+api_router.include_router(customer_desk.admin_create_router)
+api_router.include_router(customer_desk.partner_create_router)
 api_router.include_router(revenue_analytics.router)
 api_router.include_router(dispute_analytics.router)
 api_router.include_router(settlements.router)

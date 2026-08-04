@@ -41,11 +41,17 @@ Creating another request for the same open phone is **allowed**. Admin/partner c
 
 Failures never roll back the saved request. SMTP unset → email skipped (see [email-smtp.md](email-smtp.md)).
 
+## Convert → order
+
+1. Confirm pickup (status `confirmed`), or admin **force** from `contacted`.
+2. Drawer **Convert to order** → assisted form (laundry, address, services, slots).
+3. Creates `assisted_admin` / `assisted_partner` order via Customer Desk factory; BR → `converted_to_order`.
+4. UI navigates to Customer Desk (`?phone=` + orders tab).
+
 ## Out of scope / deferred
 
 - Public track-by-code portal (customer OTP self-serve deferred)
 - CSV export, admin overview KPI cards beyond inbox strip
-- Convert → order (API returns `501 CONVERT_NOT_IMPLEMENTED`)
 - Auto-expire after 72h (Celery job pending)
 
 ## Common issues
