@@ -27,12 +27,12 @@ describeJourney('Mahesh partner journey', () => {
   test('1. /partner dashboard loads KPIs without forever spinner', async ({ page }) => {
     await loginAsPartner(page);
     await expect(page).toHaveURL(/\/partner(\/|$)/);
-    await expect(page.getByRole('heading', { name: /today at a glance/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^dashboard$/i })).toBeVisible();
 
-    // KPI values must resolve (₹ / counts / rating) — not perpetual skeletons
-    await expect(page.getByText(/today's revenue/i)).toBeVisible({ timeout: 30_000 });
+    // KPI values must resolve (₹ / counts) — not perpetual skeletons
+    await expect(page.getByText(/today's sales/i)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(/today's orders/i)).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText(/₹\d|₹0/).first()).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText(/\d+\.\d+\s*★|\d+\s*★/).first()).toBeVisible({ timeout: 30_000 });
 
     // Actionable error states if API fails (never silent hang)
     const analyticsError = page.getByRole('heading', { name: /could not load analytics/i });

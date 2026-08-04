@@ -50,8 +50,10 @@ export function usePartnerOrderMutations() {
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOrders() });
+    void queryClient.invalidateQueries({ queryKey: ['partner-order'] });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerAnalytics() });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerCustomers() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerWalkInOrders() });
   };
 
   const acceptMutation = useMutation({

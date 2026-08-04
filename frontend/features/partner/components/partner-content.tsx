@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 
 export function PartnerContent({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-5', className)}>{children}</div>
+    <div className={cn('mx-auto w-full max-w-7xl px-4 py-3 sm:px-6 sm:py-4', className)}>{children}</div>
   );
 }
 
@@ -16,7 +16,7 @@ export function PartnerPageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <header className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <h1 className="page-title">{title}</h1>
         {description && (

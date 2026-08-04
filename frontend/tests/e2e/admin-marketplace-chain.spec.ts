@@ -84,7 +84,7 @@ describeJourney('Anita admin marketplace chain', () => {
 
     const routes: Array<{ path: string; heading: RegExp }> = [
       { path: '/admin/laundries', heading: /laundry|laundries/i },
-      { path: '/admin/customers', heading: /customer/i },
+      { path: '/admin/customers', heading: /^orders$/i },
       { path: '/admin/orders', heading: /order/i },
       { path: '/admin/revenue', heading: /revenue/i },
       { path: '/admin/commission', heading: /commission/i },

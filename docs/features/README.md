@@ -31,5 +31,6 @@ Per-feature specs. Template: `.cursor/templates/feature-spec.md`.
 | Marketing homepage v2 | shipped | [marketing-homepage.md](marketing-homepage.md) | 6 |
 | Booking requests (Book Now inbox) | in-progress | [booking-requests.md](booking-requests.md) | launch / offline |
 | Customer Desk (assisted lookup & create) | review | [customer-desk.md](customer-desk.md) | launch / ops |
+| Orders Hub (hard-merge ops home) | review | [orders-hub.md](orders-hub.md) | launch / ops |
 
 Product index: [../product/INDEX.md](../product/INDEX.md)

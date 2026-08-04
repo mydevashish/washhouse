@@ -17,8 +17,10 @@
 ## Currently shipping
 
 - Customer booking + tracking UI, partner/admin dashboards, review + commission APIs
+- **Partner Ops UX Phase 1 (A+B+C)** (2026-08-04): denser Partner/Admin shell; `/partner` dashboard KPI layout; `/partner/new-order` workspace; `/partner/orders/[id]` detail + stepper. Invoice/tags + Admin POS overview deferred.
 - **Booking Requests convert-to-order** (2026-08-04): confirmed/`force` contacted → Customer Desk assisted factory; FE Convert enabled; expiry job remains next.
-- **Customer Desk Slices 1–5** (2026-08-04): lookup/history + assisted create API + Admin/Partner UI + QA matrix (IDOR, role 403, guest→registered link), Playwright smoke, a11y, security checklist (PII/audit/no mass export), desk indexes. Status: **review**.
+- **Customer Desk Slices 1–5** (2026-08-04): lookup/history + assisted create API + Admin/Partner UI + QA matrix. Status: **review**.
+- **Orders Hub hard-merge** (2026-08-04): Spec + nav + hub tabs + redirects; **Admin + Partner ops shells** (`features/admin|partner/orders-hub`) with requests badge on header/tab + Playwright smoke (admin + partner). See [orders-hub.md](../../docs/features/orders-hub.md).
 
 ## Blocked / Waiting
 

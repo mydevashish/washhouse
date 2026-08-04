@@ -1,12 +1,14 @@
-import { RoleGuard } from '@/components/auth/role-guard';
-import { AdminCustomersView } from '@/features/admin/views/admin-customers-view';
+import { permanentRedirect } from 'next/navigation';
+
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 
 export const metadata = { title: 'Admin · Customers' };
 
-export default function AdminCustomersPage() {
-  return (
-    <RoleGuard roles={['admin', 'super_admin']}>
-      <AdminCustomersView />
-    </RoleGuard>
-  );
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+/** Legacy route → Orders Hub Directory tab. */
+export default async function AdminCustomersRedirectPage({ searchParams }: PageProps) {
+  permanentRedirect(buildOrdersHubPath('/admin/orders', 'directory', await searchParams));
 }

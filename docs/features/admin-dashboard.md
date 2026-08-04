@@ -21,9 +21,10 @@ Admins understand platform health within **10 seconds** of login: laundries, cus
 | `/admin` | Overview + KPIs + charts |
 | `/admin/approvals` | Approval center |
 | `/admin/laundries` | Laundry management + create |
-| `/admin/customers` | Customer table |
-| `/admin/customer-desk` | Customer Desk — name/phone search, order history, assisted doorstep create ([customer-desk.md](customer-desk.md)) |
-| `/admin/orders` | Orders table |
+| `/admin/orders` | Orders Hub — hard-merge tabs: Today/Orders \| Find customer \| Requests \| Directory ([orders-hub.md](orders-hub.md)); **Laundries** stays separate |
+| `/admin/customers` | → redirect `/admin/orders?tab=directory` (customers table in hub) |
+| `/admin/customer-desk` | → redirect `/admin/orders?tab=desk` ([customer-desk.md](customer-desk.md)) |
+| `/admin/booking-requests` | → redirect `/admin/orders?tab=requests` |
 | `/admin/revenue` | Revenue + transactions |
 | `/admin/commission` | Global + per-laundry commission |
 | `/admin/audit` | Audit logs |

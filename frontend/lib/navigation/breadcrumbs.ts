@@ -1,5 +1,11 @@
-import { ADMIN_NAV_FLAT } from '@/features/admin/lib/admin-nav';
-import { PARTNER_NAV_FLAT } from '@/features/partner/lib/partner-nav';
+import {
+  ADMIN_NAV_FLAT,
+  resolveAdminNavPathname,
+} from '@/features/admin/lib/admin-nav';
+import {
+  PARTNER_NAV_FLAT,
+  resolvePartnerNavPathname,
+} from '@/features/partner/lib/partner-nav';
 import type { AppContext, BreadcrumbItem } from '@/lib/navigation/types';
 
 const CUSTOMER_ROOT: BreadcrumbItem = { label: 'Discover', href: '/discover' };
@@ -42,10 +48,17 @@ function customerBreadcrumbs(pathname: string): BreadcrumbItem[] {
 
 export function buildBreadcrumbs(pathname: string, app: AppContext): BreadcrumbItem[] {
   if (app === 'admin') {
-    return navBreadcrumbs(pathname, ADMIN_NAV_FLAT, { label: 'Dashboard', href: '/admin' });
+    // Legacy Desk / BR / Customers → Orders Hub crumb (Prompt 2 redirects keep aliases for mid-flight).
+    return navBreadcrumbs(resolveAdminNavPathname(pathname), ADMIN_NAV_FLAT, {
+      label: 'Dashboard',
+      href: '/admin',
+    });
   }
   if (app === 'partner') {
-    return navBreadcrumbs(pathname, PARTNER_NAV_FLAT, { label: 'Dashboard', href: '/partner' });
+    return navBreadcrumbs(resolvePartnerNavPathname(pathname), PARTNER_NAV_FLAT, {
+      label: 'Dashboard',
+      href: '/partner',
+    });
   }
   return customerBreadcrumbs(pathname);
 }

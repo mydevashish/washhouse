@@ -59,6 +59,11 @@ export async function listPartnerOrders(): Promise<PartnerOrder[]> {
   return data.data;
 }
 
+export async function getPartnerOrder(orderId: string): Promise<PartnerOrder> {
+  const { data } = await api.get<ApiEnvelope<PartnerOrder>>(`/partner/orders/${orderId}`);
+  return data.data;
+}
+
 export async function updateOrderStatus(orderId: string, status: string): Promise<PartnerOrder> {
   const { data } = await api.patch<ApiEnvelope<PartnerOrder>>(`/partner/orders/${orderId}/status`, {
     status,

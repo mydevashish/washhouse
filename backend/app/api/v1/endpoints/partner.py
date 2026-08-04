@@ -99,6 +99,25 @@ async def partner_orders(
     return success_envelope(data, request)
 
 
+@router.get("/orders/{order_id}")
+async def partner_order_detail(
+    order_id: UUID,
+    request: Request,
+    session: SessionDep,
+    payload: Annotated[dict, Depends(get_current_partner)],
+) -> dict:
+    from sqlalchemy import select
+
+    from app.models.user import User
+
+    order = await OrderService(session).get_for_partner(UUID(payload["sub"]), order_id)
+    user_name = None
+    if order.user_id is not None:
+        user_name = await session.scalar(select(User.full_name).where(User.id == order.user_id))
+    display_name = user_name or order.customer_name or "Walk-in customer"
+    return success_envelope(_partner_order_response(order, display_name), request)
+
+
 @router.get("/customers")
 async def partner_customers(
     request: Request,

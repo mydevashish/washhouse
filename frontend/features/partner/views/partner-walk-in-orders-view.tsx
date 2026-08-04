@@ -20,6 +20,7 @@ import {
 } from '@/features/partner/components/walk-in-order-form';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { getWalkInNextStatus } from '@/features/partner/lib/partner-status';
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import { queryKeys } from '@/lib/query-keys';
 import { listPartnerServices } from '@/services/partner-service-catalog';
 import {
@@ -120,13 +121,16 @@ export function PartnerWalkInOrdersView() {
         actions={
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
-              <Link href="/partner/customer-desk">
+              <Link href={buildOrdersHubPath('/partner/orders', 'desk')}>
                 <Headset className="h-3.5 w-3.5" aria-hidden />
                 Find customer
               </Link>
             </Button>
-            <Button type="button" className="min-h-[44px]" onClick={() => setShowForm((v) => !v)}>
-              {showForm ? 'Hide form' : 'New entry'}
+            <Button asChild size="sm" className="min-h-[44px]">
+              <Link href="/partner/new-order?mode=walk_in">New Order</Link>
+            </Button>
+            <Button type="button" variant="outline" className="min-h-[44px]" onClick={() => setShowForm((v) => !v)}>
+              {showForm ? 'Hide quick form' : 'Quick form'}
             </Button>
           </div>
         }

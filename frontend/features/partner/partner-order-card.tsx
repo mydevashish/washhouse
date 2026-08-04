@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2, Shield } from 'lucide-react';
+import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -106,7 +107,12 @@ export function PartnerOrderCard({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="font-mono text-sm font-semibold text-foreground">#{order.tracking_code}</p>
+              <Link
+                href={`/partner/orders/${order.id}`}
+                className="font-mono text-sm font-semibold text-foreground hover:text-primary hover:underline"
+              >
+                #{order.tracking_code}
+              </Link>
               <PartnerOrderSourceBadge order={order} />
             </div>
             <p className="mt-0.5 truncate text-sm text-foreground">{order.customer_name}</p>

@@ -3,7 +3,7 @@
 > Status: **review** (Slices 1–5 complete: lookup/history, assisted create API, Admin UI, Partner UI, QA/security/perf/a11y)  
 > Owner: product-manager + backend-architect + frontend-architect  
 > Last updated: 2026-08-04  
-> Related: [order-placement.md](order-placement.md), [booking-requests.md](booking-requests.md), [offline-booking-whatsapp.md](offline-booking-whatsapp.md), [partner-dashboard.md](partner-dashboard.md), [admin-dashboard.md](admin-dashboard.md)  
+> Related: [order-placement.md](order-placement.md), [booking-requests.md](booking-requests.md), [orders-hub.md](orders-hub.md) (hard-merge home), [offline-booking-whatsapp.md](offline-booking-whatsapp.md), [partner-dashboard.md](partner-dashboard.md), [admin-dashboard.md](admin-dashboard.md)  
 > API: [`docs/api/endpoints/customer-desk.md`](../api/endpoints/customer-desk.md)  
 > Schema: [`docs/database/schema.md`](../database/schema.md) § Customer Desk / orders assisted columns
 
@@ -83,7 +83,7 @@ Call-to-book / offline mode is the live launch path (`FEATURE_ONLINE_BOOKING` of
 
 ### A — Lookup → Desk
 
-1. Admin opens **Customers → Customer Desk** (`/admin/customer-desk`) or Partner opens **Customers → Desk** (`/partner/customer-desk`).
+1. Admin or Partner opens **Orders → Find customer** (`/admin|/partner/orders?tab=desk`). Legacy `/…/customer-desk` redirects there ([orders-hub.md](orders-hub.md)).
 2. Search bar: phone (preferred), name, or paste `user_id`.
 3. Results list (compact cards): name, phone, registered badge / guest hint, order count (scoped), last order date.
 4. Tap result → **Desk drawer** (full-screen sheet on mobile): profile header + WhatsApp + Call + tabs **Orders** | **Actions**.
@@ -218,8 +218,7 @@ erDiagram
 
 Nav:
 
-- Admin: **Customers → Customer Desk** (keep existing `/admin/customers` list; desk is the history+create surface; row action “Open desk” when phone present)
-- Partner: **Customers → Desk** beside insights (`/partner/customers`); walk-in remains under Orders
+- Admin / Partner: **Orders → Find customer** (`?tab=desk`); Directory tab holds former customers/insights; walk-in remains a separate partner nav item ([orders-hub.md](orders-hub.md))
 
 Admin Customers copy today claims order history — **Slice 3** wires row → desk so the claim becomes true.
 

@@ -172,7 +172,7 @@ export function AdminBusinessHealthView() {
             change={m ? { value: `${formatCount(m.total_customers)} total`, positive: true } : undefined}
             icon={Users}
             loading={loading}
-            onClick={() => router.push('/admin/customers')}
+            onClick={() => router.push('/admin/orders?tab=directory')}
           />
           <KpiCard
             label="New customers"
@@ -180,7 +180,7 @@ export function AdminBusinessHealthView() {
             change={{ value: 'This month', positive: true }}
             icon={Users}
             loading={loading}
-            onClick={() => router.push('/admin/customers')}
+            onClick={() => router.push('/admin/orders?tab=directory')}
           />
           <KpiCard
             label="Returning customers"
@@ -188,7 +188,7 @@ export function AdminBusinessHealthView() {
             change={{ value: '2+ orders in 90 days', positive: true }}
             icon={Users}
             loading={loading}
-            onClick={() => router.push('/admin/customers')}
+            onClick={() => router.push('/admin/orders?tab=directory')}
           />
           <KpiCard
             label="Active laundries"

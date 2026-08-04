@@ -52,6 +52,7 @@ import {
 } from '@/features/partner/booking-requests/lib/partner-booking-status';
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import type { AdminLaundryRow } from '@/services/admin';
 
 type Props = {
@@ -565,7 +566,7 @@ export function PartnerBookingRequestDetailDrawer({
                   setConvertOpen(false);
                   onOpenChange(false);
                   router.push(
-                    `/partner/customer-desk?phone=${encodeURIComponent(d.phone_e164)}&tab=orders`,
+                    buildOrdersHubPath('/partner/orders', 'desk', { phone: d.phone_e164 }),
                   );
                 },
               },

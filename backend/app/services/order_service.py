@@ -389,6 +389,10 @@ class OrderService:
         refreshed = await self._orders.get_by_id(order.id)
         return refreshed or order
 
+    async def get_for_partner(self, partner_user_id: UUID, order_id: UUID) -> Order:
+        """Load an order owned by the partner's laundry (with items)."""
+        return await self._require_partner_order(partner_user_id, order_id)
+
     async def _require_partner_order(self, partner_user_id: UUID, order_id: UUID) -> Order:
         laundries = await self._laundries.list_by_owner(partner_user_id)
         if not laundries:

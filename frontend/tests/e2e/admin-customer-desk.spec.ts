@@ -186,9 +186,12 @@ describeDesk('Admin Customer Desk smoke', () => {
     await loginAsAdmin(page);
 
     await page.goto('/admin/customer-desk');
-    await expect(page.getByRole('heading', { name: /customer desk/i })).toBeVisible({
+    await expect(page).toHaveURL(/\/admin\/orders\?tab=desk/);
+    await expect(page.getByRole('heading', { name: /^orders$/i })).toBeVisible({
       timeout: 30_000,
     });
+    await expect(page.getByRole('heading', { name: /customer search/i })).toBeVisible();
+    await expect(page.getByTestId('orders-hub-tabs')).toBeVisible();
 
     await page.getByLabel(/phone number/i).fill('9876543210');
     await page.getByRole('button', { name: /look up/i }).click();

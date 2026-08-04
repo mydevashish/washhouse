@@ -12,11 +12,17 @@ import { AdminContent } from '@/features/admin/components/admin-content';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
 import { UserRoleBadge } from '@/features/admin/lib/admin-badges';
 import { formatIndiaDate } from '@/lib/datetime';
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
 import { listAdminUsers, type AdminUserRow } from '@/services/admin';
 
-export function AdminCustomersView() {
+type AdminCustomersViewProps = {
+  /** When true, omit page chrome — mounted inside Orders Hub `tab=directory`. */
+  embedded?: boolean;
+};
+
+export function AdminCustomersView({ embedded = false }: AdminCustomersViewProps) {
   const list = useServerList({
     queryKey: [...queryKeys.adminUsers(), 'customers'],
     fetcher: listAdminUsers,
@@ -47,7 +53,7 @@ export function AdminCustomersView() {
         cell: (u) => (
           <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
             <Link
-              href={`/admin/customer-desk?user_id=${encodeURIComponent(u.id)}`}
+              href={buildOrdersHubPath('/admin/orders', 'desk', { user_id: u.id })}
               aria-label={`Open customer desk for ${u.full_name}`}
             >
               <Headset className="h-3.5 w-3.5" aria-hidden />
@@ -60,6 +66,45 @@ export function AdminCustomersView() {
     [],
   );
 
+  const panel = (
+    <AdminPanel
+      meta={<span className="tabular-nums">{list.totalRecords.toLocaleString()} total</span>}
+      toolbar={
+        <ServerListToolbar
+          search={list.search}
+          onSearchChange={list.setSearch}
+          searchPlaceholder="Search customers…"
+          totalRecords={list.totalRecords}
+          isLoading={list.isFetching}
+          onRefresh={() => void list.refetch()}
+        />
+      }
+      bodyClassName="p-0"
+    >
+      <VirtualDataTable
+        tableId="admin-customers"
+        columns={columns}
+        rows={list.rows}
+        getRowId={(u) => u.id}
+        sort={list.sort}
+        onToggleSort={list.toggleSort}
+        page={list.page}
+        pageCount={list.pageCount}
+        pageSize={list.pageSize}
+        pageStart={list.pageStart}
+        pageEnd={list.pageEnd}
+        filteredCount={list.totalRecords}
+        onPageChange={list.setPage}
+        onPageSizeChange={list.setPageSize}
+        emptyState={<p className="py-10 text-center text-sm text-muted-foreground">No customers match.</p>}
+      />
+    </AdminPanel>
+  );
+
+  if (embedded) {
+    return <div className="space-y-5">{panel}</div>;
+  }
+
   return (
     <AdminContent className="space-y-5">
       <AdminPageHeader
@@ -67,46 +112,14 @@ export function AdminCustomersView() {
         description="Registered customers and verification status. Use Customer Desk for phone lookup and order history."
         actions={
           <Button asChild size="sm" className="gap-1.5">
-            <Link href="/admin/customer-desk">
+            <Link href={buildOrdersHubPath('/admin/orders', 'desk')}>
               <Headset className="h-3.5 w-3.5" aria-hidden />
               Customer Desk
             </Link>
           </Button>
         }
       />
-
-      <AdminPanel
-        meta={<span className="tabular-nums">{list.totalRecords.toLocaleString()} total</span>}
-        toolbar={
-          <ServerListToolbar
-            search={list.search}
-            onSearchChange={list.setSearch}
-            searchPlaceholder="Search customers…"
-            totalRecords={list.totalRecords}
-            isLoading={list.isFetching}
-            onRefresh={() => void list.refetch()}
-          />
-        }
-        bodyClassName="p-0"
-      >
-        <VirtualDataTable
-          tableId="admin-customers"
-          columns={columns}
-          rows={list.rows}
-          getRowId={(u) => u.id}
-          sort={list.sort}
-          onToggleSort={list.toggleSort}
-          page={list.page}
-          pageCount={list.pageCount}
-          pageSize={list.pageSize}
-          pageStart={list.pageStart}
-          pageEnd={list.pageEnd}
-          filteredCount={list.totalRecords}
-          onPageChange={list.setPage}
-          onPageSizeChange={list.setPageSize}
-          emptyState={<p className="py-10 text-center text-sm text-muted-foreground">No customers match.</p>}
-        />
-      </AdminPanel>
+      {panel}
     </AdminContent>
   );
 }

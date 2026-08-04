@@ -29,6 +29,7 @@ import { PartnerKpiCard, PartnerKpiGrid } from '@/features/partner/components/pa
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import { cn } from '@/lib/utils';
@@ -142,7 +143,7 @@ function CustomerTable({ rows }: { rows: CustomerInsightRow[] }) {
               </td>
               <td className="px-4 py-3">
                 <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
-                  <Link href={`/partner/customer-desk?user_id=${encodeURIComponent(c.user_id)}`}>
+                  <Link href={buildOrdersHubPath('/partner/orders', 'desk', { user_id: c.user_id })}>
                     <Headset className="h-3.5 w-3.5" aria-hidden />
                     Open desk
                   </Link>
@@ -156,7 +157,7 @@ function CustomerTable({ rows }: { rows: CustomerInsightRow[] }) {
   );
 }
 
-export function PartnerCustomersView() {
+export function PartnerCustomersView({ embedded = false }: { embedded?: boolean }) {
   const enabled = usePartnerQueriesEnabled();
   const [listTab, setListTab] = useState<CustomerListType | 'all'>('all');
   const [segmentFilter, setSegmentFilter] = useState<CustomerSegment | ''>('');
@@ -195,20 +196,22 @@ export function PartnerCustomersView() {
     return map[listTab];
   }, [dashboard, listTab]);
 
-  return (
-    <PartnerContent className="space-y-5">
-      <PartnerPageHeader
-        title="Customer Insights Dashboard"
-        description="Top customers, VIPs, repeat buyers, inactive accounts, and high-risk flags — with lifetime spend and retention scores. Open desk shows only this laundry’s past orders."
-        actions={
-          <Button asChild variant="outline" size="sm" className="gap-1.5">
-            <Link href="/partner/customer-desk">
-              <Headset className="h-3.5 w-3.5" aria-hidden />
-              Customer Desk
-            </Link>
-          </Button>
-        }
-      />
+  const body = (
+    <>
+      {!embedded ? (
+        <PartnerPageHeader
+          title="Customer Insights Dashboard"
+          description="Top customers, VIPs, repeat buyers, inactive accounts, and high-risk flags — with lifetime spend and retention scores. Open desk shows only this laundry’s past orders."
+          actions={
+            <Button asChild variant="outline" size="sm" className="gap-1.5">
+              <Link href={buildOrdersHubPath('/partner/orders', 'desk')}>
+                <Headset className="h-3.5 w-3.5" aria-hidden />
+                Customer Desk
+              </Link>
+            </Button>
+          }
+        />
+      ) : null}
 
       {dashboardQ.isError && (
         <QueryErrorState
@@ -362,6 +365,12 @@ export function PartnerCustomersView() {
           <CustomerTable rows={customers} />
         </PartnerPanel>
       )}
-    </PartnerContent>
+    </>
   );
+
+  if (embedded) {
+    return <div className="space-y-5">{body}</div>;
+  }
+
+  return <PartnerContent className="space-y-5">{body}</PartnerContent>;
 }

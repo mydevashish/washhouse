@@ -25,11 +25,20 @@ export function buildCustomerWhatsAppUrl(phone: string, message?: string): strin
   return message ? `${base}?text=${encodeURIComponent(message)}` : base;
 }
 
-/** Walk-in create deep link with phone/name prefill. */
-export function buildWalkInPrefillHref(phone: string, name?: string | null): string {
+/** New Order workspace deep link (walk-in or assisted) with phone/name prefill. */
+export function buildNewOrderHref(
+  phone: string,
+  name?: string | null,
+  mode: 'walk_in' | 'assisted' = 'walk_in',
+): string {
   const params = new URLSearchParams();
   params.set('phone', phone);
   if (name?.trim()) params.set('name', name.trim());
-  params.set('new', '1');
-  return `/partner/walk-in-orders?${params.toString()}`;
+  params.set('mode', mode);
+  return `/partner/new-order?${params.toString()}`;
+}
+
+/** @deprecated Prefer buildNewOrderHref — kept for walk-in list deep links. */
+export function buildWalkInPrefillHref(phone: string, name?: string | null): string {
+  return buildNewOrderHref(phone, name, 'walk_in');
 }

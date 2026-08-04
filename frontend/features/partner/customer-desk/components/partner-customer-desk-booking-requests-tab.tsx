@@ -18,6 +18,7 @@ import {
 } from '@/features/admin/booking-requests/constants';
 import { usePartnerBookingRequestPhoneTimeline } from '@/features/partner/booking-requests/hooks';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 
 type Props = {
   phone: string | null;
@@ -62,7 +63,7 @@ export function PartnerCustomerDeskBookingRequestsTab({
         </p>
         <div className="flex flex-wrap gap-2">
           <Button asChild size="sm" variant="ghost" className="h-8 text-xs">
-            <Link href={`/partner/booking-requests?phone=${encodeURIComponent(phone ?? '')}`}>
+            <Link href={buildOrdersHubPath('/partner/orders', 'requests', { phone: phone ?? '' })}>
               Open inbox
             </Link>
           </Button>

@@ -4,6 +4,71 @@
 
 ---
 
+## 2026-08-04 — Partner Orders Hub shell (ops home parity)
+
+- **Type:** feat
+- **Scope:** orders-hub
+- **Files:** `features/partner/orders-hub/*`, `partner-orders-view.tsx`, `tests/e2e/partner-orders-hub.spec.ts`, `playwright.partner.config.ts`, `docs/features/orders-hub.md`, `partner-dashboard.md`, logs, current-status
+- **Summary:** Mirrored Admin hard-merge into `PartnerOrdersHub`: URL tabs mount existing desk / BR inbox / customer insights (no forks); soft-merge Today panel extracted; assigned-requests badge on header + Requests tab; Jest + Playwright smoke (tabs, nav IA, search → place-order, redirects @ 375px). Walk-in stays its own nav item with desk deep-link.
+- **Risks:** Badge uses assigned-list `total` (same as sidebar); empty queue EmptyState shares page with Today strip.
+- **Mitigation:** Reuse `partnerBookingRequestsBadgeCount`; Playwright asserts badge when list meta mocked.
+- **Next:** Mark Orders Hub done after joint Admin/Partner QA on staging.
+- **Refs:** `docs/features/orders-hub.md`
+
+---
+
+## 2026-08-04 — Admin Orders Hub shell (ops home)
+
+- **Type:** feat
+- **Scope:** orders-hub
+- **Files:** `features/admin/orders-hub/*`, `features/orders-hub/orders-hub-tabs.tsx`, `admin-orders-view.tsx`, `tests/e2e/admin-orders-hub.spec.ts`, `playwright.admin.config.ts`, `docs/features/orders-hub.md`, logs
+- **Summary:** Consolidated `/admin/orders` into `AdminOrdersHub` shell with URL tabs; soft-merge Today panel extracted; requests badge on header + Requests tab; Jest tab smoke + Playwright hub smoke @ 375px.
+- **Risks:** Badge query shares list cache with inbox; zero-open state hides header chip (tab still present).
+- **Mitigation:** Same `new`+`reviewing` formula as admin sidebar; Playwright asserts badge when inbox mocked.
+- **Next:** Partner Playwright hub matrix; mark feature done after QA.
+- **Refs:** `docs/features/orders-hub.md`
+
+---
+
+## 2026-08-04 — Orders Hub Prompt 2 (tabs + legacy redirects)
+
+- **Type:** feat
+- **Scope:** orders-hub
+- **Files:** `lib/navigation/orders-hub.ts`, `features/orders-hub/orders-hub-tabs.tsx`, admin/partner `orders` views, legacy `customer-desk` / `booking-requests` / `customers` pages → `permanentRedirect`, desk/customers `embedded` mounts, internal Links, Jest + desk e2e, docs/logs
+- **Summary:** Hard-merge hub tabs mount existing desk / BR / directory modules. Legacy ops URLs 308 to `/…/orders?tab=…` preserving `phone` / `user_id` / `status`. Soft-merge Today panel deep-links into hub tabs.
+- **Risks:** Drawer-internal `tab=` values no longer written to hub URL (avoids colliding with hub tabs).
+- **Mitigation:** Hub tab parser falls unknown values back to `orders`; desk/soft-merge keep drawer tab in component state.
+- **Next:** Full Playwright hub matrix (all four tabs both roles); mark feature review after QA.
+- **Refs:** `docs/features/orders-hub.md`
+
+---
+
+## 2026-08-04 — Orders Hub hard-merge nav (Admin + Partner)
+
+- **Type:** feat
+- **Scope:** orders-hub
+- **Files:** `admin-nav.ts`, `partner-nav.ts`, `admin-shell` (badge via nav), `partner-shell.tsx`, `breadcrumbs.ts`, `search-index.ts`, `navbar-quick-actions.tsx`, nav unit tests, `orders-hub.md`, logs
+- **Summary:** Sidebar hard-merge: Admin Operations = Laundries + Orders (`bookingRequests` badge); Partner drops Customer Desk / Booking requests / Customer insights into Orders (`orders` + `bookingRequests` summed). Legacy paths + `?tab=*` highlight Orders; search/quick actions keep old labels pointing at hub tabs.
+- **Risks:** Legacy routes still render until Prompt 2 redirects — titles/active state already treat them as Orders.
+- **Mitigation:** Alias maps in nav helpers; Jest covers ops IA + aliases.
+- **Next:** Prompt 2 route redirects; hub tab mounting for desk/requests/directory.
+- **Refs:** `docs/features/orders-hub.md`
+
+---
+
+## 2026-08-04 — Orders Hub soft-merge (Admin + Partner)
+
+- **Type:** feat
+- **Scope:** orders-hub
+- **Files:** `docs/features/orders-hub.md`, `partner/orders-hub/*`, `admin/orders-hub/*`, `partner-orders-view.tsx`, `admin-orders-view.tsx`, desk views cross-links, Playwright/Jest, product/dashboard docs, logs
+- **Summary:** Soft-merge IA: Orders pages gain Find customer (desk APIs/drawer), Waiting requests preview, Today strip (partner), and deep-links to full Desk/BR. Nav items stay. `?phone=` opens panel on Orders.
+- **Risks:** Duplicate search UX on Desk vs Orders — intentional for soft merge; keep copy aligned.
+- **Mitigation:** Shared desk components; Playwright covers Orders → New order without leaving page.
+- **Next:** Admin Playwright hub smoke; mark feature review after QA.
+- **Refs:** `docs/features/orders-hub.md`
+
+---
+
 ## 2026-08-04 — Customer Desk gap close: pagination + search cap tests
 
 - **Type:** fix + test

@@ -108,7 +108,7 @@ export function PartnerCustomersPanel() {
 
         Top customers by lifetime spend.{' '}
 
-        <Link href="/partner/customers" className="font-medium text-primary hover:underline">
+        <Link href="/partner/orders?tab=directory" className="font-medium text-primary hover:underline">
 
           View all insights
 

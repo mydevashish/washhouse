@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 /** Centers admin page content with consistent max width and tight vertical rhythm. */
 export function AdminContent({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-5', className)}>
+    <div className={cn('mx-auto w-full max-w-7xl px-4 py-3 sm:px-6 sm:py-4', className)}>
       {children}
     </div>
   );

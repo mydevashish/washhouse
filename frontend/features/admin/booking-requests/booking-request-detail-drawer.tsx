@@ -54,6 +54,7 @@ import {
   useBookingRequestMutations,
 } from '@/features/admin/booking-requests/hooks';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import type { AdminLaundryRow } from '@/services/admin';
 
 type Props = {
@@ -701,7 +702,7 @@ export function BookingRequestDetailDrawer({
                 setConvertOpen(false);
                 onOpenChange(false);
                 router.push(
-                  `/admin/customer-desk?phone=${encodeURIComponent(d.phone_e164)}&tab=orders`,
+                  buildOrdersHubPath('/admin/orders', 'desk', { phone: d.phone_e164 }),
                 );
               },
             });

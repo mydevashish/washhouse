@@ -94,3 +94,11 @@
 - Done: Full desk path admin+partner (lookup → history → assisted create → walk-in/BR handoffs); name/phone search results (max 20); FE order history Prev/Next pagination
 - Next: ops runbook polish
 - Synergy: booking-request convert calls the same assisted order factory (**shipped**)
+
+## Orders Hub (hard-merge ops home)
+- Status: **review** (2026-08-04)
+- Spec: `docs/features/orders-hub.md`
+- Why: Non-technical Admin/Partner need one Orders home — hard-merge collapses Desk / BR / Customers|insights into hub tabs under a single sidebar **Orders**.
+- Done: Spec; soft-merge Today panel; Prompt 1 nav; Prompt 2 tabs + redirects; **Admin + Partner hub shells** (`features/admin|partner/orders-hub`) with header/tab requests badge, today strip + queue, desk/BR/directory reuse (no forks); Jest + Playwright hub smoke (admin + partner @ 375px, partner search → place-order)
+- Next: Mark done after joint Admin/Partner QA on staging
+- Non-goals: new backend CRUD; merging Laundries or partner walk-in/pickups/deliveries/ops center

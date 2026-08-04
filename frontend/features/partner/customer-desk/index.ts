@@ -11,5 +11,6 @@ export {
   normalizeIndianPhoneInput,
   isValidIndianMobileE164,
   buildCustomerWhatsAppUrl,
+  buildNewOrderHref,
   buildWalkInPrefillHref,
 } from '@/features/partner/customer-desk/phone';

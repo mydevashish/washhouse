@@ -13,7 +13,12 @@ type QuickAction = { label: string; href: string; roles: UserRole[] };
 const ACTIONS: QuickAction[] = [
   { label: 'Create laundry', href: '/admin/laundries', roles: ['admin', 'super_admin'] },
   { label: 'Review approvals', href: '/admin/approvals', roles: ['admin', 'super_admin'] },
-  { label: 'View orders', href: '/partner/orders', roles: ['partner', 'admin', 'super_admin'] },
+  { label: 'View orders', href: '/admin/orders', roles: ['admin', 'super_admin'] },
+  { label: 'Find customer', href: '/admin/orders?tab=desk', roles: ['admin', 'super_admin'] },
+  { label: 'Booking requests', href: '/admin/orders?tab=requests', roles: ['admin', 'super_admin'] },
+  { label: 'View orders', href: '/partner/orders', roles: ['partner'] },
+  { label: 'Find customer', href: '/partner/orders?tab=desk', roles: ['partner'] },
+  { label: 'Booking requests', href: '/partner/orders?tab=requests', roles: ['partner'] },
   { label: 'Edit storefront', href: '/partner/storefront', roles: ['partner'] },
   { label: 'Discover laundries', href: '/discover', roles: ['customer', 'partner', 'admin', 'super_admin'] },
 ];

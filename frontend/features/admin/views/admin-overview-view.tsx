@@ -137,7 +137,7 @@ export function AdminOverviewView() {
           status="healthy"
           icon={Users}
           loading={dashboardQ.isLoading}
-          onClick={() => router.push('/admin/customers')}
+          onClick={() => router.push('/admin/orders?tab=directory')}
         />
         <KpiCard
           label="Orders today"

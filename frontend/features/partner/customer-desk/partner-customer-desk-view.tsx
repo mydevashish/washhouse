@@ -3,10 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Headset, Users } from 'lucide-react';
-import Link from 'next/link';
+import { Headset } from 'lucide-react';
+import { isAxiosError } from 'axios';
 
-import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { InfoBanner } from '@/components/ui/info-banner';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
@@ -34,9 +33,9 @@ import type {
 import { customerDeskLookupKey, guestDeskProfile } from '@/features/partner/customer-desk/types';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
-import { isAxiosError } from 'axios';
 
 function parseLookupFromSearch(
   phoneParam: string | null,
@@ -50,13 +49,22 @@ function parseLookupFromSearch(
   return null;
 }
 
-export function PartnerCustomerDeskView() {
+type PartnerCustomerDeskViewProps = {
+  /** When true, omit page chrome — mounted inside Orders Hub `tab=desk`. */
+  embedded?: boolean;
+};
+
+export function PartnerCustomerDeskView({ embedded = false }: PartnerCustomerDeskViewProps) {
   const router = useRouter();
   const enabled = usePartnerQueriesEnabled();
   const searchParams = useSearchParams();
   const phoneParam = searchParams.get('phone');
   const userIdParam = searchParams.get('user_id');
-  const tabParam = searchParams.get('tab') as PartnerDeskTab | null;
+  const rawTab = searchParams.get('tab');
+  const tabParam =
+    rawTab === 'place-order' || rawTab === 'booking-requests' || rawTab === 'orders'
+      ? (rawTab as PartnerDeskTab)
+      : null;
 
   const urlLookup = useMemo(
     () => parseLookupFromSearch(phoneParam, userIdParam),
@@ -111,15 +119,11 @@ export function PartnerCustomerDeskView() {
   });
 
   const syncUrl = useCallback(
-    (next: CustomerDeskLookupParams | null, tab?: PartnerDeskTab) => {
+    (next: CustomerDeskLookupParams | null) => {
       const params = new URLSearchParams();
       if (next && 'phone' in next) params.set('phone', next.phone);
       if (next && 'user_id' in next) params.set('user_id', next.user_id);
-      if (tab && tab !== 'orders') params.set('tab', tab);
-      const qs = params.toString();
-      router.replace(qs ? `/partner/customer-desk?${qs}` : '/partner/customer-desk', {
-        scroll: false,
-      });
+      router.replace(buildOrdersHubPath('/partner/orders', 'desk', params), { scroll: false });
     },
     [router],
   );
@@ -130,7 +134,7 @@ export function PartnerCustomerDeskView() {
     setDeskOpen(true);
     setActiveSearch(null);
     if ('phone' in next) setSearchQuery(next.phone);
-    syncUrl(next, tab);
+    syncUrl(next);
   }
 
   function handleSubmit(value: PartnerDeskSearchSubmit, tab: PartnerDeskTab) {
@@ -170,21 +174,8 @@ export function PartnerCustomerDeskView() {
     !previewQ.data.registered &&
     previewQ.data.order_count === 0;
 
-  return (
-    <PartnerContent className="space-y-5">
-      <PartnerPageHeader
-        title="Customer Desk"
-        description="Search by name or phone — see only your laundry’s past orders, place doorstep or walk-in."
-        actions={
-          <Button asChild variant="outline" size="sm" className="gap-1.5">
-            <Link href="/partner/customers">
-              <Users className="h-3.5 w-3.5" aria-hidden />
-              Insights
-            </Link>
-          </Button>
-        }
-      />
-
+  const body = (
+    <>
       <PartnerPanel
         title="Counter search"
         description="Name or mobile — exact phone opens immediately; name shows matches at your shop."
@@ -262,6 +253,20 @@ export function PartnerCustomerDeskView() {
         onOpenChange={setBrOpen}
         prefill={brPrefill}
       />
+    </>
+  );
+
+  if (embedded) {
+    return <div className="space-y-5">{body}</div>;
+  }
+
+  return (
+    <PartnerContent className="space-y-5">
+      <PartnerPageHeader
+        title="Customer Desk"
+        description="Search by name or phone — see only your laundry’s past orders, place doorstep or walk-in."
+      />
+      {body}
     </PartnerContent>
   );
 }

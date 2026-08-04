@@ -55,10 +55,10 @@ function SidebarNav({
                   <Link
                     href={href}
                     onClick={onNavigate}
-                    className={cn(
-                      'flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors',
+                      className={cn(
+                      'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors',
                       active
-                        ? 'bg-primary/10 text-primary'
+                        ? 'bg-primary text-primary-foreground shadow-sm'
                         : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
                     )}
                     aria-current={active ? 'page' : undefined}
@@ -70,7 +70,7 @@ function SidebarNav({
                         className={cn(
                           'flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold',
                           active
-                            ? 'bg-primary text-primary-foreground'
+                            ? 'bg-primary-foreground/20 text-primary-foreground'
                             : 'bg-warning-muted text-warning',
                         )}
                       >

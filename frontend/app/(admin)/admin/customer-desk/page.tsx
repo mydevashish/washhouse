@@ -1,26 +1,14 @@
-import { Suspense } from 'react';
+import { permanentRedirect } from 'next/navigation';
 
-import { RoleGuard } from '@/components/auth/role-guard';
-import { CustomerDeskView } from '@/features/admin/customer-desk';
-import { Skeleton } from '@/components/ui/skeleton';
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 
 export const metadata = { title: 'Admin · Customer Desk' };
 
-function CustomerDeskFallback() {
-  return (
-    <div className="space-y-4 p-4 sm:p-6">
-      <Skeleton className="h-8 w-48" />
-      <Skeleton className="h-40 w-full max-w-xl" />
-    </div>
-  );
-}
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
-export default function AdminCustomerDeskPage() {
-  return (
-    <RoleGuard roles={['admin', 'super_admin']}>
-      <Suspense fallback={<CustomerDeskFallback />}>
-        <CustomerDeskView />
-      </Suspense>
-    </RoleGuard>
-  );
+/** Legacy route → Orders Hub Find customer tab. */
+export default async function AdminCustomerDeskRedirectPage({ searchParams }: PageProps) {
+  permanentRedirect(buildOrdersHubPath('/admin/orders', 'desk', await searchParams));
 }

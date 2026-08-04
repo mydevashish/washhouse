@@ -39,7 +39,10 @@ export function PartnerActionCenter({ items }: PartnerActionCenterProps) {
               <div className="min-w-0">
                 <p className="font-medium">{item.title}</p>
                 <p className="mt-0.5 text-sm text-muted-foreground">{item.description}</p>
-                <Link href="/partner/orders" className="mt-1 inline-block text-xs text-primary hover:underline">
+                <Link
+                  href={`/partner/orders/${item.orderId}`}
+                  className="mt-1 inline-block text-xs text-primary hover:underline"
+                >
                   #{item.trackingCode}
                 </Link>
               </div>

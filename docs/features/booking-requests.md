@@ -3,7 +3,7 @@
 > Status: **in-progress** (Slice 1–6 polish shipped; **convert-to-order via Customer Desk assisted factory shipped** 2026-08-04; expiry job pending)  
 > Owner: product-manager + backend-architect + frontend-architect  
 > Last updated: 2026-08-04  
-> Related: [marketing-homepage.md](marketing-homepage.md) (Book Now dialog), [offline-booking-whatsapp.md](offline-booking-whatsapp.md), [order-placement.md](order-placement.md), [customer-desk.md](customer-desk.md) (assisted order factory / convert target), [complaints.md](complaints.md) (SLA / drawer UX patterns), [admin-approvals.md](admin-approvals.md)  
+> Related: [marketing-homepage.md](marketing-homepage.md) (Book Now dialog), [offline-booking-whatsapp.md](offline-booking-whatsapp.md), [order-placement.md](order-placement.md), [customer-desk.md](customer-desk.md) (assisted order factory / convert target), [orders-hub.md](orders-hub.md) (hard-merge Requests tab), [complaints.md](complaints.md) (SLA / drawer UX patterns), [admin-approvals.md](admin-approvals.md)  
 > Ops: [booking-requests runbook](../runbooks/booking-requests.md)
 
 ## Problem
@@ -184,7 +184,7 @@ Ship these; do not bloat beyond:
 
 ### B — Admin triage → assign → respond
 
-1. Admin opens `/admin/booking-requests` (nav under Operations or Approvals — **default: Operations**, badge = open `new`+`reviewing` count).
+1. Admin opens **Orders → Requests** (`/admin/orders?tab=requests`; badge on **Orders** = open `new`+`reviewing` count). Legacy `/admin/booking-requests` redirects ([orders-hub.md](orders-hub.md)).
 2. Inbox table: SLA badge, public_code, name, phone, service, age, status, assigned laundry.
 3. Row opens **detail drawer** (reuse disputes drawer pattern): fields, timeline, WhatsApp button, assign laundry select, status controls, internal note vs customer response.
 4. Assign → status `assigned`; event + optional in-app notify to partner.
@@ -192,7 +192,7 @@ Ship these; do not bloat beyond:
 
 ### C — Partner handle assigned
 
-1. Partner opens `/partner/booking-requests`.
+1. Partner opens **Orders → Requests** (`/partner/orders?tab=requests`). Legacy `/partner/booking-requests` redirects.
 2. Same drawer UX, scoped; no laundry transfer; Release returns to admin.
 3. Partner may create a request for a phone (source `partner_created`, auto-assigned).
 
@@ -340,7 +340,7 @@ KPIs: median time-to-first-contact; % converted; % expired; partner acceptance l
 
 None blocking. Defaults above stand unless product overrides:
 
-1. Exact admin nav section (Operations vs Approvals) — **Operations**.  
+1. Exact admin nav section (Operations vs Approvals) — **Operations → Orders** (Requests tab; hard-merge).  
 2. Whether public form collects city/pincode as first-class fields in v1 — **yes, optional fields** (helps assign); address_text optional.  
 3. Auto `new` → `reviewing` on admin detail open — **yes** (single admin claim; no multi-lock in v1).
 

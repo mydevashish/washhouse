@@ -125,9 +125,12 @@ describeDesk('Partner Customer Desk smoke', () => {
     await mockPartnerDeskApis(page);
     await loginAsPartner(page);
     await page.goto('/partner/customer-desk');
-    await expect(page.getByRole('heading', { name: /customer desk/i })).toBeVisible({
+    await expect(page).toHaveURL(/\/partner\/orders\?tab=desk/);
+    await expect(page.getByRole('heading', { name: /^orders$/i })).toBeVisible({
       timeout: 30_000,
     });
+    await expect(page.getByRole('heading', { name: /counter search/i })).toBeVisible();
+    await expect(page.getByTestId('orders-hub-tabs')).toBeVisible();
 
     await expect(page.getByText(/your laundry only/i)).toBeVisible();
 
@@ -173,14 +176,44 @@ describeDesk('Partner Customer Desk smoke', () => {
     });
   });
 
-  test('Find customer shortcut from orders reaches desk', async ({ page }) => {
+  test('Orders hub finds customer without leaving Orders', async ({ page }) => {
+    await mockPartnerDeskApis(page);
+    await page.route('**/api/v1/partner/booking-requests**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: [], meta: { total: 0, page: 1, page_size: 5 } }),
+      });
+    });
     await loginAsPartner(page);
     await page.goto('/partner/orders');
     await expect(page.getByRole('heading', { name: /^orders$/i })).toBeVisible({
       timeout: 30_000,
     });
-    await page.getByRole('link', { name: /find customer/i }).click();
-    await expect(page).toHaveURL(/\/partner\/customer-desk/);
-    await expect(page.getByRole('heading', { name: /customer desk/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /find customer/i })).toBeVisible();
+    await expect(page.getByTestId('partner-orders-today-strip')).toBeVisible();
+
+    const phone = page.getByPlaceholder(/98765/);
+    await phone.fill('9876543210');
+    await page.getByRole('button', { name: /^new order$/i }).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 20_000 });
+    await dialog.getByRole('tab', { name: /new order/i }).click();
+    await expect(dialog.getByRole('button', { name: /place doorstep order/i })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page).toHaveURL(/\/partner\/orders/);
+  });
+
+  test('Full Customer Desk deep-link opens Find customer hub tab', async ({ page }) => {
+    await loginAsPartner(page);
+    await page.goto('/partner/orders');
+    await expect(page.getByRole('heading', { name: /^orders$/i })).toBeVisible({
+      timeout: 30_000,
+    });
+    await page.getByRole('link', { name: /full customer desk/i }).click();
+    await expect(page).toHaveURL(/\/partner\/orders\?tab=desk/);
+    await expect(page.getByRole('heading', { name: /counter search/i })).toBeVisible();
   });
 });

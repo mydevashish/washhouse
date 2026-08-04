@@ -14,6 +14,7 @@ import {
   PARTNER_NAV_SECTIONS,
   getPartnerPageTitle,
   isPartnerNavActive,
+  partnerNavBadgeKeys,
 } from '@/features/partner/lib/partner-nav';
 import { usePartnerAnalytics } from '@/features/partner/hooks/use-partner-operations';
 import { useScrollRestore } from '@/hooks/use-scroll-restore';
@@ -54,27 +55,19 @@ function PartnerSidebar({
               {section.label}
             </p>
             <ul className="flex flex-col gap-0.5">
-              {section.items.map(({ href, label, icon: Icon, badgeKey }) => {
+              {section.items.map((item) => {
+                const { href, label, icon: Icon } = item;
                 const active = isPartnerNavActive(pathname, href);
-                const badge =
-                  badgeKey === 'orders'
-                    ? badges.orders
-                    : badgeKey === 'pickups'
-                      ? badges.pickups
-                      : badgeKey === 'notifications'
-                        ? badges.notifications
-                        : badgeKey === 'bookingRequests'
-                          ? badges.bookingRequests
-                          : 0;
+                const badge = partnerNavBadgeKeys(item).reduce((sum, key) => sum + (badges[key] ?? 0), 0);
                 return (
                   <li key={href}>
                     <Link
                       href={href}
                       onClick={onNavigate}
                       className={cn(
-                        'flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors',
+                        'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors',
                         active
-                          ? 'bg-primary/10 text-primary'
+                          ? 'bg-primary text-primary-foreground shadow-sm'
                           : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
                       )}
                       aria-current={active ? 'page' : undefined}
@@ -82,7 +75,14 @@ function PartnerSidebar({
                       <Icon className="h-4 w-4 shrink-0" aria-hidden />
                       <span className="flex-1 truncate">{label}</span>
                       {badge > 0 && (
-                        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-warning-muted px-1 text-[10px] font-bold text-warning">
+                        <span
+                          className={cn(
+                            'flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold',
+                            active
+                              ? 'bg-primary-foreground/20 text-primary-foreground'
+                              : 'bg-warning-muted text-warning',
+                          )}
+                        >
                           {badge}
                         </span>
                       )}

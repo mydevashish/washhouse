@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2, Shield } from 'lucide-react';
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -163,7 +164,12 @@ export function PartnerOrdersTable({ orders, filter: initialFilter = 'all', show
                     <tr key={o.id} className="h-table-row hover:bg-muted/30">
                       <td className="px-4 py-2 font-mono text-xs font-medium">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span>#{o.tracking_code}</span>
+                          <Link
+                            href={`/partner/orders/${o.id}`}
+                            className="hover:text-primary hover:underline"
+                          >
+                            #{o.tracking_code}
+                          </Link>
                           <PartnerOrderSourceBadge order={o} />
                         </div>
                       </td>

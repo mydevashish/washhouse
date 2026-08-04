@@ -7,7 +7,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests/e2e',
-  testMatch: /admin-marketplace-chain\.spec\.ts/,
+  testMatch: /admin-(marketplace-chain|orders-hub|customer-desk)\.spec\.ts/,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,

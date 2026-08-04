@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Headset, Users } from 'lucide-react';
-import Link from 'next/link';
+import { Headset } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -31,6 +30,7 @@ import {
 import type { CustomerDeskLookupParams, CustomerDeskProfile } from '@/features/admin/customer-desk/types';
 import { customerDeskLookupKey } from '@/features/admin/customer-desk/types';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import { queryKeys } from '@/lib/query-keys';
 import { listAllLaundries } from '@/services/admin';
 import { STALE } from '@/lib/query-config';
@@ -47,12 +47,21 @@ function parseLookupFromSearch(
   return null;
 }
 
-export function CustomerDeskView() {
+type CustomerDeskViewProps = {
+  /** When true, omit page chrome — mounted inside Orders Hub `tab=desk`. */
+  embedded?: boolean;
+};
+
+export function CustomerDeskView({ embedded = false }: CustomerDeskViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const phoneParam = searchParams.get('phone');
   const userIdParam = searchParams.get('user_id');
-  const tabParam = searchParams.get('tab') as DeskTab | null;
+  const rawTab = searchParams.get('tab');
+  const tabParam =
+    rawTab === 'place-order' || rawTab === 'booking-requests' || rawTab === 'orders'
+      ? (rawTab as DeskTab)
+      : null;
 
   const urlLookup = useMemo(
     () => parseLookupFromSearch(phoneParam, userIdParam),
@@ -105,8 +114,7 @@ export function CustomerDeskView() {
       const params = new URLSearchParams();
       if (next && 'phone' in next) params.set('phone', next.phone);
       if (next && 'user_id' in next) params.set('user_id', next.user_id);
-      const qs = params.toString();
-      router.replace(qs ? `/admin/customer-desk?${qs}` : '/admin/customer-desk', { scroll: false });
+      router.replace(buildOrdersHubPath('/admin/orders', 'desk', params), { scroll: false });
     },
     [router],
   );
@@ -158,21 +166,8 @@ export function CustomerDeskView() {
     !previewQ.data.registered &&
     previewQ.data.order_count === 0;
 
-  return (
-    <AdminContent className="space-y-5">
-      <AdminPageHeader
-        title="Customer Desk"
-        description="Search by name or phone, see past orders, and place a doorstep order on their behalf."
-        actions={
-          <Button asChild variant="outline" size="sm" className="gap-1.5">
-            <Link href="/admin/customers">
-              <Users className="h-3.5 w-3.5" aria-hidden />
-              All customers
-            </Link>
-          </Button>
-        }
-      />
-
+  const body = (
+    <>
       <AdminPanel
         title="Customer search"
         description="Primary ops action — name, Indian mobile, or user id."
@@ -262,6 +257,20 @@ export function CustomerDeskView() {
         laundries={laundriesQ.data ?? []}
         prefill={brPrefill}
       />
+    </>
+  );
+
+  if (embedded) {
+    return <div className="space-y-5">{body}</div>;
+  }
+
+  return (
+    <AdminContent className="space-y-5">
+      <AdminPageHeader
+        title="Customer Desk"
+        description="Search by name or phone, see past orders, and place a doorstep order on their behalf."
+      />
+      {body}
     </AdminContent>
   );
 }

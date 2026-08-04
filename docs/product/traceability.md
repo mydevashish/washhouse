@@ -18,6 +18,7 @@ Maps historical product docs → roadmap phase → feature spec.
 | Partner walk-in / offline booking | launch | [offline-booking-whatsapp.md](../features/offline-booking-whatsapp.md), [order-placement.md](../features/order-placement.md) |
 | Book Now / phone CRM booking requests | launch | [booking-requests.md](../features/booking-requests.md) |
 | Customer Desk — assisted lookup & doorstep create (admin + partner) | launch / ops | [customer-desk.md](../features/customer-desk.md) |
+| Orders Hub — hard-merge Desk / BR / Directory into Orders tabs | launch / ops | [orders-hub.md](../features/orders-hub.md) |
 | Inventory (cloth count, missing) | 3 | [partner-inventory.md](../features/partner-inventory.md) |
 | QR / barcode tracking | 3 | [partner-qr-tracking.md](../features/partner-qr-tracking.md) |
 | Staff roles | 3 | [partner-staff.md](../features/partner-staff.md) |
