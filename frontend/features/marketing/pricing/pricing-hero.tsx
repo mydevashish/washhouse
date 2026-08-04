@@ -48,7 +48,7 @@ export function PricingHero() {
             className="pricing-hero__title mt-3 sm:mt-3.5 text-balance"
             style={{ color: 'var(--atelier-ink)' }}
           >
-            Transparent pricing. Same rates at every store.
+            Simple, Transparent Pricing
           </h1>
           <p
             className="pricing-hero__support mt-2.5 max-w-xl"
