@@ -55,7 +55,7 @@ export function CustomerDeskPlaceOrderForm({
 
   const laundriesQ = useQuery({
     queryKey: queryKeys.adminLaundries(),
-    queryFn: listLaundryOptions,
+    queryFn: () => listLaundryOptions(),
     staleTime: STALE.adminDashboard,
   });
   const approved: AdminLaundryRow[] =

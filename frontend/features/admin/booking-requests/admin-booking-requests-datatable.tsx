@@ -54,7 +54,7 @@ export function AdminBookingRequestsDatatable() {
 
   const laundriesQ = useQuery({
     queryKey: queryKeys.adminLaundries(),
-    queryFn: listLaundryOptions,
+    queryFn: () => listLaundryOptions(),
     staleTime: STALE.adminDashboard,
   });
 

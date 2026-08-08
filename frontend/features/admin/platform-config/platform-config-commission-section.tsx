@@ -34,7 +34,7 @@ export function PlatformConfigCommissionSection({ config, onSaved }: Props) {
 
   const laundriesQ = useQuery({
     queryKey: ['admin-laundries-management'],
-    queryFn: listLaundryManagementOptions,
+    queryFn: () => listLaundryManagementOptions(),
     staleTime: 60_000,
   });
 

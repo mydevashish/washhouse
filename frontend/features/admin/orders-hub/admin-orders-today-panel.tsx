@@ -111,7 +111,7 @@ export function AdminOrdersTodayPanel() {
 
   const laundriesQ = useQuery({
     queryKey: queryKeys.adminLaundries(),
-    queryFn: listLaundryOptions,
+    queryFn: () => listLaundryOptions(),
     staleTime: STALE.adminDashboard,
   });
 

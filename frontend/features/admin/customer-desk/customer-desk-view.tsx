@@ -105,7 +105,7 @@ export function CustomerDeskView({ embedded = false }: CustomerDeskViewProps) {
 
   const laundriesQ = useQuery({
     queryKey: queryKeys.adminLaundries(),
-    queryFn: listLaundryOptions,
+    queryFn: () => listLaundryOptions(),
     staleTime: STALE.adminDashboard,
   });
 

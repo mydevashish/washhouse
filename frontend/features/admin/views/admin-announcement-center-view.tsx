@@ -85,7 +85,7 @@ export function AdminAnnouncementCenterView() {
 
   const laundriesQ = useQuery({
     queryKey: queryKeys.adminLaundriesManagement(),
-    queryFn: listLaundryManagementOptions,
+    queryFn: () => listLaundryManagementOptions(),
     enabled: targetType === 'specific_laundries',
     staleTime: 60_000,
   });

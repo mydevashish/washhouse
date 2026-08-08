@@ -12,7 +12,7 @@ import { listLaundryManagementOptions } from '@/services/admin';
 export function AdminCommissionView() {
   const laundriesQ = useQuery({
     queryKey: queryKeys.adminLaundriesManagement(),
-    queryFn: listLaundryManagementOptions,
+    queryFn: () => listLaundryManagementOptions(),
   });
 
   const custom = (laundriesQ.data ?? []).filter((l) => l.custom_commission_rate != null);
