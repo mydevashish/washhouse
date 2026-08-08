@@ -26,7 +26,7 @@ type PartnerOrderTableActionsMenuProps = {
   needsAction: boolean;
   showAdvance: boolean;
   showPhotos: boolean;
-  nextLabel: string;
+  nextLabel: string | null;
   printEmphasis: PrintLifecycleEmphasis | null;
   isBusy: boolean;
   isAccepting: boolean;
@@ -257,7 +257,7 @@ export function PartnerOrderTableActionsMenu({
                   {isAdvancing ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
                   ) : null}
-                  {nextLabel}
+                  {nextLabel ?? 'Next step'}
                 </button>
               ) : null}
             </>
