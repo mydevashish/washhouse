@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-08-08 — Fix frontend TypeScript build errors
+
+- **Type:** fix
+- **Scope:** chain-of-custody / partner / pagination types / tests
+- **Files:** `partner-orders-table.tsx`, `query-keys.ts`, `pagination/types.ts`, `stores-quick-pick.test.tsx`, `online-booking.test.ts`, `marketing-homepage.spec.ts`
+- **Summary:** Aligned `CustodyTimelineDialog` call site to `queryFn`+`scope` (was stale `loadTimeline`). Cleared remaining `tsc` failures: partnerOrders queryKey typing, `getTotalRecords` shape for settlements, and test matcher/NODE_ENV/Playwright assertion types.
+- **Risks:** `getTotalRecords` is now duck-typed on `total_records`/`total` only — callers that relied on full `PaginatedList` inference are unaffected at runtime.
+- **Next:** Re-run `npm run build` on deploy host to confirm CI green.
+
+---
+
 ## 2026-08-08 — Pagination QA lock (Prompt 8)
 
 - **Type:** test / docs

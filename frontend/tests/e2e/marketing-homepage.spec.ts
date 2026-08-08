@@ -700,7 +700,7 @@ test.describe('marketing Book Now dialog', () => {
     expect(body.source).toBe('marketing_home');
 
     await expect(dialog.getByTestId('book-pickup-success')).toBeVisible({ timeout: 10_000 });
-    await expect(dialog.getByTestId('book-pickup-public-code')).toHaveTextContent('BR-K7M2QX');
+    await expect(dialog.getByTestId('book-pickup-public-code')).toHaveText('BR-K7M2QX');
     await expect(dialog.getByRole('link', { name: /whatsapp us/i })).toBeVisible();
     await expect(dialog.getByRole('link', { name: /call us/i })).toBeVisible();
 
@@ -762,7 +762,7 @@ test.describe('marketing stores directory', () => {
       // Name + city (article aria-label is "{name}, {city}")
       const articleLabel = (await article.getAttribute('aria-label')) ?? '';
       expect(articleLabel).toMatch(/,\s*\S+/);
-      const [storeName] = articleLabel.split(',').map((s) => s.trim());
+      const storeName = articleLabel.split(',')[0]?.trim() ?? '';
       expect(storeName.length).toBeGreaterThan(0);
       await expect(firstCard.getByRole('heading', { name: storeName, exact: true })).toBeVisible();
       const city = articleLabel.slice(articleLabel.indexOf(',') + 1).trim();

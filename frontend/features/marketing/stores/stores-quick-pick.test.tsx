@@ -239,7 +239,9 @@ describe('QuickPickCompactRow', () => {
     expect(
       screen.getByText(
         (_, el) =>
-          el?.classList.contains('truncate') && el.textContent?.includes('Bengaluru') === true,
+          Boolean(
+            el?.classList.contains('truncate') && el.textContent?.includes('Bengaluru') === true,
+          ),
       ),
     ).toBeInTheDocument();
 

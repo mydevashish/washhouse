@@ -289,7 +289,8 @@ export function PartnerOrdersTable({
         trackingCode={custodyOrder?.tracking_code ?? null}
         open={Boolean(custodyOrder)}
         onOpenChange={(open) => !open && setCustodyOrder(null)}
-        loadTimeline={getPartnerCustodyTimeline}
+        queryFn={getPartnerCustodyTimeline}
+        scope="partner"
       />
     </PartnerPanel>
   );

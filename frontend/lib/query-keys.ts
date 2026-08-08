@@ -63,7 +63,7 @@ export const queryKeys = {
     ['custody-timeline', scope, orderId] as const,
   addresses: () => ['addresses'] as const,
   partnerAnalytics: () => ['partner-analytics'] as const,
-  partnerOrders: (params?: Record<string, unknown>) =>
+  partnerOrders: (params?: object) =>
     ['partner-orders', params ?? {}] as const,
   partnerOrder: (id: string) => ['partner-order', id] as const,
   partnerWalkInOrders: () => ['partner-walk-in-orders'] as const,

@@ -98,14 +98,22 @@ describe('warnOnlineBookingFlagMismatch', () => {
   const originalEnv = process.env.NODE_ENV;
   let warnSpy: jest.SpyInstance;
 
+  const setNodeEnv = (value: string) => {
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value,
+      configurable: true,
+      writable: true,
+    });
+  };
+
   beforeEach(() => {
     warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-    process.env.NODE_ENV = 'development';
+    setNodeEnv('development');
   });
 
   afterEach(() => {
     warnSpy.mockRestore();
-    process.env.NODE_ENV = originalEnv;
+    setNodeEnv(originalEnv);
   });
 
   it('warns when env and API disagree in development', () => {
@@ -120,7 +128,7 @@ describe('warnOnlineBookingFlagMismatch', () => {
   });
 
   it('does not warn in production', () => {
-    process.env.NODE_ENV = 'production';
+    setNodeEnv('production');
     warnOnlineBookingFlagMismatch(true, false);
     expect(warnSpy).not.toHaveBeenCalled();
   });

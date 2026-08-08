@@ -31,7 +31,7 @@ export function normalizePageSize(size?: number): PageSize {
   return DEFAULT_PAGE_SIZE;
 }
 
-/** @deprecated Use total_records — kept for legacy settlement responses during migration */
-export function getTotalRecords<T>(data: PaginatedList<T> & { total?: number }): number {
+/** Prefer total_records; `total` kept for legacy settlement responses during migration. */
+export function getTotalRecords(data: { total_records?: number; total?: number }): number {
   return data.total_records ?? data.total ?? 0;
 }
