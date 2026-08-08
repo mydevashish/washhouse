@@ -28,6 +28,7 @@ import { DisputeAssigneeCell } from '@/features/admin/disputes/dispute-assignee-
 import { DisputeDetailDrawer } from '@/features/admin/disputes/dispute-detail-drawer';
 import { DisputeFiltersBar } from '@/features/admin/disputes/dispute-filters-bar';
 import { DisputeMetricsCards } from '@/features/admin/disputes/dispute-metrics-cards';
+import { getTotalRecords } from '@/lib/pagination/types';
 import { DisputeSlaCell } from '@/features/admin/disputes/dispute-sla-cell';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { queryKeys } from '@/lib/query-keys';
@@ -45,7 +46,7 @@ import { useAuthStore } from '@/store/auth.store';
 
 const DEFAULT_FILTERS: DisputeTableFilters = {
   page: 1,
-  page_size: 25,
+  page_size: 10,
   sort_by: 'created_at',
   sort_dir: 'desc',
 };
@@ -430,13 +431,13 @@ export function AdminDisputesDatatable() {
             onToggleSort={handleSort}
             page={tableQ.data?.page ?? 1}
             pageCount={tableQ.data?.total_pages ?? 1}
-            pageSize={filters.page_size ?? 25}
-            pageStart={((tableQ.data?.page ?? 1) - 1) * (filters.page_size ?? 25) + 1}
+            pageSize={filters.page_size ?? 10}
+            pageStart={((tableQ.data?.page ?? 1) - 1) * (filters.page_size ?? 10) + 1}
             pageEnd={Math.min(
-              (tableQ.data?.page ?? 1) * (filters.page_size ?? 25),
-              tableQ.data?.total ?? 0,
+              (tableQ.data?.page ?? 1) * (filters.page_size ?? 10),
+              tableQ.data ? getTotalRecords(tableQ.data) : 0,
             )}
-            filteredCount={tableQ.data?.total ?? 0}
+            filteredCount={tableQ.data ? getTotalRecords(tableQ.data) : 0}
             onPageChange={(p) => setFilters((f) => ({ ...f, page: p }))}
             onPageSizeChange={(s) => setFilters((f) => ({ ...f, page_size: s, page: 1 }))}
             emptyState={

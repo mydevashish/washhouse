@@ -312,9 +312,12 @@ class CustomerDeskService:
         date_to: date | None = None,
         q: str | None = None,
         page: int = 1,
-        page_size: int = 20,
+        page_size: int = 10,
     ) -> dict:
         """Paginated past orders newest-first. Partner must pass laundry_id first."""
+        from app.core.pagination import normalize_page_size
+
+        page_size = normalize_page_size(page_size)
         if not user_id and not phone:
             raise ValidationError("Provide user_id or phone")
 

@@ -11,10 +11,10 @@ describe('Orders Hub nav aliases in chrome', () => {
     expect(buildBreadcrumbs('/admin/customers', 'admin')[1]?.label).toBe('Orders');
   });
 
-  it('breadcrumbs map legacy partner paths to Orders', () => {
+  it('breadcrumbs map legacy partner paths to Orders (customers → People)', () => {
     expect(buildBreadcrumbs('/partner/customer-desk', 'partner')[1]?.label).toBe('Orders');
     expect(buildBreadcrumbs('/partner/booking-requests', 'partner')[1]?.label).toBe('Orders');
-    expect(buildBreadcrumbs('/partner/customers', 'partner')[1]?.label).toBe('Orders');
+    expect(buildBreadcrumbs('/partner/customers', 'partner')[1]?.label).toBe('Customers');
   });
 
   it('search still finds old labels and routes them into hub tabs', () => {

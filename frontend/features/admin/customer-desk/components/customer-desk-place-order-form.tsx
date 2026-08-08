@@ -17,7 +17,7 @@ import {
 } from '@/features/admin/customer-desk/schemas';
 import { useAdminAssistedOrderMutations } from '@/features/admin/customer-desk/hooks';
 import type { AssistedOrderCreatePayload, CustomerDeskProfile } from '@/features/admin/customer-desk/types';
-import { listAllLaundries, type AdminLaundryRow } from '@/services/admin';
+import { listLaundryOptions, type AdminLaundryRow } from '@/services/admin';
 import { getLaundry } from '@/services/laundries';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
@@ -55,7 +55,7 @@ export function CustomerDeskPlaceOrderForm({
 
   const laundriesQ = useQuery({
     queryKey: queryKeys.adminLaundries(),
-    queryFn: listAllLaundries,
+    queryFn: listLaundryOptions,
     staleTime: STALE.adminDashboard,
   });
   const approved: AdminLaundryRow[] =

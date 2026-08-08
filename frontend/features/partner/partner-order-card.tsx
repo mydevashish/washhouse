@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ClientDate } from '@/components/ui/client-date';
 import { PartnerStatusBadge } from '@/features/partner/components/partner-status-badge';
 import { PartnerOrderSourceBadge, isWalkInOrder } from '@/features/partner/components/partner-order-source-badge';
+import { ColorTokenChip } from '@/features/partner-shop-floor/components/color-token-chip';
 import { PickupEvidenceGallery, PickupEvidenceUpload } from '@/features/pickup-evidence';
 import {
   InventoryVerificationDisplay,
@@ -114,6 +115,13 @@ export function PartnerOrderCard({
                 #{order.tracking_code}
               </Link>
               <PartnerOrderSourceBadge order={order} />
+              {order.token_code ? (
+                <ColorTokenChip
+                  colorToken={order.color_token}
+                  tokenCode={order.token_code}
+                  size="sm"
+                />
+              ) : null}
             </div>
             <p className="mt-0.5 truncate text-sm text-foreground">{order.customer_name}</p>
             {order.customer_phone && (
@@ -187,7 +195,7 @@ export function PartnerOrderCard({
             orderId={order.id}
             onUploaded={() => {
               void queryClient.invalidateQueries({ queryKey: queryKeys.pickupEvidence(order.id, 'partner') });
-              void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOrders() });
+              void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
               onEvidenceUploaded?.();
             }}
           />
@@ -199,7 +207,7 @@ export function PartnerOrderCard({
             verification={inventoryQ.data ?? null}
             onSaved={() => {
               void queryClient.invalidateQueries({ queryKey: queryKeys.inventoryVerification(order.id, 'partner') });
-              void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOrders() });
+              void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
             }}
           />
         )}
@@ -247,7 +255,7 @@ export function PartnerOrderCard({
             disabled={busy}
             onUploaded={() => {
               void queryClient.invalidateQueries({ queryKey: queryKeys.deliveryProof(order.id, 'partner') });
-              void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOrders() });
+              void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
             }}
           />
         )}
@@ -267,7 +275,7 @@ export function PartnerOrderCard({
             verification={deliveryQ.data}
             disabled={busy}
             onVerified={() => {
-              void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOrders() });
+              void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
               void queryClient.invalidateQueries({ queryKey: queryKeys.deliveryVerification(order.id, 'partner') });
             }}
           />

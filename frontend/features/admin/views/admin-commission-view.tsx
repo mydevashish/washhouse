@@ -7,12 +7,12 @@ import { AdminContent } from '@/features/admin/components/admin-content';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
 import { AdminPanel } from '@/features/admin/components/admin-panel';
 import { queryKeys } from '@/lib/query-keys';
-import { listLaundriesManagement } from '@/services/admin';
+import { listLaundryManagementOptions } from '@/services/admin';
 
 export function AdminCommissionView() {
   const laundriesQ = useQuery({
     queryKey: queryKeys.adminLaundriesManagement(),
-    queryFn: listLaundriesManagement,
+    queryFn: listLaundryManagementOptions,
   });
 
   const custom = (laundriesQ.data ?? []).filter((l) => l.custom_commission_rate != null);

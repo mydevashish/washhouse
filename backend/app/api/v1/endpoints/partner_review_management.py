@@ -10,7 +10,9 @@ from fastapi import APIRouter, Depends, Query, Request
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_user_payload
 from app.core.exceptions import AuthorizationError
+from app.core.pagination import DEFAULT_PAGE_SIZE, build_paginated_response
 from app.models.enums import UserRole
+from app.schemas.common import PaginatedListResponse
 from app.schemas.review_management import (
     ReviewAbuseReportRequest,
     ReviewAnalyticsResponse,
@@ -43,10 +45,10 @@ async def partner_list_reviews(
     max_rating: int | None = None,
     has_reply: bool | None = None,
     abuse_reported: bool | None = None,
-    limit: int = Query(default=50, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=100),
 ) -> dict:
-    rows = await ReviewManagementService(session).partner_list_reviews(
+    data = await ReviewManagementService(session).partner_list_reviews(
         UUID(payload["sub"]),
         payload["role"],
         rating=rating,
@@ -54,10 +56,20 @@ async def partner_list_reviews(
         max_rating=max_rating,
         has_reply=has_reply,
         abuse_reported=abuse_reported,
-        limit=limit,
-        offset=offset,
+        page=page,
+        page_size=page_size,
     )
-    return success_envelope([ReviewManagementRow.model_validate(r) for r in rows], request)
+    return success_envelope(
+        PaginatedListResponse[ReviewManagementRow].model_validate(
+            build_paginated_response(
+                items=[ReviewManagementRow.model_validate(r) for r in data["items"]],
+                total_records=data["total_records"],
+                page=data["page"],
+                page_size=data["page_size"],
+            ),
+        ),
+        request,
+    )
 
 
 @router.get("/analytics")

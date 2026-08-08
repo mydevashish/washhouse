@@ -88,7 +88,7 @@ async function mockDeskApis(page: Page) {
             },
           ],
           page: 1,
-          page_size: 20,
+          page_size: 10,
           total_records: 1,
           total_pages: 1,
           has_next: false,
@@ -108,14 +108,22 @@ async function mockDeskApis(page: Page) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        data: [
-          {
-            id: LAUNDRY_ID,
-            name: 'Sparkle Wash',
-            city: 'Bengaluru',
-            status: 'approved',
-          },
-        ],
+        data: {
+          items: [
+            {
+              id: LAUNDRY_ID,
+              name: 'Sparkle Wash',
+              city: 'Bengaluru',
+              status: 'approved',
+            },
+          ],
+          page: 1,
+          page_size: 10,
+          total_records: 1,
+          total_pages: 1,
+          has_next: false,
+          has_previous: false,
+        },
         meta: {},
       }),
     });
@@ -168,7 +176,7 @@ async function mockDeskApis(page: Page) {
             },
           ],
           page: 1,
-          page_size: 20,
+          page_size: 10,
           total_records: 1,
           total_pages: 1,
           has_next: false,

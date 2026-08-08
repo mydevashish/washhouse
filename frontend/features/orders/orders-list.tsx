@@ -1,16 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Package } from 'lucide-react';
 
 import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { OrderStatusBadge } from '@/features/orders/order-status-badge';
 import { formatInr } from '@/features/discover/detail/order-pricing';
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination/types';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import { listOrders } from '@/services/orders';
@@ -28,9 +31,11 @@ function OrdersListSkeleton() {
 }
 
 export function OrdersList() {
+  const [offset, setOffset] = useState(0);
+  const pageSize = DEFAULT_PAGE_SIZE;
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: queryKeys.orders(),
-    queryFn: () => listOrders({ limit: 50, offset: 0 }),
+    queryKey: queryKeys.orders(pageSize, offset),
+    queryFn: () => listOrders({ limit: pageSize, offset }),
     staleTime: STALE.orders,
   });
 
@@ -46,7 +51,7 @@ export function OrdersList() {
     );
   }
 
-  if (!data?.length) {
+  if (!data?.length && offset === 0) {
     return (
       <EmptyState
         icon={Package}
@@ -57,43 +62,69 @@ export function OrdersList() {
     );
   }
 
+  const hasMore = (data?.length ?? 0) >= pageSize;
+
   return (
-    <ul className="space-y-3">
-      {data.map((o) => (
-        <li key={o.id}>
-          <Link
-            href={`/orders/${o.id}`}
-            className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <Card className="overflow-hidden rounded-2xl border-0 shadow-soft ring-1 ring-border/60 transition-all group-hover:shadow-[var(--shadow-card-hover)] group-hover:ring-primary/30">
-              <CardContent className="flex items-center gap-4 p-4 sm:p-5">
-                <div
-                  className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 sm:flex"
-                  aria-hidden
-                >
-                  <Package className="h-6 w-6 text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-mono text-lg font-bold text-foreground">#{o.tracking_code}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <OrderStatusBadge status={o.status} />
-                    <Badge variant="outline" className="capitalize">
-                      {o.payment_status.replace(/_/g, ' ')}
-                    </Badge>
+    <div className="space-y-3">
+      <ul className="space-y-3">
+        {(data ?? []).map((o) => (
+          <li key={o.id}>
+            <Link
+              href={`/orders/${o.id}`}
+              className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <Card className="overflow-hidden rounded-2xl border-0 shadow-soft ring-1 ring-border/60 transition-all group-hover:shadow-[var(--shadow-card-hover)] group-hover:ring-primary/30">
+                <CardContent className="flex items-center gap-4 p-4 sm:p-5">
+                  <div
+                    className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 sm:flex"
+                    aria-hidden
+                  >
+                    <Package className="h-6 w-6 text-primary" />
                   </div>
-                  <p className="mt-2 text-sm font-semibold tabular-nums text-foreground">
-                    {formatInr(Number(o.total_inr))}
-                  </p>
-                </div>
-                <ChevronRight
-                  className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
-                  aria-hidden
-                />
-              </CardContent>
-            </Card>
-          </Link>
-        </li>
-      ))}
-    </ul>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-mono text-lg font-bold text-foreground">#{o.tracking_code}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <OrderStatusBadge status={o.status} />
+                      <Badge variant="outline" className="capitalize">
+                        {o.payment_status.replace(/_/g, ' ')}
+                      </Badge>
+                    </div>
+                    <p className="mt-2 text-sm font-semibold tabular-nums text-foreground">
+                      {formatInr(Number(o.total_inr))}
+                    </p>
+                  </div>
+                  <ChevronRight
+                    className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                    aria-hidden
+                  />
+                </CardContent>
+              </Card>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      {(offset > 0 || hasMore) && (
+        <div className="flex items-center justify-between gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={offset === 0 || isFetching}
+            onClick={() => setOffset((o) => Math.max(0, o - pageSize))}
+          >
+            Previous
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!hasMore || isFetching}
+            onClick={() => setOffset((o) => o + pageSize)}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

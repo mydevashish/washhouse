@@ -18,6 +18,24 @@
 
 ## History
 
+### 2026-08-08 — UI pack Prompt 7: list/dashboard hardening
+
+- **Area:** Partner/Admin lists + ops dashboard + Shop Floor poll + customer insights
+- **Before:** Laundry-trust admin list recomputed metrics per row (N+1); admin reviews fetched laundry per row; ops `pending_tasks` loaded up to 200 orders; customer insights dumped all aggregates then sliced in Python; Shop Floor polled 50-row boards every 45s; reports fetched `page_size: 100`; customer orders `limit: 50`.
+- **Change:**
+  - Trust list: stored score + owner join + 2 batched metric queries (detail still live-recalculates)
+  - Admin reviews: join `Laundry.name` (no N+1)
+  - Ops dashboard: `count_pending_tasks` via SQL `EXISTS` counts
+  - Customer insights directory: SQL `LIMIT/OFFSET` + search; filtered tabs capped at 500
+  - Reports export page_size **25**; Shop Floor drop `refetchInterval`; customer orders default **10** + prev/next
+  - Alembic `20260808_0041`: `ix_orders_laundry_id_status_created_at`, `ix_laundries_trust_score_active`
+  - Ban note on `useDataTableState` (server entities → `useServerList`)
+- **After (expected):** Partner orders / admin laundries / people directory stay at `page_size=10`; trust/reviews list queries O(page) not O(page×metrics); ops dashboard no longer materializes open queues for a KPI.
+- **Verify:** Network panel on `/partner/orders`, `/admin/laundries`, `/partner/customers` → `page_size=10`. Run migration `20260808_0041`. Existing partner order pagination tests seed 12+ rows; full 200-order load test deferred to Prompt 8 / k6.
+- **Follow-up:** Customer insights dashboard still full-aggregates for KPIs; dedicated CSV export; Shop Floor badge counts from analytics instead of 50-row fetch.
+
+---
+
 ### 2026-07-29 — `/stores` gallery: lazy contact + no debounce skeletons
 
 - **Area:** frontend `/stores`, storefront contact

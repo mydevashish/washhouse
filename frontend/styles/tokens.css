@@ -129,6 +129,36 @@
   --gradient-hero: linear-gradient(135deg, #145f94 0%, #1a7ebf 42%, #06b6d4 100%);
   --gradient-surface: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
 
+  /* Partner Shop Floor — status + home tile surfaces (AA on fg) */
+  --floor-received: var(--info);
+  --floor-washing: var(--warning);
+  --floor-ready: var(--success);
+  --floor-given: var(--muted-foreground);
+  --floor-tile-order-bg: #e8f4fb;
+  --floor-tile-order-fg: #0a3d5c;
+  --floor-tile-order-border: #9dcae6;
+  --floor-tile-today-bg: #fef3c7;
+  --floor-tile-today-fg: #78350f;
+  --floor-tile-today-border: #fcd34d;
+  --floor-tile-ready-bg: #d1fae5;
+  --floor-tile-ready-fg: #064e3b;
+  --floor-tile-ready-border: #6ee7b7;
+  --floor-tile-print-bg: #ecfeff;
+  --floor-tile-print-fg: #155e75;
+  --floor-tile-print-border: #67e8f9;
+
+  /* Shop Floor bag color tokens (swatches on chips / tags) */
+  --token-red: #dc2626;
+  --token-blue: #2563eb;
+  --token-green: #16a34a;
+  --token-yellow: #ca8a04;
+  --token-orange: #ea580c;
+  --token-purple: #7c3aed;
+  --token-pink: #db2777;
+  --token-teal: #0d9488;
+  --token-brown: #92400e;
+  --token-grey: #4b5563;
+
   color-scheme: light;
 }
 
@@ -181,6 +211,34 @@
   --shadow-pop: 0 4px 16px rgb(0 0 0 / 0.35);
   --shadow-modal: 0 20px 48px rgb(0 0 0 / 0.5);
   --gradient-hero: linear-gradient(135deg, #0a3d5c 0%, #1a7ebf 48%, #0891b2 100%);
+
+  --floor-received: var(--info);
+  --floor-washing: var(--warning);
+  --floor-ready: var(--success);
+  --floor-given: var(--muted-foreground);
+  --floor-tile-order-bg: #0c2a3d;
+  --floor-tile-order-fg: #e0f2fe;
+  --floor-tile-order-border: #1578b5;
+  --floor-tile-today-bg: #451a03;
+  --floor-tile-today-fg: #fef3c7;
+  --floor-tile-today-border: #b45309;
+  --floor-tile-ready-bg: #064e3b;
+  --floor-tile-ready-fg: #d1fae5;
+  --floor-tile-ready-border: #059669;
+  --floor-tile-print-bg: #083344;
+  --floor-tile-print-fg: #cffafe;
+  --floor-tile-print-border: #0891b2;
+
+  --token-red: #f87171;
+  --token-blue: #60a5fa;
+  --token-green: #4ade80;
+  --token-yellow: #facc15;
+  --token-orange: #fb923c;
+  --token-purple: #c084fc;
+  --token-pink: #f472b6;
+  --token-teal: #2dd4bf;
+  --token-brown: #d6a57c;
+  --token-grey: #9ca3af;
 
   color-scheme: dark;
 }

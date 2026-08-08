@@ -132,12 +132,14 @@ class BookingRequestRepository:
         created_from: datetime | None = None,
         created_to: datetime | None = None,
         page: int = 1,
-        page_size: int = 20,
+        page_size: int = 10,
         sort_by: str = "created_at",
         sort_dir: str = "desc",
     ) -> tuple[list[BookingRequest], int]:
+        from app.core.pagination import normalize_page_size
+
         safe_page = max(1, page)
-        safe_size = min(max(1, page_size), 100)
+        safe_size = normalize_page_size(page_size)
 
         base = select(BookingRequest)
         base = self._apply_list_filters(

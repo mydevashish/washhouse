@@ -11,7 +11,12 @@ from sqlalchemy import cast, func, or_, select, Date
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import String
 
-from app.api.admin_list_params import AdminAuditListParams, AdminOrderListParams, AdminUserListParams
+from app.api.admin_list_params import (
+    AdminAuditListParams,
+    AdminLaundryListParams,
+    AdminOrderListParams,
+    AdminUserListParams,
+)
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.core.pagination import apply_sort, build_paginated_response
 from app.core.security import hash_password
@@ -96,15 +101,46 @@ class AdminService:
         }
 
     async def list_all_laundries(self) -> list[dict]:
-        from sqlalchemy import select
-
-        from app.models.laundry import Laundry
-
-        result = await self._session.execute(
-            select(Laundry).where(Laundry.deleted_at.is_(None)).order_by(Laundry.created_at.desc()),
+        """Legacy full dump — prefer ``list_all_laundries_paginated`` for admin tables."""
+        result = await self.list_all_laundries_paginated(
+            AdminLaundryListParams(page=1, page_size=100, sort_by="created_at"),
         )
-        rows = list(result.scalars().all())
-        return [
+        return list(result["items"])
+
+    async def list_all_laundries_paginated(self, params: AdminLaundryListParams) -> dict:
+        stmt = select(Laundry).where(Laundry.deleted_at.is_(None))
+        if params.status:
+            try:
+                stmt = stmt.where(Laundry.status == LaundryStatus(params.status))
+            except ValueError:
+                stmt = stmt.where(Laundry.status == params.status)
+        if params.search:
+            term = f"%{params.search}%"
+            stmt = stmt.where(
+                or_(
+                    Laundry.name.ilike(term),
+                    Laundry.city.ilike(term),
+                    cast(Laundry.status, String).ilike(term),
+                ),
+            )
+        sort_map = {
+            "name": Laundry.name,
+            "city": Laundry.city,
+            "status": Laundry.status,
+            "is_verified": Laundry.is_verified,
+            "created_at": Laundry.created_at,
+        }
+        stmt = apply_sort(
+            stmt,
+            params.sort_by,
+            params.sort_order,
+            column_map=sort_map,
+            default=Laundry.created_at,
+        )
+        count_stmt = select(func.count()).select_from(stmt.order_by(None).subquery())
+        total = int(await self._session.scalar(count_stmt) or 0)
+        result = await self._session.execute(stmt.offset(params.offset).limit(params.page_size))
+        items = [
             {
                 "id": str(r.id),
                 "name": r.name,
@@ -112,8 +148,14 @@ class AdminService:
                 "status": r.status.value,
                 "is_verified": r.is_verified,
             }
-            for r in rows
+            for r in result.scalars().all()
         ]
+        return build_paginated_response(
+            items=items,
+            total_records=total,
+            page=params.page,
+            page_size=params.page_size,
+        )
 
     async def _default_commission(self) -> Decimal:
         return await PlatformRepository(self._session).get_default_commission()
@@ -288,28 +330,79 @@ class AdminService:
         return {"orders_trend": trend, "top_cities": top_cities, "top_laundries": top_laundries}
 
     async def list_laundries_management(self) -> list[dict]:
-        default_rate = await self._default_commission()
-        result = await self._session.execute(
-            select(Laundry, User.full_name, User.email)
-            .join(User, User.id == Laundry.owner_user_id)
-            .where(Laundry.deleted_at.is_(None))
-            .order_by(Laundry.created_at.desc()),
+        """Legacy full dump — prefer ``list_laundries_management_paginated``."""
+        result = await self.list_laundries_management_paginated(
+            AdminLaundryListParams(page=1, page_size=100, sort_by="created_at"),
         )
-        rows: list[dict] = []
-        for laundry, owner_name, owner_email in result.all():
-            stats = await self._session.execute(
-                select(
-                    func.count(Order.id),
-                    func.coalesce(func.sum(Order.total_inr), 0),
-                ).where(
-                    Order.laundry_id == laundry.id,
-                    Order.deleted_at.is_(None),
-                    Order.status == OrderStatus.delivered,
+        return list(result["items"])
+
+    async def list_laundries_management_paginated(self, params: AdminLaundryListParams) -> dict:
+        default_rate = await self._default_commission()
+        order_stats = (
+            select(
+                Order.laundry_id.label("laundry_id"),
+                func.count(Order.id).label("orders_count"),
+                func.coalesce(func.sum(Order.total_inr), 0).label("revenue"),
+            )
+            .where(
+                Order.deleted_at.is_(None),
+                Order.status == OrderStatus.delivered,
+            )
+            .group_by(Order.laundry_id)
+            .subquery()
+        )
+        stmt = (
+            select(
+                Laundry,
+                User.full_name,
+                User.email,
+                order_stats.c.orders_count,
+                order_stats.c.revenue,
+            )
+            .join(User, User.id == Laundry.owner_user_id)
+            .outerjoin(order_stats, order_stats.c.laundry_id == Laundry.id)
+            .where(Laundry.deleted_at.is_(None))
+        )
+        if params.status:
+            try:
+                stmt = stmt.where(Laundry.status == LaundryStatus(params.status))
+            except ValueError:
+                stmt = stmt.where(Laundry.status == params.status)
+        if params.search:
+            term = f"%{params.search}%"
+            stmt = stmt.where(
+                or_(
+                    Laundry.name.ilike(term),
+                    Laundry.city.ilike(term),
+                    User.full_name.ilike(term),
+                    User.email.ilike(term),
+                    cast(Laundry.status, String).ilike(term),
                 ),
             )
-            order_count, revenue = stats.one()
+        sort_map = {
+            "name": Laundry.name,
+            "owner_name": User.full_name,
+            "city": Laundry.city,
+            "status": Laundry.status,
+            "orders_count": order_stats.c.orders_count,
+            "revenue_inr": order_stats.c.revenue,
+            "created_at": Laundry.created_at,
+            "effective_commission_rate": Laundry.commission_rate,
+        }
+        stmt = apply_sort(
+            stmt,
+            params.sort_by,
+            params.sort_order,
+            column_map=sort_map,
+            default=Laundry.created_at,
+        )
+        count_stmt = select(func.count()).select_from(stmt.order_by(None).subquery())
+        total = int(await self._session.scalar(count_stmt) or 0)
+        result = await self._session.execute(stmt.offset(params.offset).limit(params.page_size))
+        items: list[dict] = []
+        for laundry, owner_name, owner_email, order_count, revenue in result.all():
             effective = laundry.commission_rate if laundry.commission_rate is not None else default_rate
-            rows.append(
+            items.append(
                 {
                     "id": laundry.id,
                     "name": laundry.name,
@@ -329,7 +422,12 @@ class AdminService:
                     "created_at": laundry.created_at,
                 },
             )
-        return rows
+        return build_paginated_response(
+            items=items,
+            total_records=total,
+            page=params.page,
+            page_size=params.page_size,
+        )
 
     async def list_audit_logs(
         self,

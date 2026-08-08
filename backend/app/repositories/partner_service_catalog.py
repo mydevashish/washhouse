@@ -31,6 +31,23 @@ class PartnerServiceCatalogRepository:
             ),
         )
 
+    async def get_by_catalog_bridge(
+        self,
+        laundry_id: UUID,
+        *,
+        catalog_item_id: UUID,
+        process: str,
+    ) -> LaundryService | None:
+        """Find a laundry_service created for a Cloth Wall catalog line."""
+        marker = f"catalog:{catalog_item_id}:{process}"
+        return await self._session.scalar(
+            select(LaundryService).where(
+                LaundryService.laundry_id == laundry_id,
+                LaundryService.description == marker,
+                LaundryService.deleted_at.is_(None),
+            ),
+        )
+
     async def create(self, row: LaundryService) -> LaundryService:
         self._session.add(row)
         await self._session.flush()

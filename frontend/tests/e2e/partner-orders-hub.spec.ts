@@ -24,7 +24,7 @@ async function mockHubApis(page: Page) {
         meta: {
           pagination: {
             page: 1,
-            page_size: 20,
+            page_size: 10,
             total: 3,
             total_pages: 1,
             has_next: false,
@@ -75,7 +75,7 @@ async function mockHubApis(page: Page) {
         data: {
           items: [],
           page: 1,
-          page_size: 20,
+          page_size: 10,
           total_records: 0,
           total_pages: 0,
           has_next: false,
@@ -98,6 +98,7 @@ async function mockHubApis(page: Page) {
           avg_retention_score: 0,
           segments: { new: 0, active: 0, vip: 0, at_risk: 0, inactive: 0 },
           lists: { top: 0, repeat: 0, vip: 0, inactive: 0, high_risk: 0 },
+          new_this_week: 0,
         },
         meta: {},
       }),
@@ -109,7 +110,15 @@ async function mockHubApis(page: Page) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        data: { items: [], total: 0 },
+        data: {
+          items: [],
+          page: 1,
+          page_size: 10,
+          total_records: 0,
+          total_pages: 1,
+          has_next: false,
+          has_previous: false,
+        },
         meta: {},
       }),
     });

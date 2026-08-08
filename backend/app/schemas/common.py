@@ -7,6 +7,8 @@ from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
+from app.core.pagination import DEFAULT_PAGE_SIZE
+
 T = TypeVar("T")
 
 
@@ -35,7 +37,7 @@ class PaginatedListResponse(BaseModel, Generic[T]):
         return cls.model_validate(payload)
 
     @classmethod
-    def empty(cls, *, page: int = 1, page_size: int = 10) -> PaginatedListResponse:
+    def empty(cls, *, page: int = 1, page_size: int = DEFAULT_PAGE_SIZE) -> PaginatedListResponse:
         return cls(
             items=[],
             page=page,

@@ -4,12 +4,14 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Loader2, Store } from 'lucide-react';
 
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { EmptyState } from '@/components/ui/empty-state';
 import { InfoBanner } from '@/components/ui/info-banner';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AdminPanel } from '@/features/admin/components/admin-panel';
 import { LaundryTrustScoreBadge } from '@/features/admin/components/laundry-trust-score-badge';
+import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
 import {
   getAdminLaundryTrustScoreDetail,
@@ -122,20 +124,19 @@ function LaundryTrustDetailPanel({
 
 export function AdminLaundryTrustScoresPanel() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
 
-  const listQ = useQuery({
+  const list = useServerList<LaundryTrustScoreSummary>({
     queryKey: queryKeys.adminLaundryTrustScores(),
-    queryFn: listAdminLaundryTrustScores,
+    fetcher: listAdminLaundryTrustScores,
   });
 
   if (selectedId) {
     return <LaundryTrustDetailPanel laundryId={selectedId} onBack={() => setSelectedId(null)} />;
   }
 
-  if (listQ.isLoading) return <Skeleton className="h-64 w-full rounded-2xl" />;
+  if (list.isLoading) return <Skeleton className="h-64 w-full rounded-2xl" />;
 
-  if (listQ.isError) {
+  if (list.isError) {
     return (
       <InfoBanner variant="destructive" title="Could not load laundry trust scores">
         Try refreshing the page.
@@ -143,25 +144,18 @@ export function AdminLaundryTrustScoresPanel() {
     );
   }
 
-  const q = search.toLowerCase();
-  const rows = (listQ.data ?? []).filter(
-    (r) =>
-      r.laundry_name.toLowerCase().includes(q) ||
-      r.city.toLowerCase().includes(q) ||
-      (r.owner_name?.toLowerCase().includes(q) ?? false) ||
-      r.level.includes(q),
-  );
+  const rows = list.rows;
 
   return (
     <AdminPanel
       title="Partner trust scores"
-      meta={<span className="tabular-nums">{rows.length} laundries</span>}
+      meta={<span className="tabular-nums">{list.totalRecords} laundries</span>}
       toolbar={
         <Input
           type="search"
           placeholder="Search…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={list.search}
+          onChange={(e) => list.setSearch(e.target.value)}
           className="h-9 w-48 sm:w-56"
           aria-label="Search laundry trust scores"
         />
@@ -173,31 +167,46 @@ export function AdminLaundryTrustScoresPanel() {
           <EmptyState icon={Store} title="No laundries" description="Partner trust scores appear for registered laundries." />
         </div>
       ) : (
-        <ul className="divide-y divide-border">
-          {rows.map((r: LaundryTrustScoreSummary) => (
-            <li key={r.laundry_id}>
-              <button
-                type="button"
-                className="flex w-full items-center gap-3 px-4 py-4 text-left hover:bg-muted/40"
-                onClick={() => setSelectedId(r.laundry_id)}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold">{r.laundry_name}</span>
-                    <LaundryTrustScoreBadge level={r.level} score={r.trust_score} />
+        <>
+          <ul className="divide-y divide-border">
+            {rows.map((r: LaundryTrustScoreSummary) => (
+              <li key={r.laundry_id}>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 px-4 py-4 text-left hover:bg-muted/40"
+                  onClick={() => setSelectedId(r.laundry_id)}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold">{r.laundry_name}</span>
+                      <LaundryTrustScoreBadge level={r.level} score={r.trust_score} />
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {r.city}
+                      {r.owner_name ? ` · ${r.owner_name}` : ''} · {r.metrics.completed_orders} completed ·{' '}
+                      {r.metrics.avg_rating} ★
+                    </p>
                   </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {r.city}
-                    {r.owner_name ? ` · ${r.owner_name}` : ''} · {r.metrics.completed_orders} completed ·{' '}
-                    {r.metrics.avg_rating} ★
-                  </p>
-                </div>
-                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
-              </button>
-            </li>
-          ))}
-        </ul>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="border-t border-border px-2 py-2">
+            <DataTablePagination
+              page={list.page}
+              pageCount={list.pageCount}
+              pageSize={list.pageSize}
+              pageStart={list.pageStart}
+              pageEnd={list.pageEnd}
+              totalCount={list.totalRecords}
+              onPageChange={list.setPage}
+              onPageSizeChange={list.setPageSize}
+            />
+          </div>
+        </>
       )}
     </AdminPanel>
   );
 }
+

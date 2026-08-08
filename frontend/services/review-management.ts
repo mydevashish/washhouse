@@ -1,4 +1,5 @@
 import { api, type ApiEnvelope } from '@/lib/api';
+import type { ListQueryState, PaginatedList } from '@/lib/pagination/types';
 
 export interface ReviewManagementRow {
   id: string;
@@ -40,14 +41,21 @@ export interface ReviewAuditRow {
   note: string | null;
 }
 
-export async function listPartnerReviews(params?: {
+export type ListPartnerReviewsParams = ListQueryState & {
   rating?: number;
   min_rating?: number;
   max_rating?: number;
   has_reply?: boolean;
   abuse_reported?: boolean;
-}): Promise<ReviewManagementRow[]> {
-  const { data } = await api.get<ApiEnvelope<ReviewManagementRow[]>>('/partner/review-management/reviews', { params });
+};
+
+export async function listPartnerReviews(
+  params?: ListPartnerReviewsParams,
+): Promise<PaginatedList<ReviewManagementRow>> {
+  const { data } = await api.get<ApiEnvelope<PaginatedList<ReviewManagementRow>>>(
+    '/partner/review-management/reviews',
+    { params },
+  );
   return data.data;
 }
 
@@ -72,12 +80,18 @@ export async function reportReviewAbuse(reviewId: string, reason: string): Promi
   return data.data;
 }
 
-export async function listAdminReviews(params?: {
-  status?: string;
-  abuse_reported?: boolean;
-  is_fake?: boolean;
-}): Promise<ReviewManagementRow[]> {
-  const { data } = await api.get<ApiEnvelope<ReviewManagementRow[]>>('/admin/review-management/reviews', { params });
+export async function listAdminReviews(
+  params?: ListQueryState & {
+    status?: string;
+    abuse_reported?: boolean;
+    is_fake?: boolean;
+    laundry_id?: string;
+  },
+): Promise<PaginatedList<ReviewManagementRow>> {
+  const { data } = await api.get<ApiEnvelope<PaginatedList<ReviewManagementRow>>>(
+    '/admin/review-management/reviews',
+    { params },
+  );
   return data.data;
 }
 

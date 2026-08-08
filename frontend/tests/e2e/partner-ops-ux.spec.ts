@@ -32,6 +32,25 @@ async function mockPartnerOpsApis(page: Page) {
           revenue_today_inr: '1200',
           revenue_this_month_inr: '8000',
           revenue_week_inr: '3500',
+          revenue_yesterday_inr: '1000',
+          revenue_prev_week_inr: '3000',
+          revenue_prev_month_inr: '7000',
+          growth_today_pct: '20.00',
+          growth_week_pct: '16.67',
+          growth_month_pct: '14.29',
+          effective_commission_rate: '10.00',
+          commission_today_inr: '120.00',
+          commission_week_inr: '350.00',
+          commission_month_inr: '800.00',
+          partner_net_today_inr: '1080.00',
+          partner_net_week_inr: '3150.00',
+          partner_net_month_inr: '7200.00',
+          revenue_walk_in_today_inr: '400.00',
+          revenue_doorstep_today_inr: '800.00',
+          revenue_walk_in_week_inr: '1000.00',
+          revenue_doorstep_week_inr: '2500.00',
+          revenue_walk_in_month_inr: '2500.00',
+          revenue_doorstep_month_inr: '5500.00',
         },
         meta: {},
       }),
@@ -140,15 +159,24 @@ describeOps('Partner Ops UX Phase 1', () => {
 
   test('B: new order workspace loads walk-in mode', async ({ page }) => {
     await mockPartnerOpsApis(page);
+    await page.route('**/api/v1/partner/price-list**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: { offered_count: 0, total_catalog_items: 0, items: [] },
+          meta: {},
+        }),
+      });
+    });
     await loginAsPartner(page);
     await page.goto('/partner/new-order');
     await expect(page.getByRole('heading', { name: /^new order$/i })).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByRole('tab', { name: /walk-in/i })).toBeVisible();
-    await expect(page.getByRole('tab', { name: /doorstep assisted/i })).toBeVisible();
-    await expect(page.getByText(/select services/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /^create order$/i })).toBeVisible();
+    await expect(page.getByTestId('cloth-wall-phone')).toBeVisible();
+    await expect(page.getByTestId('list-mode-toggle')).toBeVisible();
+    await expect(page.getByTestId('cloth-wall-customer-next')).toBeVisible();
   });
 
   test('C: order detail shows status stepper', async ({ page }) => {

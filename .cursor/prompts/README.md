@@ -33,3 +33,7 @@ Reusable kick-off prompts you can paste into Cursor (or any AI) to start a task 
 | [`fix-api-frontend-contracts.md`](fix-api-frontend-contracts.md) | FE service paths vs BE endpoints, response shapes |
 | [`fix-api-crud-by-role.md`](fix-api-crud-by-role.md)             | Customer, partner, admin CRUD sweep |
 | [`api-integration-test-matrix.md`](api-integration-test-matrix.md) | Backfill pytest + Playwright for fixed APIs |
+| **Partner Owner UX** | |
+| [`partner-owner-command-center.md`](partner-owner-command-center.md) | Sequenced prompts: Advanced Mode → Owner Command Center (staff, logistics, commission %, growth, image-led) |
+| **UI fix + performance** | |
+| [`ui-fix-and-backend-pagination.md`](ui-fix-and-backend-pagination.md) | Sequenced prompts: inventory broken UI → default **10** backend pagination → Partner/Admin lists → perf hardening → QA |

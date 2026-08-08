@@ -1,13 +1,13 @@
 import { RoleGuard } from '@/components/auth/role-guard';
 import { PARTNER_PORTAL_ROLES } from '@/lib/partner-roles';
-import { PartnerOverviewView } from '@/features/partner/views/partner-overview-view';
+import { PartnerHomeView } from '@/features/partner-shop-floor/views/partner-home-view';
 
-export const metadata = { title: 'Partner · Overview' };
+export const metadata = { title: 'Partner · Home' };
 
 export default function PartnerPage() {
   return (
     <RoleGuard roles={PARTNER_PORTAL_ROLES}>
-      <PartnerOverviewView />
+      <PartnerHomeView />
     </RoleGuard>
   );
 }

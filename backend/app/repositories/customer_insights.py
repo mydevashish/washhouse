@@ -27,7 +27,14 @@ class CustomerInsightsRepository:
     async def get_laundry(self, laundry_id: UUID) -> Laundry | None:
         return await self._session.get(Laundry, laundry_id)
 
-    async def customer_aggregates(self, laundry_id: UUID) -> list[dict]:
+    async def customer_aggregates(
+        self,
+        laundry_id: UUID,
+        *,
+        search: str | None = None,
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> list[dict]:
         dispute_subq = (
             select(
                 Order.user_id.label("user_id"),
@@ -42,6 +49,7 @@ class CustomerInsightsRepository:
             select(
                 Order.user_id,
                 User.full_name,
+                User.phone,
                 User.trust_score,
                 User.fraud_risk_level,
                 func.count(Order.id).label("order_count"),
@@ -62,12 +70,18 @@ class CustomerInsightsRepository:
             .group_by(
                 Order.user_id,
                 User.full_name,
+                User.phone,
                 User.trust_score,
                 User.fraud_risk_level,
                 dispute_subq.c.dispute_count,
             )
             .order_by(func.coalesce(func.sum(Order.total_inr), 0).desc())
         )
+        if search and search.strip():
+            term = f"%{search.strip()}%"
+            stmt = stmt.where(User.full_name.ilike(term) | User.phone.ilike(term))
+        if limit is not None:
+            stmt = stmt.offset(max(0, offset)).limit(limit)
         rows = await self._session.execute(stmt)
         result: list[dict] = []
         for row in rows.all():
@@ -77,6 +91,7 @@ class CustomerInsightsRepository:
                 {
                     "user_id": row.user_id,
                     "name": row.full_name,
+                    "phone": row.phone,
                     "trust_score": int(row.trust_score),
                     "fraud_risk_level": risk.value if hasattr(risk, "value") else str(risk),
                     "order_count": int(row.order_count),
@@ -87,3 +102,21 @@ class CustomerInsightsRepository:
                 },
             )
         return result
+
+    async def count_customer_aggregates(self, laundry_id: UUID, *, search: str | None = None) -> int:
+        """Distinct customers with non-cancelled orders (matches customer_aggregates filters)."""
+        stmt = (
+            select(func.count(func.distinct(Order.user_id)))
+            .join(User, User.id == Order.user_id)
+            .where(
+                Order.laundry_id == laundry_id,
+                Order.deleted_at.is_(None),
+                Order.status != OrderStatus.cancelled,
+                User.deleted_at.is_(None),
+                User.role == UserRole.customer,
+            )
+        )
+        if search and search.strip():
+            term = f"%{search.strip()}%"
+            stmt = stmt.where(User.full_name.ilike(term) | User.phone.ilike(term))
+        return int(await self._session.scalar(stmt) or 0)

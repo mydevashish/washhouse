@@ -32,10 +32,26 @@ jest.mock('next/link', () => ({
 jest.mock('@/features/partner/hooks/use-partner-operations', () => ({
   usePartnerQueriesEnabled: () => true,
   usePartnerOrders: () => ({
-    data: [],
+    data: {
+      items: [],
+      page: 1,
+      page_size: 10,
+      total_records: 0,
+      total_pages: 1,
+      has_next: false,
+      has_previous: false,
+    },
     isLoading: false,
     isError: false,
   }),
+}));
+
+jest.mock('@/features/partner/components/partner-orders-table', () => ({
+  PartnerOrdersTable: () => <div data-testid="partner-orders-table-mock" />,
+}));
+
+jest.mock('@/features/partner/orders-hub/partner-orders-today-panel', () => ({
+  PartnerOrdersTodayPanel: () => <div data-testid="partner-orders-today-mock" />,
 }));
 
 jest.mock('@/features/partner/booking-requests/hooks', () => ({
@@ -103,7 +119,7 @@ describe('PartnerOrdersHub', () => {
     );
     expect(screen.getByRole('tab', { name: /find customer/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /requests/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /directory/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /customers/i })).toBeInTheDocument();
 
     expect(screen.getByTestId('orders-hub-panel-orders')).toBeInTheDocument();
     expect(screen.getByTestId('partner-orders-today-panel')).toBeInTheDocument();

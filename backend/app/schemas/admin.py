@@ -93,6 +93,14 @@ class AdminAnalyticsResponse(BaseModel):
     top_laundries: list[dict]
 
 
+class AdminLaundryListRow(BaseModel):
+    id: str
+    name: str
+    city: str
+    status: str
+    is_verified: bool
+
+
 class AdminLaundryManagementRow(BaseModel):
     id: UUID
     name: str

@@ -2,9 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Flag, Shield, Star } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { Button } from '@/components/ui/button';
 import { ClientDate } from '@/components/ui/client-date';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -17,6 +18,7 @@ import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
 import { AdminPanel } from '@/features/admin/components/admin-panel';
 import { KpiCard, KpiGrid } from '@/features/admin/components/kpi-card';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import {
@@ -40,15 +42,22 @@ export function AdminReviewManagementView() {
     staleTime: STALE.adminDashboard,
   });
 
-  const reviewsQ = useQuery({
+  const reviewFilters = useMemo(
+    () => ({
+      ...(statusFilter ? { status: statusFilter } : {}),
+      ...(abuseOnly ? { abuse_reported: true } : {}),
+      ...(fakeOnly ? { is_fake: true } : {}),
+    }),
+    [statusFilter, abuseOnly, fakeOnly],
+  );
+
+  const list = useServerList<
+    ReviewManagementRow,
+    { status?: string; abuse_reported?: boolean; is_fake?: boolean }
+  >({
     queryKey: queryKeys.adminReviews(statusFilter, abuseOnly, fakeOnly),
-    queryFn: () =>
-      listAdminReviews({
-        status: statusFilter || undefined,
-        abuse_reported: abuseOnly || undefined,
-        is_fake: fakeOnly || undefined,
-      }),
-    staleTime: 30_000,
+    fetcher: listAdminReviews,
+    filters: reviewFilters,
   });
 
   const auditQ = useQuery({
@@ -70,7 +79,7 @@ export function AdminReviewManagementView() {
   });
 
   const dash = dashQ.data;
-  const reviews = reviewsQ.data ?? [];
+  const reviews = list.rows;
 
   return (
     <AdminContent className="space-y-5">
@@ -123,30 +132,46 @@ export function AdminReviewManagementView() {
         </label>
       </AdminPanel>
 
-      {reviewsQ.isError && (
+      {list.isError && (
         <p className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {getApiErrorMessage(reviewsQ.error, 'Could not load reviews')}
+          {getApiErrorMessage(list.error, 'Could not load reviews')}
         </p>
       )}
 
-      {reviewsQ.isLoading && <Skeleton className="h-48 w-full rounded-2xl" />}
-      {!reviewsQ.isLoading && reviews.length === 0 && (
+      {list.isLoading && <Skeleton className="h-48 w-full rounded-2xl" />}
+      {!list.isLoading && reviews.length === 0 && (
         <EmptyState icon={Star} title="No reviews match filters" description="Adjust filters or check back later." />
       )}
 
       {reviews.length > 0 && (
-        <AdminPanel title="Reviews" meta={`${reviews.length} shown`} bodyClassName="divide-y divide-border/50 p-0">
-          {reviews.map((r) => (
-            <AdminReviewRow
-              key={r.id}
-              review={r}
-              note={modNotes[r.id] ?? ''}
-              onNote={(v) => setModNotes((n) => ({ ...n, [r.id]: v }))}
-              onModerate={(action) => modM.mutate({ id: r.id, action, note: modNotes[r.id] })}
-              pending={modM.isPending}
-            />
-          ))}
-        </AdminPanel>
+        <>
+          <AdminPanel
+            title="Reviews"
+            meta={`${list.totalRecords} total`}
+            bodyClassName="divide-y divide-border/50 p-0"
+          >
+            {reviews.map((r) => (
+              <AdminReviewRow
+                key={r.id}
+                review={r}
+                note={modNotes[r.id] ?? ''}
+                onNote={(v) => setModNotes((n) => ({ ...n, [r.id]: v }))}
+                onModerate={(action) => modM.mutate({ id: r.id, action, note: modNotes[r.id] })}
+                pending={modM.isPending}
+              />
+            ))}
+          </AdminPanel>
+          <DataTablePagination
+            page={list.page}
+            pageCount={list.pageCount}
+            pageSize={list.pageSize}
+            pageStart={list.pageStart}
+            pageEnd={list.pageEnd}
+            totalCount={list.totalRecords}
+            onPageChange={list.setPage}
+            onPageSizeChange={list.setPageSize}
+          />
+        </>
       )}
 
       <AdminPanel title="Review audit log" bodyClassName="divide-y divide-border/50 p-0">

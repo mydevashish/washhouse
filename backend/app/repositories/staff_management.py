@@ -180,6 +180,24 @@ class StaffManagementRepository:
         await self._session.flush()
         return row
 
+    def _activity_filters(self, laundry_id: UUID, *, staff_id: UUID | None = None):
+        filters = [StaffActivityLog.laundry_id == laundry_id]
+        if staff_id:
+            filters.append(
+                or_(StaffActivityLog.staff_id == staff_id, StaffActivityLog.actor_user_id == staff_id),
+            )
+        return filters
+
+    async def count_activity(
+        self,
+        laundry_id: UUID,
+        *,
+        staff_id: UUID | None = None,
+    ) -> int:
+        q = select(func.count()).select_from(StaffActivityLog).where(*self._activity_filters(laundry_id, staff_id=staff_id))
+        result = await self._session.execute(q)
+        return int(result.scalar_one() or 0)
+
     async def list_activity(
         self,
         laundry_id: UUID,
@@ -192,13 +210,11 @@ class StaffManagementRepository:
             select(StaffActivityLog, PartnerStaff.name, User.full_name)
             .outerjoin(PartnerStaff, PartnerStaff.id == StaffActivityLog.staff_id)
             .outerjoin(User, User.id == StaffActivityLog.actor_user_id)
-            .where(StaffActivityLog.laundry_id == laundry_id)
+            .where(*self._activity_filters(laundry_id, staff_id=staff_id))
             .order_by(StaffActivityLog.created_at.desc())
             .limit(limit)
             .offset(offset)
         )
-        if staff_id:
-            q = q.where(or_(StaffActivityLog.staff_id == staff_id, StaffActivityLog.actor_user_id == staff_id))
         rows = await self._session.execute(q)
         return [
             {

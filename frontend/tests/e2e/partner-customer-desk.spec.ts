@@ -87,7 +87,7 @@ async function mockPartnerDeskApis(page: Page) {
             },
           ],
           page: 1,
-          page_size: 20,
+          page_size: 10,
           total_records: 1,
           total_pages: 1,
           has_next: false,

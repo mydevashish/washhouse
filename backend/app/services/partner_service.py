@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.exceptions import NotFoundError
-from app.models.enums import OrderStatus
+from app.models.enums import OrderSource, OrderStatus
 from app.models.order import Order, OrderInventory
 from app.models.partner_staff import PartnerStaff
 from app.models.user import User
@@ -21,6 +22,20 @@ from app.repositories.laundry import LaundryRepository
 from app.repositories.order import OrderRepository
 from app.repositories.staff import StaffRepository
 from app.services.fraud_detection_service import FraudDetectionService
+from app.services.partner_money_math import (
+    empty_money_fields,
+    growth_pct_str,
+    money_str,
+    partner_net,
+)
+from app.services.platform_config_service import PlatformConfigService
+
+if TYPE_CHECKING:
+    from app.api.partner_orders_list_params import PartnerOrdersListParams
+
+
+def _commission_expr():
+    return Order.total_inr * Order.commission_rate / Decimal("100")
 
 
 class PartnerService:
@@ -45,12 +60,11 @@ class PartnerService:
 
     async def empty_analytics_summary(self, partner_user_id: UUID) -> dict:
         """Dashboard-safe zeros when partner has no laundry yet (e.g. pending onboarding)."""
-        from decimal import Decimal
-
         from app.repositories.user import UserRepository
 
         user = await UserRepository(self._session).get_by_id(partner_user_id)
         name = user.full_name if user else "Your laundry"
+        money = empty_money_fields()
         return {
             "laundry_id": None,
             "laundry_name": name,
@@ -64,10 +78,11 @@ class PartnerService:
             "pickup_requests": 0,
             "orders_delivered": 0,
             "customers_count": 0,
-            "revenue_inr": str(Decimal("0.00")),
-            "revenue_today_inr": str(Decimal("0.00")),
-            "revenue_this_month_inr": str(Decimal("0.00")),
-            "revenue_week_inr": str(Decimal("0.00")),
+            "revenue_inr": money_str(0),
+            "revenue_today_inr": money_str(0),
+            "revenue_this_month_inr": money_str(0),
+            "revenue_week_inr": money_str(0),
+            **money,
         }
 
     async def _require_owned_order(self, partner_user_id: UUID, order_id: UUID) -> Order:
@@ -153,6 +168,40 @@ class PartnerService:
             raise NotFoundError("Staff not found")
         await self._staff.soft_delete(staff)
 
+    async def _delivered_gross_commission(
+        self,
+        laundry_id: UUID,
+        *,
+        time_col,
+        start: datetime | None = None,
+        end: datetime | None = None,
+        order_source: OrderSource | None = None,
+        exclude_walk_in: bool = False,
+    ) -> tuple[Decimal, Decimal]:
+        """Sum delivered gross + snapshotted commission for a time window."""
+        clauses = [
+            Order.laundry_id == laundry_id,
+            Order.deleted_at.is_(None),
+            Order.status == OrderStatus.delivered,
+        ]
+        if start is not None:
+            clauses.append(time_col >= start)
+        if end is not None:
+            clauses.append(time_col < end)
+        if order_source is not None:
+            clauses.append(Order.order_source == order_source)
+        if exclude_walk_in:
+            clauses.append(Order.order_source != OrderSource.walk_in)
+
+        result = await self._session.execute(
+            select(
+                func.coalesce(func.sum(Order.total_inr), 0),
+                func.coalesce(func.sum(_commission_expr()), 0),
+            ).where(and_(*clauses)),
+        )
+        row = result.one()
+        return Decimal(str(row[0] or 0)), Decimal(str(row[1] or 0))
+
     async def analytics_summary(self, partner_user_id: UUID) -> dict:
         laundry = await self._laundry_for_partner(partner_user_id)
         pending_statuses = (OrderStatus.confirmed, OrderStatus.pickup_assigned)
@@ -183,25 +232,18 @@ class PartnerService:
         )
         total = int(all_result.scalar() or 0)
 
-        revenue_result = await self._session.execute(
-            select(func.coalesce(func.sum(Order.total_inr), 0)).where(
-                Order.laundry_id == laundry.id,
-                Order.deleted_at.is_(None),
-                Order.status == OrderStatus.delivered,
-            ),
-        )
-        revenue = Decimal(str(revenue_result.scalar() or 0))
+        revenue_all, _ = await self._delivered_gross_commission(laundry.id, time_col=Order.updated_at)
 
-        month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        month_result = await self._session.execute(
-            select(func.coalesce(func.sum(Order.total_inr), 0)).where(
-                Order.laundry_id == laundry.id,
-                Order.deleted_at.is_(None),
-                Order.status == OrderStatus.delivered,
-                Order.created_at >= month_start,
-            ),
-        )
-        revenue_month = Decimal(str(month_result.scalar() or 0))
+        now = datetime.now(UTC)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        yesterday_start = today_start - timedelta(days=1)
+        week_start = today_start - timedelta(days=today_start.weekday())
+        prev_week_start = week_start - timedelta(days=7)
+        month_start = today_start.replace(day=1)
+        if month_start.month == 1:
+            prev_month_start = month_start.replace(year=month_start.year - 1, month=12)
+        else:
+            prev_month_start = month_start.replace(month=month_start.month - 1)
 
         customers_result = await self._session.execute(
             select(func.count(func.distinct(Order.user_id))).where(
@@ -210,9 +252,6 @@ class PartnerService:
             ),
         )
         customers_count = int(customers_result.scalar() or 0)
-
-        today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        week_start = today_start - timedelta(days=today_start.weekday())
 
         today_orders_result = await self._session.execute(
             select(func.count())
@@ -225,25 +264,65 @@ class PartnerService:
         )
         orders_today = int(today_orders_result.scalar() or 0)
 
-        today_revenue_result = await self._session.execute(
-            select(func.coalesce(func.sum(Order.total_inr), 0)).where(
-                Order.laundry_id == laundry.id,
-                Order.deleted_at.is_(None),
-                Order.status == OrderStatus.delivered,
-                Order.updated_at >= today_start,
-            ),
+        # Today / week / yesterday: delivered by updated_at (legacy today/week KPIs)
+        revenue_today, commission_today = await self._delivered_gross_commission(
+            laundry.id, time_col=Order.updated_at, start=today_start,
         )
-        revenue_today = Decimal(str(today_revenue_result.scalar() or 0))
+        revenue_yesterday, _ = await self._delivered_gross_commission(
+            laundry.id, time_col=Order.updated_at, start=yesterday_start, end=today_start,
+        )
+        revenue_week, commission_week = await self._delivered_gross_commission(
+            laundry.id, time_col=Order.updated_at, start=week_start,
+        )
+        revenue_prev_week, _ = await self._delivered_gross_commission(
+            laundry.id, time_col=Order.updated_at, start=prev_week_start, end=week_start,
+        )
+        # Month: delivered by created_at (legacy revenue_this_month_inr)
+        revenue_month, commission_month = await self._delivered_gross_commission(
+            laundry.id, time_col=Order.created_at, start=month_start,
+        )
+        revenue_prev_month, _ = await self._delivered_gross_commission(
+            laundry.id, time_col=Order.created_at, start=prev_month_start, end=month_start,
+        )
 
-        week_revenue_result = await self._session.execute(
-            select(func.coalesce(func.sum(Order.total_inr), 0)).where(
-                Order.laundry_id == laundry.id,
-                Order.deleted_at.is_(None),
-                Order.status == OrderStatus.delivered,
-                Order.updated_at >= week_start,
-            ),
+        walk_today, _ = await self._delivered_gross_commission(
+            laundry.id,
+            time_col=Order.updated_at,
+            start=today_start,
+            order_source=OrderSource.walk_in,
         )
-        revenue_week = Decimal(str(week_revenue_result.scalar() or 0))
+        door_today, _ = await self._delivered_gross_commission(
+            laundry.id,
+            time_col=Order.updated_at,
+            start=today_start,
+            exclude_walk_in=True,
+        )
+        walk_week, _ = await self._delivered_gross_commission(
+            laundry.id,
+            time_col=Order.updated_at,
+            start=week_start,
+            order_source=OrderSource.walk_in,
+        )
+        door_week, _ = await self._delivered_gross_commission(
+            laundry.id,
+            time_col=Order.updated_at,
+            start=week_start,
+            exclude_walk_in=True,
+        )
+        walk_month, _ = await self._delivered_gross_commission(
+            laundry.id,
+            time_col=Order.created_at,
+            start=month_start,
+            order_source=OrderSource.walk_in,
+        )
+        door_month, _ = await self._delivered_gross_commission(
+            laundry.id,
+            time_col=Order.created_at,
+            start=month_start,
+            exclude_walk_in=True,
+        )
+
+        effective_rate = await PlatformConfigService(self._session).resolve_commission_rate(laundry)
 
         return {
             "laundry_id": laundry.id,
@@ -258,10 +337,29 @@ class PartnerService:
             "pickup_requests": await count_where(OrderStatus.confirmed),
             "orders_delivered": await count_where(OrderStatus.delivered),
             "customers_count": customers_count,
-            "revenue_inr": str(revenue.quantize(Decimal("0.01"))),
-            "revenue_today_inr": str(revenue_today.quantize(Decimal("0.01"))),
-            "revenue_this_month_inr": str(revenue_month.quantize(Decimal("0.01"))),
-            "revenue_week_inr": str(revenue_week.quantize(Decimal("0.01"))),
+            "revenue_inr": money_str(revenue_all),
+            "revenue_today_inr": money_str(revenue_today),
+            "revenue_this_month_inr": money_str(revenue_month),
+            "revenue_week_inr": money_str(revenue_week),
+            "revenue_yesterday_inr": money_str(revenue_yesterday),
+            "revenue_prev_week_inr": money_str(revenue_prev_week),
+            "revenue_prev_month_inr": money_str(revenue_prev_month),
+            "growth_today_pct": growth_pct_str(revenue_today, revenue_yesterday),
+            "growth_week_pct": growth_pct_str(revenue_week, revenue_prev_week),
+            "growth_month_pct": growth_pct_str(revenue_month, revenue_prev_month),
+            "effective_commission_rate": money_str(effective_rate),
+            "commission_today_inr": money_str(commission_today),
+            "commission_week_inr": money_str(commission_week),
+            "commission_month_inr": money_str(commission_month),
+            "partner_net_today_inr": money_str(partner_net(revenue_today, commission_today)),
+            "partner_net_week_inr": money_str(partner_net(revenue_week, commission_week)),
+            "partner_net_month_inr": money_str(partner_net(revenue_month, commission_month)),
+            "revenue_walk_in_today_inr": money_str(walk_today),
+            "revenue_doorstep_today_inr": money_str(door_today),
+            "revenue_walk_in_week_inr": money_str(walk_week),
+            "revenue_doorstep_week_inr": money_str(door_week),
+            "revenue_walk_in_month_inr": money_str(walk_month),
+            "revenue_doorstep_month_inr": money_str(door_month),
         }
 
     async def list_customers(self, partner_user_id: UUID) -> list[dict]:
@@ -295,17 +393,118 @@ class PartnerService:
         return rows
 
     async def list_orders_for_partner(self, partner_user_id: UUID) -> list[tuple[Order, str]]:
+        """Legacy helper — prefer ``list_orders_for_partner_paginated``."""
+        from app.api.partner_orders_list_params import PartnerOrdersListParams
+        from app.core.pagination import SortOrder
+
+        result = await self.list_orders_for_partner_paginated(
+            partner_user_id,
+            PartnerOrdersListParams(
+                page=1,
+                page_size=50,
+                search=None,
+                sort_by="created_at",
+                sort_order=SortOrder.desc,
+                bucket="all",
+                status=None,
+                order_source=None,
+            ),
+        )
+        return [(row[0], row[1]) for row in result["items"]]
+
+    async def list_orders_for_partner_paginated(
+        self,
+        partner_user_id: UUID,
+        params: PartnerOrdersListParams,
+    ) -> dict:
+        from sqlalchemy import or_
+
+        from app.core.pagination import apply_sort, build_paginated_response
+
         laundry_ids = await self._laundry_ids_for_partner(partner_user_id)
-        result = await self._session.execute(
+        stmt = (
             select(Order, User.full_name)
             .outerjoin(User, User.id == Order.user_id)
             .where(Order.laundry_id.in_(laundry_ids), Order.deleted_at.is_(None))
-            .options(selectinload(Order.items))
-            .order_by(Order.created_at.desc())
-            .limit(50),
+        )
+
+        bucket = params.bucket or "all"
+        if params.status:
+            try:
+                stmt = stmt.where(Order.status == OrderStatus(params.status))
+            except ValueError:
+                from app.core.exceptions import ValidationError
+
+                raise ValidationError("Invalid status filter") from None
+        elif bucket == "action":
+            # Matches FE isOrderNeedsAction: confirmed online (not walk-in).
+            stmt = stmt.where(
+                Order.status == OrderStatus.confirmed,
+                Order.order_source != OrderSource.walk_in,
+            )
+        elif bucket == "active":
+            stmt = stmt.where(
+                Order.status.notin_([OrderStatus.delivered, OrderStatus.cancelled]),
+                or_(
+                    Order.status != OrderStatus.confirmed,
+                    Order.order_source == OrderSource.walk_in,
+                ),
+            )
+        elif bucket == "done":
+            stmt = stmt.where(Order.status.in_([OrderStatus.delivered, OrderStatus.cancelled]))
+
+        if params.order_source:
+            try:
+                stmt = stmt.where(Order.order_source == OrderSource(params.order_source))
+            except ValueError:
+                from app.core.exceptions import ValidationError
+
+                raise ValidationError("Invalid order_source filter") from None
+
+        if params.search:
+            term = f"%{params.search}%"
+            stmt = stmt.where(
+                or_(
+                    Order.tracking_code.ilike(term),
+                    Order.customer_name.ilike(term),
+                    Order.customer_phone.ilike(term),
+                    User.full_name.ilike(term),
+                    Order.token_code.ilike(term),
+                ),
+            )
+
+        sort_map = {
+            "created_at": Order.created_at,
+            "pickup_at": Order.pickup_at,
+            "delivery_at": Order.delivery_at,
+            "tracking_code": Order.tracking_code,
+            "status": Order.status,
+            "total_inr": Order.total_inr,
+            "customer_name": func.coalesce(User.full_name, Order.customer_name),
+        }
+        stmt = apply_sort(
+            stmt,
+            params.sort_by,
+            params.sort_order,
+            column_map=sort_map,
+            default=Order.created_at,
+        )
+
+        count_stmt = select(func.count()).select_from(stmt.order_by(None).subquery())
+        total = int(await self._session.scalar(count_stmt) or 0)
+        result = await self._session.execute(
+            stmt.options(selectinload(Order.items))
+            .offset(params.offset)
+            .limit(params.page_size),
         )
         rows: list[tuple[Order, str]] = []
         for order, user_name in result.all():
             display_name = user_name or order.customer_name or "Walk-in customer"
             rows.append((order, display_name))
-        return rows
+
+        return build_paginated_response(
+            items=rows,
+            total_records=total,
+            page=params.page,
+            page_size=params.page_size,
+        )

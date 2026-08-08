@@ -10,7 +10,9 @@ from fastapi import APIRouter, Depends, Query, Request
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_user_payload
 from app.core.exceptions import AuthorizationError
+from app.core.pagination import DEFAULT_PAGE_SIZE, build_paginated_response
 from app.models.enums import UserRole
+from app.schemas.common import PaginatedListResponse
 from app.schemas.staff_management import (
     StaffActivityRow,
     StaffCreateRequest,
@@ -179,14 +181,24 @@ async def staff_activity_logs(
     session: SessionDep,
     payload: Annotated[dict, Depends(get_partner_staff_actor)],
     staff_id: UUID | None = None,
-    limit: int = Query(default=50, ge=1, le=200),
-    offset: int = Query(default=0, ge=0),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=100),
 ) -> dict:
-    rows = await StaffManagementService(session).list_activity(
+    data = await StaffManagementService(session).list_activity(
         UUID(payload["sub"]),
         payload["role"],
         staff_id=staff_id,
-        limit=limit,
-        offset=offset,
+        page=page,
+        page_size=page_size,
     )
-    return success_envelope([StaffActivityRow.model_validate(r) for r in rows], request)
+    return success_envelope(
+        PaginatedListResponse[StaffActivityRow].model_validate(
+            build_paginated_response(
+                items=[StaffActivityRow.model_validate(r) for r in data["items"]],
+                total_records=data["total_records"],
+                page=data["page"],
+                page_size=data["page_size"],
+            ),
+        ),
+        request,
+    )

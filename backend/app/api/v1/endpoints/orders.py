@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_user_payload
+from app.core.pagination import DEFAULT_PAGE_SIZE
 from app.schemas.order import (
     OrderCreateRequest,
     OrderDetailResponse,
@@ -59,7 +60,7 @@ async def list_orders(
     request: Request,
     session: SessionDep,
     payload: Annotated[dict, Depends(get_current_user_payload)],
-    limit: int = Query(default=50, le=100),
+    limit: int = Query(default=DEFAULT_PAGE_SIZE, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> dict:
     rows = await OrderService(session).list_for_user(

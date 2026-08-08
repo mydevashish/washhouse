@@ -15,6 +15,8 @@ Per-feature specs. Template: `.cursor/templates/feature-spec.md`.
 | Reviews | shipped | [reviews.md](reviews.md) | 2 |
 | Partner onboarding | shipped | [partner-onboarding.md](partner-onboarding.md) | 3 |
 | Partner dashboard | shipped | [partner-dashboard.md](partner-dashboard.md) | 3 |
+| Partner Owner Command Center | in-progress (P4) | [partner-owner-command-center.md](partner-owner-command-center.md) | Advanced Mode ops (after Shop Floor) |
+| Partner Shop Floor Mode | in progress (Today + Ready boards) | [partner-shop-floor.md](partner-shop-floor.md) | Phase 2+ ops (after dashboard A+B+C) |
 | Partner inventory | shipped | [partner-inventory.md](partner-inventory.md) | 3 |
 | Partner QR tracking | shipped | [partner-qr-tracking.md](partner-qr-tracking.md) | 3 |
 | Partner staff | shipped | [partner-staff.md](partner-staff.md) | 3 |

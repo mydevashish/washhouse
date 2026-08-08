@@ -12,6 +12,8 @@ from app.models.enums import LaundryStatus
 from app.models.laundry import Laundry, LaundryService
 
 # Directory / discovery page size. Keep in sync with FE PUBLIC_LAUNDRY_LIST_PAGE_SIZE.
+# Directory / discovery page size. Keep in sync with FE PUBLIC_LAUNDRY_LIST_PAGE_SIZE.
+# Exception to platform default 10: discover still concatenates pages client-side (Prompt 5/7).
 PUBLIC_LIST_DEFAULT_LIMIT = 100
 PUBLIC_LIST_MAX_LIMIT = 100
 

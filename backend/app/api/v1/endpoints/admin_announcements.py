@@ -9,13 +9,14 @@ from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_admin
+from app.core.pagination import DEFAULT_PAGE_SIZE, build_paginated_response
 from app.schemas.announcement import (
     AnnouncementCreateRequest,
-    AnnouncementListResponse,
     AnnouncementRow,
     AnnouncementScheduleRequest,
     AnnouncementUpdateRequest,
 )
+from app.schemas.common import PaginatedListResponse
 from app.services.announcement_service import AnnouncementService
 
 router = APIRouter(prefix="/admin/announcements", tags=["admin-announcements"])
@@ -27,16 +28,18 @@ async def list_announcements(
     session: SessionDep,
     _: Annotated[dict, Depends(get_current_admin)],
     status: str | None = None,
-    limit: int = Query(default=50, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=100),
 ) -> dict:
-    data = await AnnouncementService(session).admin_list(status=status, limit=limit, offset=offset)
+    data = await AnnouncementService(session).admin_list(status=status, page=page, page_size=page_size)
     return success_envelope(
-        AnnouncementListResponse(
-            items=[AnnouncementRow.model_validate(i) for i in data["items"]],
-            total=data["total"],
-            limit=data["limit"],
-            offset=data["offset"],
+        PaginatedListResponse[AnnouncementRow].model_validate(
+            build_paginated_response(
+                items=[AnnouncementRow.model_validate(i) for i in data["items"]],
+                total_records=data["total_records"],
+                page=data["page"],
+                page_size=data["page_size"],
+            ),
         ),
         request,
     )

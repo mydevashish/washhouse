@@ -88,10 +88,14 @@ class DisputeAdminRowResponse(DisputeSlaFields):
 
 class DisputeAdminTableResponse(BaseModel):
     items: list[DisputeAdminRowResponse]
-    total: int
+    total_records: int
     page: int
     page_size: int
     total_pages: int
+    has_next: bool = False
+    has_previous: bool = False
+    # Legacy alias during migration
+    total: int | None = None
 
 
 class DisputeAdminMetricsResponse(BaseModel):

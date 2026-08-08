@@ -49,3 +49,8 @@
 - Coverage diff uploaded
 
 See `.cursor/rules/08-testing.md`.
+
+## Manual / partner usability
+
+- Partner Shop Floor timed checklist: [`../qa/partner-shop-floor-usability.md`](../qa/partner-shop-floor-usability.md)
+- Playwright twin: `frontend/tests/e2e/partner-shop-floor-journey.spec.ts`

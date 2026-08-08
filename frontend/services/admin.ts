@@ -126,9 +126,25 @@ export async function listPendingLaundries(): Promise<PendingLaundry[]> {
   return data.data;
 }
 
-export async function listAllLaundries(): Promise<AdminLaundryRow[]> {
-  const { data } = await api.get<ApiEnvelope<AdminLaundryRow[]>>('/admin/laundries');
+export async function listAllLaundries(
+  params: ListQueryState & { status?: string } = {},
+): Promise<PaginatedList<AdminLaundryRow>> {
+  const { data } = await api.get<ApiEnvelope<PaginatedList<AdminLaundryRow>>>('/admin/laundries', {
+    params,
+  });
   return data.data;
+}
+
+/** Cap for select/filter dropdowns — not a full dump. */
+export async function listLaundryOptions(search?: string): Promise<AdminLaundryRow[]> {
+  const page = await listAllLaundries({
+    page: 1,
+    page_size: 100,
+    search: search || undefined,
+    sort_by: 'name',
+    sort_order: 'asc',
+  });
+  return page.items;
 }
 
 export async function listAdminOrders(params: ListQueryState = {}): Promise<PaginatedList<AdminOrderRow>> {
@@ -197,11 +213,28 @@ export async function getAdminAnalytics(days = 14): Promise<AdminAnalytics> {
   return data.data;
 }
 
-export async function listLaundriesManagement(): Promise<AdminLaundryManagementRow[]> {
-  const { data } = await api.get<ApiEnvelope<AdminLaundryManagementRow[]>>(
+export async function listLaundriesManagement(
+  params: ListQueryState & { status?: string } = {},
+): Promise<PaginatedList<AdminLaundryManagementRow>> {
+  const { data } = await api.get<ApiEnvelope<PaginatedList<AdminLaundryManagementRow>>>(
     '/admin/laundries/management',
+    { params },
   );
   return data.data;
+}
+
+/** Cap for pickers that need management fields (commission/announcements). */
+export async function listLaundryManagementOptions(
+  search?: string,
+): Promise<AdminLaundryManagementRow[]> {
+  const page = await listLaundriesManagement({
+    page: 1,
+    page_size: 100,
+    search: search || undefined,
+    sort_by: 'name',
+    sort_order: 'asc',
+  });
+  return page.items;
 }
 
 export interface AdminAuditListParams extends ListQueryState {

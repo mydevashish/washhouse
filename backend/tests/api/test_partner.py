@@ -334,6 +334,73 @@ async def test_analytics_summary_returns_kpis(
     assert data["orders_total"] >= 1
     assert "revenue_today_inr" in data
     assert "orders_pending" in data
+    assert "effective_commission_rate" in data
+    assert "partner_net_today_inr" in data
+    assert "commission_today_inr" in data
+    assert "growth_today_pct" in data
+    assert data["growth_today_pct"] is None or isinstance(data["growth_today_pct"], str)
+
+
+async def test_analytics_money_intelligence_uses_order_commission_snapshot(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    partner, laundry, token = await _seed_partner(db_session, email_prefix="money")
+    _ = partner
+    laundry.commission_rate = Decimal("10.00")
+    await db_session.flush()
+
+    customer = User(
+        email=f"cust.money.{uuid4().hex[:8]}@test.dlm",
+        password_hash=hash_password("Customer@1234"),
+        full_name="Money Customer",
+        role=UserRole.customer,
+        is_email_verified=True,
+    )
+    db_session.add(customer)
+    await db_session.flush()
+
+    now = datetime.now(UTC)
+    order = Order(
+        user_id=customer.id,
+        laundry_id=laundry.id,
+        order_source=OrderSource.walk_in,
+        status=OrderStatus.delivered,
+        tracking_code=f"DLM{uuid4().hex[:8].upper()}",
+        pickup_at=now - timedelta(hours=2),
+        delivery_at=now,
+        subtotal_inr=Decimal("100.00"),
+        delivery_fee_inr=Decimal("0.00"),
+        cgst_inr=Decimal("0.00"),
+        sgst_inr=Decimal("0.00"),
+        total_inr=Decimal("100.00"),
+        payment_status=PaymentStatus.paid,
+        commission_rate=Decimal("15.00"),
+    )
+    db_session.add(order)
+    await db_session.flush()
+
+    response = await client.get(
+        "/api/v1/partner/analytics/summary",
+        headers=_headers(token),
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["effective_commission_rate"] == "10.00"
+    assert Decimal(data["revenue_today_inr"]) == Decimal("100.00")
+    assert Decimal(data["commission_today_inr"]) == Decimal("15.00")
+    assert Decimal(data["partner_net_today_inr"]) == Decimal("85.00")
+    assert Decimal(data["revenue_walk_in_today_inr"]) == Decimal("100.00")
+    assert Decimal(data["revenue_doorstep_today_inr"]) == Decimal("0.00")
+
+    # IDOR: other partner must not see this laundry's revenue
+    _other, _other_laundry, other_token = await _seed_partner(db_session, email_prefix="moneyother")
+    other = await client.get(
+        "/api/v1/partner/analytics/summary",
+        headers=_headers(other_token),
+    )
+    assert other.status_code == 200
+    assert Decimal(other.json()["data"]["revenue_today_inr"]) == Decimal("0.00")
 
 
 @patch("app.tasks.order_notifications.send_order_status_whatsapp")
@@ -395,7 +462,11 @@ async def test_partner_orders_lists_across_multiple_laundries(
 
     listed = await client.get("/api/v1/partner/orders", headers=_headers(token))
     assert listed.status_code == 200, listed.text
-    ids = {str(row["id"]) for row in listed.json()["data"]}
+    body = listed.json()["data"]
+    assert "items" in body
+    assert body["page"] == 1
+    assert body["page_size"] == 10
+    ids = {str(row["id"]) for row in body["items"]}
     assert str(order_a.id) in ids
     assert str(order_b.id) in ids
 
@@ -412,3 +483,151 @@ async def test_partner_headers_fixture_smoke(
     r = await client.get("/api/v1/partner/analytics/summary", headers=partner_headers)
     assert r.status_code == 200
     assert "laundry_name" in r.json()["data"]
+
+
+async def test_partner_orders_paginated_default_page_size(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    partner, laundry, token = await _seed_partner(db_session, email_prefix="page.orders")
+    for _ in range(12):
+        await _seed_confirmed_order(db_session, laundry_id=laundry.id)
+
+    listed = await client.get("/api/v1/partner/orders", headers=_headers(token))
+    assert listed.status_code == 200, listed.text
+    body = listed.json()["data"]
+    assert body["page"] == 1
+    assert body["page_size"] == 10
+    assert body["total_records"] >= 12
+    assert len(body["items"]) == 10
+    assert body["has_next"] is True
+    assert body["has_previous"] is False
+
+    page2 = await client.get(
+        "/api/v1/partner/orders?page=2&page_size=10",
+        headers=_headers(token),
+    )
+    assert page2.status_code == 200
+    body2 = page2.json()["data"]
+    assert body2["page"] == 2
+    assert len(body2["items"]) >= 2
+    assert body2["has_previous"] is True
+
+    action = await client.get(
+        "/api/v1/partner/orders?bucket=action&page_size=10",
+        headers=_headers(token),
+    )
+    assert action.status_code == 200
+    for row in action.json()["data"]["items"]:
+        assert row["status"] == "confirmed"
+
+    bad_size = await client.get(
+        "/api/v1/partner/orders?page_size=15",
+        headers=_headers(token),
+    )
+    assert bad_size.status_code == 200
+    assert bad_size.json()["data"]["page_size"] == 10
+
+
+async def test_partner_customer_insights_paginated_default_page_size(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    _partner, laundry, token = await _seed_partner(db_session, email_prefix="crm.page")
+    for i in range(12):
+        customer = User(
+            email=f"crm.cust.{i}.{uuid4().hex[:6]}@test.dlm",
+            password_hash=hash_password("Customer@1234"),
+            full_name=f"CRM Customer {i:02d}",
+            phone=f"+9198{uuid4().hex[:8]}",
+            role=UserRole.customer,
+            is_email_verified=True,
+        )
+        db_session.add(customer)
+        await db_session.flush()
+        await _seed_confirmed_order(db_session, laundry_id=laundry.id, customer=customer)
+
+    listed = await client.get(
+        "/api/v1/partner/customer-insights/customers",
+        headers=_headers(token),
+    )
+    assert listed.status_code == 200, listed.text
+    body = listed.json()["data"]
+    assert body["page"] == 1
+    assert body["page_size"] == 10
+    assert body["total_records"] >= 12
+    assert len(body["items"]) == 10
+    assert body["has_next"] is True
+    assert "limit" not in body
+    assert "offset" not in body
+
+    searched = await client.get(
+        "/api/v1/partner/customer-insights/customers?search=CRM%20Customer%2003",
+        headers=_headers(token),
+    )
+    assert searched.status_code == 200
+    search_body = searched.json()["data"]
+    assert search_body["total_records"] >= 1
+    assert any("03" in row["name"] for row in search_body["items"])
+
+    bad_size = await client.get(
+        "/api/v1/partner/customer-insights/customers?page_size=15",
+        headers=_headers(token),
+    )
+    assert bad_size.status_code == 200
+    assert bad_size.json()["data"]["page_size"] == 10
+
+    dash = await client.get(
+        "/api/v1/partner/customer-insights/dashboard",
+        headers=_headers(token),
+    )
+    assert dash.status_code == 200
+    assert "new_this_week" in dash.json()["data"]
+
+
+async def test_partner_staff_activity_paginated_default_page_size(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    from app.models.enums import StaffActivityAction
+    from app.models.staff_activity_log import StaffActivityLog
+
+    partner, laundry, token = await _seed_partner(db_session, email_prefix="staff.act")
+    for i in range(12):
+        db_session.add(
+            StaffActivityLog(
+                laundry_id=laundry.id,
+                actor_user_id=partner.id,
+                action=StaffActivityAction.login,
+                description=f"Activity {i}",
+            ),
+        )
+    await db_session.flush()
+
+    listed = await client.get(
+        "/api/v1/partner/staff-management/activity",
+        headers=_headers(token),
+    )
+    assert listed.status_code == 200, listed.text
+    body = listed.json()["data"]
+    assert body["page"] == 1
+    assert body["page_size"] == 10
+    assert body["total_records"] >= 12
+    assert len(body["items"]) == 10
+    assert body["has_next"] is True
+
+    page2 = await client.get(
+        "/api/v1/partner/staff-management/activity?page=2&page_size=10",
+        headers=_headers(token),
+    )
+    assert page2.status_code == 200
+    body2 = page2.json()["data"]
+    assert body2["page"] == 2
+    assert body2["has_previous"] is True
+
+    bad_size = await client.get(
+        "/api/v1/partner/staff-management/activity?page_size=15",
+        headers=_headers(token),
+    )
+    assert bad_size.status_code == 200
+    assert bad_size.json()["data"]["page_size"] == 10

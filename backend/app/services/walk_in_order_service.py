@@ -11,13 +11,19 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.models.catalog import LaundryItemPrice, PlatformCatalogItem
 from app.models.enums import CustodyActorRole, CustodyEventType, OrderSource, OrderStatus
+from app.models.laundry import LaundryService
 from app.models.order import Order, OrderItem, OrderStatusEvent
+from app.repositories.catalog import CatalogRepository
 from app.repositories.laundry import LaundryRepository
 from app.repositories.order import OrderRepository
 from app.repositories.partner_service_catalog import PartnerServiceCatalogRepository
 from app.repositories.user import UserRepository
 from app.repositories.walk_in_order import WalkInOrderRepository
+from app.schemas.walk_in_order import WalkInCatalogProcess
+from app.services.catalog_pricing import catalog_allows_press, catalog_price_mode
+from app.services.color_token_service import ColorTokenService
 from app.services.custody_event_service import CustodyEventService
 from app.services.order_events import publish_order_status_update
 from app.services.notifications.order_status_whatsapp_notifier import OrderStatusWhatsAppNotifier
@@ -33,6 +39,7 @@ class WalkInOrderService:
         self._orders = OrderRepository(session)
         self._laundries = LaundryRepository(session)
         self._catalog = PartnerServiceCatalogRepository(session)
+        self._platform_catalog = CatalogRepository(session)
         self._users = UserRepository(session)
         self._walk_in = WalkInOrderRepository(session)
 
@@ -59,15 +66,11 @@ class WalkInOrderService:
         line_items: list[OrderItem] = []
         subtotal = Decimal("0")
         for raw in items:
-            service_id = UUID(str(raw["service_id"]))
             quantity = int(raw["quantity"])
             if quantity < 1:
                 raise ValidationError("Quantity must be at least 1")
 
-            service = await self._catalog.get(service_id, laundry.id)
-            if not service or not service.is_active or service.catalog_status != "active":
-                raise ValidationError("One or more services are invalid or unavailable")
-
+            service = await self._resolve_line_service(laundry.id, raw)
             line_total = (service.price_inr * quantity).quantize(Decimal("0.01"))
             subtotal += line_total
             line_items.append(
@@ -95,6 +98,7 @@ class WalkInOrderService:
 
         commission_rate = await platform.resolve_commission_rate(laundry)
         tracking_code = await self._allocate_tracking_code()
+        token = await ColorTokenService(self._session).allocate(laundry.id)
         now = datetime.now(UTC)
         ready_at = self._ensure_aware(expected_ready_at) if expected_ready_at else now + timedelta(days=2)
 
@@ -108,6 +112,10 @@ class WalkInOrderService:
             partner_notes=notes,
             status=OrderStatus.confirmed,
             tracking_code=tracking_code,
+            color_token=token.color_token,
+            token_code=token.token_code,
+            token_day_number=token.token_day_number,
+            token_assigned_on=token.token_assigned_on,
             pickup_at=now,
             delivery_at=ready_at,
             subtotal_inr=subtotal,
@@ -147,11 +155,152 @@ class WalkInOrderService:
         await self._session.flush()
         return await self._orders.get_by_id(order.id) or order
 
-    async def list_for_partner(self, partner_user_id: UUID) -> list[Order]:
+    async def list_for_partner(
+        self,
+        partner_user_id: UUID,
+        *,
+        page: int = 1,
+        page_size: int = 10,
+        search: str | None = None,
+    ) -> dict:
+        from app.core.pagination import build_paginated_response, normalize_page_size
+
         laundry = await self._laundries.get_by_owner(partner_user_id)
         if not laundry:
             raise NotFoundError("Partner laundry not found")
-        return await self._walk_in.list_by_laundry(laundry.id)
+        safe_page = max(1, page)
+        safe_size = normalize_page_size(page_size)
+        term = search.strip() if search and search.strip() else None
+        total = await self._walk_in.count_by_laundry(laundry.id, search=term)
+        offset = (safe_page - 1) * safe_size
+        orders = await self._walk_in.list_by_laundry(
+            laundry.id,
+            limit=safe_size,
+            offset=offset,
+            search=term,
+        )
+        return build_paginated_response(
+            items=orders,
+            total_records=total,
+            page=safe_page,
+            page_size=safe_size,
+        )
+
+    async def _resolve_line_service(self, laundry_id: UUID, raw: dict[str, Any]) -> LaundryService:
+        catalog_item_id = raw.get("catalog_item_id")
+        if catalog_item_id is not None:
+            return await self._resolve_catalog_service(
+                laundry_id,
+                UUID(str(catalog_item_id)),
+                raw.get("process"),
+            )
+
+        service_id = UUID(str(raw["service_id"]))
+        service = await self._catalog.get(service_id, laundry_id)
+        if not service or not service.is_active or service.catalog_status != "active":
+            raise ValidationError("One or more services are invalid or unavailable")
+        return service
+
+    async def _resolve_catalog_service(
+        self,
+        laundry_id: UUID,
+        catalog_item_id: UUID,
+        process_raw: Any,
+    ) -> LaundryService:
+        item = await self._platform_catalog.get_item_by_id(catalog_item_id)
+        if not item or not item.is_active:
+            raise ValidationError("One or more catalog items are invalid or unavailable")
+
+        override = await self._platform_catalog.get_laundry_price(laundry_id, catalog_item_id)
+        if not override or not override.is_offered:
+            raise ValidationError("Catalog item is not offered by this laundry")
+
+        process = self._resolve_process(item, override, process_raw)
+        unit_price = self._unit_price_for_process(override, process)
+        if unit_price is None:
+            raise ValidationError(f"No price configured for {item.name} ({process.value})")
+
+        display_name = self._service_display_name(item.name, process)
+        existing = await self._catalog.get_by_catalog_bridge(
+            laundry_id,
+            catalog_item_id=catalog_item_id,
+            process=process.value,
+        )
+        if existing:
+            existing.name = display_name[:120]
+            existing.price_inr = unit_price
+            existing.category = item.category.value
+            existing.unit = item.unit.value
+            existing.is_active = True
+            existing.catalog_status = "active"
+            await self._session.flush()
+            return existing
+
+        marker = f"catalog:{catalog_item_id}:{process.value}"
+        return await self._catalog.create(
+            LaundryService(
+                laundry_id=laundry_id,
+                name=display_name[:120],
+                category=item.category.value,
+                unit=item.unit.value,
+                price_inr=unit_price,
+                description=marker,
+                is_active=True,
+                catalog_status="active",
+            ),
+        )
+
+    @staticmethod
+    def _resolve_process(
+        item: PlatformCatalogItem,
+        override: LaundryItemPrice,
+        process_raw: Any,
+    ) -> WalkInCatalogProcess:
+        mode = catalog_price_mode(item)
+        if process_raw is not None:
+            try:
+                process = WalkInCatalogProcess(str(process_raw))
+            except ValueError as exc:
+                raise ValidationError("Invalid catalog process") from exc
+        elif mode == "single" or override.price_inr is not None:
+            process = WalkInCatalogProcess.single
+        elif override.dry_clean_inr is not None:
+            process = WalkInCatalogProcess.dry_clean
+        elif override.press_inr is not None and catalog_allows_press(item):
+            process = WalkInCatalogProcess.press
+        else:
+            raise ValidationError(f"No process available for {item.name}")
+
+        if process == WalkInCatalogProcess.press and not catalog_allows_press(item):
+            raise ValidationError(f"Press is not available for {item.name}")
+        if process == WalkInCatalogProcess.single and override.price_inr is None:
+            raise ValidationError(f"Single rate is not configured for {item.name}")
+        if process == WalkInCatalogProcess.dry_clean and override.dry_clean_inr is None:
+            raise ValidationError(f"Dry clean is not configured for {item.name}")
+        if process == WalkInCatalogProcess.press and override.press_inr is None:
+            raise ValidationError(f"Press is not configured for {item.name}")
+        return process
+
+    @staticmethod
+    def _unit_price_for_process(
+        override: LaundryItemPrice,
+        process: WalkInCatalogProcess,
+    ) -> Decimal | None:
+        if process == WalkInCatalogProcess.single:
+            return override.price_inr
+        if process == WalkInCatalogProcess.dry_clean:
+            return override.dry_clean_inr
+        if process == WalkInCatalogProcess.press:
+            return override.press_inr
+        return None
+
+    @staticmethod
+    def _service_display_name(name: str, process: WalkInCatalogProcess) -> str:
+        if process == WalkInCatalogProcess.dry_clean:
+            return f"{name} · Dry clean"
+        if process == WalkInCatalogProcess.press:
+            return f"{name} · Press"
+        return name
 
     async def _allocate_tracking_code(self) -> str:
         for _ in range(8):

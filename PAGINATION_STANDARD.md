@@ -142,19 +142,41 @@ export async function listItems(params: ListQueryState = {}): Promise<PaginatedL
 
 ## Migration Status
 
+> **Prompt 1 (2026-08-08):** Platform default `page_size` / list `limit` aligned to **10** across booking requests, customer desk tables, settlements, disputes, revenue analytics, reviews, announcements, staff activity, customer insights, and customer order history. Invalid sizes fall back to 10 via `normalize_page_size` / `ListQueryParams.from_query`.  
+> **Prompt 2 (2026-08-08):** `GET /partner/orders` → `PaginatedListResponse` + FE `useServerList`.  
+> **Prompt 3 (2026-08-08):** People/CRM — customer insights + staff activity → standard pages; desk history already default 10.  
+> **Prompt 4 (2026-08-08):** Walk-in + reviews pages; ops queues date/status-scoped (cap 200); Done today endpoint; audit/notifications honesty.  
+> **Prompt 7 (2026-08-08):** Perf hardening — trust/reviews N+1 fixed; ops pending SQL; insights directory SQL-paged; Shop Floor no list poll; reports page_size 25; indexes `ix_orders_laundry_id_status_created_at` + `ix_laundries_trust_score_active`.  
+> **Prompt 8 (2026-08-08):** QA lock — matrix [`docs/qa/partner-admin-pagination-matrix.md`](docs/qa/partner-admin-pagination-matrix.md); admin laundry + list-param boundary tests; Playwright `partner-pagination.spec.ts`; **DoD gate** below.  
+> **Deliberate exceptions:** Customer desk **lookup** typeahead `limit` (max 20); public laundry directory `PUBLIC_LIST_DEFAULT_LIMIT=100` (FE still concatenates pages — migrate later); Shop Floor / Orders Hub today previews (`page_size: 5` / badge `page_size: 1`); ops boards use status/date scope + hard cap (not infinite kanban pages); laundry dropdown helpers cap at **100**; notifications derived pages of 50 (no poll).
+
 | Module | Backend | Frontend |
 |--------|---------|----------|
 | Trust scores (customers) | Done | Done |
 | Admin users | Done | Done |
 | Admin orders | Done | Done |
 | Admin audit logs | Done | Done |
-| Settlements | Aligned (`total_records`) | Done |
-| Disputes datatable | Partial (`total` legacy) | Server-driven |
-| Announcements | Offset-based | Pending |
-| Laundries management | Unpaginated | Client-side |
-| Reviews / fraud / notifications | Unpaginated | Pending |
-| Laundry trust scores | Unpaginated | Pending |
-
+| Settlements | Aligned (`total_records`); **default 10** | Done (default 10) |
+| Disputes datatable | **Done** (`total_records` + legacy `total`); **default 10** | **Done** (`getTotalRecords`) |
+| Booking requests | Partial (envelope mix); **default 10** | Default 10 |
+| Customer desk order history | Done shape; **default 10** | Default 10 |
+| Revenue analytics laundry table | Partial; **default 10** | Default 10 |
+| Announcements | **Done** (`PaginatedListResponse`; default 10) | **Done** (`useServerList`) |
+| Reviews (partner) | **Done** (`PaginatedListResponse`; default 10) | **Done** (`useServerList`) |
+| Reviews (admin) | **Done** (`PaginatedListResponse`; default 10) | **Done** (`useServerList`) |
+| Walk-in orders | **Done** (page/page_size/search; default 10) | **Done** (`useServerList`) |
+| Ops pickups/deliveries | **Scoped** (open + today completed; hard cap 200) | Active board columns; phone on row |
+| Ops done-today | **Done** (`GET /partner/operations/done-today`) | Logistics Done tab |
+| Partner audit (order activity) | Uses paginated `/partner/orders` | **Done** (`useServerList`) |
+| Partner notifications | Derived from order pages (honest cap note) | Loading/error + truncation banner |
+| Customer insights list | **Done** (`page`/`page_size`/`search`; default 10) | **Done** (`useServerList` + `DataTablePagination`) |
+| Staff activity | **Done** (`PaginatedListResponse`; default 10) | **Done** (activity panel pages) |
+| Partner orders | **Done** (page/page_size/bucket; default 10) | **Done** (`useServerList` / `usePartnerOrders`) |
+| Laundries management | **Done** (`PaginatedListResponse`; default 10) | **Done** (`useServerList`; options helpers ≤100) |
+| Laundry trust scores | **Done** (page + search; default 10) | **Done** (`useServerList`) |
+| Inventory change requests | **Done** (`PaginatedListResponse`; default 10) | **Done** (`useServerList`; 30s poll on page) |
+| Public laundry directory | limit/offset; default **100** (exception) | Client concatenate |
+| Service catalog | Unbounded (typically small) | Documented P3 — Prompt 4 deferred |
 ### Rollout checklist for remaining modules
 
 1. Add `*_list_params.py` with filters
@@ -189,6 +211,21 @@ Each list page should show:
 - Pagination: accurate `total_records`, `has_next`, `has_previous`
 - Performance: no full-table fetch to frontend
 - Mobile: toolbar and pagination stack responsively
+
+---
+
+## Definition of Done (regression gate)
+
+**New list endpoint without `PaginatedListResponse` + frontend `useServerList` is incomplete.**
+
+Ship checklist for every new Partner/Admin (and growing Customer) list:
+
+1. Backend returns `PaginatedListResponse` (or documented envelope with the same fields) with default `page_size=10`.
+2. Frontend uses `useServerList` + `DataTablePagination` (or equivalent prev/next that still drives server `page`).
+3. No `useDataTableState` over a full-table dump; no silent `limit: 100` “because pagination is hard”.
+4. Matrix row added in [`docs/qa/partner-admin-pagination-matrix.md`](docs/qa/partner-admin-pagination-matrix.md); inventory P0 stays at zero.
+
+Exceptions must be **dated** in Migration Status above (directory, typeahead, scoped ops boards, small catalogs).
 
 ---
 

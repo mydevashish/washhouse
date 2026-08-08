@@ -134,7 +134,7 @@ class ComplaintRepository:
         date_from: datetime | None = None,
         date_to: datetime | None = None,
         page: int = 1,
-        page_size: int = 25,
+        page_size: int = 10,
         sort_by: str = "created_at",
         sort_dir: str = "desc",
     ) -> tuple[list[dict], int]:

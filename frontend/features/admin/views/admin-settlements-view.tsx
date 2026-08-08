@@ -24,7 +24,7 @@ import {
 
 const DEFAULT_FILTERS: SettlementFilters = {
   page: 1,
-  page_size: 25,
+  page_size: 10,
   sort_by: 'created_at',
   sort_dir: 'desc',
 };

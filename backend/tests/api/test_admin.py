@@ -43,9 +43,9 @@ async def test_admin_paginated_lists_return_200_envelope(
 ) -> None:
     """Regression: frozen ListQueryParams subclasses must accept status/role filters."""
     paths = (
-        "/api/v1/admin/orders?page=1&page_size=20",
-        "/api/v1/admin/users?page=1&page_size=20&role=customer",
-        "/api/v1/admin/audit-logs?page=1&page_size=20",
+        "/api/v1/admin/orders?page=1&page_size=10",
+        "/api/v1/admin/users?page=1&page_size=10&role=customer",
+        "/api/v1/admin/audit-logs?page=1&page_size=10",
         "/api/v1/admin/laundries/pending",
     )
     for path in paths:

@@ -17,9 +17,11 @@ type OrdersHubTabsProps = {
   active: OrdersHubTab;
   /** Optional counts shown on tab labels (e.g. open booking requests). */
   badges?: Partial<Record<OrdersHubTab, number>>;
+  /** Optional label overrides (e.g. partner directory → Customers). */
+  labels?: Partial<Record<OrdersHubTab, string>>;
 };
 
-export function OrdersHubTabs({ basePath, active, badges }: OrdersHubTabsProps) {
+export function OrdersHubTabs({ basePath, active, badges, labels }: OrdersHubTabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -37,6 +39,7 @@ export function OrdersHubTabs({ basePath, active, badges }: OrdersHubTabsProps) 
       <div className="inline-flex min-w-full gap-0.5 rounded-lg bg-muted/60 p-0.5 sm:min-w-0 sm:flex sm:flex-wrap">
         {ORDERS_HUB_TABS.map((tab) => {
           const count = badges?.[tab] ?? 0;
+          const label = labels?.[tab] ?? ORDERS_HUB_TAB_LABELS[tab];
           return (
             <button
               key={tab}
@@ -52,7 +55,7 @@ export function OrdersHubTabs({ basePath, active, badges }: OrdersHubTabsProps) 
                   : 'text-muted-foreground hover:text-foreground',
               )}
             >
-              {ORDERS_HUB_TAB_LABELS[tab]}
+              {label}
               {count > 0 ? (
                 <Badge
                   variant="destructive"

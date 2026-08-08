@@ -72,7 +72,7 @@ describe('PartnerCustomerDeskOrdersTab scoped empty state', () => {
       data: {
         items: [],
         page: 1,
-        page_size: 20,
+        page_size: 10,
         total_records: 0,
         total_pages: 0,
         has_next: false,
@@ -133,7 +133,7 @@ describe('PartnerCustomerDeskOrdersTab scoped empty state', () => {
             },
           ],
           page,
-          page_size: 20,
+          page_size: 10,
           total_records: 25,
           total_pages: 2,
           has_next: page < 2,

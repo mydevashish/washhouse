@@ -3,15 +3,22 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, SoftDeleteMixin, TimestampMixin
-from app.models.enums import OrderSource, OrderStatus, PaymentMethod, PaymentStatus, SettlementEligibility
+from app.models.enums import (
+    ColorToken,
+    OrderSource,
+    OrderStatus,
+    PaymentMethod,
+    PaymentStatus,
+    SettlementEligibility,
+)
 
 
 class Order(Base, TimestampMixin, SoftDeleteMixin):
@@ -63,6 +70,14 @@ class Order(Base, TimestampMixin, SoftDeleteMixin):
         index=True,
     )
     tracking_code: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)
+    color_token: Mapped[ColorToken | None] = mapped_column(
+        Enum(ColorToken, name="color_token", native_enum=True),
+        nullable=True,
+        index=True,
+    )
+    token_code: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    token_day_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    token_assigned_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     pickup_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     delivery_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)

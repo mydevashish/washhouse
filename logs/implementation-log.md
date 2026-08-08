@@ -4,6 +4,270 @@
 
 ---
 
+## 2026-08-08 — Pagination QA lock (Prompt 8)
+
+- **Type:** test / docs
+- **Scope:** ui-fix-and-backend-pagination
+- **Files:** `docs/qa/partner-admin-pagination-matrix.md`, `test_admin_laundries_pagination.py`, `frontend/tests/e2e/partner-pagination.spec.ts`, `admin_list_params.py` (`_optional_str`), `PAGINATION_STANDARD.md` DoD gate, inventory/status/logs, feature cross-links
+- **Summary:** Locked Partner/Admin pagination: matrix green for P0/P1, boundary tests (default 10 / page 2 / empty / invalid→10), Playwright Next-page smoke, zero open P0 in inventory.
+- **Risks:** Public directory still concatenates pages (limit 100); notifications derived; insights segment filters cap 500; Playwright needs auth seed (`E2E_SKIP_AUTH=1` skips).
+- **Next:** Dated deferrals only — no further pack prompts.
+- **Refs:** `docs/qa/partner-admin-pagination-matrix.md`, `PAGINATION_STANDARD.md`
+
+---
+
+## 2026-08-08 — Performance hardening (Prompt 7)
+
+- **Type:** perf
+- **Scope:** ui-fix-and-backend-pagination
+- **Files:** laundry trust list (no N+1), admin reviews laundry join, ops `count_pending_tasks`, customer insights SQL page, Shop Floor remove poll, reports page_size 25, customer orders limit 10, Alembic `20260808_0041`, `logs/performance-log.md`
+- **Summary:** Lists/dashboards stay lean as volume grows. Indexes for `(laundry_id, status, created_at)` and laundry `trust_score`. Documented ban on `useDataTableState` for server entities.
+- **Risks:** Insights segment filters still cap at 500 enriched rows; trust list shows stored score (detail recalculates).
+- **Next:** Prompt 8 — QA matrix / regression / docs lock.
+- **Refs:** `logs/performance-log.md`, `PAGINATION_STANDARD.md`
+
+---
+
+## 2026-08-08 — Broken UI sweep (Prompt 6)
+
+- **Type:** fix / ux
+- **Scope:** ui-fix-and-backend-pagination
+- **Files:** notifications + action-center order deep-links; logistics `?tab=` URL sync; ops/done-today invalidate; money/settlements/logistics error≠empty; settlements `DataTablePagination`; `/partner/people` redirect; remove dead Top services panel; shell nav contrast
+- **Summary:** Closed open inventory UI bugs that were not pagination features (UI-05/12/16 + UI-24–28). P0 list bugs already Fixed in Prompts 2–5. UI-13/22 confirmed already at default 10.
+- **Risks:** Notifications still derived from order pages (no dedicated inbox API); full People hub tabs deferred (redirect only).
+- **Next:** Prompt 7 — performance hardening.
+- **Refs:** `docs/qa/ui-and-pagination-inventory.md`
+
+---
+
+## 2026-08-08 — Admin lists pagination + client-table purge (Prompt 5)
+
+- **Type:** feat / perf
+- **Scope:** ui-fix-and-backend-pagination
+- **Files:** admin laundries (+ management) pages; announcements/reviews/laundry-trust/inventory-change `PaginatedListResponse`; disputes `total_records` FE; `useServerList` + `DataTablePagination`; e2e mocks; marketplace chain assert on `.items`
+- **Summary:** Closed inventory UI-04/18–21. Admin list UIs no longer full-fetch then client-page. Defaults page_size=10; laundry option helpers capped at 100. Grep: no `useDataTableState` under `frontend/features/admin`.
+- **Risks:** Laundry trust still recomputes metrics per row on the current page (ordered by stored score); owner-name search not in SQL yet.
+- **Next:** Prompt 6 — broken UI sweep (non-list bugs).
+- **Refs:** `docs/qa/ui-and-pagination-inventory.md`, `PAGINATION_STANDARD.md`
+
+---
+
+## 2026-08-08 — Partner logistics + walk-in + secondary lists (Prompt 4)
+
+- **Type:** feat / perf
+- **Scope:** ui-fix-and-backend-pagination
+- **Files:** walk-in paginated list; reviews `PaginatedList`; ops queues status/date-scoped (cap 200) + `GET /operations/done-today`; logistics/audit/notifications FE; tests + docs
+- **Summary:** Closed inventory UI-05/06/08/09/10. Walk-in and reviews use standard pages (default 10). Logistics boards no longer download all laundry orders; Done today is date-scoped. Audit pages real order list; notifications show loading/error and truncation honesty. Service catalog left unbounded (small) as P3.
+- **Risks:** Ops boards hard-cap at 200 open/today rows — document if a laundry exceeds that; notifications still not a dedicated attention API.
+- **Next:** Prompt 5 — Admin laundries + remaining admin lists.
+- **Refs:** `docs/qa/ui-and-pagination-inventory.md`, `PAGINATION_STANDARD.md`
+
+---
+
+## 2026-08-08 — Partner People/CRM pagination (Prompt 3)
+
+- **Type:** feat / perf
+- **Scope:** ui-fix-and-backend-pagination
+- **Files:** customer insights API/service/schema (`page`/`page_size`/`search`, `new_this_week`), staff activity repo count + `PaginatedListResponse`, FE `PartnerCustomersView`/`PartnerStaffView` `useServerList` + `DataTablePagination`, CRM strip uses dashboard metric, tests + docs
+- **Summary:** People-pillar lists no longer dump/cap at 100/50. Customers directory searches server-side (300ms debounce via `useServerList`); staff activity pages default 10; desk order history already default 10 with prev/next. Closed inventory UI-07/11/14.
+- **Risks:** Customer insights still aggregates in Python then slices (same as before) — SQL pushdown deferred; roster remains full small array by design.
+- **Next:** Prompt 4 — walk-in / logistics / reviews / audit.
+- **Refs:** `docs/qa/ui-and-pagination-inventory.md`, `PAGINATION_STANDARD.md`
+
+---
+
+## 2026-08-08 — Partner orders backend pagination (Prompt 2)
+
+- **Type:** feat / perf
+- **Scope:** ui-fix-and-backend-pagination
+- **Files:** `partner_orders_list_params.py`, `partner_service.list_orders_for_partner_paginated`, `GET /partner/orders` → `PaginatedListResponse`, FE `listPartnerOrders` + `useServerList` panel/table, hub/overview/notifications/audit/reports/logistics/floor callers, tests, docs
+- **Summary:** Partner order lists are server-paginated (default **10**, buckets action/active/done/all, search/sort). Overview/KPI counts prefer analytics + ops; reports warn when export is capped at 100; Shop Floor uses page_size 50. Closed inventory UI-01/02/03 for silent 50-cap.
+- **Risks:** Reports/service breakdown no longer invent full-history CSV; floor boards still capped at 50 open rows until a dedicated floor API.
+- **Next:** Prompt 3 — People / CRM pagination.
+- **Refs:** `docs/qa/ui-and-pagination-inventory.md`, `PAGINATION_STANDARD.md`
+
+---
+
+## 2026-08-08 — Pagination defaults hardened to 10 (Prompt 1)
+
+- **Type:** chore / perf contract
+- **Scope:** ui-fix-and-backend-pagination
+- **Files:** `backend/app/core/pagination.py` (`normalize_page_size`), `list_params.py` docstring, booking/desk/settlements/disputes/revenue/reviews/announcements/staff/insights/orders/laundries search defaults, matching FE inbox/desk/settlements/disputes/revenue/announcements defaults, unit + FE types tests, `PAGINATION_STANDARD.md`, inventory tracker, logs
+- **Summary:** Default `page_size`/`limit` for standardized and partial list APIs is **10**; invalid sizes fall back to 10. FE list UIs that hard-coded 20/25/50 now default to 10 (users can still pick 25/50/100). Exceptions documented: desk typeahead limit≤20, public laundry directory page size 100, preview strips page_size 5/1. Did **not** migrate `GET /partner/orders` (Prompt 2).
+- **Risks:** Clients that relied on implicit 20/25 rows without sending `page_size` now see 10 until they opt up.
+- **Next:** Prompt 2 — paginate Partner Orders.
+- **Refs:** `docs/qa/ui-and-pagination-inventory.md`, `PAGINATION_STANDARD.md`
+
+---
+
+## 2026-08-08 — UI + pagination inventory (Prompt 0)
+
+- **Type:** docs / qa
+- **Scope:** ui-fix-and-backend-pagination
+- **Files:** `docs/qa/ui-and-pagination-inventory.md`, `.cursor/prompts/ui-fix-and-backend-pagination.md` (prior), `logs/implementation-log.md`
+- **Summary:** Full Partner + Admin inventory of broken/flaky list UIs and pagination gaps. Confirmed platform standard exists (`DEFAULT_PAGE_SIZE=10`) but hot paths ignore it: `GET /partner/orders` + walk-in hard-capped at 50 (array), customers CRM `limit:100` + client search, admin laundries unpaginated + `useDataTableState`, booking/desk/settlements defaults 20/25. Named 5+ P0/P1 bugs (UI-01…UI-11) with repros; migration matrix + perf budget + Prompt 1→8 order.
+- **Risks:** Inventory is static code analysis — runtime Lighthouse/EXPLAIN deferred to Prompt 7.
+- **Next:** Prompt 1 (align defaults to 10), then Prompt 2 (paginate Partner Orders).
+- **Refs:** `PAGINATION_STANDARD.md`, `.cursor/prompts/ui-fix-and-backend-pagination.md`
+
+---
+
+## 2026-08-08 — Partner Owner Command Center P4 (logistics board)
+
+- **Type:** feat + ux
+- **Scope:** partner-owner-command-center
+- **Files:** `owner-logistics.ts` (+ test), `owner-logistics-board.tsx`, `owner-logistics-run-card.tsx`, `partner-logistics-view.tsx`, `/partner/logistics` page, pickups/deliveries wrappers, `partner-nav` Logistics hub + aliases, search-index, docs/logs
+- **Summary:** Image-led Logistics hub with Needs pickup / Out for delivery / Done today. Run cards: status+icon, call, advance/accept, assign/reassign rider via operations APIs. Search + rider filter. Nav single Logistics item; legacy routes reuse board.
+- **Risks:** Address line omitted (API rows lack address); Done today uses `delivery_at` day window on listed orders only.
+- **Next:** Prompt 5 — Customers CRM polish.
+- **Refs:** `docs/features/partner-owner-command-center.md`
+
+---
+
+## 2026-08-08 — Partner Owner Command Center P3 (money intelligence)
+
+- **Type:** feat
+- **Scope:** partner-owner-command-center
+- **Files:** `partner_money_math.py`, `partner_service.py` analytics, `schemas/partner.py`, `test_partner_money_math.py`, `test_partner.py` money cases, FE `partner.ts`, `partner-revenue-view.tsx`, `owner-money-pulse.tsx`, `partner-revenue-chart.tsx`, `partner-settlements-view.tsx` banner, e2e mock, docs/logs
+- **Summary:** Extended analytics/summary with effective commission %, snapshotted commission ₹, partner net, prior periods, null-safe growth, walk-in/doorstep gross. Money page: period tabs, net hero, explainer, chart. Overview pulse shows net + rate. Settlements links to Money.
+- **Risks:** Local pytest API needs DB (password auth failed in this environment); unit helpers verified via import. Month gross still uses `created_at` (legacy); today/week use `updated_at`.
+- **Next:** Prompt 4 — Logistics board.
+- **Refs:** `docs/features/partner-owner-command-center.md`, `commission.md`
+
+---
+
+## 2026-08-08 — Partner Owner Command Center P2 (agentic Overview)
+
+- **Type:** feat + ux
+- **Scope:** partner-owner-command-center
+- **Files:** `partner-overview-view.tsx`, `owner-brief.ts` (+ test), `owner-money-pulse.tsx`, `owner-floor-strip.tsx`, `owner-home-motion.tsx`, `services/partner.ts` optional money fields, docs/logs
+- **Summary:** Advanced `/partner` rebuilt as one-composition Owner home: greeting + CTAs, Do-next brief (real counts, calm empty), Money pulse (gross live; %/net/growth placeholders for P3), illustrated pillars, floor strip, recent orders, shop card. Removed 8-KPI grid + status chart. Motion respects `prefers-reduced-motion`. Shop Floor via `PartnerHomeView` unchanged.
+- **Risks:** Platform % / net still “—” until P3 API; greeting uses client clock after mount.
+- **Next:** Prompt 3 — analytics money fields + Revenue UI.
+- **Refs:** `docs/features/partner-owner-command-center.md`
+
+---
+
+## 2026-08-08 — Partner Owner Command Center P1 (nav + primitives)
+
+- **Type:** feat
+- **Scope:** partner-owner-command-center
+- **Files:** `partner-nav.ts`, `partner-shell.tsx`, `(partner)/layout.tsx` Suspense, `features/partner/components/owner/*`, `partner-overview-view.tsx` (light demo), nav/hub/shop-floor tests, docs/logs
+- **Summary:** Advanced sidebar regrouped into Today / Operations / Logistics / People / Money (+ shop + system). Owner primitives with catalog/marketing images. Customers nav highlights on `?tab=directory`. Shell subtitle “Owner command center”. Shop Floor unchanged.
+- **Risks:** `useSearchParams` requires Suspense on partner layout; overview still has legacy KPI grid until P2.
+- **Next:** Prompt 2 — agentic Advanced overview (replace KPI wall).
+- **Refs:** `docs/features/partner-owner-command-center.md`
+
+---
+
+## 2026-08-08 — Partner Owner Command Center spec (Prompt 0)
+
+- **Type:** docs
+- **Scope:** partner-owner-command-center
+- **Files:** `docs/features/partner-owner-command-center.md`, `docs/features/README.md`, `partner-dashboard.md`, `docs/product/traceability.md`, `logs/feature-progress.md`, `.cursor/context/current-status.md`
+- **Summary:** Locked Advanced Mode Owner Command Center IA — 5 pillars (Today / Orders / Logistics / People / Money), agentic home, money model (gross · platform % · net · growth), image inventory, API gap on `analytics/summary`, P1–P7 slice map. Shop Floor explicitly out of scope.
+- **Risks:** None (spec only).
+- **Next:** Prompt 1 — nav regroup + `frontend/features/partner/components/owner/` primitives.
+- **Refs:** `.cursor/prompts/partner-owner-command-center.md`
+
+---
+
+## 2026-08-08 — Shop Floor literacy polish (a11y + calm UX)
+
+- **Type:** feat + a11y + perf
+- **Scope:** partner-shop-floor
+- **Files:** `walk-in-success-panel`, `floor-voice*`, `floor-coach*`, `phone-numeric-keypad`, `color-token-bar`, Cloth Wall / print tags+bill, More/Settings toggles, `catalog-garment-thumb` lazy, docs/qa + feature + logs
+- **Summary:** Calm success (“Order save हो गई” + soft check); opt-in Web Speech gated by setting / reduced-motion / Sound OFF; stripe-dot patterns on color bars; huge phone keypad; sticky coach for first 3 orders; lazy catalog tiles; Shop Floor home stays chart-free (TTI ≤2.5s).
+- **Risks:** Web Speech voice/lang varies by device; coach count is per-browser localStorage only.
+- **Next:** Facilitator run of usability checklist; QR image; optional floor today API.
+- **Refs:** `docs/features/partner-shop-floor.md`, `docs/qa/partner-shop-floor-usability.md`
+
+---
+
+## 2026-08-08 — Shop Floor usability checklist + journey tests
+
+- **Type:** docs + test
+- **Scope:** partner-shop-floor
+- **Files:** `docs/qa/partner-shop-floor-usability.md`, `partner-shop-floor-journey.spec.ts`, Practice mode store/toggle/banner, More/Settings, `partner-shell`, logs/docs
+- **Summary:** Timed partner usability checklist (create/tags/bill/wash-ready/phone reprint) with staging seed steps. Playwright happy-path journey on shop_floor; Practice mode is a localStorage training banner (no fake API layer — seed/staging data documented).
+- **Risks:** Practice mode does not isolate from live APIs if someone enables it on production; facilitators must use seed accounts.
+- **Next:** Run checklist with 3–5 real counter staff; optional Ready phone keypad.
+- **Refs:** `docs/qa/partner-shop-floor-usability.md`, `docs/features/partner-shop-floor.md`
+
+---
+
+## 2026-08-08 — Shop Floor Today + Ready boards
+
+- **Type:** feat
+- **Scope:** partner-shop-floor
+- **Files:** `floor-status.ts`, `use-floor-order-advance`, Today/Ready views + cards, home tile badges, empty states, Playwright advance flow, docs/logs
+- **Summary:** `/partner/floor/today` card list (color/token/photos/CTA) with filters; advances Received→Washing→Ready via existing accept + PATCH (doorstep Ready chains ironing). Ready board: Give clothes + Print Bill + Call + Diya confirm → walk-in `delivered`. Home tiles show needs-attention counts; picture empty states in Hinglish.
+- **Risks:** Online doorstep from `pickup_assigned` still needs evidence for `picked_up`; no dedicated floor today API yet (uses `GET /partner/orders`).
+- **Next:** QR image; optional floor today DTO; Ready search keypad; laundry GSTIN.
+- **Refs:** `docs/features/partner-shop-floor.md`
+
+---
+
+## 2026-08-08 — Partner invoice + counter bill print
+
+- **Type:** feat
+- **Scope:** partner-shop-floor
+- **Files:** `invoice_service`, `order_invoice_service`, schemas + partner endpoints, FE bill/invoice print routes + `PrintOrderActions`, Ready list CTAs, globals print chrome split, tests, docs/logs
+- **Summary:** `GET /partner/orders/{id}/invoice` (+ HTML `variant=bill|gst`) allocates `invoice_number` once (`WH-{year}-{tracking}`), echoes frozen GST/totals. FE thermal bill + A4 GST with garment thumbs, huge total, color token. CTAs on Success, Order detail, Ready, Print center. Reprint idempotent.
+- **Risks:** Laundry GSTIN still null (shown as —); invoice number not allocated at create (first print/fetch); Diya confirm still stub.
+- **Next:** Today boards + Diya; optional allocate-on-create; laundry GSTIN field; QR image.
+- **Refs:** `docs/features/partner-shop-floor.md`
+
+---
+
+## 2026-08-08 — Shop Floor color tokens + tag print
+
+- **Type:** feat
+- **Scope:** partner-shop-floor
+- **Files:** migration `20260808_0040`, `ColorToken` enum, `color_token_service`, `order_tags_service`, walk-in/partner schemas + tags endpoints, FE print route + Print center, chips on cards/detail, Playwright, docs/logs
+- **Summary:** Walk-in create assigns least-used color + daily IST `token_day_number` → `token_code` (`R-42`). `GET /partner/orders/{id}/tags` (+ optional HTML print). Success → `/partner/floor/print/[orderId]/tags` with 58mm CSS + `window.print()`; reprint from Print center by phone/tracking. Bill/A4/QR image deferred.
+- **Risks:** Concurrent same-laundry creates may race unique index (retry not yet wired); tracking shown as text not QR bitmap.
+- **Next:** Today/Ready boards; thermal bill + A4; QR image; token reassign (P3).
+- **Refs:** `docs/features/partner-shop-floor.md`
+
+---
+
+## 2026-08-08 — Partner Shop Floor Cloth Wall (P1 FE)
+
+- **Type:** feat
+- **Scope:** partner-shop-floor
+- **Files:** `features/partner-shop-floor/**`, `catalog-garment-thumb.tsx`, `partner/new-order`, `partner/floor/new`, `walk_in_order` schema/service, `partner-walk-in-orders.ts`, Playwright `partner-shop-floor.spec.ts`, docs/logs
+- **Summary:** Cloth Wall wizard (phone → photo grid → confirm → success) on `/partner/new-order` + `/partner/floor/new`; catalog `is_offered` preferred with services fallback; List mode toggle; walk-in accepts `catalog_item_id` via bridged laundry_service. Print CTAs toast P2/P3; no token columns yet.
+- **Risks:** Bridged services accumulate in partner catalog; display prices are catalog but charged via synced service rows. Partners without offered price list see services wall only.
+- **Next:** Token columns + assignment; today cards; print HTML.
+- **Refs:** `docs/features/partner-shop-floor.md`
+
+---
+
+## 2026-08-08 — Partner Shop Floor Mode P0 FE shell
+
+- **Type:** feat
+- **Scope:** partner-shop-floor
+- **Files:** `frontend/features/partner-shop-floor/**`, `partner-shell.tsx`, `partner/page.tsx`, `partner/floor/*/page.tsx`, `partner-settings-view.tsx`, `tokens.css`, `store-hydration.tsx`, `docs/features/partner-shop-floor.md`, logs, current-status
+- **Summary:** Shipped `partner_ui_mode` (localStorage, default shop_floor): Shop Floor replaces `/partner` with 4 Hinglish tiles + 4+More nav; Advanced keeps Overview + full `PARTNER_NAV_SECTIONS`. Floor today/ready/print stubs; Cloth Wall/print deferred.
+- **Risks:** New Order still Advanced form until Cloth Wall; brief mode flash before hydrate (defaults shop_floor).
+- **Next:** P1 Cloth Wall + token columns + today cards.
+- **Refs:** `docs/features/partner-shop-floor.md`
+
+---
+
+## 2026-08-08 — Partner Shop Floor Mode spec
+
+- **Type:** docs
+- **Scope:** partner-shop-floor
+- **Files:** `docs/features/partner-shop-floor.md`, `docs/features/partner-dashboard.md`, `docs/features/README.md`, `docs/product/traceability.md`, `.cursor/context/current-status.md`, `logs/feature-progress.md`, `logs/decisions-log.md`
+- **Summary:** Spec’d literacy-tolerant Shop Floor Mode (4 home tiles, Cloth Wall, color tokens `R-42`, Ready handoff, thermal/A4 print reusing GST fields + catalog photos). Linked as Partner Ops Phase 2+; Advanced Mode nav stays as-is. No UI implemented.
+- **Risks:** Status collapse (ironing / out_for_delivery) must be orchestrated carefully when coding.
+- **Next:** P1 — `/partner/floor` shell + token schema + Cloth Wall create.
+- **Refs:** `docs/features/partner-shop-floor.md`
+
+---
+
 ## 2026-08-04 — Partner Orders Hub shell (ops home parity)
 
 - **Type:** feat

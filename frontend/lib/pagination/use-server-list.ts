@@ -16,6 +16,7 @@ export type UseServerListOptions<T, F extends object = Record<string, never>> = 
   defaultSort?: { sort_by: string; sort_order: 'asc' | 'desc' };
   defaultPageSize?: number;
   enabled?: boolean;
+  refetchInterval?: number | false;
 };
 
 export function useServerList<T, F extends object = Record<string, never>>({
@@ -25,6 +26,7 @@ export function useServerList<T, F extends object = Record<string, never>>({
   defaultSort,
   defaultPageSize = DEFAULT_PAGE_SIZE,
   enabled = true,
+  refetchInterval,
 }: UseServerListOptions<T, F>) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSizeState] = useState(normalizePageSize(defaultPageSize));
@@ -63,6 +65,7 @@ export function useServerList<T, F extends object = Record<string, never>>({
     queryKey: [...queryKey, requestParams],
     queryFn: () => fetcher(requestParams),
     enabled,
+    refetchInterval,
   });
 
   const data = query.data;

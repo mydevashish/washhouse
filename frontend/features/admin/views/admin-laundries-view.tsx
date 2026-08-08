@@ -1,42 +1,40 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import { Button } from '@/components/ui/button';
-import { AdminPanel } from '@/features/admin/components/admin-panel';
-import { Input } from '@/components/ui/input';
+import { ServerListToolbar } from '@/components/data-table/server-list-toolbar';
 import { VirtualDataTable, type VirtualColumnDef } from '@/components/data-table/virtual-data-table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { QueryErrorState } from '@/components/feedback/query-error-state';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AdminPanel } from '@/features/admin/components/admin-panel';
 import { AdminContent } from '@/features/admin/components/admin-content';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
 import { AdminCreateLaundry } from '@/features/admin/admin-create-laundry';
 import { LaundryStatusBadge } from '@/features/admin/lib/admin-badges';
 import { formatInr } from '@/features/discover/detail/order-pricing';
 import { formatIndiaDate } from '@/lib/datetime';
-import { useDataTableState } from '@/lib/table/use-data-table-state';
+import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
-import { listLaundriesManagement, setLaundryCommission, type AdminLaundryManagementRow } from '@/services/admin';
-
-function filterLaundry(row: AdminLaundryManagementRow, q: string) {
-  const s = q.toLowerCase();
-  return (
-    row.name.toLowerCase().includes(s) ||
-    row.owner_name.toLowerCase().includes(s) ||
-    row.city.toLowerCase().includes(s) ||
-    row.status.toLowerCase().includes(s)
-  );
-}
+import {
+  listLaundriesManagement,
+  setLaundryCommission,
+  type AdminLaundryManagementRow,
+} from '@/services/admin';
 
 export function AdminLaundriesView() {
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRate, setEditRate] = useState('');
 
-  const laundriesQ = useQuery({
+  const list = useServerList({
     queryKey: queryKeys.adminLaundriesManagement(),
-    queryFn: listLaundriesManagement,
+    fetcher: listLaundriesManagement,
+    defaultSort: { sort_by: 'created_at', sort_order: 'desc' },
   });
 
   const saveCommission = useMutation({
@@ -48,22 +46,6 @@ export function AdminLaundriesView() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.adminAuditLogs() });
     },
     onError: () => toast.error('Update failed'),
-  });
-
-  const data = laundriesQ.data ?? [];
-  const table = useDataTableState({
-    data,
-    filterFn: filterLaundry,
-    getSortValue: (row, col) => {
-      if (col === 'revenue_inr') return Number(row.revenue_inr);
-      if (col === 'orders_count') return row.orders_count;
-      if (col === 'effective_commission_rate') return Number(row.effective_commission_rate);
-      if (col === 'name') return row.name;
-      if (col === 'created_at') return row.created_at;
-      return '';
-    },
-    defaultSort: { columnId: 'created_at', direction: 'desc' },
-    defaultPageSize: 25,
   });
 
   const columns = useMemo<VirtualColumnDef<AdminLaundryManagementRow>[]>(
@@ -109,7 +91,8 @@ export function AdminLaundriesView() {
         header: 'Rating',
         cell: (r) => (
           <span className="text-sm">
-            {Number(r.rating).toFixed(1)} <span className="text-muted-foreground">({r.review_count})</span>
+            {Number(r.rating).toFixed(1)}{' '}
+            <span className="text-muted-foreground">({r.review_count})</span>
           </span>
         ),
       },
@@ -181,37 +164,51 @@ export function AdminLaundriesView() {
         }
       />
 
+      {list.isError ? (
+        <QueryErrorState
+          title="Could not load laundries"
+          onRetry={() => void list.refetch()}
+          isRetrying={list.isFetching}
+        />
+      ) : null}
+
       <AdminPanel
-        meta={<span className="tabular-nums">{data.length} registered</span>}
+        meta={<span className="tabular-nums">{list.totalRecords} registered</span>}
         toolbar={
-          <Input
-            type="search"
-            placeholder="Search…"
-            value={table.search}
-            onChange={(e) => table.setSearch(e.target.value)}
-            className="h-9 w-48 sm:w-56"
-            aria-label="Search laundries"
+          <ServerListToolbar
+            search={list.search}
+            onSearchChange={list.setSearch}
+            searchPlaceholder="Search…"
+            totalRecords={list.totalRecords}
+            isLoading={list.isFetching}
+            onRefresh={() => void list.refetch()}
           />
         }
         bodyClassName="p-0"
       >
-        <VirtualDataTable
-          tableId="admin-laundries-mgmt"
-          columns={columns}
-          rows={table.pageRows}
-          getRowId={(r) => r.id}
-          sort={table.sort}
-          onToggleSort={table.toggleSort}
-          page={table.page}
-          pageCount={table.pageCount}
-          pageSize={table.pageSize}
-          pageStart={table.pageStart}
-          pageEnd={table.pageEnd}
-          filteredCount={table.filteredCount}
-          onPageChange={table.setPage}
-          onPageSizeChange={table.setPageSize}
-          emptyState={<p className="py-10 text-center text-sm text-muted-foreground">No laundries found.</p>}
-        />
+        {list.isLoading && list.rows.length === 0 ? (
+          <Skeleton className="m-4 h-64 rounded-xl" />
+        ) : (
+          <VirtualDataTable
+            tableId="admin-laundries-mgmt"
+            columns={columns}
+            rows={list.rows}
+            getRowId={(r) => r.id}
+            sort={list.sort}
+            onToggleSort={list.toggleSort}
+            page={list.page}
+            pageCount={list.pageCount}
+            pageSize={list.pageSize}
+            pageStart={list.pageStart}
+            pageEnd={list.pageEnd}
+            filteredCount={list.totalRecords}
+            onPageChange={list.setPage}
+            onPageSizeChange={list.setPageSize}
+            emptyState={
+              <p className="py-10 text-center text-sm text-muted-foreground">No laundries found.</p>
+            }
+          />
+        )}
       </AdminPanel>
 
       <div id="create-laundry">

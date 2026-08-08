@@ -22,8 +22,10 @@ function downloadCsv(filename: string, rows: string[][]) {
 }
 
 export function PartnerReportsView() {
-  const ordersQ = usePartnerOrders();
-  const orders = ordersQ.data ?? [];
+  const ordersQ = usePartnerOrders({ page: 1, page_size: 25, bucket: 'all' });
+  const orders = ordersQ.data?.items ?? [];
+  const totalKnown = ordersQ.data?.total_records ?? orders.length;
+  const capped = totalKnown > orders.length;
 
   function exportOrders() {
     const header = ['Order ID', 'Customer', 'Services', 'Amount', 'Status', 'Payment'];
@@ -55,9 +57,15 @@ export function PartnerReportsView() {
     <PartnerContent className="space-y-5">
       <PartnerPageHeader title="Reports" description="Export order and revenue data." />
 
+      {capped ? (
+        <p className="text-sm text-amber-700 dark:text-amber-400">
+          Export includes the latest {orders.length} of {totalKnown} orders. Full CSV export ships in a later slice.
+        </p>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2">
-        <PartnerPanel title="Orders report" description="All orders in your queue" bodyClassName="px-4 py-4">
-          <Button type="button" className="gap-2" onClick={exportOrders} disabled={!orders.length}>
+        <PartnerPanel title="Orders report" description="Latest orders in your queue" bodyClassName="px-4 py-4">
+          <Button type="button" className="gap-2" onClick={exportOrders} disabled={!orders.length || ordersQ.isLoading}>
             <Download className="h-4 w-4" />
             Export CSV
           </Button>

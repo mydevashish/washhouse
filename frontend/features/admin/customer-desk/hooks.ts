@@ -47,8 +47,8 @@ export function useAdminCustomerDeskOrders(
     queryKey: queryKeys.adminCustomerDeskOrders(userId ?? phone, { ...filters, page }),
     queryFn: () =>
       userId
-        ? listAdminCustomerOrdersByUser(userId, { page_size: 20, ...filters, page })
-        : listAdminCustomerOrdersByPhone(phone, { page_size: 20, ...filters, page }),
+        ? listAdminCustomerOrdersByUser(userId, { page_size: 10, ...filters, page })
+        : listAdminCustomerOrdersByPhone(phone, { page_size: 10, ...filters, page }),
     enabled: Boolean(open && profile && (userId || phone)),
     staleTime: 15_000,
   });

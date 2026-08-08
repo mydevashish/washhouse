@@ -15,6 +15,8 @@ Maps historical product docs → roadmap phase → feature spec.
 | Reviews & ratings | 2 | [reviews.md](../features/reviews.md) |
 | Partner registration, KYC | 3 | [partner-onboarding.md](../features/partner-onboarding.md) |
 | Partner order management | 3 | [partner-dashboard.md](../features/partner-dashboard.md) |
+| Partner owner command center (Advanced: money %, growth, people, logistics) | 3 / Phase 2+ ops | [partner-owner-command-center.md](../features/partner-owner-command-center.md) |
+| Partner shop floor (low-literacy counter, color tokens, print) | 3 / Phase 2+ ops | [partner-shop-floor.md](../features/partner-shop-floor.md) |
 | Partner walk-in / offline booking | launch | [offline-booking-whatsapp.md](../features/offline-booking-whatsapp.md), [order-placement.md](../features/order-placement.md) |
 | Book Now / phone CRM booking requests | launch | [booking-requests.md](../features/booking-requests.md) |
 | Customer Desk — assisted lookup & doorstep create (admin + partner) | launch / ops | [customer-desk.md](../features/customer-desk.md) |

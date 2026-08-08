@@ -18,6 +18,7 @@ Long-form documentation for the Doorstep Laundry Marketplace.
 | **Decisions** (ADRs)                                        | [`decisions/`](decisions/)        |
 | **Roadmap**                                                 | [`roadmap/`](roadmap/)            |
 | **Product** (index, traceability)                           | [`product/`](product/)            |
+| **QA checklists** (partner usability, etc.)                 | [`qa/`](qa/)                      |
 | **Runbooks** (deploy, webhooks, DB restore)               | [`runbooks/`](runbooks/)          |
 
 ## Conventions

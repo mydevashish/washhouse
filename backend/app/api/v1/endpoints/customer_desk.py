@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, Header, Query, Request
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_admin, get_current_partner
 from app.core.exceptions import ValidationError
+from app.core.pagination import DEFAULT_PAGE_SIZE, normalize_page_size
 from app.models.enums import OrderSource, OrderStatus
 from app.schemas.common import PaginatedListResponse
 from app.schemas.customer_desk import (
@@ -27,7 +28,8 @@ partner_router = APIRouter(prefix="/partner/customers", tags=["Partner"])
 admin_create_router = APIRouter(prefix="/admin/customer-desk", tags=["Admin"])
 partner_create_router = APIRouter(prefix="/partner/customer-desk", tags=["Partner"])
 
-_DESK_DEFAULT_PAGE_SIZE = 20
+# Table lists use platform default 10; lookup ``limit`` below stays capped for typeahead.
+_DESK_DEFAULT_PAGE_SIZE = DEFAULT_PAGE_SIZE
 _DESK_MAX_PAGE_SIZE = 100
 
 

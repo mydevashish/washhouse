@@ -158,8 +158,8 @@ export function AdminSettlementsDatatable({ filters, onFiltersChange }: Props) {
           onToggleSort={handleSort}
           page={tableQ.data?.page ?? 1}
           pageCount={tableQ.data?.total_pages ?? 1}
-          pageSize={filters.page_size ?? 25}
-          pageStart={((tableQ.data?.page ?? 1) - 1) * (filters.page_size ?? 25) + (rows.length ? 1 : 0)}
+          pageSize={filters.page_size ?? 10}
+          pageStart={((tableQ.data?.page ?? 1) - 1) * (filters.page_size ?? 10) + (rows.length ? 1 : 0)}
           pageEnd={Math.min((tableQ.data?.page ?? 1) * (filters.page_size ?? 10), tableQ.data?.total_records ?? 0)}
           filteredCount={tableQ.data?.total_records ?? 0}
           onPageChange={(p) => onFiltersChange({ page: p })}

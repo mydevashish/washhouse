@@ -95,7 +95,7 @@ class RevenueAnalyticsRepository:
         revenue_max: Decimal | None = None,
         cities_for_state: list[str] | None = None,
         page: int = 1,
-        page_size: int = 25,
+        page_size: int = 10,
         sort_by: str = "revenue",
         sort_dir: str = "desc",
     ) -> tuple[list[dict], int]:

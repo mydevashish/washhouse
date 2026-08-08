@@ -2,9 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Archive, Calendar, Megaphone, Send, Eye, MousePointerClick, CheckCircle2 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ClientDate } from '@/components/ui/client-date';
@@ -17,9 +18,9 @@ import { AdminContent } from '@/features/admin/components/admin-content';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
 import { AdminPanel } from '@/features/admin/components/admin-panel';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
-import { STALE } from '@/lib/query-config';
-import { listLaundriesManagement } from '@/services/admin';
+import { listLaundryManagementOptions } from '@/services/admin';
 import {
   archiveAnnouncement,
   createAnnouncement,
@@ -71,15 +72,20 @@ export function AdminAnnouncementCenterView() {
   const [requiresAck, setRequiresAck] = useState(false);
   const [scheduleAt, setScheduleAt] = useState('');
 
-  const listQ = useQuery({
+  const announcementFilters = useMemo(
+    () => ({ ...(statusFilter ? { status: statusFilter } : {}) }),
+    [statusFilter],
+  );
+
+  const list = useServerList<AnnouncementRow, { status?: AnnouncementStatus }>({
     queryKey: queryKeys.adminAnnouncements(statusFilter),
-    queryFn: () => listAdminAnnouncements({ status: statusFilter || undefined, limit: 50 }),
-    staleTime: STALE.adminDashboard,
+    fetcher: listAdminAnnouncements,
+    filters: announcementFilters,
   });
 
   const laundriesQ = useQuery({
     queryKey: queryKeys.adminLaundriesManagement(),
-    queryFn: listLaundriesManagement,
+    queryFn: listLaundryManagementOptions,
     enabled: targetType === 'specific_laundries',
     staleTime: 60_000,
   });
@@ -142,7 +148,7 @@ export function AdminAnnouncementCenterView() {
     })
     .slice(0, 12);
 
-  const items = listQ.data?.items ?? [];
+  const items = list.rows;
 
   return (
     <AdminContent className="space-y-5">
@@ -249,11 +255,11 @@ export function AdminAnnouncementCenterView() {
           }
           bodyClassName="divide-y divide-border/50 p-0"
         >
-          {listQ.isLoading && <Skeleton className="m-4 h-32 w-full" />}
-          {listQ.isError && (
-            <p className="px-4 py-6 text-sm text-destructive">{getApiErrorMessage(listQ.error, 'Could not load announcements')}</p>
+          {list.isLoading && <Skeleton className="m-4 h-32 w-full" />}
+          {list.isError && (
+            <p className="px-4 py-6 text-sm text-destructive">{getApiErrorMessage(list.error, 'Could not load announcements')}</p>
           )}
-          {!listQ.isLoading && items.length === 0 && (
+          {!list.isLoading && items.length === 0 && (
             <p className="px-4 py-6 text-sm text-muted-foreground">No announcements yet.</p>
           )}
           {items.map((row) => (
@@ -266,6 +272,20 @@ export function AdminAnnouncementCenterView() {
               pending={publishM.isPending || archiveM.isPending || scheduleM.isPending}
             />
           ))}
+          {!list.isLoading && list.totalRecords > 0 && (
+            <div className="border-t border-border/50 px-2 py-2">
+              <DataTablePagination
+                page={list.page}
+                pageCount={list.pageCount}
+                pageSize={list.pageSize}
+                pageStart={list.pageStart}
+                pageEnd={list.pageEnd}
+                totalCount={list.totalRecords}
+                onPageChange={list.setPage}
+                onPageSizeChange={list.setPageSize}
+              />
+            </div>
+          )}
         </AdminPanel>
       </div>
     </AdminContent>

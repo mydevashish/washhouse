@@ -83,7 +83,7 @@ export function PartnerActionCenter({ items }: PartnerActionCenterProps) {
                 )}
                 {item.primaryAction === 'view' && (
                   <Button type="button" size="lg" variant="secondary" asChild>
-                    <Link href="/partner/orders">View order</Link>
+                    <Link href={`/partner/orders/${item.orderId}`}>View order</Link>
                   </Button>
                 )}
               </div>

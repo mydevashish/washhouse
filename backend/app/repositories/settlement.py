@@ -129,7 +129,7 @@ class SettlementRepository:
         date_from: datetime | None = None,
         date_to: datetime | None = None,
         page: int = 1,
-        page_size: int = 25,
+        page_size: int = 10,
         sort_by: str = "created_at",
         sort_dir: str = "desc",
     ) -> tuple[list[dict], int]:
@@ -427,7 +427,7 @@ class SettlementRepository:
         partner_user_id: UUID,
         *,
         page: int = 1,
-        page_size: int = 25,
+        page_size: int = 10,
     ) -> tuple[list[dict], int]:
         base = (
             select(Settlement, Laundry.name)

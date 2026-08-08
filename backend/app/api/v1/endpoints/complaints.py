@@ -12,6 +12,7 @@ from fastapi.responses import PlainTextResponse
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_admin, get_current_user_payload
 from app.core.exceptions import ValidationError
+from app.core.pagination import DEFAULT_PAGE_SIZE, normalize_page_size
 from app.models.enums import ComplaintStatus, ComplaintType, DisputePriority
 from app.schemas.complaint import ComplaintStatusUpdateRequest
 from app.schemas.dispute_admin import (
@@ -88,10 +89,11 @@ async def admin_dispute_datatable(
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=25, ge=1, le=100),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=100),
     sort_by: str = Query(default="created_at"),
     sort_dir: str = Query(default="desc", pattern="^(asc|desc)$"),
 ) -> dict:
+    page_size = normalize_page_size(page_size)
     data = await DisputeAdminService(session).datatable(
         q=q,
         status=status,

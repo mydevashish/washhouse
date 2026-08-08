@@ -1,4 +1,5 @@
 import { api, type ApiEnvelope } from '@/lib/api';
+import type { PaginatedList } from '@/lib/pagination/types';
 
 
 
@@ -318,16 +319,16 @@ export async function resetStaffPassword(id: string): Promise<{ staff_id: string
 
 
 
-export async function getStaffActivity(staffId?: string): Promise<StaffActivityRow[]> {
-
-  const { data } = await api.get<ApiEnvelope<StaffActivityRow[]>>('/partner/staff-management/activity', {
-
-    params: staffId ? { staff_id: staffId } : undefined,
-
-  });
-
+export async function getStaffActivity(params?: {
+  staff_id?: string;
+  page?: number;
+  page_size?: number;
+}): Promise<PaginatedList<StaffActivityRow>> {
+  const { data } = await api.get<ApiEnvelope<PaginatedList<StaffActivityRow>>>(
+    '/partner/staff-management/activity',
+    { params },
+  );
   return data.data;
-
 }
 
 

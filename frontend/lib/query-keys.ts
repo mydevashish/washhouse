@@ -11,7 +11,7 @@ export const queryKeys = {
   laundry: (id: string) => ['laundry', id] as const,
   laundryPriceList: (id: string) => ['laundry-price-list', id] as const,
   reviews: (laundryId: string) => ['reviews', laundryId] as const,
-  orders: (limit = 50, offset = 0) => ['orders', { limit, offset }] as const,
+  orders: (limit = 10, offset = 0) => ['orders', { limit, offset }] as const,
   order: (id: string) => ['order', id] as const,
   orderEvents: (id: string) => ['order-events', id] as const,
   pickupEvidence: (orderId: string, scope: 'customer' | 'partner' | 'admin') =>
@@ -63,7 +63,8 @@ export const queryKeys = {
     ['custody-timeline', scope, orderId] as const,
   addresses: () => ['addresses'] as const,
   partnerAnalytics: () => ['partner-analytics'] as const,
-  partnerOrders: () => ['partner-orders'] as const,
+  partnerOrders: (params?: Record<string, unknown>) =>
+    ['partner-orders', params ?? {}] as const,
   partnerOrder: (id: string) => ['partner-order', id] as const,
   partnerWalkInOrders: () => ['partner-walk-in-orders'] as const,
   partnerCustomers: () => ['partner-customers'] as const,
@@ -78,6 +79,7 @@ export const queryKeys = {
   partnerOperationsDashboard: () => ['partner-operations-dashboard'] as const,
   partnerOperationsPickups: () => ['partner-operations-pickups'] as const,
   partnerOperationsDeliveries: () => ['partner-operations-deliveries'] as const,
+  partnerOperationsDoneToday: () => ['partner-operations-done-today'] as const,
   partnerOperationsDrivers: () => ['partner-operations-drivers'] as const,
   partnerStorefront: () => ['partner-storefront'] as const,
   partnerServiceCatalog: () => ['partner-service-catalog'] as const,
@@ -116,7 +118,8 @@ export const queryKeys = {
   adminSettlementAudit: (settlementId?: string) => ['admin-settlement-audit', settlementId ?? 'all'] as const,
   adminSettlementsTable: (filters?: object) => ['admin-settlements-table', filters ?? {}] as const,
   adminSettlementDetail: (id: string) => ['admin-settlement-detail', id] as const,
-  partnerSettlements: (page?: number) => ['partner-settlements', page ?? 1] as const,
+  partnerSettlements: (page?: number, pageSize?: number) =>
+    ['partner-settlements', page ?? 1, pageSize ?? 10] as const,
   platformPartnerDashboard: () => ['platform-partner-dashboard'] as const,
   platformPartnerProfitSharing: () => ['platform-partner-profit-sharing'] as const,
   adminProfitSharingOverview: () => ['admin-profit-sharing-overview'] as const,

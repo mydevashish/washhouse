@@ -78,9 +78,12 @@ class AnnouncementRow(BaseModel):
 
 class AnnouncementListResponse(BaseModel):
     items: list[AnnouncementRow]
-    total: int
-    limit: int
-    offset: int
+    page: int
+    page_size: int
+    total_records: int
+    total_pages: int
+    has_next: bool
+    has_previous: bool
 
 
 class ActiveAnnouncementRow(BaseModel):

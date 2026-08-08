@@ -5,10 +5,13 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_partner
+from app.core.exceptions import NotFoundError
+from app.core.pagination import DEFAULT_PAGE_SIZE, build_paginated_response
+from app.schemas.common import PaginatedListResponse
 from app.schemas.order import OrderItemResponse
 from app.schemas.walk_in_order import WalkInOrderCreateRequest, WalkInOrderResponse
 from app.services.walk_in_order_service import WalkInOrderService
@@ -22,6 +25,9 @@ def _walk_in_order_response(order) -> WalkInOrderResponse:
         laundry_id=order.laundry_id,
         status=order.status,
         tracking_code=order.tracking_code,
+        color_token=order.color_token,
+        token_code=order.token_code,
+        token_day_number=order.token_day_number,
         pickup_at=order.pickup_at,
         delivery_at=order.delivery_at,
         subtotal_inr=order.subtotal_inr,
@@ -50,7 +56,7 @@ async def create_walk_in_order(
         UUID(payload["sub"]),
         customer_name=body.customer_name,
         customer_phone=body.customer_phone,
-        items=[item.model_dump() for item in body.items],
+        items=[item.model_dump(mode="json") for item in body.items],
         notes=body.notes,
         expected_ready_at=body.expected_ready_at,
     )
@@ -62,12 +68,31 @@ async def list_walk_in_orders(
     request: Request,
     session: SessionDep,
     payload: Annotated[dict, Depends(get_current_partner)],
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=100),
+    search: str | None = Query(default=None, max_length=120),
 ) -> dict:
-    from app.core.exceptions import NotFoundError
-
     try:
-        orders = await WalkInOrderService(session).list_for_partner(UUID(payload["sub"]))
+        result = await WalkInOrderService(session).list_for_partner(
+            UUID(payload["sub"]),
+            page=page,
+            page_size=page_size,
+            search=search,
+        )
     except NotFoundError:
-        orders = []
-    data = [_walk_in_order_response(order) for order in orders]
-    return success_envelope(data, request)
+        return success_envelope(
+            PaginatedListResponse[WalkInOrderResponse].empty(page=page, page_size=page_size),
+            request,
+        )
+    items = [_walk_in_order_response(order) for order in result["items"]]
+    return success_envelope(
+        PaginatedListResponse[WalkInOrderResponse].model_validate(
+            build_paginated_response(
+                items=items,
+                total_records=result["total_records"],
+                page=result["page"],
+                page_size=result["page_size"],
+            ),
+        ),
+        request,
+    )

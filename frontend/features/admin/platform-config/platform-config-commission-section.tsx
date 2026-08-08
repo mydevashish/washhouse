@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AdminPanel } from '@/features/admin/components/admin-panel';
-import { listLaundriesManagement } from '@/services/admin';
+import { listLaundryManagementOptions } from '@/services/admin';
 import {
   removePartnerCommission,
   setPartnerCommission,
@@ -34,7 +34,7 @@ export function PlatformConfigCommissionSection({ config, onSaved }: Props) {
 
   const laundriesQ = useQuery({
     queryKey: ['admin-laundries-management'],
-    queryFn: listLaundriesManagement,
+    queryFn: listLaundryManagementOptions,
     staleTime: 60_000,
   });
 

@@ -1,4 +1,5 @@
 import { api, type ApiEnvelope } from '@/lib/api';
+import type { ListQueryState, PaginatedList } from '@/lib/pagination/types';
 
 export type LaundryTrustLevel = 'premium' | 'trusted' | 'verified' | 'under_review';
 
@@ -40,8 +41,13 @@ export async function getPartnerTrustScore(): Promise<LaundryTrustScoreSummary> 
   return data.data;
 }
 
-export async function listAdminLaundryTrustScores(): Promise<LaundryTrustScoreSummary[]> {
-  const { data } = await api.get<ApiEnvelope<LaundryTrustScoreSummary[]>>('/admin/laundry-trust-scores');
+export async function listAdminLaundryTrustScores(
+  params?: ListQueryState,
+): Promise<PaginatedList<LaundryTrustScoreSummary>> {
+  const { data } = await api.get<ApiEnvelope<PaginatedList<LaundryTrustScoreSummary>>>(
+    '/admin/laundry-trust-scores',
+    { params },
+  );
   return data.data;
 }
 

@@ -32,7 +32,7 @@ import { getApiErrorMessage } from '@/lib/api-error-message';
 import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
-import { listAllLaundries } from '@/services/admin';
+import { listLaundryOptions } from '@/services/admin';
 import { cn } from '@/lib/utils';
 
 function parseLookupFromSearch(
@@ -111,7 +111,7 @@ export function AdminOrdersTodayPanel() {
 
   const laundriesQ = useQuery({
     queryKey: queryKeys.adminLaundries(),
-    queryFn: listAllLaundries,
+    queryFn: listLaundryOptions,
     staleTime: STALE.adminDashboard,
   });
 

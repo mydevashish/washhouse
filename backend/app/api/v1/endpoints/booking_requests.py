@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, Path, Query, Request, status
 
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_admin, get_current_partner
+from app.core.pagination import DEFAULT_PAGE_SIZE, normalize_page_size
 from app.models.enums import (
     BookingRequestPriority,
     BookingRequestSource,
@@ -110,7 +111,7 @@ async def admin_list_booking_requests(
     session: SessionDep,
     _: Annotated[dict, Depends(get_current_admin)],
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=100),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=100),
     status_filter: str | None = Query(default=None, alias="status"),
     priority: BookingRequestPriority | None = None,
     assigned_laundry_id: UUID | None = None,
@@ -123,6 +124,7 @@ async def admin_list_booking_requests(
     created_to: datetime | None = None,
     sort: str = Query(default="sla"),
 ) -> dict:
+    page_size = normalize_page_size(page_size)
     statuses = _parse_statuses(status_filter)
     single_status = statuses[0] if statuses and len(statuses) == 1 else None
     multi = statuses if statuses and len(statuses) > 1 else None
@@ -370,7 +372,7 @@ async def partner_list_booking_requests(
     session: SessionDep,
     payload: Annotated[dict, Depends(get_current_partner)],
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=100),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=100),
     status_filter: str | None = Query(default=None, alias="status"),
     priority: BookingRequestPriority | None = None,
     phone: str | None = None,
@@ -378,6 +380,7 @@ async def partner_list_booking_requests(
     source: BookingRequestSource | None = None,
     sort: str = Query(default="sla"),
 ) -> dict:
+    page_size = normalize_page_size(page_size)
     statuses = _parse_statuses(status_filter)
     single_status = statuses[0] if statuses and len(statuses) == 1 else None
     multi = statuses if statuses and len(statuses) > 1 else None

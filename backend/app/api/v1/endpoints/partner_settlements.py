@@ -10,6 +10,7 @@ from fastapi.responses import PlainTextResponse, Response
 
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_partner
+from app.core.pagination import DEFAULT_PAGE_SIZE, normalize_page_size
 from app.schemas.settlement import PartnerSettlementSummaryResponse, SettlementDetailResponse
 from app.services.settlement_service import SettlementService
 
@@ -22,8 +23,9 @@ async def partner_settlements(
     session: SessionDep,
     payload: Annotated[dict, Depends(get_current_partner)],
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=25, ge=1, le=100),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=100),
 ) -> dict:
+    page_size = normalize_page_size(page_size)
     data = await SettlementService(session).partner_history(
         UUID(payload["sub"]),
         page=page,

@@ -140,18 +140,58 @@ class LaundryTrustScoreService:
             await self._session.flush()
         return await self._to_summary(laundry, metrics)
 
-    async def list_for_admin(self) -> list[LaundryTrustScoreSummary]:
-        laundries = await self._repo.list_laundries()
+    async def list_for_admin(
+        self,
+        *,
+        page: int = 1,
+        page_size: int = 10,
+        search: str | None = None,
+    ) -> dict:
+        from app.core.pagination import build_paginated_response, normalize_page_size
+
+        safe_page = max(1, page)
+        safe_size = normalize_page_size(page_size)
+        offset = (safe_page - 1) * safe_size
+        total = await self._repo.count_laundries(search=search)
+        rows = await self._repo.list_laundries_with_owners(
+            limit=safe_size,
+            offset=offset,
+            search=search,
+        )
+        metrics_map = await self._repo.list_summary_metrics([laundry.id for laundry, _ in rows])
         summaries: list[LaundryTrustScoreSummary] = []
-        for laundry in laundries:
-            metrics = await self.compute_metrics(laundry.id)
-            score, breakdown = self.compute_score_from_metrics(metrics)
-            if laundry.trust_score != score:
-                laundry.trust_score = score
-            summaries.append(await self._to_summary(laundry, metrics))
-        await self._session.flush()
-        summaries.sort(key=lambda s: s.trust_score)
-        return summaries
+        for laundry, owner_name in rows:
+            completed, avg_rating, review_count = metrics_map.get(laundry.id, (0, 0.0, 0))
+            # List uses stored score (detail endpoint recalculates live). Avoid N+1 metric fan-out.
+            score = int(laundry.trust_score or DEFAULT_SCORE)
+            level = self.level_for_score(score)
+            summaries.append(
+                LaundryTrustScoreSummary(
+                    laundry_id=laundry.id,
+                    laundry_name=laundry.name,
+                    city=laundry.city,
+                    owner_name=owner_name,
+                    trust_score=score,
+                    level=level,
+                    level_label=LAUNDRY_TRUST_LEVEL_LABELS[level],
+                    metrics=LaundryTrustMetrics(
+                        on_time_delivery_pct=0.0,
+                        complaint_rate_pct=0.0,
+                        refund_rate_pct=0.0,
+                        dispute_rate_pct=0.0,
+                        avg_rating=avg_rating,
+                        review_count=review_count,
+                        completed_orders=completed,
+                    ),
+                    calculated_at=datetime.now(UTC),
+                ),
+            )
+        return build_paginated_response(
+            items=summaries,
+            total_records=total,
+            page=safe_page,
+            page_size=safe_size,
+        )
 
     async def get_detail_for_admin(self, laundry_id: UUID) -> LaundryTrustScoreDetail:
         laundry = await self._repo.get_laundry(laundry_id)

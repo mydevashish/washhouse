@@ -336,7 +336,7 @@ class RevenueAnalyticsService:
         revenue_min: Decimal | None = None,
         revenue_max: Decimal | None = None,
         page: int = 1,
-        page_size: int = 25,
+        page_size: int = 10,
         sort_by: str = "revenue",
         sort_dir: str = "desc",
     ) -> dict:

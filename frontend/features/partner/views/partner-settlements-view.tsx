@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, Clock, Download, FileSpreadsheet, FileText, Wallet } from 'lucide-react';
 
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { Button } from '@/components/ui/button';
 import { ClientDate } from '@/components/ui/client-date';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -15,6 +17,7 @@ import { KpiCard, KpiGrid } from '@/features/admin/components/kpi-card';
 import { formatInrCompact } from '@/features/admin/lib/format-admin';
 import { formatInr } from '@/features/discover/detail/order-pricing';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { DEFAULT_PAGE_SIZE, getTotalRecords, normalizePageSize } from '@/lib/pagination/types';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import { downloadPartnerSettlementExport, getPartnerSettlements } from '@/services/settlements';
@@ -22,17 +25,22 @@ import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-o
 
 export function PartnerSettlementsView() {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [exporting, setExporting] = useState(false);
   const enabled = usePartnerQueriesEnabled();
 
   const dataQ = useQuery({
-    queryKey: queryKeys.partnerSettlements(page),
-    queryFn: () => getPartnerSettlements(page),
+    queryKey: queryKeys.partnerSettlements(page, pageSize),
+    queryFn: () => getPartnerSettlements(page, pageSize),
     enabled,
     staleTime: STALE.adminDashboard,
   });
 
   const d = dataQ.data;
+  const totalRecords = d ? getTotalRecords(d) : 0;
+  const pageCount = d?.total_pages ?? 1;
+  const pageStart = totalRecords === 0 ? 0 : (page - 1) * pageSize;
+  const pageEnd = Math.min(page * pageSize, totalRecords);
 
   const handleExport = async (format: 'csv' | 'xlsx' | 'pdf') => {
     setExporting(true);
@@ -66,6 +74,16 @@ export function PartnerSettlementsView() {
         }
       />
 
+      <div className="rounded-lg bg-brand-50/80 px-3 py-2.5 text-sm text-muted-foreground ring-1 ring-brand-500/20 dark:bg-brand-900/20">
+        <p>
+          Settlements pay your <span className="font-semibold text-foreground">net</span> after the
+          platform commission cut. See the full split on{' '}
+          <Link href="/partner/revenue" className="font-medium text-brand-600 underline-offset-2 hover:underline dark:text-brand-50">
+            Money
+          </Link>
+          .
+        </p>
+      </div>
       {dataQ.isError && (
         <QueryErrorState
           title="Could not load settlements"
@@ -110,7 +128,7 @@ export function PartnerSettlementsView() {
                 <td className="px-3 py-2 text-xs">{row.paid_at ? <ClientDate iso={row.paid_at} mode="datetime" /> : '—'}</td>
               </tr>
             ))}
-            {!d?.items.length && !dataQ.isLoading && (
+            {!dataQ.isError && !d?.items.length && !dataQ.isLoading && (
               <tr>
                 <td colSpan={7} className="px-3 py-8">
                   <EmptyState
@@ -126,13 +144,21 @@ export function PartnerSettlementsView() {
         )}
       </div>
 
-      {(d?.total_pages ?? 1) > 1 && (
-        <div className="flex justify-center gap-2">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
-          <span className="self-center text-xs text-muted-foreground">Page {page} of {d?.total_pages}</span>
-          <Button variant="outline" size="sm" disabled={page >= (d?.total_pages ?? 1)} onClick={() => setPage((p) => p + 1)}>Next</Button>
-        </div>
-      )}
+      {!dataQ.isError && totalRecords > 0 ? (
+        <DataTablePagination
+          page={d?.page ?? page}
+          pageCount={pageCount}
+          pageSize={d?.page_size ?? pageSize}
+          pageStart={pageStart}
+          pageEnd={pageEnd}
+          totalCount={totalRecords}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(normalizePageSize(size));
+            setPage(1);
+          }}
+        />
+      ) : null}
     </PartnerContent>
   );
 }

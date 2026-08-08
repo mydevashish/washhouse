@@ -53,13 +53,22 @@ class OperationsOrderRow(BaseModel):
     order_id: UUID
     tracking_code: str
     customer_name: str
+    customer_phone: str | None = None
     status: str
     pickup_at: datetime
     delivery_at: datetime
+    delivered_at: datetime | None = None
     total_inr: str
     is_delayed: bool
     assignment: TaskAssignmentResponse | None = None
     queue_status: str
+
+
+class DoneTodayResponse(BaseModel):
+    orders: list[OperationsOrderRow]
+    total: int
+    capped: bool = False
+    cap: int = 200
 
 
 class QueueBucketResponse(BaseModel):

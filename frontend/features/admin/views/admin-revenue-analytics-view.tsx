@@ -30,7 +30,7 @@ import {
 const DEFAULT_FILTERS: RevenueAnalyticsFilters = {
   period: 'last_30_days',
   page: 1,
-  page_size: 25,
+  page_size: 10,
   sort_by: 'revenue',
   sort_dir: 'desc',
 };

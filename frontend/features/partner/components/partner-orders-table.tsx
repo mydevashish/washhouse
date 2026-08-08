@@ -1,11 +1,13 @@
-'use client';
+﻿'use client';
 
 import { Loader2, Shield } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerOrderCard } from '@/features/partner/partner-order-card';
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { PartnerPickupEvidenceDialog } from '@/features/partner/components/partner-pickup-evidence-dialog';
@@ -21,53 +23,38 @@ import {
 import { usePartnerOrderMutations } from '@/features/partner/hooks/use-partner-operations';
 import { formatInr } from '@/features/discover/detail/order-pricing';
 import { ClientDate } from '@/components/ui/client-date';
-import type { PartnerOrder } from '@/services/partner';
+import { useServerList } from '@/lib/pagination/use-server-list';
+import { queryKeys } from '@/lib/query-keys';
+import { listPartnerOrders, type PartnerOrder, type PartnerOrdersBucket } from '@/services/partner';
 import { getPartnerCustodyTimeline } from '@/services/custody-timeline';
 import { cn } from '@/lib/utils';
 
-type Filter = 'all' | 'action' | 'active' | 'done';
+type Filter = PartnerOrdersBucket;
 
 type PartnerOrdersTableProps = {
-  orders: PartnerOrder[];
+  /** @deprecated Ignored — table loads server pages. Kept for call-site compatibility. */
+  orders?: PartnerOrder[];
   filter?: Filter;
   showSearch?: boolean;
 };
 
-export function PartnerOrdersTable({ orders, filter: initialFilter = 'all', showSearch = true }: PartnerOrdersTableProps) {
+export function PartnerOrdersTable({
+  filter: initialFilter = 'all',
+  showSearch = true,
+}: PartnerOrdersTableProps) {
   const [filter, setFilter] = useState<Filter>(initialFilter);
-  const [search, setSearch] = useState('');
   const [evidenceOrder, setEvidenceOrder] = useState<PartnerOrder | null>(null);
   const [custodyOrder, setCustodyOrder] = useState<PartnerOrder | null>(null);
   const { acceptMutation, rejectMutation, advanceOrder, advanceMutation, isBusy } =
     usePartnerOrderMutations();
 
-  const filtered = useMemo(() => {
-    let rows = orders;
-    const q = search.toLowerCase();
-    if (q) {
-      rows = rows.filter(
-        (o) =>
-          o.tracking_code.toLowerCase().includes(q) ||
-          o.customer_name.toLowerCase().includes(q) ||
-          o.status.toLowerCase().includes(q),
-      );
-    }
-    switch (filter) {
-      case 'action':
-        return rows.filter((o) => isOrderNeedsAction(o.status, o.order_source));
-      case 'active':
-        return rows.filter(
-          (o) =>
-            o.status !== 'delivered' &&
-            o.status !== 'cancelled' &&
-            !isOrderNeedsAction(o.status, o.order_source),
-        );
-      case 'done':
-        return rows.filter((o) => o.status === 'delivered' || o.status === 'cancelled');
-      default:
-        return rows;
-    }
-  }, [orders, filter, search]);
+  const list = useServerList<PartnerOrder, { bucket: Filter }>({
+    queryKey: queryKeys.partnerOrders({ surface: 'table' }),
+    fetcher: (params) => listPartnerOrders(params),
+    filters: { bucket: filter },
+    defaultSort: { sort_by: 'created_at', sort_order: 'desc' },
+    defaultPageSize: 10,
+  });
 
   const filters: { id: Filter; label: string }[] = [
     { id: 'action', label: 'Needs action' },
@@ -99,8 +86,8 @@ export function PartnerOrdersTable({ orders, filter: initialFilter = 'all', show
         <Input
           type="search"
           placeholder="Search orders…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={list.search}
+          onChange={(e) => list.setSearch(e.target.value)}
           className="h-control w-full min-w-[140px] sm:w-44"
           aria-label="Search orders"
         />
@@ -108,19 +95,24 @@ export function PartnerOrdersTable({ orders, filter: initialFilter = 'all', show
     </div>
   );
 
+  if (list.isLoading) {
+    return <Skeleton className="h-96 w-full rounded-2xl" />;
+  }
+
   return (
     <PartnerPanel
-      meta={<span className="tabular-nums">{filtered.length} orders</span>}
+      meta={<span className="tabular-nums">{list.totalRecords} orders</span>}
       toolbar={toolbar}
       bodyClassName="p-0"
     >
-      {filtered.length === 0 ? (
+      {list.isError ? (
+        <p className="px-4 py-8 text-center text-sm text-destructive">Could not load orders.</p>
+      ) : list.rows.length === 0 ? (
         <p className="px-4 py-8 text-center text-sm text-muted-foreground">No orders in this view.</p>
       ) : (
         <>
-          {/* Mobile: card stack */}
           <div className="space-y-3 p-3 md:hidden">
-            {filtered.map((o) => (
+            {list.rows.map((o) => (
               <PartnerOrderCard
                 key={o.id}
                 order={o}
@@ -134,7 +126,6 @@ export function PartnerOrdersTable({ orders, filter: initialFilter = 'all', show
             ))}
           </div>
 
-          {/* Desktop: compact table */}
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead className="table-sticky-head border-b border-border/60 bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
@@ -149,7 +140,7 @@ export function PartnerOrdersTable({ orders, filter: initialFilter = 'all', show
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {filtered.map((o) => {
+                {list.rows.map((o) => {
                   const needsAction = isOrderNeedsAction(o.status, o.order_source);
                   const walkIn = isWalkInOrder(o);
                   const nextLabel = getPartnerAdvanceLabel(o.status, o.order_source);
@@ -257,15 +248,15 @@ export function PartnerOrdersTable({ orders, filter: initialFilter = 'all', show
                                 }
                                 onClick={() => advanceOrder(o.id, o.status, o.order_source)}
                               >
-                              {advanceMutation.isPending ? (
-                                <>
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                                  Updating…
-                                </>
-                              ) : (
-                                nextLabel
-                              )}
-                            </Button>
+                                {advanceMutation.isPending ? (
+                                  <>
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                                    Updating…
+                                  </>
+                                ) : (
+                                  nextLabel
+                                )}
+                              </Button>
                             </>
                           )}
                         </div>
@@ -276,6 +267,16 @@ export function PartnerOrdersTable({ orders, filter: initialFilter = 'all', show
               </tbody>
             </table>
           </div>
+          <DataTablePagination
+            page={list.page}
+            pageCount={list.pageCount}
+            pageSize={list.pageSize}
+            pageStart={list.pageStart}
+            pageEnd={list.pageEnd}
+            totalCount={list.totalRecords}
+            onPageChange={list.setPage}
+            onPageSizeChange={list.setPageSize}
+          />
         </>
       )}
       <PartnerPickupEvidenceDialog
@@ -288,8 +289,7 @@ export function PartnerOrdersTable({ orders, filter: initialFilter = 'all', show
         trackingCode={custodyOrder?.tracking_code ?? null}
         open={Boolean(custodyOrder)}
         onOpenChange={(open) => !open && setCustodyOrder(null)}
-        queryFn={getPartnerCustodyTimeline}
-        scope="partner"
+        loadTimeline={getPartnerCustodyTimeline}
       />
     </PartnerPanel>
   );

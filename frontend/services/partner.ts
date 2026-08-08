@@ -1,4 +1,6 @@
 import { api, type ApiEnvelope } from '@/lib/api';
+import { buildListQueryParams } from '@/lib/pagination/build-query';
+import type { ListQueryState, PaginatedList } from '@/lib/pagination/types';
 import type { OrderItem } from '@/services/orders';
 
 export interface PartnerAnalytics {
@@ -18,6 +20,26 @@ export interface PartnerAnalytics {
   revenue_today_inr: string;
   revenue_this_month_inr: string;
   revenue_week_inr: string;
+  /** Money intelligence (Owner Command Center P3). Rate is percent e.g. "10.00". */
+  revenue_yesterday_inr: string;
+  revenue_prev_week_inr: string;
+  revenue_prev_month_inr: string;
+  growth_today_pct: string | null;
+  growth_week_pct: string | null;
+  growth_month_pct: string | null;
+  effective_commission_rate: string;
+  commission_today_inr: string;
+  commission_week_inr: string;
+  commission_month_inr: string;
+  partner_net_today_inr: string;
+  partner_net_week_inr: string;
+  partner_net_month_inr: string;
+  revenue_walk_in_today_inr: string;
+  revenue_doorstep_today_inr: string;
+  revenue_walk_in_week_inr: string;
+  revenue_doorstep_week_inr: string;
+  revenue_walk_in_month_inr: string;
+  revenue_doorstep_month_inr: string;
 }
 
 export interface PartnerStaff {
@@ -40,6 +62,9 @@ export interface PartnerOrder {
   laundry_id: string;
   status: string;
   tracking_code: string;
+  color_token?: string | null;
+  token_code?: string | null;
+  token_day_number?: number | null;
   pickup_at: string;
   delivery_at: string;
   subtotal_inr: string;
@@ -54,8 +79,29 @@ export interface PartnerOrder {
   items: OrderItem[];
 }
 
-export async function listPartnerOrders(): Promise<PartnerOrder[]> {
-  const { data } = await api.get<ApiEnvelope<PartnerOrder[]>>('/partner/orders');
+export type PartnerOrdersBucket = 'action' | 'active' | 'done' | 'all';
+
+export type PartnerOrdersListParams = ListQueryState & {
+  bucket?: PartnerOrdersBucket;
+  status?: string;
+  order_source?: 'online' | 'walk_in' | string;
+};
+
+export async function listPartnerOrders(
+  params: PartnerOrdersListParams = {},
+): Promise<PaginatedList<PartnerOrder>> {
+  const { data } = await api.get<ApiEnvelope<PaginatedList<PartnerOrder>>>('/partner/orders', {
+    params: buildListQueryParams({
+      page: params.page ?? 1,
+      page_size: params.page_size ?? 10,
+      search: params.search,
+      sort_by: params.sort_by ?? 'created_at',
+      sort_order: params.sort_order ?? 'desc',
+      bucket: params.bucket ?? 'all',
+      status: params.status,
+      order_source: params.order_source,
+    }),
+  });
   return data.data;
 }
 

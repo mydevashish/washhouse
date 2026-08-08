@@ -221,6 +221,39 @@ Seed: `python scripts/seed_washhouse_catalog.py` (idempotent by `slug`).
 
 Until Slice E ships, regression: walk-in + `/partner/services` paths must stay green.
 
+**Cloth Wall bridge (2026-08-08):** `POST /partner/walk-in-orders` accepts optional `catalog_item_id` + `process` (`dry_clean`\|`press`\|`single`) instead of `service_id`. Service find-or-creates a `laundry_services` row keyed by `description=catalog:{uuid}:{process}` and locks `order_items` unit price from `laundry_item_prices`. Full `catalog_item_id` on order lines remains Slice E.
+
+## Shop Floor color tokens
+
+> Spec: [partner-shop-floor.md](../features/partner-shop-floor.md) · Migration: `20260808_0040`
+
+### `color_token` enum
+
+`red`, `blue`, `green`, `yellow`, `orange`, `purple`, `pink`, `teal`, `brown`, `grey`
+
+### `orders` — token columns
+
+| Column | Type | Notes |
+| ------ | ---- | ----- |
+| `color_token` | enum `color_token` NULL | Least-used among active floor orders on assign |
+| `token_code` | `VARCHAR(16)` NULL | Display e.g. `R-42` (letter map: pink=`K`, brown=`W`, grey=`E`) |
+| `token_day_number` | `INT` NULL | Laundry-scoped daily sequence (IST midnight reset) |
+| `token_assigned_on` | `DATE` NULL | IST calendar day of assignment |
+
+**Unique (partial):** `uq_orders_laundry_color_token_day` on `(laundry_id, color_token, token_day_number, token_assigned_on)` WHERE NOT NULL.
+
+**Index:** `ix_orders_laundry_id_token_assigned_on` for daily allocation.
+
+Assigned on walk-in create; tags endpoint can lazy-assign if null. Immutable after create (reprint only).
+
+### `orders` — invoice number (Shop Floor print)
+
+| Column | Type | Notes |
+| ------ | ---- | ----- |
+| `invoice_number` | `VARCHAR(40)` NULL UNIQUE | Allocated once on first `GET /partner/orders/{id}/invoice` as `WH-{IST_year}-{tracking_code}`; reprint never overwrites or recalculates GST/totals |
+
+GST amounts (`gst_rate`, `cgst_inr`, `sgst_inr`, `subtotal_inr`, `total_inr`) remain create-time frozen fields.
+
 ## Migrations
 
 - All schema changes via Alembic
@@ -228,4 +261,5 @@ Until Slice E ships, regression: walk-in + `/partner/services` paths must stay g
 - Latest catalog migration: `20260717_0034_platform_catalog_and_laundry_item_prices`
 - Booking requests: `20260803_0038_booking_requests`
 - Customer Desk: migration `20260804_0039` — extend `order_source` + `orders.created_by_user_id` + guest address snapshot columns + desk indexes; lookup/history APIs shipped (Slice 1)
+- Shop Floor tokens: `20260808_0040_order_color_token`
 - See `.cursor/checklists/new-migration.md`

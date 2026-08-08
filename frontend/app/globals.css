@@ -162,3 +162,39 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Shop Floor print: hide app chrome only — page size lives on each print view */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  header,
+  nav,
+  aside,
+  [data-shop-floor-nav],
+  [data-partner-shell-chrome] {
+    display: none !important;
+  }
+
+  .tag-card {
+    width: 54mm;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .bill-card {
+    width: 54mm;
+  }
+
+  .invoice-card {
+    width: auto;
+    max-width: 190mm;
+  }
+}
+

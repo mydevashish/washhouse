@@ -1,4 +1,5 @@
 import { api, type ApiEnvelope } from '@/lib/api';
+import type { ListQueryState, PaginatedList } from '@/lib/pagination/types';
 import type { OrderItem } from '@/services/orders';
 
 export interface WalkInOrder {
@@ -6,6 +7,9 @@ export interface WalkInOrder {
   laundry_id: string;
   status: string;
   tracking_code: string;
+  color_token?: string | null;
+  token_code?: string | null;
+  token_day_number?: number | null;
   pickup_at: string;
   delivery_at: string;
   subtotal_inr: string;
@@ -23,12 +27,20 @@ export interface WalkInOrder {
 }
 
 export interface WalkInOrderLineItem {
-  service_id: string;
+  service_id?: string;
+  catalog_item_id?: string;
+  process?: 'dry_clean' | 'press' | 'single';
   quantity: number;
 }
 
-export async function listWalkInOrders(): Promise<WalkInOrder[]> {
-  const { data } = await api.get<ApiEnvelope<WalkInOrder[]>>('/partner/walk-in-orders');
+export type ListWalkInOrdersParams = ListQueryState;
+
+export async function listWalkInOrders(
+  params?: ListWalkInOrdersParams,
+): Promise<PaginatedList<WalkInOrder>> {
+  const { data } = await api.get<ApiEnvelope<PaginatedList<WalkInOrder>>>('/partner/walk-in-orders', {
+    params,
+  });
   return data.data;
 }
 

@@ -189,7 +189,7 @@ class SettlementService:
         date_from: datetime | None = None,
         date_to: datetime | None = None,
         page: int = 1,
-        page_size: int = 25,
+        page_size: int = 10,
         sort_by: str = "created_at",
         sort_dir: str = "desc",
     ) -> dict:
@@ -447,7 +447,7 @@ class SettlementService:
     async def partner_summary(self, partner_user_id: UUID) -> dict:
         return await self._repo.partner_summary(partner_user_id)
 
-    async def partner_history(self, partner_user_id: UUID, *, page: int = 1, page_size: int = 25) -> dict:
+    async def partner_history(self, partner_user_id: UUID, *, page: int = 1, page_size: int = 10) -> dict:
         items, total = await self._repo.partner_list(partner_user_id, page=page, page_size=page_size)
         total_pages = max(1, (total + page_size - 1) // page_size)
         summary = await self._repo.partner_summary(partner_user_id)

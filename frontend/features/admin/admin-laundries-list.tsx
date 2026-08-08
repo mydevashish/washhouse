@@ -1,44 +1,18 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { Store } from 'lucide-react';
 import { useMemo } from 'react';
 
+import { ServerListToolbar } from '@/components/data-table/server-list-toolbar';
 import { VirtualDataTable, type VirtualColumnDef } from '@/components/data-table/virtual-data-table';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
-import { InfoBanner } from '@/components/ui/info-banner';
-import { Input } from '@/components/ui/input';
+import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LaundryStatusBadge } from '@/features/admin/lib/admin-badges';
-import { maybeExpandRowsForPerfMock } from '@/lib/table/expand-mock-rows';
-import { useDataTableState } from '@/lib/table/use-data-table-state';
+import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
 import { listAllLaundries, type AdminLaundryRow } from '@/services/admin';
-
-function filterLaundry(row: AdminLaundryRow, query: string): boolean {
-  const q = query.toLowerCase();
-  return (
-    row.name.toLowerCase().includes(q) ||
-    row.city.toLowerCase().includes(q) ||
-    row.status.toLowerCase().includes(q)
-  );
-}
-
-function getLaundrySortValue(row: AdminLaundryRow, columnId: string) {
-  switch (columnId) {
-    case 'name':
-      return row.name;
-    case 'city':
-      return row.city;
-    case 'status':
-      return row.status;
-    case 'is_verified':
-      return row.is_verified;
-    default:
-      return '';
-  }
-}
 
 const LAUNDRY_COLUMNS: VirtualColumnDef<AdminLaundryRow>[] = [
   {
@@ -75,37 +49,25 @@ const LAUNDRY_COLUMNS: VirtualColumnDef<AdminLaundryRow>[] = [
 ];
 
 export function AdminLaundriesList() {
-  const laundriesQ = useQuery({
+  const list = useServerList({
     queryKey: queryKeys.adminLaundries(),
-    queryFn: listAllLaundries,
+    fetcher: listAllLaundries,
+    defaultSort: { sort_by: 'created_at', sort_order: 'desc' },
   });
 
-  const data = useMemo(() => {
-    const rows = laundriesQ.data ?? [];
-    return maybeExpandRowsForPerfMock(rows, (seed, index) => ({
-      ...seed,
-      id: `${seed.id}-mock-${index}`,
-      name: `${seed.name} (${index})`,
-    }));
-  }, [laundriesQ.data]);
+  const columns = useMemo(() => LAUNDRY_COLUMNS, []);
 
-  const table = useDataTableState({
-    data,
-    filterFn: filterLaundry,
-    getSortValue: getLaundrySortValue,
-    defaultSort: { columnId: 'name', direction: 'asc' },
-    defaultPageSize: 50,
-  });
-
-  if (laundriesQ.isLoading) {
+  if (list.isLoading && list.rows.length === 0) {
     return <Skeleton className="h-96 w-full rounded-xl" />;
   }
 
-  if (laundriesQ.isError) {
+  if (list.isError) {
     return (
-      <InfoBanner variant="destructive" title="Could not load laundries">
-        Try again later.
-      </InfoBanner>
+      <QueryErrorState
+        title="Could not load laundries"
+        onRetry={() => void list.refetch()}
+        isRetrying={list.isFetching}
+      />
     );
   }
 
@@ -113,43 +75,44 @@ export function AdminLaundriesList() {
     <Card>
       <CardHeader className="flex flex-col gap-4 border-b border-border sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-bold text-foreground">All laundries</h2>
-          <p className="text-sm text-muted-foreground">{table.totalCount} registered</p>
+          <h2 className="text-lg font-bold text-foreground">Laundries</h2>
+          <p className="text-sm text-muted-foreground">All partner shops on the platform</p>
         </div>
-        <Input
-          type="search"
-          placeholder="Search name, city, status…"
-          value={table.search}
-          onChange={(e) => table.setSearch(e.target.value)}
-          className="max-w-xs"
-          aria-label="Search laundries"
+        <ServerListToolbar
+          search={list.search}
+          onSearchChange={list.setSearch}
+          searchPlaceholder="Search name, city, status…"
+          totalRecords={list.totalRecords}
+          isLoading={list.isFetching}
+          onRefresh={() => void list.refetch()}
+          className="w-full sm:w-auto"
         />
       </CardHeader>
       <CardContent className="p-0">
         <VirtualDataTable
           tableId="admin-laundries"
-          columns={LAUNDRY_COLUMNS}
-          rows={table.pageRows}
+          columns={columns}
+          rows={list.rows}
           getRowId={(l) => l.id}
-          sort={table.sort}
-          onToggleSort={table.toggleSort}
-          page={table.page}
-          pageCount={table.pageCount}
-          pageSize={table.pageSize}
-          pageStart={table.pageStart}
-          pageEnd={table.pageEnd}
-          filteredCount={table.filteredCount}
-          onPageChange={table.setPage}
-          onPageSizeChange={table.setPageSize}
+          sort={list.sort}
+          onToggleSort={list.toggleSort}
+          page={list.page}
+          pageCount={list.pageCount}
+          pageSize={list.pageSize}
+          pageStart={list.pageStart}
+          pageEnd={list.pageEnd}
+          filteredCount={list.totalRecords}
+          onPageChange={list.setPage}
+          onPageSizeChange={list.setPageSize}
           emptyState={
             <div className="p-8">
               <EmptyState
                 icon={Store}
-                title={table.search ? 'No matches' : 'No laundries yet'}
+                title={list.search ? 'No matches' : 'No laundries'}
                 description={
-                  table.search
-                    ? 'Try a different search term.'
-                    : 'Laundries will appear here after registration.'
+                  list.search
+                    ? 'Try another search term.'
+                    : 'Partner shops will appear here after onboarding.'
                 }
               />
             </div>

@@ -6,6 +6,7 @@ import { Flag, MessageSquare, Star, ThumbsDown, ThumbsUp, TrendingUp } from 'luc
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { Button } from '@/components/ui/button';
 import { ClientDate } from '@/components/ui/client-date';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -19,6 +20,7 @@ import { PartnerKpiCard, PartnerKpiGrid } from '@/features/partner/components/pa
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import {
@@ -59,17 +61,36 @@ export function PartnerReviewsView() {
     staleTime: STALE.adminDashboard,
   });
 
-  const reviewsQ = useQuery({
+  const reviewFilters = {
+    ...(ratingFilter ? { rating: Number(ratingFilter) } : {}),
+    ...(sentimentFilter === 'positive' ? { min_rating: 4 } : {}),
+    ...(sentimentFilter === 'negative' ? { max_rating: 2 } : {}),
+    ...(replyFilter === 'yes' ? { has_reply: true } : {}),
+    ...(replyFilter === 'no' ? { has_reply: false } : {}),
+  };
+
+  const list = useServerList<
+    ReviewManagementRow,
+    {
+      rating?: number;
+      min_rating?: number;
+      max_rating?: number;
+      has_reply?: boolean;
+    }
+  >({
     queryKey: queryKeys.partnerReviews(ratingFilter, replyFilter, sentimentFilter),
-    queryFn: () =>
+    fetcher: (params) =>
       listPartnerReviews({
-        rating: ratingFilter ? Number(ratingFilter) : undefined,
-        min_rating: sentimentFilter === 'positive' ? 4 : undefined,
-        max_rating: sentimentFilter === 'negative' ? 2 : undefined,
-        has_reply: replyFilter === 'yes' ? true : replyFilter === 'no' ? false : undefined,
+        page: params.page,
+        page_size: params.page_size,
+        rating: params.rating,
+        min_rating: params.min_rating,
+        max_rating: params.max_rating,
+        has_reply: params.has_reply,
       }),
+    filters: reviewFilters,
+    defaultPageSize: 10,
     enabled,
-    staleTime: 30_000,
   });
 
   const invalidate = () => {
@@ -90,7 +111,7 @@ export function PartnerReviewsView() {
   });
 
   const analytics = analyticsQ.data;
-  const reviews = reviewsQ.data ?? [];
+  const reviews = list.rows;
 
   return (
     <PartnerContent className="space-y-5">
@@ -196,34 +217,46 @@ export function PartnerReviewsView() {
         </div>
       </PartnerPanel>
 
-      {reviewsQ.isError && (
+      {list.isError && (
         <p className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {getApiErrorMessage(reviewsQ.error, 'Could not load reviews')}
+          {getApiErrorMessage(list.error, 'Could not load reviews')}
         </p>
       )}
 
-      {reviewsQ.isLoading && <Skeleton className="h-48 w-full rounded-2xl" />}
-      {!reviewsQ.isLoading && reviews.length === 0 && (
+      {list.isLoading && <Skeleton className="h-48 w-full rounded-2xl" />}
+      {!list.isLoading && reviews.length === 0 && (
         <EmptyState icon={Star} title="No reviews yet" description="Customer feedback will appear here after delivery." />
       )}
 
       {reviews.length > 0 && (
-        <PartnerPanel bodyClassName="divide-y divide-border/50">
-          {reviews.map((r) => (
-            <ReviewRow
-              key={r.id}
-              review={r}
-              replyDraft={replyDrafts[r.id] ?? r.partner_reply ?? ''}
-              abuseDraft={abuseDrafts[r.id] ?? ''}
-              onReplyDraft={(v) => setReplyDrafts((d) => ({ ...d, [r.id]: v }))}
-              onAbuseDraft={(v) => setAbuseDrafts((d) => ({ ...d, [r.id]: v }))}
-              onReply={() => replyM.mutate({ id: r.id, reply: replyDrafts[r.id] ?? '' })}
-              onReport={() => abuseM.mutate({ id: r.id, reason: abuseDrafts[r.id] ?? '' })}
-              replyPending={replyM.isPending}
-              abusePending={abuseM.isPending}
-            />
-          ))}
-        </PartnerPanel>
+        <>
+          <PartnerPanel bodyClassName="divide-y divide-border/50">
+            {reviews.map((r) => (
+              <ReviewRow
+                key={r.id}
+                review={r}
+                replyDraft={replyDrafts[r.id] ?? r.partner_reply ?? ''}
+                abuseDraft={abuseDrafts[r.id] ?? ''}
+                onReplyDraft={(v) => setReplyDrafts((d) => ({ ...d, [r.id]: v }))}
+                onAbuseDraft={(v) => setAbuseDrafts((d) => ({ ...d, [r.id]: v }))}
+                onReply={() => replyM.mutate({ id: r.id, reply: replyDrafts[r.id] ?? '' })}
+                onReport={() => abuseM.mutate({ id: r.id, reason: abuseDrafts[r.id] ?? '' })}
+                replyPending={replyM.isPending}
+                abusePending={abuseM.isPending}
+              />
+            ))}
+          </PartnerPanel>
+          <DataTablePagination
+            page={list.page}
+            pageCount={list.pageCount}
+            pageSize={list.pageSize}
+            pageStart={list.pageStart}
+            pageEnd={list.pageEnd}
+            totalCount={list.totalRecords}
+            onPageChange={list.setPage}
+            onPageSizeChange={list.setPageSize}
+          />
+        </>
       )}
     </PartnerContent>
   );

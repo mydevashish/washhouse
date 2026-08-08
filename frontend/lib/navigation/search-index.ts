@@ -49,7 +49,9 @@ const PARTNER_EXTRA: SearchItem[] = [
     keywords: 'create walk-in assisted desk order',
   },
   { id: 'p-storefront', label: 'Storefront builder', href: '/partner/storefront', group: 'Shop', keywords: 'brand gallery' },
-  { id: 'p-pickups', label: 'Pickup requests', href: '/partner/pickups', group: 'Operations', keywords: 'collection' },
+  { id: 'p-pickups', label: 'Pickup requests', href: '/partner/logistics?tab=pickups', group: 'Logistics', keywords: 'collection logistics' },
+  { id: 'p-deliveries', label: 'Deliveries', href: '/partner/logistics?tab=deliveries', group: 'Logistics', keywords: 'dispatch logistics' },
+  { id: 'p-logistics', label: 'Logistics', href: '/partner/logistics', group: 'Logistics', keywords: 'pickups deliveries riders' },
   ...PARTNER_ORDERS_HUB_SEARCH_ALIASES.map((alias) => ({
     id: alias.id,
     label: alias.label,

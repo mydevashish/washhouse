@@ -32,9 +32,11 @@ export interface OperationsOrderRow {
   order_id: string;
   tracking_code: string;
   customer_name: string;
+  customer_phone?: string | null;
   status: string;
   pickup_at: string;
   delivery_at: string;
+  delivered_at?: string | null;
   total_inr: string;
   is_delayed: boolean;
   queue_status: string;
@@ -56,6 +58,13 @@ export interface PickupQueue {
 export interface DeliveryQueue {
   buckets: QueueBucket[];
   total: number;
+}
+
+export interface DoneTodayResponse {
+  orders: OperationsOrderRow[];
+  total: number;
+  capped: boolean;
+  cap: number;
 }
 
 export interface DriverSummary {
@@ -83,6 +92,11 @@ export async function getPickupQueue(): Promise<PickupQueue> {
 
 export async function getDeliveryQueue(): Promise<DeliveryQueue> {
   const { data } = await api.get<ApiEnvelope<DeliveryQueue>>('/partner/operations/deliveries');
+  return data.data;
+}
+
+export async function getDoneToday(): Promise<DoneTodayResponse> {
+  const { data } = await api.get<ApiEnvelope<DoneTodayResponse>>('/partner/operations/done-today');
   return data.data;
 }
 

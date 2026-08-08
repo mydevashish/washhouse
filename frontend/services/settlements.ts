@@ -112,6 +112,8 @@ export interface PartnerSettlementSummary {
   in_flight_settlements_inr: string;
   released_earnings_inr: string;
   items: Array<Omit<SettlementRow, 'laundry_id' | 'partner_user_id' | 'partner_name' | 'partner_email' | 'payout_reference'>>;
+  total_records?: number;
+  /** @deprecated Prefer total_records */
   total: number;
   page: number;
   page_size: number;
@@ -230,7 +232,7 @@ export async function downloadSettlementExport(
   URL.revokeObjectURL(url);
 }
 
-export async function getPartnerSettlements(page = 1, pageSize = 25): Promise<PartnerSettlementSummary> {
+export async function getPartnerSettlements(page = 1, pageSize = 10): Promise<PartnerSettlementSummary> {
   const { data } = await api.get<ApiEnvelope<PartnerSettlementSummary>>('/partner/settlements', {
     params: { page, page_size: pageSize },
   });

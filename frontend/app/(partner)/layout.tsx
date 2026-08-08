@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+
 import { OptionalAuthRefresh } from '@/components/auth/optional-auth-refresh';
 import { RoleGuard } from '@/components/auth/role-guard';
 import { PartnerShell } from '@/components/layout/partner-shell';
@@ -9,7 +11,15 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
     <>
       <OptionalAuthRefresh />
       <RoleGuard roles={PARTNER_PORTAL_ROLES}>
-        <PartnerShell>{children}</PartnerShell>
+        <Suspense
+          fallback={
+            <div className="flex min-h-screen items-center justify-center bg-muted/20 text-sm text-muted-foreground">
+              Loading partner…
+            </div>
+          }
+        >
+          <PartnerShell>{children}</PartnerShell>
+        </Suspense>
       </RoleGuard>
     </>
   );

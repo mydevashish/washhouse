@@ -1,14 +1,12 @@
-'use client';
+﻿'use client';
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { CalendarClock, Package } from 'lucide-react';
+import { CalendarClock } from 'lucide-react';
 import Link from 'next/link';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
-import { InfoBanner } from '@/components/ui/info-banner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerBookingRequestsInbox } from '@/features/partner/booking-requests';
 import { usePartnerBookingRequestsBadge } from '@/features/partner/booking-requests/hooks';
@@ -16,47 +14,23 @@ import { partnerBookingRequestsBadgeCount } from '@/features/partner/booking-req
 import { PartnerPageHeader } from '@/features/partner/components/partner-content';
 import { PartnerOrdersTable } from '@/features/partner/components/partner-orders-table';
 import { PartnerCustomerDeskView } from '@/features/partner/customer-desk';
-import {
-  usePartnerOrders,
-  usePartnerQueriesEnabled,
-} from '@/features/partner/hooks/use-partner-operations';
+import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { PartnerOrdersTodayPanel } from '@/features/partner/orders-hub/partner-orders-today-panel';
 import { PartnerCustomersView } from '@/features/partner/views/partner-customers-view';
 import { OrdersHubTabs } from '@/features/orders-hub/orders-hub-tabs';
 import { buildOrdersHubPath, parseOrdersHubTab } from '@/lib/navigation/orders-hub';
-import type { PartnerOrder } from '@/services/partner';
 
 function HubFallback() {
   return <Skeleton className="h-48 w-full rounded-2xl" />;
 }
 
-function PartnerOrdersQueue({
-  orders,
-  isLoading,
-  isError,
-}: {
-  orders: PartnerOrder[];
-  isLoading: boolean;
-  isError: boolean;
-}) {
+function PartnerOrdersQueue() {
   const enabled = usePartnerQueriesEnabled();
 
   return (
     <>
-      {isLoading && <Skeleton className="h-96 w-full rounded-2xl" />}
-      {enabled && isError && (
-        <InfoBanner variant="destructive" title="Could not load orders">
-          Refresh the page to try again.
-        </InfoBanner>
-      )}
-      {enabled && !isLoading && orders.length === 0 && (
-        <EmptyState
-          icon={Package}
-          title="No orders yet"
-          description="Type a customer phone above to place the first order, or wait for online bookings."
-        />
-      )}
-      {enabled && orders.length > 0 && <PartnerOrdersTable orders={orders} />}
+      {!enabled && <Skeleton className="h-96 w-full rounded-2xl" />}
+      {enabled && <PartnerOrdersTable />}
     </>
   );
 }
@@ -64,7 +38,6 @@ function PartnerOrdersQueue({
 function PartnerOrdersHubBody() {
   const searchParams = useSearchParams();
   const tab = parseOrdersHubTab(searchParams.get('tab'));
-  const ordersQ = usePartnerOrders();
 
   const badgeQ = usePartnerBookingRequestsBadge();
   const requestsBadge = partnerBookingRequestsBadgeCount({
@@ -103,18 +76,15 @@ function PartnerOrdersHubBody() {
         basePath="/partner/orders"
         active={tab}
         badges={requestsBadge > 0 ? { requests: requestsBadge } : undefined}
+        labels={{ directory: 'Customers' }}
       />
 
       {tab === 'orders' ? (
         <div className="space-y-5" data-testid="orders-hub-panel-orders">
           <Suspense fallback={<HubFallback />}>
-            <PartnerOrdersTodayPanel orders={ordersQ.data ?? []} />
+            <PartnerOrdersTodayPanel />
           </Suspense>
-          <PartnerOrdersQueue
-            orders={ordersQ.data ?? []}
-            isLoading={ordersQ.isLoading}
-            isError={ordersQ.isError}
-          />
+          <PartnerOrdersQueue />
         </div>
       ) : null}
 

@@ -280,6 +280,7 @@ export function PartnerOperationsView() {
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsDashboard() });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsPickups() });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsDeliveries() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsDoneToday() });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsDrivers() });
   };
 

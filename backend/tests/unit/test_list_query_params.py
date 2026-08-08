@@ -9,6 +9,38 @@ from app.api.admin_list_params import (
     get_admin_user_list_params,
 )
 from app.api.trust_score_list_params import TrustScoreListParams, get_trust_score_list_params
+from app.core.pagination import (
+    DEFAULT_PAGE_SIZE,
+    ListQueryParams,
+    normalize_page_size,
+)
+
+
+def test_normalize_page_size_defaults_and_allowed() -> None:
+    assert normalize_page_size(None) == DEFAULT_PAGE_SIZE
+    assert normalize_page_size(10) == 10
+    assert normalize_page_size(25) == 25
+    assert normalize_page_size(50) == 50
+    assert normalize_page_size(100) == 100
+
+
+def test_normalize_page_size_rejects_invalid() -> None:
+    assert normalize_page_size(15) == DEFAULT_PAGE_SIZE
+    assert normalize_page_size(20) == DEFAULT_PAGE_SIZE
+    assert normalize_page_size(0) == DEFAULT_PAGE_SIZE
+    assert normalize_page_size(200) == DEFAULT_PAGE_SIZE
+
+
+def test_list_query_params_from_query_defaults_to_ten() -> None:
+    params = ListQueryParams.from_query()
+    assert params.page == 1
+    assert params.page_size == 10
+
+
+def test_list_query_params_from_query_invalid_size_falls_back() -> None:
+    params = ListQueryParams.from_query(page=2, page_size=15)
+    assert params.page == 2
+    assert params.page_size == 10
 
 
 def test_admin_order_list_params_accepts_status() -> None:

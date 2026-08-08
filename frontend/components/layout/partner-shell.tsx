@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
 import { useState } from 'react';
 
@@ -15,21 +15,29 @@ import {
   getPartnerPageTitle,
   isPartnerNavActive,
   partnerNavBadgeKeys,
+  stripNavQuery,
 } from '@/features/partner/lib/partner-nav';
 import { usePartnerAnalytics } from '@/features/partner/hooks/use-partner-operations';
+import { PartnerPracticeModeBanner } from '@/features/partner-shop-floor/components/partner-practice-mode-banner';
+import { ShopFloorBottomNav } from '@/features/partner-shop-floor/components/shop-floor-bottom-nav';
+import { ShopFloorSidebar } from '@/features/partner-shop-floor/components/shop-floor-sidebar';
+import { usePartnerUiMode } from '@/features/partner-shop-floor/hooks/use-partner-ui-mode';
+import { getShopFloorPageTitle } from '@/features/partner-shop-floor/lib/shop-floor-nav';
 import { useScrollRestore } from '@/hooks/use-scroll-restore';
 import { useMounted } from '@/lib/hooks/use-mounted';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
 
-function PartnerSidebar({
+function PartnerAdvancedSidebar({
   pathname,
+  tab,
   badges,
   laundryName,
   userName,
   onNavigate,
 }: {
   pathname: string;
+  tab?: string | null;
   badges: {
     orders: number;
     pickups: number;
@@ -40,27 +48,28 @@ function PartnerSidebar({
   userName?: string;
   onNavigate?: () => void;
 }) {
+  const navActiveOpts = { tab };
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0 border-b border-border/60 px-3 py-3">
         <Link href="/partner" className="block min-w-0" onClick={onNavigate}>
           <p className="truncate text-sm font-semibold">{laundryName ?? 'Your laundry'}</p>
-          <p className="text-[10px] text-muted-foreground">Partner console</p>
+          <p className="text-[10px] text-muted-foreground">Owner command center</p>
         </Link>
       </div>
       <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-2 py-3" aria-label="Partner navigation">
         {PARTNER_NAV_SECTIONS.map((section) => (
           <div key={section.id}>
-            <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+            <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               {section.label}
             </p>
             <ul className="flex flex-col gap-0.5">
               {section.items.map((item) => {
                 const { href, label, icon: Icon } = item;
-                const active = isPartnerNavActive(pathname, href);
+                const active = isPartnerNavActive(pathname, href, navActiveOpts);
                 const badge = partnerNavBadgeKeys(item).reduce((sum, key) => sum + (badges[key] ?? 0), 0);
                 return (
-                  <li key={href}>
+                  <li key={`${stripNavQuery(href)}:${label}`}>
                     <Link
                       href={href}
                       onClick={onNavigate}
@@ -103,8 +112,12 @@ function PartnerSidebar({
 
 export function PartnerShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const ordersTab = searchParams.get('tab');
   const user = useAuthStore((s) => s.user);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { mode } = usePartnerUiMode();
+  const shopFloor = mode === 'shop_floor';
 
   useScrollRestore();
 
@@ -127,9 +140,17 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
   const laundryName = mounted ? analyticsQ.data?.laundry_name : undefined;
   const userName = mounted ? user?.full_name : undefined;
 
-  const sidebar = (
-    <PartnerSidebar
+  const sidebar = shopFloor ? (
+    <ShopFloorSidebar
       pathname={pathname}
+      laundryName={laundryName}
+      userName={userName}
+      onNavigate={() => setMobileOpen(false)}
+    />
+  ) : (
+    <PartnerAdvancedSidebar
+      pathname={pathname}
+      tab={ordersTab}
       badges={badges}
       laundryName={laundryName}
       userName={userName}
@@ -137,13 +158,17 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
     />
   );
 
+  const pageTitle =
+    (shopFloor ? getShopFloorPageTitle(pathname) : null) ??
+    getPartnerPageTitle(pathname, ordersTab);
+
   return (
     <div className="flex h-screen overflow-hidden bg-muted/20">
       <aside className="hidden h-full w-sidebar shrink-0 flex-col border-r border-border bg-background lg:flex">
         {sidebar}
       </aside>
 
-      {mobileOpen && (
+      {mobileOpen && !shopFloor && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
             type="button"
@@ -168,17 +193,26 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <GlobalNavbar
           app="partner"
-          pageTitle={getPartnerPageTitle(pathname)}
+          pageTitle={pageTitle}
           userRole={mounted ? user?.role : undefined}
           laundryName={mounted ? laundryName : undefined}
-          onOpenSidebar={() => setMobileOpen(true)}
+          onOpenSidebar={shopFloor ? undefined : () => setMobileOpen(true)}
           notificationsHref="/partner/notifications"
           settingsHref="/partner/settings"
         />
-        <main id="main-content" className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden" tabIndex={-1}>
+        <main
+          id="main-content"
+          className={cn(
+            'min-h-0 flex-1 overflow-y-auto overflow-x-hidden',
+            shopFloor && 'pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0',
+          )}
+          tabIndex={-1}
+        >
           {mounted && user && <AnnouncementBannerStack />}
+          {mounted && user ? <PartnerPracticeModeBanner /> : null}
           {children}
         </main>
+        {shopFloor ? <ShopFloorBottomNav pathname={pathname} /> : null}
       </div>
     </div>
   );

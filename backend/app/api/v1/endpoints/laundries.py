@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 from app.api.utils import pagination_meta, success_envelope
 from app.api.v1.deps import SessionDep, get_current_user_payload
 from app.core.config import settings
+from app.core.pagination import DEFAULT_PAGE_SIZE
 from app.schemas.laundry import LaundryDetailResponse, LaundryListItem, LaundryServiceResponse
 from app.schemas.laundry_price_list import PublicLaundryPriceListResponse
 from app.schemas.review import ReviewCreateRequest, ReviewResponse
@@ -31,7 +32,7 @@ async def search_laundries(
     city: str | None = None,
     min_rating: float | None = Query(default=None, ge=0, le=5),
     sort: Literal["relevance", "rating", "name"] = Query(default="relevance"),
-    limit: int = Query(default=20, ge=1, le=100),
+    limit: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> dict:
     result = await LaundryService(session).search_public(
@@ -119,7 +120,7 @@ async def list_reviews(
     laundry_id: UUID,
     request: Request,
     session: SessionDep,
-    limit: int = Query(default=20, le=100),
+    limit: int = Query(default=DEFAULT_PAGE_SIZE, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> dict:
     rows = await ReviewService(session).list_for_laundry(laundry_id, limit=limit, offset=offset)

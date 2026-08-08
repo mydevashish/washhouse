@@ -102,3 +102,32 @@
 - Done: Spec; soft-merge Today panel; Prompt 1 nav; Prompt 2 tabs + redirects; **Admin + Partner hub shells** (`features/admin|partner/orders-hub`) with header/tab requests badge, today strip + queue, desk/BR/directory reuse (no forks); Jest + Playwright hub smoke (admin + partner @ 375px, partner search → place-order)
 - Next: Mark done after joint Admin/Partner QA on staging
 - Non-goals: new backend CRUD; merging Laundries or partner walk-in/pickups/deliveries/ops center
+
+## Partner Shop Floor Mode
+- Status: **in progress** (literacy polish shipped — 2026-08-08)
+- Spec: `docs/features/partner-shop-floor.md`
+- Why: Counter staff (non-tech / low literacy) need picture-first intake, color tokens (`R-42`), 4-status floor board, and print (thermal tags/bill + A4 GST) — separate from Advanced Mode nav.
+- Done: Feature spec; **P0 FE** shell; **P1 Cloth Wall**; **color tokens** + tags print; **thermal bill + A4 GST invoice**; **Today cards** + **Ready Diya**; **usability checklist** + Playwright journey + Practice mode; **literacy polish** (calm success, optional voice, patterns, keypad, coach ×3, lazy tiles)
+- Next: QR image; optional `GET /partner/floor/today`; laundry GSTIN on profile; run checklist with real partners
+- Non-goals: replacing Advanced Mode; new catalog photo assets first; Admin Floor; Bluetooth SDK in this slice; offline fake Practice demo APIs
+
+## Partner Owner Command Center (Advanced Mode)
+- Status: **in-progress** (P6 shipped 2026-08-08 — Prompt 6)
+- Spec: `docs/features/partner-owner-command-center.md`
+- Prompts: `.cursor/prompts/partner-owner-command-center.md` (P7 next)
+- Why: Owners need a calm, picture-led cockpit — do-next brief, platform commission %, net ₹, growth, logistics + people — without breaking Shop Floor.
+- IA: 5 pillars — Today · Orders · Logistics · People · Money
+- Done (P1–P3): Nav + agentic home + money intelligence
+- Done (P4): `/partner/logistics` hub tabs (Needs pickup / Out for delivery / Done today); illustrated run cards; Call / Accept / Advance / Assign rider (operations assign APIs); search + rider filter; nav collapsed to single Logistics (legacy `/pickups` `/deliveries` keep working)
+- Done (P5): Orders Hub directory → human CRM cards (LTV, soft tags, Call/WhatsApp/New order/History); insights strip (new this week, repeat rate, top 5); phone on customer-insights API; tab label **Customers**; Desk remains find/create
+- Done (P6): Staff roster cards (role art, Active/Suspended/Offline, on-shift); coverage today (pickup/delivery); add/edit dialog with illustrated role picker; Logistics deep links `?capability=` / `?action=add`; activity filter per card
+- Next: **Prompt 7** — Aesthetic polish, a11y, Playwright, docs ship
+- Non-goals: Shop Floor redesign; Admin rebuild; fake metrics; map SDK; LLM chatbot
+
+## UI fix + backend pagination
+- Status: **done** (Prompt 8 QA lock 2026-08-08)
+- Spec/pack: `PAGINATION_STANDARD.md`, `.cursor/prompts/ui-fix-and-backend-pagination.md`, `docs/qa/ui-and-pagination-inventory.md`, `docs/qa/partner-admin-pagination-matrix.md`
+- Why: Lists must stay fast — server-driven pages, default **10** rows
+- Done: Prompt 0–8; matrix + admin laundry pagination tests + Playwright `partner-pagination.spec.ts`; DoD gate in `PAGINATION_STANDARD.md`
+- Next: Dated deferrals only (public directory, notifications attention API, full CSV export, insights segment cap 500)
+- Non-goals (this pack): Shop Floor redesign; discover client-concat; full CSV export job; dedicated notifications API

@@ -1,4 +1,5 @@
 import { api, type ApiEnvelope } from '@/lib/api';
+import type { ListQueryState, PaginatedList } from '@/lib/pagination/types';
 
 export type AnnouncementStatus = 'draft' | 'scheduled' | 'published' | 'archived';
 export type AnnouncementTarget =
@@ -31,12 +32,7 @@ export interface AnnouncementRow {
   updated_at: string;
 }
 
-export interface AnnouncementListResponse {
-  items: AnnouncementRow[];
-  total: number;
-  limit: number;
-  offset: number;
-}
+export type AnnouncementListResponse = PaginatedList<AnnouncementRow>;
 
 export interface ActiveAnnouncement {
   id: string;
@@ -49,12 +45,12 @@ export interface ActiveAnnouncement {
   acknowledged: boolean;
 }
 
-export async function listAdminAnnouncements(params?: {
-  status?: AnnouncementStatus;
-  limit?: number;
-  offset?: number;
-}): Promise<AnnouncementListResponse> {
-  const { data } = await api.get<ApiEnvelope<AnnouncementListResponse>>('/admin/announcements', { params });
+export async function listAdminAnnouncements(
+  params?: ListQueryState & { status?: AnnouncementStatus },
+): Promise<AnnouncementListResponse> {
+  const { data } = await api.get<ApiEnvelope<AnnouncementListResponse>>('/admin/announcements', {
+    params,
+  });
   return data.data;
 }
 

@@ -1,139 +1,69 @@
 'use client';
 
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Activity, KeyRound, Pencil, UserCog, UserMinus, UserPlus, Users, UserX } from 'lucide-react';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { Button } from '@/components/ui/button';
 import { ClientDate } from '@/components/ui/client-date';
-import { EmptyState } from '@/components/ui/empty-state';
 import { QueryErrorState } from '@/components/feedback/query-error-state';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { KpiCard, KpiGrid } from '@/features/admin/components/kpi-card';
+import {
+  OWNER_IMAGES,
+  OwnerEmptyState,
+  OwnerSectionHeader,
+} from '@/features/partner/components/owner';
+import { OwnerStaffCard } from '@/features/partner/components/owner/owner-staff-card';
+import { OwnerStaffCoverage } from '@/features/partner/components/owner/owner-staff-coverage';
+import {
+  OwnerStaffFormDialog,
+  type StaffFormValues,
+} from '@/features/partner/components/owner/owner-staff-form-dialog';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
-import { formatCount } from '@/features/admin/lib/format-admin';
+import {
+  filterStaffByCapability,
+  parseStaffCapability,
+  type StaffCapability,
+} from '@/features/partner/lib/owner-staff';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
+import { cn } from '@/lib/utils';
 import {
   ACTIVITY_LABELS,
-  DEFAULT_WORK_SCHEDULE,
-  STAFF_ROLES,
-  STAFF_ROLE_LABELS,
-  WEEKDAYS,
   activateStaffMember,
   createStaffMember,
   deactivateStaffMember,
-  formatWorkSchedule,
   getStaffActivity,
-  getStaffDashboard,
   listStaffMembers,
   resetStaffPassword,
   suspendStaffMember,
   unsuspendStaffMember,
   updateStaffMember,
+  type StaffActivityRow,
   type StaffMember,
-  type StaffRole,
-  type WorkSchedule,
 } from '@/services/staff-management';
-import { cn } from '@/lib/utils';
 
-function StaffStatusPill({ active, suspended }: { active: boolean; suspended?: boolean }) {
-  if (suspended) {
-    return (
-      <span className="inline-flex rounded-full bg-orange-500/15 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-300">
-        Suspended
-      </span>
-    );
-  }
-  return (
-    <span
-      className={cn(
-        'inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold',
-        active ? 'bg-success-muted text-success' : 'bg-muted text-muted-foreground',
-      )}
-    >
-      {active ? 'Active' : 'Inactive'}
-    </span>
-  );
-}
-
-function ScheduleFields({
-  schedule,
-  onChange,
-}: {
-  schedule: WorkSchedule;
-  onChange: (s: WorkSchedule) => void;
-}) {
-  const toggleDay = (day: string) => {
-    const days = schedule.days.includes(day)
-      ? schedule.days.filter((d) => d !== day)
-      : [...schedule.days, day];
-    onChange({ ...schedule, days });
-  };
-  return (
-    <div className="grid gap-2 sm:col-span-2 lg:col-span-5">
-      <Label>Work schedule</Label>
-      <div className="flex flex-wrap gap-1">
-        {WEEKDAYS.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => toggleDay(id)}
-            className={cn(
-              'rounded-md border px-2 py-1 text-[10px] font-medium',
-              schedule.days.includes(id) ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground',
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <Input
-          type="time"
-          value={schedule.start_time}
-          onChange={(e) => onChange({ ...schedule, start_time: e.target.value.slice(0, 5) })}
-          className="h-9 text-sm"
-        />
-        <Input
-          type="time"
-          value={schedule.end_time}
-          onChange={(e) => onChange({ ...schedule, end_time: e.target.value.slice(0, 5) })}
-          className="h-9 text-sm"
-        />
-      </div>
-    </div>
-  );
-}
-
-export function PartnerStaffView() {
+function PartnerStaffViewBody() {
   const queryClient = useQueryClient();
   const enabled = usePartnerQueriesEnabled();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [role, setRole] = useState<StaffRole>('pickup_agent');
-  const [schedule, setSchedule] = useState<WorkSchedule>(DEFAULT_WORK_SCHEDULE);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editPhone, setEditPhone] = useState('');
-  const [editRole, setEditRole] = useState<StaffRole>('pickup_agent');
-  const [editSchedule, setEditSchedule] = useState<WorkSchedule>(DEFAULT_WORK_SCHEDULE);
+  const capabilityFilter = parseStaffCapability(searchParams.get('capability'));
+  const wantAdd = searchParams.get('action') === 'add';
 
-  const dashQ = useQuery({
-    queryKey: queryKeys.partnerStaffDashboard(),
-    queryFn: getStaffDashboard,
-    enabled,
-    staleTime: STALE.adminDashboard,
-  });
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [editing, setEditing] = useState<StaffMember | null>(null);
+  const [activityStaffId, setActivityStaffId] = useState<string | null>(null);
+  const [preferCapability, setPreferCapability] = useState<StaffCapability | null>(capabilityFilter);
 
   const staffQ = useQuery({
     queryKey: queryKeys.partnerStaffMembers(),
@@ -142,49 +72,74 @@ export function PartnerStaffView() {
     staleTime: STALE.adminDashboard,
   });
 
-  const activityQ = useQuery({
-    queryKey: queryKeys.partnerStaffActivity(),
-    queryFn: () => getStaffActivity(),
+  const activityList = useServerList<StaffActivityRow, { staff_id?: string }>({
+    queryKey: queryKeys.partnerStaffActivity(activityStaffId ?? undefined),
+    fetcher: (params) =>
+      getStaffActivity({
+        staff_id: params.staff_id,
+        page: params.page,
+        page_size: params.page_size,
+      }),
+    filters: activityStaffId ? { staff_id: activityStaffId } : {},
+    defaultPageSize: 10,
     enabled,
-    staleTime: 30_000,
   });
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerStaffMembers() });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerStaffDashboard() });
-    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerStaffActivity() });
+    void queryClient.invalidateQueries({ queryKey: ['partner-staff-activity'] });
+  };
+
+  useEffect(() => {
+    if (wantAdd) {
+      setFormMode('create');
+      setEditing(null);
+      setPreferCapability(capabilityFilter);
+      setFormOpen(true);
+    }
+  }, [wantAdd, capabilityFilter]);
+
+  const clearActionParam = () => {
+    if (!wantAdd && !capabilityFilter) return;
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('action');
+    const qs = next.toString();
+    router.replace(qs ? `/partner/staff?${qs}` : '/partner/staff', { scroll: false });
   };
 
   const createM = useMutation({
-    mutationFn: () =>
+    mutationFn: (values: StaffFormValues) =>
       createStaffMember({
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim() || undefined,
-        role,
-        work_schedule: schedule,
+        name: values.name,
+        email: values.email,
+        phone: values.phone || undefined,
+        role: values.role,
+        work_schedule: values.work_schedule,
       }),
     onSuccess: (r) => {
       toast.success(r.temporary_password ? `Staff created. Temp password: ${r.temporary_password}` : 'Staff created');
-      setName('');
-      setEmail('');
-      setPhone('');
+      setFormOpen(false);
+      clearActionParam();
       invalidate();
     },
     onError: () => toast.error('Could not create staff'),
   });
 
   const updateM = useMutation({
-    mutationFn: (id: string) =>
-      updateStaffMember(id, {
-        name: editName.trim(),
-        phone: editPhone.trim() || undefined,
-        role: editRole,
-        work_schedule: editSchedule,
-      }),
+    mutationFn: (values: StaffFormValues) => {
+      if (!editing) throw new Error('No staff selected');
+      return updateStaffMember(editing.id, {
+        name: values.name,
+        phone: values.phone || undefined,
+        role: values.role,
+        work_schedule: values.work_schedule,
+      });
+    },
     onSuccess: () => {
       toast.success('Staff updated');
-      setEditId(null);
+      setFormOpen(false);
+      setEditing(null);
       invalidate();
     },
     onError: () => toast.error('Could not update staff'),
@@ -192,13 +147,19 @@ export function PartnerStaffView() {
 
   const deactivateM = useMutation({
     mutationFn: deactivateStaffMember,
-    onSuccess: () => { toast.success('Staff deactivated'); invalidate(); },
+    onSuccess: () => {
+      toast.success('Staff deactivated');
+      invalidate();
+    },
     onError: () => toast.error('Could not deactivate staff'),
   });
 
   const activateM = useMutation({
     mutationFn: activateStaffMember,
-    onSuccess: () => { toast.success('Staff activated'); invalidate(); },
+    onSuccess: () => {
+      toast.success('Staff activated');
+      invalidate();
+    },
     onError: () => toast.error('Could not activate staff'),
   });
 
@@ -213,199 +174,245 @@ export function PartnerStaffView() {
 
   const suspendM = useMutation({
     mutationFn: (id: string) => suspendStaffMember(id, 'Suspended by manager'),
-    onSuccess: () => { toast.success('Staff suspended'); invalidate(); },
+    onSuccess: () => {
+      toast.success('Staff suspended');
+      invalidate();
+    },
     onError: () => toast.error('Could not suspend staff'),
   });
 
   const unsuspendM = useMutation({
     mutationFn: unsuspendStaffMember,
-    onSuccess: () => { toast.success('Staff unsuspended'); invalidate(); },
+    onSuccess: () => {
+      toast.success('Staff unsuspended');
+      invalidate();
+    },
     onError: () => toast.error('Could not unsuspend staff'),
   });
 
   const staff = staffQ.data ?? [];
-  const dash = dashQ.data;
+  const filtered = useMemo(
+    () => filterStaffByCapability(staff, capabilityFilter),
+    [staff, capabilityFilter],
+  );
+  const busy =
+    createM.isPending ||
+    updateM.isPending ||
+    deactivateM.isPending ||
+    activateM.isPending ||
+    resetM.isPending ||
+    suspendM.isPending ||
+    unsuspendM.isPending;
 
-  const startEdit = (s: StaffMember) => {
-    setEditId(s.id);
-    setEditName(s.name);
-    setEditPhone(s.phone ?? '');
-    setEditRole((s.role as StaffRole) in STAFF_ROLE_LABELS ? (s.role as StaffRole) : 'pickup_agent');
-    setEditSchedule(s.work_schedule ?? DEFAULT_WORK_SCHEDULE);
+  const openCreate = (cap?: StaffCapability | null) => {
+    setFormMode('create');
+    setEditing(null);
+    setPreferCapability(cap ?? capabilityFilter);
+    setFormOpen(true);
+  };
+
+  const openEdit = (member: StaffMember) => {
+    setFormMode('edit');
+    setEditing(member);
+    setPreferCapability(null);
+    setFormOpen(true);
   };
 
   return (
     <PartnerContent className="space-y-5">
+      <div data-testid="partner-staff-view" className="space-y-5">
       <PartnerPageHeader
-        title="Staff management"
-        description="Create login accounts, assign roles and branches, and track team activity."
+        title="Staff"
+        description="Roster, today’s pickup/delivery coverage, and calm add/edit — assign still happens on Logistics runs."
+        actions={
+          <Button type="button" className="min-h-[44px] gap-1.5" onClick={() => openCreate()}>
+            <UserPlus className="h-3.5 w-3.5" aria-hidden />
+            Add helper
+          </Button>
+        }
       />
 
-      {dashQ.isError && (
+      {staffQ.isError ? (
         <QueryErrorState
-          title="Could not load staff dashboard"
-          message={getApiErrorMessage(dashQ.error)}
-          onRetry={() => void dashQ.refetch()}
-          isRetrying={dashQ.isFetching}
-        />
-      )}
-      {staffQ.isError && (
-        <QueryErrorState
-          title="Could not load staff list"
+          title="Could not load staff"
           message={getApiErrorMessage(staffQ.error)}
           onRetry={() => void staffQ.refetch()}
           isRetrying={staffQ.isFetching}
         />
-      )}
-
-      {dashQ.isLoading ? (
-        <Skeleton className="h-24 w-full rounded-2xl" />
-      ) : dash ? (
-        <KpiGrid className="sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard label="Total staff" value={formatCount(dash.total_staff)} icon={Users} status="neutral" />
-          <KpiCard label="Active staff" value={formatCount(dash.active_staff)} icon={UserCog} status="healthy" />
-          <KpiCard label="Online now" value={formatCount(dash.online_staff)} icon={Activity} status="neutral" />
-          <KpiCard label="Inactive staff" value={formatCount(dash.inactive_staff)} icon={UserX} status="warning" />
-        </KpiGrid>
       ) : null}
 
-      <PartnerPanel title="Create staff account" bodyClassName="px-4 py-4 sm:px-5">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <div className="grid gap-1.5 lg:col-span-2">
-            <Label htmlFor="staff-name">Full name</Label>
-            <Input id="staff-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
-          </div>
-          <div className="grid gap-1.5 lg:col-span-2">
-            <Label htmlFor="staff-email">Email (login)</Label>
-            <Input id="staff-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="staff@laundry.com" />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="staff-phone">Phone</Label>
-            <Input id="staff-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Optional" />
-          </div>
-          <div className="grid gap-1.5 sm:col-span-2">
-            <Label htmlFor="staff-role">Role</Label>
-            <Select id="staff-role" value={role} onChange={(e) => setRole(e.target.value as StaffRole)} className="h-10">
-              {STAFF_ROLES.map((r) => (
-                <option key={r} value={r}>{STAFF_ROLE_LABELS[r]}</option>
-              ))}
-            </Select>
-          </div>
-          <ScheduleFields schedule={schedule} onChange={setSchedule} />
-          <div className="flex items-end sm:col-span-2 lg:col-span-5">
-            <Button type="button" disabled={!name.trim() || !email.trim() || createM.isPending} onClick={() => createM.mutate()}>
-              Create staff
-            </Button>
-          </div>
+      {staffQ.isLoading ? <Skeleton className="h-36 w-full rounded-2xl" /> : null}
+
+      {!staffQ.isLoading && staff.length > 0 ? <OwnerStaffCoverage members={staff} /> : null}
+
+      {capabilityFilter ? (
+        <div
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-info-muted/40 px-3 py-2 text-sm text-info ring-1 ring-info/30"
+          role="status"
+        >
+          <span>
+            Showing staff who can run <strong className="font-semibold">{capabilityFilter}</strong> (from Logistics).
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="min-h-[40px]"
+            onClick={() => router.replace('/partner/staff', { scroll: false })}
+          >
+            Clear filter
+          </Button>
         </div>
-      </PartnerPanel>
+      ) : null}
 
-      {staffQ.isLoading && <Skeleton className="h-48 w-full rounded-2xl" />}
-      {!staffQ.isLoading && staff.length === 0 && (
-        <EmptyState icon={UserCog} title="No staff yet" description="Create staff accounts with role-based login access." />
-      )}
+      <OwnerSectionHeader
+        title="Team roster"
+        description={
+          filtered.length === staff.length
+            ? `${staff.length} people`
+            : `${filtered.length} of ${staff.length} matching filter`
+        }
+        action={
+          <Button type="button" variant="outline" size="sm" className="min-h-[44px]" onClick={() => openCreate()}>
+            Add
+          </Button>
+        }
+      />
 
-      {staff.length > 0 && (
-        <PartnerPanel title="Team" meta={`${staff.length} members`} bodyClassName="divide-y divide-border/50 p-0">
-          {staff.map((s) => (
-            <div key={s.id} className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              {editId === s.id ? (
-                <div className="grid flex-1 gap-2 sm:grid-cols-2">
-                  <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-9 text-sm" />
-                  <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} className="h-9 text-sm" placeholder="Phone" />
-                  <Select value={editRole} onChange={(e) => setEditRole(e.target.value as StaffRole)} className="h-9 text-sm sm:col-span-2">
-                    {STAFF_ROLES.map((r) => (
-                      <option key={r} value={r}>{STAFF_ROLE_LABELS[r]}</option>
-                    ))}
-                  </Select>
-                  <ScheduleFields schedule={editSchedule} onChange={setEditSchedule} />
-                </div>
-              ) : (
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium">{s.name}</p>
-                    <StaffStatusPill active={s.is_active} suspended={s.is_suspended} />
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium">{s.role_label}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {s.email ?? '—'}{s.phone ? ` · ${s.phone}` : ''} · Branch: {s.laundry_name}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">{formatWorkSchedule(s.work_schedule)}</p>
-                  {s.last_login_at && (
-                    <p className="text-[10px] text-muted-foreground">
-                      Last login <ClientDate iso={s.last_login_at} mode="datetime" />
-                    </p>
-                  )}
-                </div>
-              )}
-              <div className="flex flex-wrap gap-1.5">
-                {editId === s.id ? (
-                  <>
-                    <Button size="sm" disabled={updateM.isPending} onClick={() => updateM.mutate(s.id)}>Save</Button>
-                    <Button size="sm" variant="outline" onClick={() => setEditId(null)}>Cancel</Button>
-                  </>
-                ) : (
-                  <>
-                    <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => startEdit(s)}>
-                      <Pencil className="h-3.5 w-3.5" aria-hidden /> Edit
-                    </Button>
-                    <Button size="sm" variant="outline" className="h-8 gap-1" disabled={resetM.isPending} onClick={() => resetM.mutate(s.id)}>
-                      <KeyRound className="h-3.5 w-3.5" aria-hidden /> Reset pwd
-                    </Button>
-                    {s.is_active && !s.is_suspended && (
-                      <Button size="sm" variant="outline" className="h-8 gap-1" disabled={suspendM.isPending} onClick={() => suspendM.mutate(s.id)}>
-                        <UserMinus className="h-3.5 w-3.5" aria-hidden /> Suspend
-                      </Button>
-                    )}
-                    {s.is_suspended && (
-                      <Button size="sm" variant="outline" className="h-8" disabled={unsuspendM.isPending} onClick={() => unsuspendM.mutate(s.id)}>
-                        Unsuspend
-                      </Button>
-                    )}
-                    {s.is_active && !s.is_suspended ? (
-                      <Button size="sm" variant="outline" className="h-8 gap-1" disabled={deactivateM.isPending} onClick={() => deactivateM.mutate(s.id)}>
-                        <UserMinus className="h-3.5 w-3.5" aria-hidden /> Deactivate
-                      </Button>
-                    ) : !s.is_active ? (
-                      <Button size="sm" variant="outline" className="h-8" disabled={activateM.isPending} onClick={() => activateM.mutate(s.id)}>
-                        Activate
-                      </Button>
-                    ) : null}
-                  </>
-                )}
-              </div>
-            </div>
+      {staffQ.isLoading ? <Skeleton className="h-64 w-full rounded-2xl" /> : null}
+
+      {!staffQ.isLoading && staff.length === 0 ? (
+        <OwnerEmptyState
+          title="No helpers yet"
+          description="Add your first pickup or delivery helper so Logistics can assign runs."
+          imageSrc={OWNER_IMAGES.emptyStaff}
+          imageAlt="Quiet shop ready for a team"
+          action={{ label: 'Add your first helper', href: '/partner/staff?action=add' }}
+        />
+      ) : null}
+
+      {!staffQ.isLoading && staff.length > 0 && filtered.length === 0 ? (
+        <OwnerEmptyState
+          title="No matching staff"
+          description="Nobody with this capability yet — add a helper or clear the filter."
+          imageSrc={OWNER_IMAGES.people}
+          imageAlt="Team"
+          action={{
+            label: `Add ${capabilityFilter ?? 'staff'}`,
+            href: `/partner/staff?action=add${capabilityFilter ? `&capability=${capabilityFilter}` : ''}`,
+          }}
+        />
+      ) : null}
+
+      {filtered.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" data-testid="owner-staff-grid">
+          {filtered.map((member) => (
+            <OwnerStaffCard
+              key={member.id}
+              member={member}
+              busy={busy}
+              onEdit={() => openEdit(member)}
+              onActivity={() =>
+                setActivityStaffId((prev) => (prev === member.id ? null : member.id))
+              }
+              onResetPassword={() => resetM.mutate(member.id)}
+              onSuspend={() => suspendM.mutate(member.id)}
+              onUnsuspend={() => unsuspendM.mutate(member.id)}
+              onDeactivate={() => deactivateM.mutate(member.id)}
+              onActivate={() => activateM.mutate(member.id)}
+            />
           ))}
-        </PartnerPanel>
-      )}
+        </div>
+      ) : null}
 
-      <PartnerPanel title="Activity log" bodyClassName="p-0">
-        {activityQ.isError && (
+      <PartnerPanel
+        title={activityStaffId ? 'Activity for selected staff' : 'Recent activity'}
+        meta={activityStaffId ? 'Filtered' : 'Team'}
+        bodyClassName="p-0"
+        toolbar={
+          activityStaffId ? (
+            <Button type="button" variant="ghost" size="sm" onClick={() => setActivityStaffId(null)}>
+              Show all
+            </Button>
+          ) : undefined
+        }
+      >
+        {activityList.isError ? (
           <div className="p-4">
             <QueryErrorState
               title="Could not load activity"
-              message={getApiErrorMessage(activityQ.error)}
-              onRetry={() => void activityQ.refetch()}
-              isRetrying={activityQ.isFetching}
+              message={getApiErrorMessage(activityList.error)}
+              onRetry={() => void activityList.refetch()}
+              isRetrying={activityList.isFetching}
             />
           </div>
-        )}
-        {activityQ.isLoading && <Skeleton className="m-4 h-32 w-full" />}
-        {!activityQ.isLoading && (activityQ.data ?? []).length === 0 && (
+        ) : null}
+        {activityList.isLoading ? <Skeleton className="m-4 h-32 w-full" /> : null}
+        {!activityList.isLoading && activityList.rows.length === 0 ? (
           <p className="px-4 py-6 text-sm text-muted-foreground">No activity recorded yet.</p>
-        )}
+        ) : null}
         <div className="divide-y divide-border/50">
-          {(activityQ.data ?? []).map((row) => (
-            <div key={row.id} className="flex flex-col gap-0.5 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+          {activityList.rows.map((row) => (
+            <div
+              key={row.id}
+              className={cn(
+                'flex flex-col gap-0.5 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between',
+                activityStaffId && row.staff_id === activityStaffId && 'bg-muted/30',
+              )}
+            >
               <div>
                 <p className="text-sm font-medium">{row.staff_name}</p>
-                <p className="text-xs text-muted-foreground">{row.description ?? ACTIVITY_LABELS[row.action] ?? row.action}</p>
+                <p className="text-xs text-muted-foreground">
+                  {row.description ?? ACTIVITY_LABELS[row.action] ?? row.action}
+                </p>
               </div>
               <ClientDate iso={row.created_at} mode="datetime" className="text-[10px] text-muted-foreground" />
             </div>
           ))}
         </div>
+        {activityList.totalRecords > 0 ? (
+          <div className="border-t border-border/50 px-2 py-2">
+            <DataTablePagination
+              page={activityList.page}
+              pageCount={activityList.pageCount}
+              pageSize={activityList.pageSize}
+              pageStart={activityList.pageStart}
+              pageEnd={activityList.pageEnd}
+              totalCount={activityList.totalRecords}
+              onPageChange={activityList.setPage}
+              onPageSizeChange={activityList.setPageSize}
+            />
+          </div>
+        ) : null}
       </PartnerPanel>
+
+      <OwnerStaffFormDialog
+        open={formOpen}
+        onOpenChange={(open) => {
+          setFormOpen(open);
+          if (!open) {
+            setEditing(null);
+            clearActionParam();
+          }
+        }}
+        mode={formMode}
+        initial={editing}
+        preferCapability={preferCapability}
+        pending={createM.isPending || updateM.isPending}
+        onSubmit={(values) => {
+          if (formMode === 'create') createM.mutate(values);
+          else updateM.mutate(values);
+        }}
+      />
+      </div>
     </PartnerContent>
+  );
+}
+
+export function PartnerStaffView() {
+  return (
+    <Suspense fallback={<Skeleton className="h-96 w-full rounded-2xl" />}>
+      <PartnerStaffViewBody />
+    </Suspense>
   );
 }

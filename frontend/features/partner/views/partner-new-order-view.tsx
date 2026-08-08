@@ -99,7 +99,7 @@ export function PartnerNewOrderView() {
     onSuccess: (order) => {
       toast.success(`Walk-in order #${order.tracking_code} created`);
       void queryClient.invalidateQueries({ queryKey: queryKeys.partnerWalkInOrders() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOrders() });
+      void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.partnerAnalytics() });
       router.push(`/partner/orders/${order.id}`);
     },

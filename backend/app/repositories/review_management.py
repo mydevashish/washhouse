@@ -64,14 +64,16 @@ class ReviewManagementRepository:
         max_rating: int | None = None,
         has_reply: bool | None = None,
         abuse_reported: bool | None = None,
+        is_fake: bool | None = None,
         status: ReviewStatus | None = None,
         statuses: tuple[ReviewStatus, ...] | None = None,
         limit: int = 50,
         offset: int = 0,
-    ) -> list[tuple[Review, str]]:
+    ) -> list[tuple[Review, str, str | None]]:
         q = (
-            select(Review, User.full_name)
+            select(Review, User.full_name, Laundry.name)
             .join(User, User.id == Review.user_id)
+            .outerjoin(Laundry, Laundry.id == Review.laundry_id)
             .order_by(Review.created_at.desc())
             .limit(limit)
             .offset(offset)
@@ -90,6 +92,8 @@ class ReviewManagementRepository:
             q = q.where(Review.partner_reply.is_(None))
         if abuse_reported is not None:
             q = q.where(Review.abuse_reported.is_(abuse_reported))
+        if is_fake is not None:
+            q = q.where(Review.is_fake.is_(is_fake))
         if status is not None:
             q = q.where(Review.status == status)
         elif statuses:
@@ -99,13 +103,35 @@ class ReviewManagementRepository:
 
     async def count_reviews(
         self,
-        laundry_id: UUID,
+        laundry_id: UUID | None = None,
         *,
+        rating: int | None = None,
+        min_rating: int | None = None,
+        max_rating: int | None = None,
+        has_reply: bool | None = None,
+        abuse_reported: bool | None = None,
+        is_fake: bool | None = None,
         status: ReviewStatus | None = None,
         statuses: tuple[ReviewStatus, ...] | None = None,
     ) -> int:
-        q = select(func.count()).select_from(Review).where(Review.laundry_id == laundry_id)
-        if status:
+        q = select(func.count()).select_from(Review)
+        if laundry_id:
+            q = q.where(Review.laundry_id == laundry_id)
+        if rating is not None:
+            q = q.where(Review.rating == rating)
+        if min_rating is not None:
+            q = q.where(Review.rating >= min_rating)
+        if max_rating is not None:
+            q = q.where(Review.rating <= max_rating)
+        if has_reply is True:
+            q = q.where(Review.partner_reply.isnot(None))
+        elif has_reply is False:
+            q = q.where(Review.partner_reply.is_(None))
+        if abuse_reported is not None:
+            q = q.where(Review.abuse_reported.is_(abuse_reported))
+        if is_fake is not None:
+            q = q.where(Review.is_fake.is_(is_fake))
+        if status is not None:
             q = q.where(Review.status == status)
         elif statuses:
             q = q.where(Review.status.in_(statuses))

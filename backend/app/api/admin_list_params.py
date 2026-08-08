@@ -11,6 +11,14 @@ from fastapi import Depends, Query
 from app.core.pagination import DEFAULT_PAGE_SIZE, ListQueryParams
 
 
+def _optional_str(value: str | None) -> str | None:
+    """Normalize optional query strings; ignore FastAPI Query defaults in unit calls."""
+    if not isinstance(value, str):
+        return None
+    cleaned = value.strip()
+    return cleaned or None
+
+
 @dataclass(frozen=True)
 class AdminUserListParams(ListQueryParams):
     role: str | None = None
@@ -80,9 +88,9 @@ def get_admin_order_list_params(
         search=base.search,
         sort_by=base.sort_by,
         sort_order=base.sort_order,
-        status=status,
-        customer_phone=customer_phone.strip() if customer_phone and customer_phone.strip() else None,
-        user_id=user_id.strip() if user_id and user_id.strip() else None,
+        status=_optional_str(status),
+        customer_phone=_optional_str(customer_phone),
+        user_id=_optional_str(user_id),
     )
 
 
@@ -119,6 +127,37 @@ def get_admin_audit_list_params(
     )
 
 
+@dataclass(frozen=True)
+class AdminLaundryListParams(ListQueryParams):
+    status: str | None = None
+
+
+def get_admin_laundry_list_params(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=100),
+    search: str | None = Query(default=None, max_length=200),
+    sort_by: str | None = Query(default="created_at", max_length=64),
+    sort_order: str = Query(default="desc", pattern="^(asc|desc)$"),
+    status: str | None = Query(default=None),
+) -> AdminLaundryListParams:
+    base = ListQueryParams.from_query(
+        page=page,
+        page_size=page_size,
+        search=search,
+        sort_by=sort_by,
+        sort_order=sort_order,
+    )
+    return AdminLaundryListParams(
+        page=base.page,
+        page_size=base.page_size,
+        search=base.search,
+        sort_by=base.sort_by,
+        sort_order=base.sort_order,
+        status=_optional_str(status),
+    )
+
+
 AdminUserListQuery = Annotated[AdminUserListParams, Depends(get_admin_user_list_params)]
 AdminOrderListQuery = Annotated[AdminOrderListParams, Depends(get_admin_order_list_params)]
 AdminAuditListQuery = Annotated[AdminAuditListParams, Depends(get_admin_audit_list_params)]
+AdminLaundryListQuery = Annotated[AdminLaundryListParams, Depends(get_admin_laundry_list_params)]

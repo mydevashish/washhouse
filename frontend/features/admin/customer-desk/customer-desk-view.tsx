@@ -32,7 +32,7 @@ import { customerDeskLookupKey } from '@/features/admin/customer-desk/types';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import { queryKeys } from '@/lib/query-keys';
-import { listAllLaundries } from '@/services/admin';
+import { listLaundryOptions } from '@/services/admin';
 import { STALE } from '@/lib/query-config';
 
 function parseLookupFromSearch(
@@ -105,7 +105,7 @@ export function CustomerDeskView({ embedded = false }: CustomerDeskViewProps) {
 
   const laundriesQ = useQuery({
     queryKey: queryKeys.adminLaundries(),
-    queryFn: listAllLaundries,
+    queryFn: listLaundryOptions,
     staleTime: STALE.adminDashboard,
   });
 

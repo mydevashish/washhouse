@@ -61,7 +61,7 @@ describe('CustomerDeskOrdersTab empty state', () => {
       data: {
         items: [],
         page: 1,
-        page_size: 20,
+        page_size: 10,
         total_records: 0,
         total_pages: 0,
         has_next: false,
@@ -97,7 +97,7 @@ describe('CustomerDeskOrdersTab empty state', () => {
         data: {
           items: [orderRow({ tracking_code: page === 1 ? 'DLMPAGE1' : 'DLMPAGE2' })],
           page,
-          page_size: 20,
+          page_size: 10,
           total_records: 40,
           total_pages: 2,
           has_next: page < 2,

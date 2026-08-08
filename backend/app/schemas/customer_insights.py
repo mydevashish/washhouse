@@ -31,6 +31,7 @@ class CustomerInsightsDashboard(BaseModel):
     avg_retention_score: str
     avg_lifetime_spend_inr: str
     avg_order_value_inr: str
+    new_this_week: int = 0
 
 
 class CustomerInsightRow(BaseModel):
@@ -38,6 +39,7 @@ class CustomerInsightRow(BaseModel):
 
     user_id: UUID
     name: str
+    phone: str | None = None
     lifetime_spend_inr: str
     order_count: int
     avg_order_value_inr: str
@@ -51,8 +53,13 @@ class CustomerInsightRow(BaseModel):
     risk_label: str
 
 
+# Prefer PaginatedListResponse[CustomerInsightRow] at the API boundary.
+# Kept as a named alias for older imports/tests during Prompt 3 migration.
 class CustomerInsightsListResponse(BaseModel):
     items: list[CustomerInsightRow]
-    total: int
-    limit: int
-    offset: int
+    page: int
+    page_size: int
+    total_records: int
+    total_pages: int
+    has_next: bool
+    has_previous: bool

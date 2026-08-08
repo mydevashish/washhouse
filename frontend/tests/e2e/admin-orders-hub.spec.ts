@@ -23,7 +23,7 @@ async function mockHubApis(page: Page) {
         data: {
           items: [],
           page: 1,
-          page_size: 20,
+          page_size: 10,
           total: 0,
           total_pages: 0,
           has_next: false,
@@ -47,7 +47,7 @@ async function mockHubApis(page: Page) {
         data: {
           items: [],
           page: 1,
-          page_size: 20,
+          page_size: 10,
           total_records: 0,
           total_pages: 0,
           has_next: false,
@@ -66,7 +66,7 @@ async function mockHubApis(page: Page) {
         data: {
           items: [],
           page: 1,
-          page_size: 20,
+          page_size: 10,
           total_records: 0,
           total_pages: 0,
           has_next: false,
@@ -104,7 +104,18 @@ async function mockHubApis(page: Page) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ data: [], meta: {} }),
+      body: JSON.stringify({
+        data: {
+          items: [],
+          page: 1,
+          page_size: 10,
+          total_records: 0,
+          total_pages: 1,
+          has_next: false,
+          has_previous: false,
+        },
+        meta: {},
+      }),
     });
   });
 }

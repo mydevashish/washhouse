@@ -7,7 +7,7 @@ import { CustomerDeskPlaceOrderForm } from '@/features/admin/customer-desk/compo
 import type { CustomerDeskProfile } from '@/features/admin/customer-desk/types';
 
 jest.mock('@/services/admin', () => ({
-  listAllLaundries: jest.fn().mockResolvedValue([
+  listLaundryOptions: jest.fn().mockResolvedValue([
     {
       id: '11111111-1111-4111-8111-111111111111',
       name: 'Sparkle Wash',

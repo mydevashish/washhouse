@@ -24,13 +24,13 @@ describe('partner booking request list params', () => {
         q: 'BR-',
         priority: 'urgent',
         sort: 'sla',
-        page_size: 20,
+        page_size: 10,
       }),
     ).toEqual({
       q: 'BR-',
       priority: 'urgent',
       sort: 'sla',
-      page_size: 20,
+      page_size: 10,
     });
   });
 });

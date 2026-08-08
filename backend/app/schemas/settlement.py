@@ -176,7 +176,7 @@ class PartnerSettlementSummaryResponse(BaseModel):
     items: list[PartnerSettlementRow] = Field(default_factory=list)
     total: int = 0
     page: int = 1
-    page_size: int = 25
+    page_size: int = 10
     total_pages: int = 1
 
 

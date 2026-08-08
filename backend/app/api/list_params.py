@@ -1,4 +1,12 @@
-"""FastAPI dependency for standardized list query parameters."""
+"""FastAPI dependency for standardized list query parameters.
+
+New list endpoints should prefer ``ListParams`` (or a module ``*_list_params.py``
+that extends ``ListQueryParams``) and return ``PaginatedListResponse``.
+
+Contract: ``page`` (default 1), ``page_size`` (default **10**, allowed 10/25/50/100),
+``search``, ``sort_by``, ``sort_order``. Invalid ``page_size`` → 10 via
+``ListQueryParams.from_query`` / ``normalize_page_size``.
+"""
 
 from __future__ import annotations
 

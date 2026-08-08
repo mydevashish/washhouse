@@ -198,7 +198,7 @@ async def test_walk_in_order_appears_in_partner_orders_list(
         headers=_partner_headers(token),
     )
     assert list_response.status_code == 200
-    orders = list_response.json()["data"]
+    orders = list_response.json()["data"]["items"]
     match = next((row for row in orders if row["id"] == order_id), None)
     assert match is not None
     assert match["order_source"] == OrderSource.walk_in.value
@@ -358,3 +358,108 @@ async def test_send_order_status_whatsapp_uses_provider(
     assert variables["customer_name"] == "WhatsApp Test"
     assert variables["tracking_code"] == order.tracking_code
     assert variables["laundry_name"] == laundry.name
+
+
+@patch("app.tasks.order_notifications.send_order_status_whatsapp")
+async def test_create_walk_in_order_from_catalog_item(
+    mock_whatsapp_task: MagicMock,
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """Cloth Wall path: catalog_item_id + offered price → order lines via service bridge."""
+    from app.models.catalog import LaundryItemPrice, PlatformCatalogItem
+    from app.models.enums import CatalogCategory, CatalogUnit
+
+    mock_whatsapp_task.delay = MagicMock()
+    _partner, laundry, _service, token = await _seed_partner_laundry(db_session)
+
+    shirt = PlatformCatalogItem(
+        slug=f"men-shirt-{uuid4().hex[:8]}",
+        name="Shirt / T-shirt",
+        category=CatalogCategory.men,
+        unit=CatalogUnit.piece,
+        suggested_dry_clean_inr=Decimal("69.00"),
+        suggested_press_inr=Decimal("15.00"),
+        sort_order=10,
+    )
+    db_session.add(shirt)
+    await db_session.flush()
+    db_session.add(
+        LaundryItemPrice(
+            laundry_id=laundry.id,
+            catalog_item_id=shirt.id,
+            dry_clean_inr=Decimal("69.00"),
+            press_inr=Decimal("15.00"),
+            is_offered=True,
+        ),
+    )
+    await db_session.flush()
+
+    response = await client.post(
+        "/api/v1/partner/walk-in-orders",
+        headers=_partner_headers(token),
+        json={
+            "customer_name": "Cloth Wall Customer",
+            "customer_phone": "+919811122233",
+            "items": [
+                {
+                    "catalog_item_id": str(shirt.id),
+                    "process": "dry_clean",
+                    "quantity": 2,
+                },
+            ],
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()["data"]
+    assert body["customer_name"] == "Cloth Wall Customer"
+    assert len(body["items"]) == 1
+    assert body["items"][0]["quantity"] == 2
+    assert "Shirt" in body["items"][0]["service_name"]
+    assert Decimal(body["subtotal_inr"]) == Decimal("138.00")
+
+
+@patch("app.tasks.order_notifications.send_order_status_whatsapp")
+async def test_walk_in_orders_list_paginated_default_page_size(
+    mock_whatsapp_task: MagicMock,
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    mock_whatsapp_task.delay = MagicMock()
+    _partner, laundry, service, token = await _seed_partner_laundry(db_session)
+    for i in range(12):
+        create = await client.post(
+            "/api/v1/partner/walk-in-orders",
+            headers=_partner_headers(token),
+            json={
+                "customer_name": f"Page Customer {i:02d}",
+                "customer_phone": f"+9198{uuid4().hex[:8]}",
+                "items": [{"service_id": str(service.id), "quantity": 1}],
+            },
+        )
+        assert create.status_code == 201, create.text
+
+    listed = await client.get("/api/v1/partner/walk-in-orders", headers=_partner_headers(token))
+    assert listed.status_code == 200, listed.text
+    body = listed.json()["data"]
+    assert body["page"] == 1
+    assert body["page_size"] == 10
+    assert body["total_records"] >= 12
+    assert len(body["items"]) == 10
+    assert body["has_next"] is True
+
+    bad = await client.get(
+        "/api/v1/partner/walk-in-orders?page_size=15",
+        headers=_partner_headers(token),
+    )
+    assert bad.status_code == 200
+    assert bad.json()["data"]["page_size"] == 10
+
+    searched = await client.get(
+        "/api/v1/partner/walk-in-orders?search=Page%20Customer%2003",
+        headers=_partner_headers(token),
+    )
+    assert searched.status_code == 200
+    assert searched.json()["data"]["total_records"] >= 1
+    _ = laundry  # laundry used for ownership only

@@ -128,14 +128,17 @@ class CustomerInsightsService:
             return laundry
         raise AuthorizationError()
 
-    def _enrich_rows(self, raw_rows: list[dict], now: datetime) -> list[dict]:
+    def _enrich_rows(self, raw_rows: list[dict], now: datetime, *, use_percentile_vip: bool = True) -> list[dict]:
         if not raw_rows:
             return []
         spends = sorted((r["total_spent_inr"] for r in raw_rows), reverse=True)
-        vip_threshold_idx = max(0, int(len(spends) * 0.1) - 1)
-        vip_spend_threshold = spends[vip_threshold_idx] if spends else Decimal("0")
-        p90_idx = max(0, int(len(spends) * 0.9) - 1)
-        spend_p90 = spends[p90_idx] if spends else Decimal("1")
+        vip_spend_threshold = Decimal("0")
+        spend_p90 = Decimal("1")
+        if use_percentile_vip and spends:
+            vip_threshold_idx = max(0, int(len(spends) * 0.1) - 1)
+            vip_spend_threshold = spends[vip_threshold_idx]
+            p90_idx = max(0, int(len(spends) * 0.9) - 1)
+            spend_p90 = spends[p90_idx] if spends else Decimal("1")
 
         enriched: list[dict] = []
         for row in raw_rows:
@@ -146,7 +149,7 @@ class CustomerInsightsService:
             is_vip = (
                 order_count >= VIP_MIN_ORDERS
                 and spend >= VIP_MIN_SPEND_INR
-            ) or spend >= vip_spend_threshold
+            ) or (use_percentile_vip and spend >= vip_spend_threshold and vip_spend_threshold > 0)
             segment = _assign_segment(
                 order_count=order_count,
                 days_since_first=days_first,
@@ -158,7 +161,7 @@ class CustomerInsightsService:
                 days_since_last=days_last,
                 order_count=order_count,
                 spend=spend,
-                spend_p90=spend_p90,
+                spend_p90=spend_p90 if use_percentile_vip else max(spend, Decimal("1")),
             )
             risk_label = _risk_label(row["trust_score"], row["fraud_risk_level"], row["dispute_count"])
             high_risk = _is_high_risk(row["trust_score"], row["fraud_risk_level"], row["dispute_count"])
@@ -180,6 +183,7 @@ class CustomerInsightsService:
         return {
             "user_id": row["user_id"],
             "name": row["name"],
+            "phone": row.get("phone"),
             "lifetime_spend_inr": str(row["total_spent_inr"]),
             "order_count": row["order_count"],
             "avg_order_value_inr": str(row["avg_order_value_inr"]),
@@ -210,6 +214,12 @@ class CustomerInsightsService:
         total_spend = sum((r["total_spent_inr"] for r in rows), Decimal("0"))
         total_orders = sum(r["order_count"] for r in rows)
         avg_retention = sum(r["retention_score"] for r in rows) / len(rows) if rows else 0
+        week_ago = now - timedelta(days=7)
+        new_this_week = sum(
+            1
+            for r in rows
+            if r.get("first_order_at") is not None and r["first_order_at"] >= week_ago
+        )
 
         return {
             "total_customers": len(rows),
@@ -228,6 +238,7 @@ class CustomerInsightsService:
             "avg_order_value_inr": str(
                 (total_spend / total_orders).quantize(Decimal("0.01")) if total_orders else Decimal("0"),
             ),
+            "new_this_week": new_this_week,
         }
 
     async def partner_list_customers(
@@ -237,12 +248,41 @@ class CustomerInsightsService:
         *,
         list_type: str | None = None,
         segment: str | None = None,
-        limit: int = 50,
-        offset: int = 0,
+        search: str | None = None,
+        page: int = 1,
+        page_size: int = 10,
     ) -> dict:
+        from app.core.pagination import build_paginated_response, normalize_page_size
+
         laundry = await self._resolve_laundry(actor_user_id, actor_role)
         now = datetime.now(UTC)
-        rows = self._enrich_rows(await self._repo.customer_aggregates(laundry.id), now)
+        safe_page = max(1, page)
+        safe_size = normalize_page_size(page_size)
+        offset = (safe_page - 1) * safe_size
+
+        # Common directory path: page in SQL (fixed VIP thresholds — no full dump).
+        if not list_type and not segment:
+            total = await self._repo.count_customer_aggregates(laundry.id, search=search)
+            raw = await self._repo.customer_aggregates(
+                laundry.id,
+                search=search,
+                limit=safe_size,
+                offset=offset,
+            )
+            rows = self._enrich_rows(raw, now, use_percentile_vip=False)
+            return build_paginated_response(
+                items=[self._serialize_row(r) for r in rows],
+                total_records=total,
+                page=safe_page,
+                page_size=safe_size,
+            )
+
+        # Segment / list_type filters still need enriched set; hard-cap to avoid unbounded dumps.
+        FILTERED_CAP = 500
+        rows = self._enrich_rows(
+            await self._repo.customer_aggregates(laundry.id, limit=FILTERED_CAP),
+            now,
+        )
 
         if list_type == "top":
             rows = rows[:TOP_CUSTOMER_LIMIT]
@@ -258,11 +298,21 @@ class CustomerInsightsService:
         if segment and segment in SEGMENT_LABELS:
             rows = [r for r in rows if r["segment"] == segment]
 
+        if search:
+            term = search.strip().lower()
+            if term:
+                rows = [
+                    r
+                    for r in rows
+                    if term in str(r.get("name") or "").lower()
+                    or term in str(r.get("phone") or "").lower()
+                ]
+
         total = len(rows)
-        page = rows[offset : offset + limit]
-        return {
-            "items": [self._serialize_row(r) for r in page],
-            "total": total,
-            "limit": limit,
-            "offset": offset,
-        }
+        page_rows = rows[offset : offset + safe_size]
+        return build_paginated_response(
+            items=[self._serialize_row(r) for r in page_rows],
+            total_records=total,
+            page=safe_page,
+            page_size=safe_size,
+        )

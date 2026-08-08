@@ -68,8 +68,8 @@ export function usePartnerCustomerDeskOrders(
     queryKey: queryKeys.partnerCustomerDeskOrders(userId ?? phone, { ...filters, page }),
     queryFn: () =>
       userId
-        ? listPartnerCustomerOrdersByUser(userId, { page_size: 20, ...filters, page })
-        : listPartnerCustomerOrdersByPhone(phone, { page_size: 20, ...filters, page }),
+        ? listPartnerCustomerOrdersByUser(userId, { page_size: 10, ...filters, page })
+        : listPartnerCustomerOrdersByPhone(phone, { page_size: 10, ...filters, page }),
     enabled: Boolean(partnerEnabled && open && profile && (userId || phone)),
     staleTime: 15_000,
   });
@@ -87,7 +87,7 @@ export function usePartnerAssistedOrderMutations(options?: {
         queryKey: queryKeys.partnerCustomerDeskLookup(phone),
       });
     }
-    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOrders() });
+    void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
   };
 
   const quoteM = useMutation({

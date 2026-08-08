@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -53,13 +53,30 @@ class InventoryVerificationRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_pending_change_requests(self) -> list[OrderInventoryChangeRequest]:
-        result = await self._session.execute(
+    async def list_pending_change_requests(
+        self,
+        *,
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> list[OrderInventoryChangeRequest]:
+        q = (
             select(OrderInventoryChangeRequest)
             .where(OrderInventoryChangeRequest.status == InventoryChangeRequestStatus.pending)
-            .order_by(OrderInventoryChangeRequest.created_at.asc()),
+            .order_by(OrderInventoryChangeRequest.created_at.asc())
+            .offset(offset)
         )
+        if limit is not None:
+            q = q.limit(limit)
+        result = await self._session.execute(q)
         return list(result.scalars().all())
+
+    async def count_pending_change_requests(self) -> int:
+        result = await self._session.execute(
+            select(func.count())
+            .select_from(OrderInventoryChangeRequest)
+            .where(OrderInventoryChangeRequest.status == InventoryChangeRequestStatus.pending),
+        )
+        return int(result.scalar_one())
 
     async def save_change_request(self, row: OrderInventoryChangeRequest) -> OrderInventoryChangeRequest:
         self._session.add(row)

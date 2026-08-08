@@ -9,9 +9,11 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.complaint import Complaint
-from app.models.enums import ComplaintStatus, OrderStatus, PaymentStatus, UserRole
+from app.models.enums import ComplaintStatus, OrderStatus, PaymentStatus, ReviewStatus, UserRole
 from app.models.laundry import Laundry
 from app.models.order import Order, OrderStatusEvent
+from app.models.review import Review
+from app.models.user import User
 
 
 class LaundryTrustScoreRepository:
@@ -33,14 +35,82 @@ class LaundryTrustScoreRepository:
         )
         return result.scalars().first()
 
-    async def list_laundries(self, *, limit: int = 200) -> list[Laundry]:
-        result = await self._session.execute(
-            select(Laundry)
+    async def list_laundries_with_owners(
+        self,
+        *,
+        limit: int = 200,
+        offset: int = 0,
+        search: str | None = None,
+    ) -> list[tuple[Laundry, str | None]]:
+        q = (
+            select(Laundry, User.full_name)
+            .outerjoin(User, User.id == Laundry.owner_user_id)
             .where(Laundry.deleted_at.is_(None))
-            .order_by(Laundry.trust_score.asc(), Laundry.name.asc())
-            .limit(limit),
         )
-        return list(result.scalars().all())
+        if search and search.strip():
+            term = f"%{search.strip()}%"
+            q = q.where(
+                Laundry.name.ilike(term)
+                | Laundry.city.ilike(term)
+            )
+        result = await self._session.execute(
+            q.order_by(Laundry.trust_score.asc(), Laundry.name.asc())
+            .limit(limit)
+            .offset(offset),
+        )
+        return list(result.all())
+
+    async def list_laundries(
+        self,
+        *,
+        limit: int = 200,
+        offset: int = 0,
+        search: str | None = None,
+    ) -> list[Laundry]:
+        rows = await self.list_laundries_with_owners(limit=limit, offset=offset, search=search)
+        return [laundry for laundry, _ in rows]
+
+    async def count_laundries(self, *, search: str | None = None) -> int:
+        q = select(func.count()).select_from(Laundry).where(Laundry.deleted_at.is_(None))
+        if search and search.strip():
+            term = f"%{search.strip()}%"
+            q = q.where(
+                Laundry.name.ilike(term)
+                | Laundry.city.ilike(term)
+            )
+        return int(await self._session.scalar(q) or 0)
+
+    async def list_summary_metrics(self, laundry_ids: list[UUID]) -> dict[UUID, tuple[int, float, int]]:
+        """Return laundry_id -> (completed_orders, avg_rating, review_count) in two queries."""
+        if not laundry_ids:
+            return {}
+        completed_rows = await self._session.execute(
+            select(Order.laundry_id, func.count())
+            .where(
+                Order.laundry_id.in_(laundry_ids),
+                Order.status == OrderStatus.delivered,
+                Order.deleted_at.is_(None),
+            )
+            .group_by(Order.laundry_id),
+        )
+        completed_map = {row[0]: int(row[1]) for row in completed_rows.all()}
+        rating_rows = await self._session.execute(
+            select(Review.laundry_id, func.avg(Review.rating), func.count())
+            .where(
+                Review.laundry_id.in_(laundry_ids),
+                Review.status == ReviewStatus.published,
+            )
+            .group_by(Review.laundry_id),
+        )
+        rating_map = {
+            row[0]: (float(row[1] or 0), int(row[2] or 0))
+            for row in rating_rows.all()
+        }
+        out: dict[UUID, tuple[int, float, int]] = {}
+        for lid in laundry_ids:
+            avg, count = rating_map.get(lid, (0.0, 0))
+            out[lid] = (completed_map.get(lid, 0), round(avg, 1), count)
+        return out
 
     async def count_completed_orders(self, laundry_id: UUID) -> int:
         result = await self._session.execute(

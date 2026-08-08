@@ -5,10 +5,14 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
+from fastapi.responses import HTMLResponse
 
+from app.api.partner_orders_list_params import PartnerOrdersListParamsDep
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_partner, get_current_user_payload
+from app.core.pagination import build_paginated_response
+from app.schemas.common import PaginatedListResponse
 from app.schemas.laundry import LaundryDetailResponse, PartnerLaundryRegisterRequest
 from app.schemas.order import OrderItemResponse, OrderResponse, OrderStatusUpdateRequest
 from app.schemas.partner import (
@@ -24,6 +28,9 @@ from app.schemas.partner import (
 from app.services.laundry_trust_score_service import LaundryTrustScoreService
 from app.services.laundry_service import LaundryService
 from app.services.order_service import OrderService
+from app.schemas.order_invoice import InvoicePrintVariant
+from app.services.order_invoice_service import OrderInvoiceService
+from app.services.order_tags_service import OrderTagsService
 from app.services.partner_service import PartnerService
 from app.repositories.order import OrderRepository
 
@@ -68,6 +75,9 @@ def _partner_order_response(order, customer_name: str) -> PartnerOrderResponse:
         laundry_id=order.laundry_id,
         status=order.status,
         tracking_code=order.tracking_code,
+        color_token=order.color_token,
+        token_code=order.token_code,
+        token_day_number=order.token_day_number,
         pickup_at=order.pickup_at,
         delivery_at=order.delivery_at,
         subtotal_inr=order.subtotal_inr,
@@ -88,15 +98,37 @@ async def partner_orders(
     request: Request,
     session: SessionDep,
     payload: Annotated[dict, Depends(get_current_partner)],
+    params: PartnerOrdersListParamsDep,
 ) -> dict:
     from app.core.exceptions import NotFoundError
 
     try:
-        rows = await PartnerService(session).list_orders_for_partner(UUID(payload["sub"]))
+        result = await PartnerService(session).list_orders_for_partner_paginated(
+            UUID(payload["sub"]),
+            params,
+        )
     except NotFoundError:
-        return success_envelope([], request)
-    data = [_partner_order_response(order, name) for order, name in rows]
-    return success_envelope(data, request)
+        return success_envelope(
+            PaginatedListResponse[PartnerOrderResponse].empty(
+                page=params.page,
+                page_size=params.page_size,
+            ),
+            request,
+        )
+
+    items = [
+        _partner_order_response(order, name)
+        for order, name in result["items"]
+    ]
+    payload_body = PaginatedListResponse[PartnerOrderResponse].model_validate(
+        build_paginated_response(
+            items=items,
+            total_records=result["total_records"],
+            page=result["page"],
+            page_size=result["page_size"],
+        ),
+    )
+    return success_envelope(payload_body, request)
 
 
 @router.get("/orders/{order_id}")
@@ -116,6 +148,70 @@ async def partner_order_detail(
         user_name = await session.scalar(select(User.full_name).where(User.id == order.user_id))
     display_name = user_name or order.customer_name or "Walk-in customer"
     return success_envelope(_partner_order_response(order, display_name), request)
+
+
+@router.get("/orders/{order_id}/tags")
+async def partner_order_tags(
+    order_id: UUID,
+    request: Request,
+    session: SessionDep,
+    payload: Annotated[dict, Depends(get_current_partner)],
+    per_piece: Annotated[bool, Query()] = False,
+) -> dict:
+    """JSON payload for Shop Floor bag + item tag print UI."""
+    tags = await OrderTagsService(session).get_tags_for_partner(
+        UUID(payload["sub"]),
+        order_id,
+        per_piece=per_piece,
+    )
+    return success_envelope(tags, request)
+
+
+@router.get("/orders/{order_id}/tags/print", response_class=HTMLResponse)
+async def partner_order_tags_print(
+    order_id: UUID,
+    session: SessionDep,
+    payload: Annotated[dict, Depends(get_current_partner)],
+    per_piece: Annotated[bool, Query()] = False,
+) -> HTMLResponse:
+    """Optional HTML thermal print view (58mm-friendly)."""
+    service = OrderTagsService(session)
+    tags = await service.get_tags_for_partner(
+        UUID(payload["sub"]),
+        order_id,
+        per_piece=per_piece,
+    )
+    html = service.render_print_html(tags)
+    return HTMLResponse(content=html)
+
+
+@router.get("/orders/{order_id}/invoice")
+async def partner_order_invoice(
+    order_id: UUID,
+    request: Request,
+    session: SessionDep,
+    payload: Annotated[dict, Depends(get_current_partner)],
+) -> dict:
+    """JSON invoice snapshot for counter bill / A4 GST print (idempotent)."""
+    invoice = await OrderInvoiceService(session).get_invoice_for_partner(
+        UUID(payload["sub"]),
+        order_id,
+    )
+    return success_envelope(invoice, request)
+
+
+@router.get("/orders/{order_id}/invoice/print", response_class=HTMLResponse)
+async def partner_order_invoice_print(
+    order_id: UUID,
+    session: SessionDep,
+    payload: Annotated[dict, Depends(get_current_partner)],
+    variant: Annotated[InvoicePrintVariant, Query()] = InvoicePrintVariant.bill,
+) -> HTMLResponse:
+    """HTML print: thermal counter bill (`bill`) or A4 GST invoice (`gst`)."""
+    service = OrderInvoiceService(session)
+    invoice = await service.get_invoice_for_partner(UUID(payload["sub"]), order_id)
+    html = service.render_print_html(invoice, variant=variant)
+    return HTMLResponse(content=html)
 
 
 @router.get("/customers")

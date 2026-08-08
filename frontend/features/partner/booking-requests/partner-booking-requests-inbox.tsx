@@ -34,7 +34,7 @@ import { getApiErrorMessage } from '@/lib/api-error-message';
 
 const DEFAULT_FILTERS: BookingRequestListFilters = {
   page: 1,
-  page_size: 20,
+  page_size: 10,
   sort: 'sla',
 };
 
@@ -258,10 +258,10 @@ export function PartnerBookingRequestsInbox() {
             onToggleSort={handleSort}
             page={tableQ.data?.page ?? 1}
             pageCount={tableQ.data?.total_pages ?? 1}
-            pageSize={filters.page_size ?? 20}
-            pageStart={((tableQ.data?.page ?? 1) - 1) * (filters.page_size ?? 20) + 1}
+            pageSize={filters.page_size ?? 10}
+            pageStart={((tableQ.data?.page ?? 1) - 1) * (filters.page_size ?? 10) + 1}
             pageEnd={Math.min(
-              (tableQ.data?.page ?? 1) * (filters.page_size ?? 20),
+              (tableQ.data?.page ?? 1) * (filters.page_size ?? 10),
               tableQ.data?.total ?? 0,
             )}
             filteredCount={tableQ.data?.total ?? 0}

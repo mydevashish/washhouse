@@ -14,6 +14,8 @@ import { PartnerOrderStatusStepper } from '@/features/partner/components/partner
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { PartnerStatusBadge } from '@/features/partner/components/partner-status-badge';
 import { PartnerOrderCard } from '@/features/partner/partner-order-card';
+import { ColorTokenChip } from '@/features/partner-shop-floor/components/color-token-chip';
+import { PrintOrderActions } from '@/features/partner-shop-floor/components/print-order-actions';
 import {
   usePartnerOrderMutations,
   usePartnerQueriesEnabled,
@@ -75,7 +77,15 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
         title={`Order #${order.tracking_code}`}
         description={order.customer_name}
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {order.token_code ? (
+              <ColorTokenChip
+                colorToken={order.color_token}
+                tokenCode={order.token_code}
+                size="md"
+                showLabel
+              />
+            ) : null}
             <Button type="button" size="sm" variant="outline" asChild>
               <Link href="/partner/orders" className="gap-1.5">
                 <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
@@ -92,6 +102,13 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium">{order.customer_name}</p>
             <PartnerOrderSourceBadge order={order} />
+            {order.token_code ? (
+              <ColorTokenChip
+                colorToken={order.color_token}
+                tokenCode={order.token_code}
+                size="sm"
+              />
+            ) : null}
           </div>
           {order.customer_phone && (
             <p className="text-muted-foreground">{order.customer_phone}</p>
@@ -99,6 +116,7 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
           <p className="text-muted-foreground">
             Payment: <span className="font-medium text-foreground">{order.payment_status}</span>
           </p>
+          <PrintOrderActions orderId={order.id} className="mt-2" />
         </PartnerPanel>
 
         <PartnerPanel title="Schedule" bodyClassName="space-y-2 p-4 text-sm">

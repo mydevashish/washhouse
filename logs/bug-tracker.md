@@ -312,13 +312,14 @@ $r.Headers["Access-Control-Allow-Origin"]  # expect https://washhouse.vercel.app
 
 ### BUG-2026-07-28-SEC-001 — `invoice_number` never assigned on order create
 
-- **Status:** open
+- **Status:** partial (2026-08-08)
 - **Priority:** P2
 - **Severity:** S2 (Medium security/compliance)
 - **Area:** orders / GST invoicing
 - **Owner:** backend-architect
 - **Description:** Order model has `invoice_number` (unique); create paths set `gst_rate` / `cgst_inr` / `sgst_inr` but never allocate an invoice number. Blocks India GST invoice issuance.
 - **Remediation:** Allocate sequential/unique invoice numbers at create (and walk-in); expose on order response; add regression test.
+- **Progress:** Shop Floor invoice API allocates once on first `GET /partner/orders/{id}/invoice` (`WH-{year}-{tracking}`); reprint idempotent. Still not allocated on create / not on partner order list response.
 
 ### BUG-2026-07-28-SEC-002 — `.env.example` CORS is localhost-only (no prod guidance)
 

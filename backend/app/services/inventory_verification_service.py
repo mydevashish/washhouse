@@ -232,9 +232,25 @@ class InventoryVerificationService:
         rows = await self._repo.list_history(order_id)
         return [InventoryHistoryEntryResponse.model_validate(r) for r in rows]
 
-    async def list_pending_changes_admin(self) -> list[InventoryChangeRequestResponse]:
-        rows = await self._repo.list_pending_change_requests()
-        return [self._change_to_response(r) for r in rows]
+    async def list_pending_changes_admin(
+        self,
+        *,
+        page: int = 1,
+        page_size: int = 10,
+    ) -> dict:
+        from app.core.pagination import build_paginated_response, normalize_page_size
+
+        safe_page = max(1, page)
+        safe_size = normalize_page_size(page_size)
+        offset = (safe_page - 1) * safe_size
+        total = await self._repo.count_pending_change_requests()
+        rows = await self._repo.list_pending_change_requests(limit=safe_size, offset=offset)
+        return build_paginated_response(
+            items=[self._change_to_response(r) for r in rows],
+            total_records=total,
+            page=safe_page,
+            page_size=safe_size,
+        )
 
     async def approve_change(self, admin_user_id: UUID, request_id: UUID, *, admin_notes: str | None) -> InventoryVerificationResponse:
         change = await self._repo.get_change_request(request_id)

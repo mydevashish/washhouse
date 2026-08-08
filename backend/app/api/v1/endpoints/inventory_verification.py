@@ -5,12 +5,15 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_admin, get_current_partner, get_current_user_payload
+from app.core.pagination import DEFAULT_PAGE_SIZE, build_paginated_response
+from app.schemas.common import PaginatedListResponse
 from app.schemas.inventory_verification import (
     InventoryChangeRequestInput,
+    InventoryChangeRequestResponse,
     InventoryChangeReviewRequest,
     InventoryRecordRequest,
     items_input_to_dict,
@@ -117,9 +120,24 @@ async def list_inventory_change_requests(
     request: Request,
     session: SessionDep,
     _: Annotated[dict, Depends(get_current_admin)],
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=100),
 ) -> dict:
-    data = await InventoryVerificationService(session).list_pending_changes_admin()
-    return success_envelope(data, request)
+    data = await InventoryVerificationService(session).list_pending_changes_admin(
+        page=page,
+        page_size=page_size,
+    )
+    return success_envelope(
+        PaginatedListResponse[InventoryChangeRequestResponse].model_validate(
+            build_paginated_response(
+                items=data["items"],
+                total_records=data["total_records"],
+                page=data["page"],
+                page_size=data["page_size"],
+            ),
+        ),
+        request,
+    )
 
 
 @router.post("/admin/inventory-change-requests/{request_id}/approve")

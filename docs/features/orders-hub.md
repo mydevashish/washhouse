@@ -2,8 +2,9 @@
 
 > Status: **review** (Admin + Partner hub shells complete; Playwright partner matrix shipped)  
 > Owner: product-manager + frontend-architect  
-> Last updated: 2026-08-04  
+> Last updated: 2026-08-08  
 > Related: [customer-desk.md](customer-desk.md), [booking-requests.md](booking-requests.md), [partner-dashboard.md](partner-dashboard.md), [admin-dashboard.md](admin-dashboard.md), [order-placement.md](order-placement.md)  
+> Pagination: Partner Orders queue uses **server-driven** `GET /partner/orders?page=&page_size=` (default **10**, buckets `action|active|done|all`) — see [`PAGINATION_STANDARD.md`](../../PAGINATION_STANDARD.md) · QA matrix [`partner-admin-pagination-matrix.md`](../qa/partner-admin-pagination-matrix.md)  
 > API: reuses [customer-desk.md](../api/endpoints/customer-desk.md) + existing order / booking-request / customers endpoints  
 > Product map: [offline-booking-ui-map.md](../product/offline-booking-ui-map.md)
 
@@ -89,7 +90,7 @@ Customer Desk (Slices 1–5) and booking-request convert already ship the APIs. 
 | Today / Orders | `orders` (default) | Today strip + active orders table (existing soft-merge queue home) |
 | Find customer | `desk` | Full Customer Desk (lookup, history, assisted create / walk-in handoff) |
 | Requests | `requests` | Booking requests inbox (admin platform / partner assigned) |
-| Directory | `directory` | Admin: customers table; Partner: customer insights |
+| Directory | `directory` | Admin: customers table; Partner: relationship CRM (insights cards; hub label **Customers**) |
 
 ```mermaid
 flowchart TD
@@ -175,7 +176,7 @@ Feature folders: `frontend/features/admin/orders-hub/` (full admin shell + today
 
 - [x] Walk-in orders, Pickup requests, Deliveries, and Operations center remain separate sidebar items.
 - [x] Desk / history / create remain laundry-scoped (existing desk AuthZ).
-- [x] Directory tab shows customer insights (former `/partner/customers`).
+- [x] Directory tab shows customer relationship CRM (former `/partner/customers` insights; soft tags + quick actions).
 - [x] `/partner/orders` is the ops home shell (`features/partner/orders-hub`): tabs mount desk / BR inbox / insights without forking those modules.
 - [x] Default `tab=orders` keeps soft-merge Today strip (phone search opens desk drawer) + orders queue.
 - [x] Requests badge visible on hub header and Requests tab (assigned waiting count).

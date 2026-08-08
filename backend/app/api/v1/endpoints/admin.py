@@ -7,9 +7,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from app.api.admin_list_params import AdminAuditListQuery, AdminOrderListQuery, AdminUserListQuery
+from app.api.admin_list_params import (
+    AdminAuditListQuery,
+    AdminLaundryListQuery,
+    AdminOrderListQuery,
+    AdminUserListQuery,
+)
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_admin
+from app.core.pagination import build_paginated_response
 from app.services.laundry_service import invalidate_laundry_discovery_cache
 from app.schemas.admin import (
     AdminAnalyticsResponse,
@@ -17,6 +23,7 @@ from app.schemas.admin import (
     AdminCreateLaundryRequest,
     AdminCreateLaundryResponse,
     AdminDashboardResponse,
+    AdminLaundryListRow,
     AdminLaundryManagementRow,
     AdminOrderRowResponse,
     AdminPendingLaundryResponse,
@@ -49,9 +56,20 @@ async def list_laundries(
     request: Request,
     session: SessionDep,
     _: Annotated[dict, Depends(get_current_admin)],
+    params: AdminLaundryListQuery,
 ) -> dict:
-    rows = await AdminService(session).list_all_laundries()
-    return success_envelope(rows, request)
+    result = await AdminService(session).list_all_laundries_paginated(params)
+    return success_envelope(
+        PaginatedListResponse[AdminLaundryListRow].model_validate(
+            build_paginated_response(
+                items=[AdminLaundryListRow.model_validate(r) for r in result["items"]],
+                total_records=result["total_records"],
+                page=result["page"],
+                page_size=result["page_size"],
+            ),
+        ),
+        request,
+    )
 
 
 @router.get("/laundries/management")
@@ -59,10 +77,20 @@ async def list_laundries_management(
     request: Request,
     session: SessionDep,
     _: Annotated[dict, Depends(get_current_admin)],
+    params: AdminLaundryListQuery,
 ) -> dict:
-    rows = await AdminService(session).list_laundries_management()
-    data = [AdminLaundryManagementRow.model_validate(r) for r in rows]
-    return success_envelope(data, request)
+    result = await AdminService(session).list_laundries_management_paginated(params)
+    return success_envelope(
+        PaginatedListResponse[AdminLaundryManagementRow].model_validate(
+            build_paginated_response(
+                items=[AdminLaundryManagementRow.model_validate(r) for r in result["items"]],
+                total_records=result["total_records"],
+                page=result["page"],
+                page_size=result["page_size"],
+            ),
+        ),
+        request,
+    )
 
 
 @router.get("/laundries/pending")

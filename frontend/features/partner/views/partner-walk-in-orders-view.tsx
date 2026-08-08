@@ -7,9 +7,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { InfoBanner } from '@/components/ui/info-banner';
+import { Input } from '@/components/ui/input';
+import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
 import { WalkInOrderCard } from '@/features/partner/components/walk-in-order-card';
@@ -20,13 +23,16 @@ import {
 } from '@/features/partner/components/walk-in-order-form';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { getWalkInNextStatus } from '@/features/partner/lib/partner-status';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
+import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
 import { listPartnerServices } from '@/services/partner-service-catalog';
 import {
   advanceWalkInOrderStatus,
   createWalkInOrder,
   listWalkInOrders,
+  type WalkInOrder,
 } from '@/services/partner-walk-in-orders';
 
 export function PartnerWalkInOrdersView() {
@@ -52,11 +58,11 @@ export function PartnerWalkInOrdersView() {
     if (newParam === '1' || deskPrefill) setShowForm(true);
   }, [newParam, deskPrefill]);
 
-  const ordersQ = useQuery({
+  const list = useServerList<WalkInOrder>({
     queryKey: queryKeys.partnerWalkInOrders(),
-    queryFn: listWalkInOrders,
+    fetcher: (params) => listWalkInOrders(params),
+    defaultPageSize: 10,
     enabled,
-    refetchInterval: enabled ? 45_000 : false,
   });
 
   const servicesQ = useQuery({
@@ -66,8 +72,8 @@ export function PartnerWalkInOrdersView() {
   });
 
   const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerWalkInOrders() });
-    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOrders() });
+    void queryClient.invalidateQueries({ queryKey: ['partner-walk-in-orders'] });
+    void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerAnalytics() });
   };
 
@@ -112,6 +118,8 @@ export function PartnerWalkInOrdersView() {
       })),
     });
   }
+
+  const orders = list.rows;
 
   return (
     <PartnerContent className="space-y-5">
@@ -160,13 +168,24 @@ export function PartnerWalkInOrdersView() {
         </div>
       )}
 
-      {ordersQ.isLoading && <Skeleton className="h-64 w-full rounded-2xl" />}
-      {enabled && ordersQ.isError && (
-        <InfoBanner variant="destructive" title="Could not load walk-in orders">
-          Refresh the page to try again.
-        </InfoBanner>
+      <Input
+        value={list.search}
+        onChange={(e) => list.setSearch(e.target.value)}
+        placeholder="Search name, phone, or tracking code"
+        aria-label="Search walk-in orders"
+        className="min-h-[44px]"
+      />
+
+      {list.isLoading && <Skeleton className="h-64 w-full rounded-2xl" />}
+      {enabled && list.isError && (
+        <QueryErrorState
+          title="Could not load walk-in orders"
+          message={getApiErrorMessage(list.error)}
+          onRetry={() => void list.refetch()}
+          isRetrying={list.isFetching}
+        />
       )}
-      {enabled && !ordersQ.isLoading && ordersQ.data && ordersQ.data.length === 0 && !showForm && (
+      {enabled && !list.isLoading && orders.length === 0 && !showForm && (
         <EmptyState
           icon={Store}
           title="No walk-in orders yet"
@@ -174,20 +193,32 @@ export function PartnerWalkInOrdersView() {
         />
       )}
 
-      {enabled && ordersQ.data && ordersQ.data.length > 0 && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {ordersQ.data.map((order) => (
-            <WalkInOrderCard
-              key={order.id}
-              order={order}
-              isAdvancing={busyOrderId === order.id && advanceMutation.isPending}
-              onAdvance={() => {
-                const next = getWalkInNextStatus(order.status);
-                if (next) advanceMutation.mutate({ id: order.id, status: next });
-              }}
-            />
-          ))}
-        </div>
+      {enabled && orders.length > 0 && (
+        <>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {orders.map((order) => (
+              <WalkInOrderCard
+                key={order.id}
+                order={order}
+                isAdvancing={busyOrderId === order.id && advanceMutation.isPending}
+                onAdvance={() => {
+                  const next = getWalkInNextStatus(order.status);
+                  if (next) advanceMutation.mutate({ id: order.id, status: next });
+                }}
+              />
+            ))}
+          </div>
+          <DataTablePagination
+            page={list.page}
+            pageCount={list.pageCount}
+            pageSize={list.pageSize}
+            pageStart={list.pageStart}
+            pageEnd={list.pageEnd}
+            totalCount={list.totalRecords}
+            onPageChange={list.setPage}
+            onPageSizeChange={list.setPageSize}
+          />
+        </>
       )}
     </PartnerContent>
   );

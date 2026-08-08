@@ -32,13 +32,14 @@ import type {
   CustomerDeskProfile,
 } from '@/features/partner/customer-desk/types';
 import { customerDeskLookupKey, guestDeskProfile } from '@/features/partner/customer-desk/types';
-import { isOrderNeedsAction } from '@/features/partner/lib/partner-status';
-import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
+import {
+  usePartnerOrders,
+  usePartnerQueriesEnabled,
+} from '@/features/partner/hooks/use-partner-operations';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
-import type { PartnerOrder } from '@/services/partner';
 import { cn } from '@/lib/utils';
 
 function parseLookupFromSearch(
@@ -54,11 +55,12 @@ function parseLookupFromSearch(
 }
 
 type PartnerOrdersTodayPanelProps = {
-  orders?: PartnerOrder[];
+  /** @deprecated Ignored — counts come from paginated APIs. */
+  orders?: unknown;
 };
 
 /** Soft-merge Today strip: phone search + waiting requests preview on `tab=orders`. */
-export function PartnerOrdersTodayPanel({ orders = [] }: PartnerOrdersTodayPanelProps) {
+export function PartnerOrdersTodayPanel(_props: PartnerOrdersTodayPanelProps = {}) {
   const router = useRouter();
   const enabled = usePartnerQueriesEnabled();
   const searchParams = useSearchParams();
@@ -129,10 +131,10 @@ export function PartnerOrdersTodayPanel({ orders = [] }: PartnerOrdersTodayPanel
     sort: 'sla',
   });
 
-  const needsAction = orders.filter((o) => isOrderNeedsAction(o.status, o.order_source)).length;
-  const activeCount = orders.filter(
-    (o) => o.status !== 'delivered' && o.status !== 'cancelled',
-  ).length;
+  const actionQ = usePartnerOrders({ bucket: 'action', page: 1, page_size: 10 });
+  const openQ = usePartnerOrders({ bucket: 'active', page: 1, page_size: 10 });
+  const needsAction = actionQ.data?.total_records ?? 0;
+  const activeCount = (actionQ.data?.total_records ?? 0) + (openQ.data?.total_records ?? 0);
   const waitingRequests = requestsQ.data?.total ?? requestsQ.data?.items?.length ?? 0;
 
   const syncUrl = useCallback(

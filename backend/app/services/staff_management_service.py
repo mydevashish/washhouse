@@ -340,13 +340,30 @@ class StaffManagementService:
         actor_role: str,
         *,
         staff_id: UUID | None = None,
-        limit: int = 50,
-        offset: int = 0,
-    ) -> list[dict]:
+        page: int = 1,
+        page_size: int = 10,
+    ) -> dict:
+        from app.core.pagination import build_paginated_response, normalize_page_size
+
         laundry, staff, is_owner = await self._resolve_laundry(actor_user_id, actor_role)
         if not is_owner and staff and not has_permission(staff.role, PERM_STAFF_VIEW):
             raise AuthorizationError()
-        return await self._repo.list_activity(laundry.id, staff_id=staff_id, limit=limit, offset=offset)
+        safe_page = max(1, page)
+        safe_size = normalize_page_size(page_size)
+        offset = (safe_page - 1) * safe_size
+        total = await self._repo.count_activity(laundry.id, staff_id=staff_id)
+        rows = await self._repo.list_activity(
+            laundry.id,
+            staff_id=staff_id,
+            limit=safe_size,
+            offset=offset,
+        )
+        return build_paginated_response(
+            items=rows,
+            total_records=total,
+            page=safe_page,
+            page_size=safe_size,
+        )
 
     async def record_login(self, user_id: UUID) -> None:
         staff = await self._repo.get_staff_by_user(user_id)

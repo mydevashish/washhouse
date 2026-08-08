@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { getPartnerNextStatus } from '@/features/partner/lib/partner-status';
 import { useMounted } from '@/lib/hooks/use-mounted';
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination/types';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import {
@@ -13,6 +14,7 @@ import {
   listPartnerOrders,
   rejectOrder,
   updateOrderStatus,
+  type PartnerOrdersListParams,
 } from '@/services/partner';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -33,14 +35,31 @@ export function usePartnerAnalytics() {
   });
 }
 
-export function usePartnerOrders() {
+/**
+ * Server-paginated partner orders. Default page_size=10.
+ * Prefer analytics/ops endpoints for KPI counts — do not treat this as a full dump.
+ */
+export function usePartnerOrders(params: PartnerOrdersListParams = {}) {
   const enabled = usePartnerQueriesEnabled();
+  const request: PartnerOrdersListParams = {
+    page: params.page ?? 1,
+    page_size: params.page_size ?? DEFAULT_PAGE_SIZE,
+    sort_by: params.sort_by ?? 'created_at',
+    sort_order: params.sort_order ?? 'desc',
+    bucket: params.bucket ?? 'all',
+    search: params.search,
+    status: params.status,
+    order_source: params.order_source,
+  };
+
   return useQuery({
-    queryKey: queryKeys.partnerOrders(),
-    queryFn: listPartnerOrders,
+    queryKey: queryKeys.partnerOrders(request),
+    queryFn: () => listPartnerOrders(request),
     staleTime: STALE.partnerAnalytics,
     enabled,
-    refetchInterval: enabled ? 45_000 : false,
+    // Only poll small action queues — never unbounded lists.
+    refetchInterval:
+      enabled && request.bucket === 'action' && (request.page_size ?? 10) <= 10 ? 45_000 : false,
     refetchIntervalInBackground: false,
   });
 }
@@ -49,11 +68,15 @@ export function usePartnerOrderMutations() {
   const queryClient = useQueryClient();
 
   const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOrders() });
+    void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
     void queryClient.invalidateQueries({ queryKey: ['partner-order'] });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerAnalytics() });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerCustomers() });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerWalkInOrders() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsDashboard() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsPickups() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsDeliveries() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsDoneToday() });
   };
 
   const acceptMutation = useMutation({

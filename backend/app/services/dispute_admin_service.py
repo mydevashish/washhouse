@@ -111,7 +111,7 @@ class DisputeAdminService:
         date_from: datetime | None = None,
         date_to: datetime | None = None,
         page: int = 1,
-        page_size: int = 25,
+        page_size: int = 10,
         sort_by: str = "created_at",
         sort_dir: str = "desc",
     ) -> dict:
@@ -187,13 +187,16 @@ class DisputeAdminService:
             item.update(sla.as_dict())
             items.append(item)
 
-        total_pages = max(1, (total + page_size - 1) // page_size)
+        total_pages = max(1, (total + page_size - 1) // page_size) if page_size else 1
         return {
             "items": items,
+            "total_records": total,
             "total": total,
             "page": page,
             "page_size": page_size,
             "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_previous": page > 1 and total > 0,
         }
 
     async def detail(self, complaint_id: UUID) -> dict:

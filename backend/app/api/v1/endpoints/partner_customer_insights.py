@@ -10,11 +10,12 @@ from fastapi import APIRouter, Depends, Query, Request
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_user_payload
 from app.core.exceptions import AuthorizationError
+from app.core.pagination import DEFAULT_PAGE_SIZE, build_paginated_response
 from app.models.enums import UserRole
+from app.schemas.common import PaginatedListResponse
 from app.schemas.customer_insights import (
     CustomerInsightRow,
     CustomerInsightsDashboard,
-    CustomerInsightsListResponse,
 )
 from app.services.customer_insights_service import CustomerInsightsService
 
@@ -49,23 +50,27 @@ async def partner_customer_insights_list(
     payload: Annotated[dict, Depends(get_insights_actor)],
     list_type: str | None = Query(default=None, pattern="^(top|repeat|vip|inactive|high_risk)$"),
     segment: str | None = Query(default=None, pattern="^(new|active|vip|at_risk|inactive)$"),
-    limit: int = Query(default=50, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
+    search: str | None = Query(default=None, max_length=120),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=100),
 ) -> dict:
     data = await CustomerInsightsService(session).partner_list_customers(
         UUID(payload["sub"]),
         payload["role"],
         list_type=list_type,
         segment=segment,
-        limit=limit,
-        offset=offset,
+        search=search,
+        page=page,
+        page_size=page_size,
     )
     return success_envelope(
-        CustomerInsightsListResponse(
-            items=[CustomerInsightRow.model_validate(i) for i in data["items"]],
-            total=data["total"],
-            limit=data["limit"],
-            offset=data["offset"],
+        PaginatedListResponse[CustomerInsightRow].model_validate(
+            build_paginated_response(
+                items=[CustomerInsightRow.model_validate(i) for i in data["items"]],
+                total_records=data["total_records"],
+                page=data["page"],
+                page_size=data["page_size"],
+            ),
         ),
         request,
     )

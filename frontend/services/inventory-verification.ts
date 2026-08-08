@@ -1,4 +1,5 @@
 import { api, type ApiEnvelope } from '@/lib/api';
+import type { ListQueryState, PaginatedList } from '@/lib/pagination/types';
 import type { DeliveryProofPhoto } from '@/services/delivery-proof';
 
 export const INVENTORY_ITEM_TYPES = [
@@ -155,8 +156,13 @@ export async function listInventoryHistory(orderId: string): Promise<InventoryHi
   return data.data;
 }
 
-export async function listAdminInventoryChangeRequests(): Promise<InventoryChangeRequest[]> {
-  const { data } = await api.get<ApiEnvelope<InventoryChangeRequest[]>>('/admin/inventory-change-requests');
+export async function listAdminInventoryChangeRequests(
+  params?: ListQueryState,
+): Promise<PaginatedList<InventoryChangeRequest>> {
+  const { data } = await api.get<ApiEnvelope<PaginatedList<InventoryChangeRequest>>>(
+    '/admin/inventory-change-requests',
+    { params },
+  );
   return data.data;
 }
 

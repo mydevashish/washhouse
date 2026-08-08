@@ -14,6 +14,7 @@ from app.models.enums import TaskAssignmentStatus, UserRole
 from app.schemas.operations import (
     AssignDriverRequest,
     DeliveryQueueResponse,
+    DoneTodayResponse,
     DriverSummaryResponse,
     OperationsDashboardResponse,
     OperationsOrderRow,
@@ -67,6 +68,16 @@ async def delivery_queue(
 ) -> dict:
     data = await OperationsService(session).delivery_queue(UUID(payload["sub"]), payload["role"])
     return success_envelope(DeliveryQueueResponse.model_validate(data), request)
+
+
+@router.get("/done-today")
+async def done_today(
+    request: Request,
+    session: SessionDep,
+    payload: Annotated[dict, Depends(get_operations_actor)],
+) -> dict:
+    data = await OperationsService(session).done_today(UUID(payload["sub"]), payload["role"])
+    return success_envelope(DoneTodayResponse.model_validate(data), request)
 
 
 @router.get("/drivers")

@@ -23,7 +23,7 @@ const SOURCE_LABELS: Record<string, string> = {
   assisted_partner: 'Partner assisted',
 };
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 type Props = {
   profile: { user_id: string | null; phone: string } | null;

@@ -506,3 +506,46 @@ class BookingRequestEventType(str, enum.Enum):
     restored = "restored"
     converted = "converted"
     expired = "expired"
+
+
+class ColorToken(str, enum.Enum):
+    """Shop-floor bag/garment color token (spoken + printed as letter-number)."""
+
+    red = "red"
+    blue = "blue"
+    green = "green"
+    yellow = "yellow"
+    orange = "orange"
+    purple = "purple"
+    pink = "pink"
+    teal = "teal"
+    brown = "brown"
+    grey = "grey"
+
+
+# Letter codes for display token_code e.g. R-42 (pink=K, brown=W, grey=E — avoid clashes).
+COLOR_TOKEN_LETTERS: dict[ColorToken, str] = {
+    ColorToken.red: "R",
+    ColorToken.blue: "B",
+    ColorToken.green: "G",
+    ColorToken.yellow: "Y",
+    ColorToken.orange: "O",
+    ColorToken.purple: "P",
+    ColorToken.pink: "K",
+    ColorToken.teal: "T",
+    ColorToken.brown: "W",
+    ColorToken.grey: "E",
+}
+
+COLOR_TOKEN_PALETTE_ORDER: tuple[ColorToken, ...] = (
+    ColorToken.red,
+    ColorToken.blue,
+    ColorToken.green,
+    ColorToken.yellow,
+    ColorToken.orange,
+    ColorToken.purple,
+    ColorToken.pink,
+    ColorToken.teal,
+    ColorToken.brown,
+    ColorToken.grey,
+)

@@ -40,6 +40,21 @@ DELIVERY_BUCKET_LABELS = {
     "returned": "Returned",
 }
 
+# Board safety: never load unbounded laundry history into queue endpoints.
+QUEUE_HARD_CAP = 200
+PICKUP_OPEN_STATUSES = (OrderStatus.confirmed, OrderStatus.pickup_assigned)
+PICKUP_RECENT_DONE_STATUSES = (
+    OrderStatus.picked_up,
+    OrderStatus.washing,
+    OrderStatus.ironing,
+    OrderStatus.ready,
+    OrderStatus.out_for_delivery,
+    OrderStatus.delivered,
+)
+DELIVERY_OPEN_STATUSES = (OrderStatus.ready, OrderStatus.out_for_delivery)
+DELIVERY_DONE_STATUSES = (OrderStatus.delivered,)
+
+
 
 class OperationsService:
     def __init__(self, session: AsyncSession) -> None:
@@ -105,14 +120,17 @@ class OperationsService:
         assignment: OrderTaskAssignment | None,
         staff_names: dict,
         now: datetime,
+        customer_phone: str | None = None,
     ) -> dict:
         return {
             "order_id": order.id,
             "tracking_code": order.tracking_code,
             "customer_name": customer_name,
+            "customer_phone": customer_phone or order.customer_phone,
             "status": order.status.value,
             "pickup_at": order.pickup_at,
             "delivery_at": order.delivery_at,
+            "delivered_at": order.delivered_at,
             "total_inr": str(Decimal(order.total_inr).quantize(Decimal("0.01"))),
             "is_delayed": self._is_delayed(order, now),
             "queue_status": queue_status,
@@ -183,38 +201,7 @@ class OperationsService:
         failed_deliveries = await self._repo.count_failed_deliveries_today(laundry.id, today_start)
         completed_today = await self._repo.count_completed_today(laundry.id, today_start)
         avg_delivery = await self._repo.avg_delivery_time_minutes(laundry.id, today_start)
-
-        orders = await self._repo.list_orders_with_customers(laundry.id)
-        assignments = await self._repo.list_assignments(laundry.id)
-        pickup_map = {
-            a.order_id: a
-            for a in assignments
-            if a.task_type == TaskAssignmentType.pickup and a.status in (
-                TaskAssignmentStatus.scheduled,
-                TaskAssignmentStatus.assigned,
-                TaskAssignmentStatus.in_progress,
-            )
-        }
-        delivery_map = {
-            a.order_id: a
-            for a in assignments
-            if a.task_type == TaskAssignmentType.delivery and a.status in (
-                TaskAssignmentStatus.scheduled,
-                TaskAssignmentStatus.assigned,
-                TaskAssignmentStatus.in_progress,
-                TaskAssignmentStatus.failed,
-                TaskAssignmentStatus.returned,
-            )
-        }
-
-        pending = 0
-        for order, _ in orders:
-            if order.status == OrderStatus.confirmed:
-                pending += 1
-            elif order.status == OrderStatus.pickup_assigned and order.id not in pickup_map:
-                pending += 1
-            elif order.status == OrderStatus.ready and order.id not in delivery_map:
-                pending += 1
+        pending = await self._repo.count_pending_tasks(laundry.id)
 
         return {
             "laundry_id": laundry.id,
@@ -236,6 +223,7 @@ class OperationsService:
         self._require_operations_access(actor_role)
         laundry = await self._resolve_laundry(actor_user_id, actor_role)
         now = datetime.now(UTC)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         staff_names = await self._repo.staff_name_map(laundry.id)
         assignments = await self._repo.list_assignments(laundry.id)
         pickup_by_order = {
@@ -244,10 +232,26 @@ class OperationsService:
             if a.task_type == TaskAssignmentType.pickup
         }
 
+        open_rows = await self._repo.list_orders_with_customers(
+            laundry.id,
+            statuses=PICKUP_OPEN_STATUSES,
+            limit=QUEUE_HARD_CAP,
+        )
+        # Recent completed pickups only (today) — never dump laundry history into "completed".
+        recent_done = await self._repo.list_orders_with_customers(
+            laundry.id,
+            statuses=PICKUP_RECENT_DONE_STATUSES,
+            active_since=today_start,
+            limit=QUEUE_HARD_CAP,
+            order_by_pickup_asc=False,
+        )
+
         buckets: dict[str, list] = {k: [] for k in PICKUP_BUCKET_LABELS}
-        for order, customer_name in await self._repo.list_orders_with_customers(laundry.id):
+        for order, customer_name, phone in [*open_rows, *recent_done]:
             queue_status = self._pickup_queue_status(order, pickup_by_order.get(order.id))
             if not queue_status:
+                continue
+            if queue_status in ("completed", "cancelled") and order.id not in {r[0].id for r in recent_done}:
                 continue
             active = pickup_by_order.get(order.id)
             if queue_status == "completed" and active and active.status not in (
@@ -263,6 +267,7 @@ class OperationsService:
                     assignment=active if queue_status in ("assigned", "in_progress") else pickup_by_order.get(order.id),
                     staff_names=staff_names,
                     now=now,
+                    customer_phone=phone,
                 ),
             )
 
@@ -282,6 +287,7 @@ class OperationsService:
         self._require_operations_access(actor_role)
         laundry = await self._resolve_laundry(actor_user_id, actor_role)
         now = datetime.now(UTC)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         staff_names = await self._repo.staff_name_map(laundry.id)
         assignments = await self._repo.list_assignments(laundry.id)
         delivery_by_order: dict = {}
@@ -292,11 +298,25 @@ class OperationsService:
             if not existing or a.assigned_at > existing.assigned_at:
                 delivery_by_order[a.order_id] = a
 
+        open_rows = await self._repo.list_orders_with_customers(
+            laundry.id,
+            statuses=DELIVERY_OPEN_STATUSES,
+            limit=QUEUE_HARD_CAP,
+        )
+        done_today = await self._repo.list_orders_with_customers(
+            laundry.id,
+            statuses=DELIVERY_DONE_STATUSES,
+            delivered_since=today_start,
+            limit=QUEUE_HARD_CAP,
+        )
+
         buckets: dict[str, list] = {k: [] for k in DELIVERY_BUCKET_LABELS}
-        for order, customer_name in await self._repo.list_orders_with_customers(laundry.id):
+        for order, customer_name, phone in [*open_rows, *done_today]:
             assignment = delivery_by_order.get(order.id)
             queue_status = self._delivery_queue_status(order, assignment)
             if not queue_status:
+                continue
+            if queue_status == "delivered" and order.id not in {r[0].id for r in done_today}:
                 continue
             buckets[queue_status].append(
                 self._serialize_order_row(
@@ -306,8 +326,59 @@ class OperationsService:
                     assignment=assignment if queue_status not in ("delivered",) else assignment,
                     staff_names=staff_names,
                     now=now,
+                    customer_phone=phone,
                 ),
             )
+
+        result_buckets = [
+            {
+                "status": status,
+                "label": label,
+                "count": len(buckets[status]),
+                "orders": buckets[status],
+            }
+            for status, label in DELIVERY_BUCKET_LABELS.items()
+        ]
+        total = sum(b["count"] for b in result_buckets)
+        return {"buckets": result_buckets, "total": total}
+
+    async def done_today(self, actor_user_id: UUID, actor_role: str) -> dict:
+        """Date-scoped delivered orders for Logistics › Done today (hard-capped)."""
+        self._require_operations_access(actor_role)
+        laundry = await self._resolve_laundry(actor_user_id, actor_role)
+        now = datetime.now(UTC)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        staff_names = await self._repo.staff_name_map(laundry.id)
+        rows = await self._repo.list_orders_with_customers(
+            laundry.id,
+            statuses=DELIVERY_DONE_STATUSES,
+            delivered_since=today_start,
+            limit=QUEUE_HARD_CAP,
+        )
+        # Newest delivered first for wrap-up scan.
+        rows = sorted(
+            rows,
+            key=lambda r: r[0].delivered_at or r[0].delivery_at or now,
+            reverse=True,
+        )
+        orders = [
+            self._serialize_order_row(
+                order,
+                customer_name,
+                queue_status="delivered",
+                assignment=None,
+                staff_names=staff_names,
+                now=now,
+                customer_phone=phone,
+            )
+            for order, customer_name, phone in rows
+        ]
+        return {
+            "orders": orders,
+            "total": len(orders),
+            "capped": len(orders) >= QUEUE_HARD_CAP,
+            "cap": QUEUE_HARD_CAP,
+        }
 
         result_buckets = [
             {

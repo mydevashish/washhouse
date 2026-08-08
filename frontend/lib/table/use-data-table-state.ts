@@ -1,5 +1,13 @@
 'use client';
 
+/**
+ * CLIENT-ONLY pagination/filter/sort over an in-memory array.
+ *
+ * Do NOT use this for server entities (orders, laundries, customers, etc.).
+ * Prefer `useServerList` + `PaginatedListResponse` so the browser never downloads
+ * the full table. Kept for tiny local/UI-only datasets only.
+ */
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { sortRows, type SortDirection } from '@/lib/table/sort-rows';

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -60,15 +60,48 @@ class OperationsRepository:
             .options(selectinload(Order.items)),
         )
 
-    async def list_orders_with_customers(self, laundry_id: UUID) -> list[tuple[Order, str]]:
-        result = await self._session.execute(
-            select(Order, User.full_name)
+    async def list_orders_with_customers(
+        self,
+        laundry_id: UUID,
+        *,
+        statuses: tuple[OrderStatus, ...] | None = None,
+        delivered_since: datetime | None = None,
+        active_since: datetime | None = None,
+        limit: int | None = None,
+        order_by_pickup_asc: bool = True,
+    ) -> list[tuple[Order, str, str | None]]:
+        """Return (order, customer_name, phone). Phone prefers order.customer_phone then user.phone."""
+        q = (
+            select(Order, User.full_name, User.phone)
             .join(User, User.id == Order.user_id)
             .where(Order.laundry_id == laundry_id, Order.deleted_at.is_(None))
             .options(selectinload(Order.items))
-            .order_by(Order.pickup_at.asc()),
         )
-        return list(result.all())
+        if statuses:
+            q = q.where(Order.status.in_(statuses))
+        if delivered_since is not None:
+            q = q.where(
+                Order.delivered_at.isnot(None),
+                Order.delivered_at >= delivered_since,
+            )
+        if active_since is not None:
+            q = q.where(
+                or_(
+                    Order.updated_at >= active_since,
+                    Order.pickup_at >= active_since,
+                ),
+            )
+        if order_by_pickup_asc:
+            q = q.order_by(Order.pickup_at.asc())
+        else:
+            q = q.order_by(Order.updated_at.desc().nullslast())
+        if limit is not None:
+            q = q.limit(limit)
+        result = await self._session.execute(q)
+        return [
+            (order, name, order.customer_phone or user_phone)
+            for order, name, user_phone in result.all()
+        ]
 
     async def list_assignments(self, laundry_id: UUID) -> list[OrderTaskAssignment]:
         result = await self._session.scalars(
@@ -297,6 +330,70 @@ class OperationsRepository:
             )
             or 0,
         )
+
+    async def count_pending_tasks(self, laundry_id: UUID) -> int:
+        """Orders waiting for ops action — SQL counts (no full order dump)."""
+        from sqlalchemy import exists
+
+        confirmed = int(
+            await self._session.scalar(
+                select(func.count())
+                .select_from(Order)
+                .where(
+                    Order.laundry_id == laundry_id,
+                    Order.deleted_at.is_(None),
+                    Order.status == OrderStatus.confirmed,
+                ),
+            )
+            or 0,
+        )
+        has_active_pickup = exists().where(
+            OrderTaskAssignment.order_id == Order.id,
+            OrderTaskAssignment.laundry_id == laundry_id,
+            OrderTaskAssignment.task_type == TaskAssignmentType.pickup,
+            OrderTaskAssignment.status.in_(ACTIVE_ASSIGNMENT_STATUSES),
+        )
+        unassigned_pickup = int(
+            await self._session.scalar(
+                select(func.count())
+                .select_from(Order)
+                .where(
+                    Order.laundry_id == laundry_id,
+                    Order.deleted_at.is_(None),
+                    Order.status == OrderStatus.pickup_assigned,
+                    ~has_active_pickup,
+                ),
+            )
+            or 0,
+        )
+        has_active_delivery = exists().where(
+            OrderTaskAssignment.order_id == Order.id,
+            OrderTaskAssignment.laundry_id == laundry_id,
+            OrderTaskAssignment.task_type == TaskAssignmentType.delivery,
+            OrderTaskAssignment.status.in_(
+                (
+                    TaskAssignmentStatus.scheduled,
+                    TaskAssignmentStatus.assigned,
+                    TaskAssignmentStatus.in_progress,
+                    TaskAssignmentStatus.failed,
+                    TaskAssignmentStatus.returned,
+                ),
+            ),
+        )
+        unassigned_ready = int(
+            await self._session.scalar(
+                select(func.count())
+                .select_from(Order)
+                .where(
+                    Order.laundry_id == laundry_id,
+                    Order.deleted_at.is_(None),
+                    Order.status == OrderStatus.ready,
+                    ~has_active_delivery,
+                ),
+            )
+            or 0,
+        )
+        return confirmed + unassigned_pickup + unassigned_ready
 
     async def staff_name_map(self, laundry_id: UUID) -> dict[UUID, str]:
         result = await self._session.execute(

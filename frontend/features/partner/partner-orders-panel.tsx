@@ -1,27 +1,32 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Package, RefreshCw } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { InfoBanner } from '@/components/ui/info-banner';
 import { Skeleton } from '@/components/ui/skeleton';
-import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
 import { PartnerOrderCard } from '@/features/partner/partner-order-card';
-import { getPartnerNextStatus, isOrderNeedsAction } from '@/features/partner/lib/partner-status';
+import { usePartnerOrders } from '@/features/partner/hooks/use-partner-operations';
+import { getPartnerNextStatus } from '@/features/partner/lib/partner-status';
 import {
   acceptOrder,
   listPartnerOrders,
   rejectOrder,
   updateOrderStatus,
+  type PartnerOrder,
+  type PartnerOrdersBucket,
 } from '@/services/partner';
+import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
+import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
 import { cn } from '@/lib/utils';
 
-type Filter = 'action' | 'active' | 'done' | 'all';
+type Filter = PartnerOrdersBucket;
 
 export function PartnerOrdersPanel() {
   const queryClient = useQueryClient();
@@ -29,15 +34,19 @@ export function PartnerOrdersPanel() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<'accept' | 'reject' | 'advance' | null>(null);
 
-  const ordersQ = useQuery({
-    queryKey: queryKeys.partnerOrders(),
-    queryFn: listPartnerOrders,
-    refetchInterval: 60_000,
-    refetchIntervalInBackground: false,
+  const list = useServerList<PartnerOrder, { bucket: Filter }>({
+    queryKey: queryKeys.partnerOrders({ surface: 'panel' }),
+    fetcher: (params) => listPartnerOrders(params),
+    filters: { bucket: filter },
+    defaultSort: { sort_by: 'created_at', sort_order: 'desc' },
+    defaultPageSize: 10,
   });
 
+  const actionCountQ = usePartnerOrders({ bucket: 'action', page: 1, page_size: 10 });
+  const actionCount = actionCountQ.data?.total_records ?? 0;
+
   const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOrders() });
+    void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerAnalytics() });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerCustomers() });
   };
@@ -93,28 +102,6 @@ export function PartnerOrdersPanel() {
     },
   });
 
-  const orders = ordersQ.data ?? [];
-
-  const filtered = useMemo(() => {
-    switch (filter) {
-      case 'action':
-        return orders.filter((o) => isOrderNeedsAction(o.status, o.order_source));
-      case 'active':
-        return orders.filter(
-          (o) =>
-            o.status !== 'delivered' &&
-            o.status !== 'cancelled' &&
-            !isOrderNeedsAction(o.status, o.order_source),
-        );
-      case 'done':
-        return orders.filter((o) => o.status === 'delivered' || o.status === 'cancelled');
-      default:
-        return orders;
-    }
-  }, [orders, filter]);
-
-  const actionCount = orders.filter((o) => isOrderNeedsAction(o.status, o.order_source)).length;
-
   const filters: { id: Filter; label: string }[] = [
     { id: 'action', label: `New (${actionCount})` },
     { id: 'active', label: 'In progress' },
@@ -122,7 +109,7 @@ export function PartnerOrdersPanel() {
     { id: 'all', label: 'All' },
   ];
 
-  if (ordersQ.isLoading) {
+  if (list.isLoading) {
     return (
       <div className="space-y-4" aria-busy="true">
         <Skeleton className="h-12 w-full rounded-xl" />
@@ -133,15 +120,15 @@ export function PartnerOrdersPanel() {
     );
   }
 
-  if (ordersQ.isError) {
+  if (list.isError) {
     return (
       <InfoBanner variant="destructive" title="Could not load orders">
         Pull to refresh or tap the button below.
         <Button
           type="button"
           variant="outline"
-          className="mt-3 w-full"
-          onClick={() => void ordersQ.refetch()}
+          className="mt-3 w-full min-h-11"
+          onClick={() => void list.refetch()}
         >
           Try again
         </Button>
@@ -159,11 +146,11 @@ export function PartnerOrdersPanel() {
           type="button"
           variant="outline"
           size="icon"
-          className="shrink-0"
+          className="min-h-11 min-w-11 shrink-0"
           aria-label="Refresh orders"
-          onClick={() => void ordersQ.refetch()}
+          onClick={() => void list.refetch()}
         >
-          <RefreshCw className={cn('h-4 w-4', ordersQ.isFetching && 'animate-spin')} />
+          <RefreshCw className={cn('h-4 w-4', list.isFetching && 'animate-spin')} />
         </Button>
       </div>
 
@@ -175,14 +162,14 @@ export function PartnerOrdersPanel() {
             variant={filter === f.id ? 'default' : 'secondary'}
             size="sm"
             onClick={() => setFilter(f.id)}
-            className="shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold"
+            className="min-h-11 shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold"
           >
             {f.label}
           </Button>
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {list.rows.length === 0 ? (
         <EmptyState
           icon={Package}
           title={filter === 'action' ? 'No new orders' : 'Nothing here'}
@@ -194,7 +181,7 @@ export function PartnerOrdersPanel() {
         />
       ) : (
         <ul className="space-y-4">
-          {filtered.map((order) => {
+          {list.rows.map((order) => {
             const next = getPartnerNextStatus(order.status, order.order_source);
             return (
               <li key={order.id}>
@@ -214,6 +201,17 @@ export function PartnerOrdersPanel() {
           })}
         </ul>
       )}
+
+      <DataTablePagination
+        page={list.page}
+        pageCount={list.pageCount}
+        pageSize={list.pageSize}
+        pageStart={list.pageStart}
+        pageEnd={list.pageEnd}
+        totalCount={list.totalRecords}
+        onPageChange={list.setPage}
+        onPageSizeChange={list.setPageSize}
+      />
     </div>
   );
 }

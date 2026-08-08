@@ -34,7 +34,7 @@ export function PartnerCustomersPanel() {
 
     queryKey: queryKeys.partnerCustomerInsights('top', ''),
 
-    queryFn: () => listPartnerCustomerInsights({ list_type: 'top', limit: 5 }),
+    queryFn: () => listPartnerCustomerInsights({ list_type: 'top', page: 1, page_size: 10 }),
 
   });
 
@@ -76,7 +76,7 @@ export function PartnerCustomersPanel() {
 
 
 
-  const customers = customersQ.data?.items ?? [];
+  const customers = (customersQ.data?.items ?? []).slice(0, 5);
 
 
 

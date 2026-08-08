@@ -41,7 +41,7 @@ function parseList(
 ): BookingRequestListResult {
   const pagination = meta?.pagination ?? {};
   const page = pagination.page ?? filters.page ?? 1;
-  const pageSize = pagination.per_page ?? pagination.page_size ?? filters.page_size ?? 20;
+  const pageSize = pagination.per_page ?? pagination.page_size ?? filters.page_size ?? 10;
   const total = pagination.total ?? data.length;
   const totalPages = pagination.total_pages ?? Math.max(1, Math.ceil(total / pageSize));
   return {

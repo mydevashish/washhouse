@@ -113,18 +113,23 @@ class AnnouncementService:
         self,
         *,
         status: str | None = None,
-        limit: int = 50,
-        offset: int = 0,
+        page: int = 1,
+        page_size: int = 10,
     ) -> dict:
+        from app.core.pagination import build_paginated_response, normalize_page_size
+
         status_enum = AnnouncementStatus(status) if status else None
-        rows = await self._repo.list_admin(status=status_enum, limit=limit, offset=offset)
+        safe_page = max(1, page)
+        safe_size = normalize_page_size(page_size)
+        offset = (safe_page - 1) * safe_size
+        rows = await self._repo.list_admin(status=status_enum, limit=safe_size, offset=offset)
         total = await self._repo.count_admin(status=status_enum)
-        return {
-            "items": [self._serialize(r) for r in rows],
-            "total": total,
-            "limit": limit,
-            "offset": offset,
-        }
+        return build_paginated_response(
+            items=[self._serialize(r) for r in rows],
+            total_records=total,
+            page=safe_page,
+            page_size=safe_size,
+        )
 
     async def admin_get(self, announcement_id: UUID) -> dict:
         row = await self._repo.get(announcement_id)

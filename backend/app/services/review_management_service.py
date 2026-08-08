@@ -105,10 +105,25 @@ class ReviewManagementService:
         max_rating: int | None = None,
         has_reply: bool | None = None,
         abuse_reported: bool | None = None,
-        limit: int = 50,
-        offset: int = 0,
-    ) -> list[dict]:
+        page: int = 1,
+        page_size: int = 10,
+    ) -> dict:
+        from app.core.pagination import build_paginated_response, normalize_page_size
+
         laundry = await self._resolve_partner_laundry(actor_user_id, actor_role)
+        statuses = (ReviewStatus.published, ReviewStatus.pending_moderation, ReviewStatus.hidden)
+        safe_page = max(1, page)
+        safe_size = normalize_page_size(page_size)
+        offset = (safe_page - 1) * safe_size
+        total = await self._repo.count_reviews(
+            laundry.id,
+            rating=rating,
+            min_rating=min_rating,
+            max_rating=max_rating,
+            has_reply=has_reply,
+            abuse_reported=abuse_reported,
+            statuses=statuses,
+        )
         rows = await self._repo.list_reviews(
             laundry.id,
             rating=rating,
@@ -116,11 +131,16 @@ class ReviewManagementService:
             max_rating=max_rating,
             has_reply=has_reply,
             abuse_reported=abuse_reported,
-            statuses=(ReviewStatus.published, ReviewStatus.pending_moderation, ReviewStatus.hidden),
-            limit=limit,
+            statuses=statuses,
+            limit=safe_size,
             offset=offset,
         )
-        return [self._serialize_row(r, name, laundry.name) for r, name in rows]
+        return build_paginated_response(
+            items=[self._serialize_row(r, name, laundry_name or laundry.name) for r, name, laundry_name in rows],
+            total_records=total,
+            page=safe_page,
+            page_size=safe_size,
+        )
 
     async def partner_analytics(self, actor_user_id: UUID, actor_role: str) -> dict:
         laundry = await self._resolve_partner_laundry(actor_user_id, actor_role)
@@ -207,24 +227,39 @@ class ReviewManagementService:
         status: str | None = None,
         abuse_reported: bool | None = None,
         is_fake: bool | None = None,
-        limit: int = 50,
-        offset: int = 0,
-    ) -> list[dict]:
+        page: int = 1,
+        page_size: int = 10,
+    ) -> dict:
+        from app.core.pagination import build_paginated_response, normalize_page_size
+
         status_enum = ReviewStatus(status) if status else None
+        safe_page = max(1, page)
+        safe_size = normalize_page_size(page_size)
+        offset = (safe_page - 1) * safe_size
         rows = await self._repo.list_reviews(
             laundry_id,
             status=status_enum,
             abuse_reported=abuse_reported,
-            limit=limit,
+            is_fake=is_fake,
+            limit=safe_size,
             offset=offset,
         )
-        result = []
-        for review, name in rows:
-            if is_fake is not None and review.is_fake != is_fake:
-                continue
-            laundry = await self._repo.get_laundry(review.laundry_id)
-            result.append(self._serialize_row(review, name, laundry.name if laundry else None))
-        return result
+        result = [
+            self._serialize_row(review, customer_name, laundry_name)
+            for review, customer_name, laundry_name in rows
+        ]
+        total = await self._repo.count_reviews(
+            laundry_id,
+            status=status_enum,
+            abuse_reported=abuse_reported,
+            is_fake=is_fake,
+        )
+        return build_paginated_response(
+            items=result,
+            total_records=total,
+            page=safe_page,
+            page_size=safe_size,
+        )
 
     async def admin_moderate(
         self,

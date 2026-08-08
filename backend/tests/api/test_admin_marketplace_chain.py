@@ -313,7 +313,8 @@ async def test_admin_marketplace_approval_order_commission_chain(
 
     management = await client.get("/api/v1/admin/laundries/management", headers=admin_h)
     assert management.status_code == 200
-    row = next(r for r in management.json()["data"] if str(r["id"]) == laundry_id)
+    management_rows = management.json()["data"]["items"]
+    row = next(r for r in management_rows if str(r["id"]) == laundry_id)
     assert row["custom_commission_rate"] == "15.00"
     assert row["effective_commission_rate"] == "15.00"
 

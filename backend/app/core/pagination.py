@@ -14,6 +14,13 @@ ALLOWED_PAGE_SIZES = frozenset({10, 25, 50, 100})
 MAX_PAGE_SIZE = 100
 
 
+def normalize_page_size(page_size: int | None) -> int:
+    """Clamp to an allowed page size; invalid / missing → DEFAULT_PAGE_SIZE (10)."""
+    if page_size is None:
+        return DEFAULT_PAGE_SIZE
+    return page_size if page_size in ALLOWED_PAGE_SIZES else DEFAULT_PAGE_SIZE
+
+
 class SortOrder(str, Enum):
     asc = "asc"
     desc = "desc"
@@ -21,6 +28,12 @@ class SortOrder(str, Enum):
 
 @dataclass(frozen=True)
 class ListQueryParams:
+    """Standard list query: page, page_size (default 10), search, sort_by, sort_order.
+
+    Copy this pattern for module filters via ``*_list_params.py`` + ``ListQueryParams.from_query``.
+    Allowed page sizes: 10, 25, 50, 100. Anything else falls back to 10.
+    """
+
     page: int = 1
     page_size: int = DEFAULT_PAGE_SIZE
     search: str | None = None
@@ -38,7 +51,7 @@ class ListQueryParams:
         sort_order: str = "desc",
     ) -> ListQueryParams:
         safe_page = max(1, page)
-        safe_size = page_size if page_size in ALLOWED_PAGE_SIZES else DEFAULT_PAGE_SIZE
+        safe_size = normalize_page_size(page_size)
         order = SortOrder.asc if sort_order.lower() == "asc" else SortOrder.desc
         term = search.strip() if search and search.strip() else None
         return cls(

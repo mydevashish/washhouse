@@ -56,7 +56,7 @@ export function PartnerPickupEvidenceDialog({
             orderId={order.id}
             onUploaded={() => {
               void queryClient.invalidateQueries({ queryKey: queryKeys.pickupEvidence(order.id, 'partner') });
-              void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOrders() });
+              void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
             }}
           />
         )}
