@@ -19,10 +19,6 @@ import {
 } from '@/features/partner/lib/partner-nav';
 import { usePartnerAnalytics } from '@/features/partner/hooks/use-partner-operations';
 import { PartnerPracticeModeBanner } from '@/features/partner-shop-floor/components/partner-practice-mode-banner';
-import { ShopFloorBottomNav } from '@/features/partner-shop-floor/components/shop-floor-bottom-nav';
-import { ShopFloorSidebar } from '@/features/partner-shop-floor/components/shop-floor-sidebar';
-import { usePartnerUiMode } from '@/features/partner-shop-floor/hooks/use-partner-ui-mode';
-import { getShopFloorPageTitle } from '@/features/partner-shop-floor/lib/shop-floor-nav';
 import { useScrollRestore } from '@/hooks/use-scroll-restore';
 import { useMounted } from '@/lib/hooks/use-mounted';
 import { cn } from '@/lib/utils';
@@ -116,8 +112,6 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
   const ordersTab = searchParams.get('tab');
   const user = useAuthStore((s) => s.user);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { mode } = usePartnerUiMode();
-  const shopFloor = mode === 'shop_floor';
 
   useScrollRestore();
 
@@ -140,14 +134,7 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
   const laundryName = mounted ? analyticsQ.data?.laundry_name : undefined;
   const userName = mounted ? user?.full_name : undefined;
 
-  const sidebar = shopFloor ? (
-    <ShopFloorSidebar
-      pathname={pathname}
-      laundryName={laundryName}
-      userName={userName}
-      onNavigate={() => setMobileOpen(false)}
-    />
-  ) : (
+  const sidebar = (
     <PartnerAdvancedSidebar
       pathname={pathname}
       tab={ordersTab}
@@ -158,9 +145,7 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
     />
   );
 
-  const pageTitle =
-    (shopFloor ? getShopFloorPageTitle(pathname) : null) ??
-    getPartnerPageTitle(pathname, ordersTab);
+  const pageTitle = getPartnerPageTitle(pathname, ordersTab);
 
   return (
     <div className="flex h-screen overflow-hidden bg-muted/20">
@@ -168,7 +153,7 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
         {sidebar}
       </aside>
 
-      {mobileOpen && !shopFloor && (
+      {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
             type="button"
@@ -196,23 +181,19 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
           pageTitle={pageTitle}
           userRole={mounted ? user?.role : undefined}
           laundryName={mounted ? laundryName : undefined}
-          onOpenSidebar={shopFloor ? undefined : () => setMobileOpen(true)}
+          onOpenSidebar={() => setMobileOpen(true)}
           notificationsHref="/partner/notifications"
           settingsHref="/partner/settings"
         />
         <main
           id="main-content"
-          className={cn(
-            'min-h-0 flex-1 overflow-y-auto overflow-x-hidden',
-            shopFloor && 'pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0',
-          )}
+          className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
           tabIndex={-1}
         >
           {mounted && user && <AnnouncementBannerStack />}
           {mounted && user ? <PartnerPracticeModeBanner /> : null}
           {children}
         </main>
-        {shopFloor ? <ShopFloorBottomNav pathname={pathname} /> : null}
       </div>
     </div>
   );

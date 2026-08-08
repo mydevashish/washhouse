@@ -291,9 +291,13 @@ describeJourney('Partner Shop Floor usability journey', () => {
   test('happy path: create → tags → bill → wash/ready → phone reprint', async ({
     page,
   }) => {
-    const board = await mockJourneyApis(page);
+    await mockJourneyApis(page);
     await page.addInitScript(() => {
-      window.localStorage.setItem('dlm.partner_ui_mode', JSON.stringify({ state: { mode: 'shop_floor' }, version: 0 }));
+      // Legacy shop_floor migrates to advanced shell (P6).
+      window.localStorage.setItem(
+        'dlm.partner_ui_mode',
+        JSON.stringify({ state: { mode: 'shop_floor' }, version: 0 }),
+      );
       window.localStorage.setItem(
         'dlm.partner_practice_mode',
         JSON.stringify({ state: { enabled: true }, version: 0 }),
@@ -301,14 +305,14 @@ describeJourney('Partner Shop Floor usability journey', () => {
     });
     await loginAsPartner(page);
 
-    // Practice banner visible in shop floor chrome
+    // Practice banner still available on the single (Advanced) shell
     await page.goto('/partner');
     await expect(page.getByTestId('practice-mode-banner')).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId('shop-floor-home-tiles')).toBeVisible();
+    await expect(page.getByTestId('shop-floor-home-tiles')).toHaveCount(0);
 
     // Task 1 — Cloth Wall: 3 shirts + 1 saree (pictures)
     await page.goto('/partner/floor/new');
-    await expect(page.getByRole('heading', { name: /naya order/i })).toBeVisible({
+    await expect(page.getByRole('heading', { name: /new order/i })).toBeVisible({
       timeout: 30_000,
     });
     await page.getByTestId('cloth-wall-phone').fill(PHONE);
@@ -350,28 +354,11 @@ describeJourney('Partner Shop Floor usability journey', () => {
     await expect(page.getByTestId('bill-cgst')).toContainText('CGST');
     await expect(page.getByRole('button', { name: /^print$/i })).toBeVisible();
 
-    // Task 4 — Washing then Ready on Today board
+    // Task 4 — Legacy Today board → hub Today chip (boards folded in P7)
     await page.goto('/partner/floor/today');
-    await expect(page.getByTestId('shop-floor-today')).toBeVisible({ timeout: 15_000 });
-    const card = page.getByTestId('today-order-card');
-    await expect(card).toBeVisible();
-    await expect(card.getByTestId('color-token-chip')).toContainText('R-42');
-    await expect(card.getByTestId('floor-photo-stack')).toContainText('4 pcs');
-
-    await expect(card.getByTestId('floor-advance-cta')).toHaveAttribute(
-      'data-floor-action',
-      'start_wash',
-    );
-    await card.getByTestId('floor-advance-cta').click();
-    await expect.poll(() => board.getStatus(), { timeout: 10_000 }).toBe('washing');
-
-    await expect(card.getByTestId('floor-advance-cta')).toHaveAttribute(
-      'data-floor-action',
-      'mark_ready',
-    );
-    await card.getByTestId('floor-advance-cta').click();
-    await expect.poll(() => board.getStatus(), { timeout: 10_000 }).toBe('ready');
-    expect(board.getPatches()).toEqual(['washing', 'ready']);
+    await expect(page).toHaveURL(/\/partner\/orders/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/chip=today/);
+    await expect(page.locator('[data-testid="shop-floor-bottom-nav"]')).toHaveCount(0);
 
     // Task 5 — Find by phone + reprint tags
     await page.goto('/partner/floor/print');

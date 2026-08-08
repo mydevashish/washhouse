@@ -32,6 +32,7 @@ import type {
 } from '@/features/partner/customer-desk/types';
 import { customerDeskLookupKey, guestDeskProfile } from '@/features/partner/customer-desk/types';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
+import { PartnerRecentCustomersStrip } from '@/features/partner/orders-hub/partner-recent-customers-strip';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import { queryKeys } from '@/lib/query-keys';
@@ -182,6 +183,7 @@ export function PartnerCustomerDeskView({ embedded = false }: PartnerCustomerDes
         bodyClassName="p-4 sm:p-5"
       >
         <div className="mx-auto w-full max-w-xl space-y-4">
+          <PartnerRecentCustomersStrip />
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-50">
               <Headset className="h-5 w-5" aria-hidden />

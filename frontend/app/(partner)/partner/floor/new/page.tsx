@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ClothWallNewOrderView } from '@/features/partner-shop-floor/views/cloth-wall-new-order-view';
 import { PARTNER_PORTAL_ROLES } from '@/lib/partner-roles';
 
-export const metadata = { title: 'Partner · Naya Order' };
+export const metadata = { title: 'Partner · New order' };
 
 function FloorNewFallback() {
   return (

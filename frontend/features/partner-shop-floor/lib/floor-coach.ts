@@ -5,25 +5,26 @@ import {
 
 export type FloorCoachStep = 'customer' | 'wall' | 'confirm' | 'success' | 'home';
 
+/** English-primary coach copy (`hinglish` kept for type compat; same as english). */
 const STEP_COPY: Record<FloorCoachStep, { hinglish: string; english: string }> = {
   customer: {
-    hinglish: 'Phone keypad se number dabao, phir naam',
+    hinglish: 'Enter phone on the big keypad, then name',
     english: 'Enter phone on the big keypad, then name',
   },
   wall: {
-    hinglish: 'Kapde ki photo pe tap — qty badhao',
-    english: 'Tap clothing photos to add qty',
+    hinglish: 'Tap clothing photos to add quantity',
+    english: 'Tap clothing photos to add quantity',
   },
   confirm: {
-    hinglish: 'Check karo — Save order dabao',
+    hinglish: 'Review lines, then Save order',
     english: 'Review lines, then Save order',
   },
   success: {
-    hinglish: 'Print Tags dabao — bag pe chipkao',
-    english: 'Print tags and stick on the bag',
+    hinglish: 'Print tags and stick them on the bag',
+    english: 'Print tags and stick them on the bag',
   },
   home: {
-    hinglish: 'Naya Order se shuru karo',
+    hinglish: 'Start with New order',
     english: 'Start with New order',
   },
 };

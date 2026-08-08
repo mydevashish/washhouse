@@ -3,9 +3,10 @@
 > Status: **in-progress** (P4 logistics board shipped — 2026-08-08)  
 > Owner: product-manager + ui-ux-designer → frontend-architect + backend-architect  
 > Last updated: 2026-08-08  
-> Related: [partner-dashboard.md](partner-dashboard.md), [partner-shop-floor.md](partner-shop-floor.md), [orders-hub.md](orders-hub.md), [partner-staff.md](partner-staff.md), [commission.md](commission.md), [customer-desk.md](customer-desk.md)  
+> Related: [partner-dashboard.md](partner-dashboard.md), [partner-customers-orders-hub.md](partner-customers-orders-hub.md) (single shell + Operations slim), [partner-shop-floor.md](partner-shop-floor.md) (mode retiring), [orders-hub.md](orders-hub.md), [partner-staff.md](partner-staff.md), [commission.md](commission.md), [customer-desk.md](customer-desk.md)  
 > Prompt pack: [`.cursor/prompts/partner-owner-command-center.md`](../../.cursor/prompts/partner-owner-command-center.md)  
-> Product: India laundry **owner** Advanced Mode cockpit (gross / platform % / net / growth + people + logistics)
+> Product: India laundry **owner** cockpit (gross / platform % / net / growth + people + logistics) — **only partner shell** after Shop Floor display mode retirement  
+> **IA note (2026-08-08):** Operations collapses to **Customers & Orders** per [partner-customers-orders-hub.md](partner-customers-orders-hub.md); evolve this nav, don’t fork.
 
 ## Problem
 

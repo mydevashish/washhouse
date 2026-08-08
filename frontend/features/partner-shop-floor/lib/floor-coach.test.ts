@@ -26,9 +26,9 @@ describe('floor coach', () => {
     expect(window.localStorage.getItem(PARTNER_FLOOR_COACH_ORDERS_KEY)).toBe('2');
   });
 
-  it('returns hinglish next-step copy', () => {
+  it('returns English next-step copy', () => {
     writeCoachOrderCount(0);
-    expect(floorCoachCopy('customer').hinglish.toLowerCase()).toContain('phone');
-    expect(floorCoachCopy('success').hinglish.toLowerCase()).toContain('print');
+    expect(floorCoachCopy('customer').english.toLowerCase()).toContain('phone');
+    expect(floorCoachCopy('success').english.toLowerCase()).toContain('print');
   });
 });

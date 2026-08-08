@@ -30,7 +30,7 @@ describe('floor-status mapping', () => {
   it('plans walk-in Received→Washing→Ready→Given advances', () => {
     expect(getFloorAdvancePlan('confirmed', 'walk_in')).toMatchObject({
       action: 'start_wash',
-      label: 'Dhulai shuru',
+      label: 'Start washing',
       patchStatuses: ['washing'],
     });
     expect(getFloorAdvancePlan('washing', 'walk_in')).toMatchObject({

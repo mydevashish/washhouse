@@ -68,7 +68,7 @@ type ClothWallNewOrderViewProps = {
 
 export function ClothWallNewOrderView({
   floorEntry = false,
-  title = 'Naya Order',
+  title = 'New order',
   description = 'Phone → Cloth Wall → Confirm',
 }: ClothWallNewOrderViewProps) {
   const enabled = usePartnerQueriesEnabled();
@@ -124,7 +124,7 @@ export function ClothWallNewOrderView({
   const createMutation = useMutation({
     mutationFn: createWalkInOrder,
     onSuccess: (order) => {
-      toast.success('Order save हो गई');
+      toast.success('Order saved');
       recordCoachOrderCreated();
       void queryClient.invalidateQueries({ queryKey: queryKeys.partnerWalkInOrders() });
       void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
@@ -132,13 +132,13 @@ export function ClothWallNewOrderView({
       setCreatedOrder(order);
       setStep('success');
     },
-    onError: () => toast.error('Order save nahi hua'),
+    onError: () => toast.error('Could not save order'),
   });
 
   const startWashMutation = useMutation({
     mutationFn: (orderId: string) => advanceWalkInOrderStatus(orderId, 'washing'),
     onSuccess: () => {
-      toast.success('Dhulai shuru');
+      toast.success('Wash started');
       if (createdOrder) {
         setCreatedOrder({ ...createdOrder, status: 'washing' });
       }
@@ -211,11 +211,11 @@ export function ClothWallNewOrderView({
   function goFromCustomer() {
     const phone = normalizeIndianPhoneInput(customerPhone);
     if (!customerName.trim()) {
-      toast.error('Customer name likho');
+      toast.error('Enter the customer name');
       return;
     }
     if (!isValidIndianMobileE164(phone)) {
-      toast.error('Sahi Indian mobile daalo (+91)');
+      toast.error('Enter a valid Indian mobile (+91)');
       return;
     }
     setCustomerPhone(phone);
@@ -226,7 +226,7 @@ export function ClothWallNewOrderView({
     const phone = normalizeIndianPhoneInput(customerPhone);
     const e164 = phone.startsWith('+') ? phone : `+${phone}`;
     if (!lines.length) {
-      toast.error('Kam se kam ek garment add karo');
+      toast.error('Add at least one garment');
       return;
     }
 
@@ -325,7 +325,7 @@ export function ClothWallNewOrderView({
               data-testid="cloth-wall-phone"
             />
             <p id="cw-phone-hint" className="text-xs text-muted-foreground">
-              Neeche bade buttons se number dabao — typing optional.
+              Use the big buttons below to enter the number — typing is optional.
             </p>
             <PhoneNumericKeypad value={customerPhone} onChange={setCustomerPhone} />
           </div>
@@ -396,7 +396,7 @@ export function ClothWallNewOrderView({
               ) : visibleTiles.length === 0 ? (
                 <PartnerPanel title="No garments" bodyClassName="p-4">
                   <p className="text-sm text-muted-foreground">
-                    Is category mein kuch nahi. Dusri category try karo ya List mode.
+                    Nothing in this category. Try another category or List mode.
                   </p>
                 </PartnerPanel>
               ) : (
@@ -501,7 +501,7 @@ export function ClothWallNewOrderView({
               className="min-h-14 flex-1"
               onClick={() => setStep('wall')}
             >
-              Wapas
+              Back
             </Button>
             <Button
               type="button"

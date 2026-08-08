@@ -34,10 +34,13 @@ describe('floor voice gates', () => {
     ).toBe(false);
   });
 
-  it('allows when setting on and motion/sound ok', () => {
+  it('speaks English with en-IN preference (never Hindi)', () => {
     const speak = jest.fn();
+    const enIn = { lang: 'en-IN', name: 'English India' } as SpeechSynthesisVoice;
+    const hi = { lang: 'hi-IN', name: 'Hindi' } as SpeechSynthesisVoice;
     class MockUtterance {
       text: string;
+      lang = '';
       rate = 1;
       pitch = 1;
       volume = 1;
@@ -55,7 +58,7 @@ describe('floor voice gates', () => {
       value: {
         speak,
         cancel: jest.fn(),
-        getVoices: () => [],
+        getVoices: () => [hi, enIn],
       },
     });
     expect(
@@ -66,12 +69,15 @@ describe('floor voice gates', () => {
       }),
     ).toBe(true);
     expect(
-      speakFloorPrompt('Order save हो गई', {
+      speakFloorPrompt('Order saved', {
         settingEnabled: true,
         prefersReducedMotion: false,
         soundOff: false,
       }),
     ).toBe(true);
     expect(speak).toHaveBeenCalled();
+    const utter = speak.mock.calls[0]?.[0] as InstanceType<typeof MockUtterance>;
+    expect(utter.lang).toBe('en-IN');
+    expect(utter.voice).toBe(enIn);
   });
 });

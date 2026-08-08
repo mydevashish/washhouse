@@ -8,8 +8,8 @@ type PartnerFloorVoiceToggleProps = {
 };
 
 /**
- * Opt-in Web Speech prompts for Shop Floor success / print.
- * Off by default; never speaks when reduced-motion or sound-off.
+ * Opt-in Web Speech prompts for order success / print.
+ * Off by default; English (en-IN); never speaks when reduced-motion or sound-off.
  */
 export function PartnerFloorVoiceToggle({ className }: PartnerFloorVoiceToggleProps) {
   const { enabled, soundOff, hydrated, setEnabled, setSoundOff } = usePartnerFloorVoice();
@@ -19,7 +19,8 @@ export function PartnerFloorVoiceToggle({ className }: PartnerFloorVoiceTogglePr
       <div>
         <p className="text-sm font-semibold text-foreground">Voice prompts</p>
         <p className="text-xs text-muted-foreground">
-          Optional one-line speak on order save / print. Respects reduced motion. Default OFF.
+          Optional English (India) one-line speak on order save / print. Respects reduced motion.
+          Default OFF.
         </p>
       </div>
       <button
@@ -41,7 +42,7 @@ export function PartnerFloorVoiceToggle({ className }: PartnerFloorVoiceTogglePr
           {enabled ? 'Voice prompts ON' : 'Voice prompts OFF'}
         </span>
         <span className="text-xs text-muted-foreground">
-          {enabled ? 'Success / print pe short Hinglish line' : 'Tap to enable Web Speech'}
+          {enabled ? 'Speaks a short English line on success / print' : 'Tap to enable Web Speech'}
         </span>
       </button>
       <button
@@ -59,7 +60,7 @@ export function PartnerFloorVoiceToggle({ className }: PartnerFloorVoiceTogglePr
       >
         <span className="text-sm font-semibold">{soundOff ? 'Sound OFF' : 'Sound on (default)'}</span>
         <span className="text-xs text-muted-foreground">
-          {soundOff ? 'Voice blocked even if prompts ON' : 'Mute floor speech without clearing setting'}
+          {soundOff ? 'Voice blocked even if prompts ON' : 'Mute speech without clearing the setting'}
         </span>
       </button>
     </div>

@@ -11,6 +11,8 @@ import { ClientDate } from '@/components/ui/client-date';
 import { PartnerStatusBadge } from '@/features/partner/components/partner-status-badge';
 import { PartnerOrderSourceBadge, isWalkInOrder } from '@/features/partner/components/partner-order-source-badge';
 import { ColorTokenChip } from '@/features/partner-shop-floor/components/color-token-chip';
+import { PrintOrderActions } from '@/features/partner-shop-floor/components/print-order-actions';
+import { getPrintLifecycleEmphasis } from '@/features/partner-shop-floor/lib/print-lifecycle';
 import { PickupEvidenceGallery, PickupEvidenceUpload } from '@/features/pickup-evidence';
 import {
   InventoryVerificationDisplay,
@@ -96,6 +98,7 @@ export function PartnerOrderCard({
   const hasInventory = (inventoryQ.data?.total_quantity ?? 0) > 0;
   const hasDeliveryProof = Boolean(deliveryProofQ.data);
   const canMarkPickedUp = (!needsPickupEvidence || hasEvidence) && (!needsInventory || hasInventory);
+  const printEmphasis = getPrintLifecycleEmphasis(order.status);
 
   return (
     <Card
@@ -104,16 +107,17 @@ export function PartnerOrderCard({
         order.status === 'cancelled' && 'opacity-70',
       )}
     >
-      <CardContent className="space-y-3 p-4">
+      <CardContent className="space-y-3 p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
               <Link
                 href={`/partner/orders/${order.id}`}
                 className="font-mono text-sm font-semibold text-foreground hover:text-primary hover:underline"
               >
                 #{order.tracking_code}
               </Link>
+              <PartnerStatusBadge status={order.status} />
               <PartnerOrderSourceBadge order={order} />
               {order.token_code ? (
                 <ColorTokenChip
@@ -128,7 +132,6 @@ export function PartnerOrderCard({
               <p className="truncate text-xs text-muted-foreground">{order.customer_phone}</p>
             )}
           </div>
-          <PartnerStatusBadge status={order.status} />
         </div>
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -154,7 +157,7 @@ export function PartnerOrderCard({
           <div className="grid gap-2 sm:grid-cols-2">
             <Button
               type="button"
-              className="min-h-[44px] w-full"
+              className="h-9 w-full"
               disabled={busy}
               aria-busy={isAccepting}
               aria-label={isAccepting ? 'Accepting order' : 'Accept order'}
@@ -162,7 +165,7 @@ export function PartnerOrderCard({
             >
               {isAccepting ? (
                 <>
-                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                   Accepting…
                 </>
               ) : (
@@ -172,7 +175,7 @@ export function PartnerOrderCard({
             <Button
               type="button"
               variant="outline"
-              className="min-h-[44px] w-full border-danger/40 text-danger hover:bg-danger-muted"
+              className="h-9 w-full border-danger/40 text-danger hover:bg-danger-muted"
               disabled={busy}
               aria-busy={isRejecting}
               aria-label={isRejecting ? 'Rejecting order' : 'Reject order'}
@@ -180,7 +183,7 @@ export function PartnerOrderCard({
             >
               {isRejecting ? (
                 <>
-                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                   Rejecting…
                 </>
               ) : (
@@ -232,7 +235,7 @@ export function PartnerOrderCard({
         {!needsAction && isOrderActive(order.status) && nextStatus && nextLabel && !needsDeliveryOtp && (
           <Button
             type="button"
-            className="min-h-[44px] w-full"
+            className="h-9 w-full"
             disabled={busy || (needsPickupEvidence && !hasEvidence) || (needsInventory && !hasInventory)}
             aria-busy={isAdvancing}
             aria-label={isAdvancing ? `Updating status to ${nextLabel}` : nextLabel}
@@ -240,7 +243,7 @@ export function PartnerOrderCard({
           >
             {isAdvancing ? (
               <>
-                <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 Updating…
               </>
             ) : (
@@ -301,6 +304,18 @@ export function PartnerOrderCard({
         {order.status === 'cancelled' && (
           <p className="text-center text-sm font-medium text-danger">Cancelled</p>
         )}
+
+        {order.status !== 'cancelled' ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/50 bg-muted/20 px-2 py-1.5">
+            <span className="text-[11px] font-medium text-muted-foreground">Print</span>
+            <PrintOrderActions
+              orderId={order.id}
+              layout="compact"
+              emphasize={printEmphasis}
+              className="justify-start"
+            />
+          </div>
+        ) : null}
 
         <Button
           type="button"

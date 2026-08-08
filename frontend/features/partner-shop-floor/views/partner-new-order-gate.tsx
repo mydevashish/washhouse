@@ -8,6 +8,7 @@ import { ClothWallNewOrderView } from '@/features/partner-shop-floor/views/cloth
 /**
  * `/partner/new-order` — Cloth Wall walk-in wizard by default;
  * `?mode=assisted` keeps the doorstep assisted desk flow.
+ * Hub FAB / header sheet chooses the mode (P3).
  */
 export function PartnerNewOrderGate() {
   const searchParams = useSearchParams();
@@ -19,8 +20,8 @@ export function PartnerNewOrderGate() {
 
   return (
     <ClothWallNewOrderView
-      title="New Order"
-      description="Walk-in Cloth Wall — phone, tap clothes, confirm"
+      title="New order"
+      description="Walk-in Cloth Wall — phone, tap clothes, confirm, then print tags"
     />
   );
 }

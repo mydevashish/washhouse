@@ -1,19 +1,19 @@
 ﻿'use client';
 
-import { Loader2, Shield } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerOrderCard } from '@/features/partner/partner-order-card';
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
+import { PartnerOrderTableActionsMenu } from '@/features/partner/components/partner-order-table-actions-menu';
 import { PartnerPickupEvidenceDialog } from '@/features/partner/components/partner-pickup-evidence-dialog';
 import { CustodyTimelineDialog } from '@/features/chain-of-custody';
 import { PartnerStatusBadge } from '@/features/partner/components/partner-status-badge';
 import { PartnerOrderSourceBadge, isWalkInOrder } from '@/features/partner/components/partner-order-source-badge';
+import { PartnerOrdersEmptyState } from '@/features/partner/orders-hub/partner-orders-empty-state';
 import { formatServices } from '@/features/partner/lib/partner-derive';
 import {
   getPartnerAdvanceLabel,
@@ -21,94 +21,119 @@ import {
   isOrderNeedsAction,
 } from '@/features/partner/lib/partner-status';
 import { usePartnerOrderMutations } from '@/features/partner/hooks/use-partner-operations';
+import { getPrintLifecycleEmphasis } from '@/features/partner-shop-floor/lib/print-lifecycle';
 import { formatInr } from '@/features/discover/detail/order-pricing';
 import { ClientDate } from '@/components/ui/client-date';
 import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
 import { listPartnerOrders, type PartnerOrder, type PartnerOrdersBucket } from '@/services/partner';
 import { getPartnerCustodyTimeline } from '@/services/custody-timeline';
-import { cn } from '@/lib/utils';
 
-type Filter = PartnerOrdersBucket;
+type PartnerOrdersTableFilters = {
+  bucket?: PartnerOrdersBucket;
+  status?: string;
+  order_source?: string;
+  payment_status?: string;
+  created_today?: boolean;
+  /** Hub-debounced `q` — overrides useServerList internal search. */
+  search?: string;
+};
 
 type PartnerOrdersTableProps = {
   /** @deprecated Ignored — table loads server pages. Kept for call-site compatibility. */
   orders?: PartnerOrder[];
-  filter?: Filter;
+  /** @deprecated Prefer `filters.bucket` from hub queue state. */
+  filter?: PartnerOrdersBucket;
+  /** Hub-controlled API filters (chips + filter bar). */
+  filters?: PartnerOrdersTableFilters;
+  /** Debounced search from hub URL (`q`). */
+  search?: string;
+  /** When true, show picture-led empty with clear CTA (active chip/filters/search). */
+  hasActiveLens?: boolean;
+  onClearFilters?: () => void;
+  /** @deprecated Search moves to hub filter bar. */
   showSearch?: boolean;
 };
 
 export function PartnerOrdersTable({
-  filter: initialFilter = 'all',
-  showSearch = true,
+  filter: legacyFilter = 'all',
+  filters,
+  search = '',
+  hasActiveLens = false,
+  onClearFilters,
 }: PartnerOrdersTableProps) {
-  const [filter, setFilter] = useState<Filter>(initialFilter);
   const [evidenceOrder, setEvidenceOrder] = useState<PartnerOrder | null>(null);
   const [custodyOrder, setCustodyOrder] = useState<PartnerOrder | null>(null);
   const { acceptMutation, rejectMutation, advanceOrder, advanceMutation, isBusy } =
     usePartnerOrderMutations();
 
-  const list = useServerList<PartnerOrder, { bucket: Filter }>({
+  const listFilters = useMemo(
+    () => ({
+      bucket: filters?.bucket ?? legacyFilter,
+      status: filters?.status,
+      order_source: filters?.order_source,
+      payment_status: filters?.payment_status,
+      created_today: filters?.created_today,
+      // Spreads after useServerList's empty search so hub `q` drives the API.
+      search: search.trim() || undefined,
+    }),
+    [filters, legacyFilter, search],
+  );
+
+  const list = useServerList<PartnerOrder, PartnerOrdersTableFilters>({
     queryKey: queryKeys.partnerOrders({ surface: 'table' }),
     fetcher: (params) => listPartnerOrders(params),
-    filters: { bucket: filter },
+    filters: listFilters,
     defaultSort: { sort_by: 'created_at', sort_order: 'desc' },
     defaultPageSize: 10,
   });
 
-  const filters: { id: Filter; label: string }[] = [
-    { id: 'action', label: 'Needs action' },
-    { id: 'active', label: 'In progress' },
-    { id: 'done', label: 'Completed' },
-    { id: 'all', label: 'All' },
-  ];
-
-  const toolbar = (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="flex rounded-lg bg-muted/60 p-0.5" role="tablist" aria-label="Order filters">
-        {filters.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            role="tab"
-            aria-selected={filter === f.id}
-            onClick={() => setFilter(f.id)}
-            className={cn(
-              'min-h-[44px] rounded-md px-2.5 py-1.5 text-xs font-medium sm:min-h-[36px] sm:py-1',
-              filter === f.id ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground',
-            )}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-      {showSearch && (
-        <Input
-          type="search"
-          placeholder="Search orders…"
-          value={list.search}
-          onChange={(e) => list.setSearch(e.target.value)}
-          className="h-control w-full min-w-[140px] sm:w-44"
-          aria-label="Search orders"
-        />
-      )}
-    </div>
-  );
-
   if (list.isLoading) {
-    return <Skeleton className="h-96 w-full rounded-2xl" />;
+    return (
+      <div
+        className="space-y-3"
+        role="status"
+        aria-busy="true"
+        aria-live="polite"
+        data-testid="partner-orders-table-loading"
+      >
+        <span className="sr-only">Loading orders</span>
+        <Skeleton className="h-12 w-full rounded-xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
+      </div>
+    );
   }
 
   return (
     <PartnerPanel
       meta={<span className="tabular-nums">{list.totalRecords} orders</span>}
-      toolbar={toolbar}
       bodyClassName="p-0"
     >
       {list.isError ? (
-        <p className="px-4 py-8 text-center text-sm text-destructive">Could not load orders.</p>
+        <div
+          role="alert"
+          className="flex flex-col items-center gap-3 px-4 py-10 text-center"
+          data-testid="partner-orders-table-error"
+        >
+          <p className="text-sm text-destructive">Could not load orders. Check your connection and try again.</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-9"
+            onClick={() => void list.refetch()}
+          >
+            Try again
+          </Button>
+        </div>
       ) : list.rows.length === 0 ? (
-        <p className="px-4 py-8 text-center text-sm text-muted-foreground">No orders in this view.</p>
+        <div className="p-4">
+          <PartnerOrdersEmptyState
+            filtered={hasActiveLens}
+            onClearFilters={onClearFilters}
+          />
+        </div>
       ) : (
         <>
           <div className="space-y-3 p-3 md:hidden">
@@ -151,6 +176,7 @@ export function PartnerOrdersTable({
                     hasNext &&
                     o.status !== 'cancelled' &&
                     (walkIn || o.status !== 'out_for_delivery');
+                  const printEmphasis = getPrintLifecycleEmphasis(o.status);
                   return (
                     <tr key={o.id} className="h-table-row hover:bg-muted/30">
                       <td className="px-4 py-2 font-mono text-xs font-medium">
@@ -175,91 +201,26 @@ export function PartnerOrdersTable({
                       <td className="px-4 py-2">
                         <PartnerStatusBadge status={o.status} />
                       </td>
-                      <td className="px-4 py-2">
-                        <div className="flex justify-end gap-1.5">
-                          {needsAction && (
-                            <>
-                              <Button
-                                type="button"
-                                size="sm"
-                                className="min-h-[44px]"
-                                disabled={isBusy}
-                                aria-busy={acceptMutation.isPending}
-                                aria-label={
-                                  acceptMutation.isPending
-                                    ? `Accepting order ${o.tracking_code}`
-                                    : `Accept order ${o.tracking_code}`
-                                }
-                                onClick={() => acceptMutation.mutate(o.id)}
-                              >
-                                {acceptMutation.isPending ? (
-                                  <>
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                                    Accepting…
-                                  </>
-                                ) : (
-                                  'Accept'
-                                )}
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                disabled={isBusy}
-                                onClick={() => rejectMutation.mutate(o.id)}
-                              >
-                                Reject
-                              </Button>
-                            </>
-                          )}
-                          {showAdvance && (
-                            <>
-                              {!walkIn && o.status === 'pickup_assigned' && (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  disabled={isBusy}
-                                  onClick={() => setEvidenceOrder(o)}
-                                >
-                                  Photos
-                                </Button>
-                              )}
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                disabled={isBusy}
-                                onClick={() => setCustodyOrder(o)}
-                                aria-label={`Chain of custody for order ${o.tracking_code}`}
-                              >
-                                <Shield className="h-3.5 w-3.5" aria-hidden />
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                className="min-h-[44px]"
-                                disabled={isBusy}
-                                aria-busy={advanceMutation.isPending}
-                                aria-label={
-                                  advanceMutation.isPending
-                                    ? `Updating order ${o.tracking_code}`
-                                    : `${nextLabel} for order ${o.tracking_code}`
-                                }
-                                onClick={() => advanceOrder(o.id, o.status, o.order_source)}
-                              >
-                                {advanceMutation.isPending ? (
-                                  <>
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                                    Updating…
-                                  </>
-                                ) : (
-                                  nextLabel
-                                )}
-                              </Button>
-                            </>
-                          )}
-                        </div>
+                      <td className="px-4 py-2 text-right">
+                        <PartnerOrderTableActionsMenu
+                          orderId={o.id}
+                          trackingCode={o.tracking_code}
+                          cancelled={o.status === 'cancelled'}
+                          needsAction={needsAction}
+                          showAdvance={showAdvance}
+                          showPhotos={!walkIn && o.status === 'pickup_assigned'}
+                          nextLabel={nextLabel}
+                          printEmphasis={printEmphasis}
+                          isBusy={isBusy}
+                          isAccepting={acceptMutation.isPending}
+                          isRejecting={rejectMutation.isPending}
+                          isAdvancing={advanceMutation.isPending}
+                          onAccept={() => acceptMutation.mutate(o.id)}
+                          onReject={() => rejectMutation.mutate(o.id)}
+                          onAdvance={() => advanceOrder(o.id, o.status, o.order_source)}
+                          onPhotos={() => setEvidenceOrder(o)}
+                          onCustody={() => setCustodyOrder(o)}
+                        />
                       </td>
                     </tr>
                   );

@@ -113,7 +113,7 @@ describe('PartnerOrdersHub', () => {
     render(wrap(<PartnerOrdersHub />));
 
     expect(screen.getByTestId('orders-hub-tabs')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /today \/ orders/i })).toHaveAttribute(
+    expect(screen.getByRole('tab', { name: /^orders$/i })).toHaveAttribute(
       'aria-selected',
       'true',
     );
@@ -123,13 +123,23 @@ describe('PartnerOrdersHub', () => {
 
     expect(screen.getByTestId('orders-hub-panel-orders')).toBeInTheDocument();
     expect(screen.getByTestId('partner-orders-today-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('partner-orders-shortcut-chips')).toBeInTheDocument();
+    expect(screen.getByTestId('partner-orders-filter-bar')).toBeInTheDocument();
+  });
+
+  it('shows English hub header copy', () => {
+    render(wrap(<PartnerOrdersHub />));
+    expect(screen.getByRole('heading', { name: /customers & orders/i })).toBeInTheDocument();
+    expect(
+      screen.getByText(/find customers, run the queue, print tags and bills/i),
+    ).toBeInTheDocument();
   });
 
   it('falls unknown tab values back to orders', () => {
     searchParams = new URLSearchParams('tab=place-order');
     render(wrap(<PartnerOrdersHub />));
 
-    expect(screen.getByRole('tab', { name: /today \/ orders/i })).toHaveAttribute(
+    expect(screen.getByRole('tab', { name: /^orders$/i })).toHaveAttribute(
       'aria-selected',
       'true',
     );
@@ -165,5 +175,43 @@ describe('PartnerOrdersHub', () => {
 
     await user.click(screen.getByRole('tab', { name: /find customer/i }));
     expect(replace).toHaveBeenCalledWith('/partner/orders?tab=desk', { scroll: false });
+  });
+
+  it('selects Ready today and Walk-in chips into URL state', async () => {
+    const user = userEvent.setup();
+    render(wrap(<PartnerOrdersHub />));
+
+    await user.click(screen.getByTestId('partner-orders-chip-ready_today'));
+    expect(replace).toHaveBeenCalled();
+    const readyCall = replace.mock.calls.at(-1)?.[0] as string;
+    expect(readyCall).toContain('chip=ready_today');
+    expect(readyCall).toContain('status=ready');
+
+    await user.click(screen.getByTestId('partner-orders-chip-walk_in'));
+    const walkCall = replace.mock.calls.at(-1)?.[0] as string;
+    expect(walkCall).toContain('chip=walk_in');
+    expect(walkCall).toContain('source=walk_in');
+  });
+
+  it('links Print chip to the print center', () => {
+    render(wrap(<PartnerOrdersHub />));
+    expect(screen.getByTestId('partner-orders-chip-print')).toHaveAttribute(
+      'href',
+      '/partner/floor/print',
+    );
+  });
+
+  it('exposes Print center header action (P5)', () => {
+    render(wrap(<PartnerOrdersHub />));
+    expect(screen.getByTestId('partner-orders-print-center')).toHaveAttribute(
+      'href',
+      '/partner/floor/print',
+    );
+  });
+
+  it('exposes New order header control and mobile FAB (P3)', () => {
+    render(wrap(<PartnerOrdersHub />));
+    expect(screen.getByTestId('partner-orders-new-order-header')).toBeInTheDocument();
+    expect(screen.getByTestId('partner-orders-new-order-fab')).toBeInTheDocument();
   });
 });

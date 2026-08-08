@@ -19,6 +19,8 @@ class PartnerOrdersListParams(ListQueryParams):
     bucket: PartnerOrderBucket = "all"
     status: str | None = None
     order_source: str | None = None
+    payment_status: str | None = None
+    created_today: bool = False
 
 
 def get_partner_orders_list_params(
@@ -30,6 +32,8 @@ def get_partner_orders_list_params(
     bucket: PartnerOrderBucket = Query(default="all"),
     status: str | None = Query(default=None, max_length=64),
     order_source: str | None = Query(default=None, max_length=32),
+    payment_status: str | None = Query(default=None, max_length=32),
+    created_today: bool = Query(default=False),
 ) -> PartnerOrdersListParams:
     base = ListQueryParams.from_query(
         page=page,
@@ -40,6 +44,7 @@ def get_partner_orders_list_params(
     )
     src = order_source.strip() if order_source and order_source.strip() else None
     st = status.strip() if status and status.strip() else None
+    pay = payment_status.strip() if payment_status and payment_status.strip() else None
     return PartnerOrdersListParams(
         page=base.page,
         page_size=base.page_size,
@@ -49,6 +54,8 @@ def get_partner_orders_list_params(
         bucket=bucket,
         status=st,
         order_source=src,
+        payment_status=pay,
+        created_today=created_today,
     )
 
 

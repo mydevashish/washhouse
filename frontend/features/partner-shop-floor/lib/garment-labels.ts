@@ -1,6 +1,5 @@
 /**
- * Short Hinglish / bilingual labels for Cloth Wall tiles.
- * Staff should not need full English garment names.
+ * Short bilingual labels for Cloth Wall tiles (English primary in UI).
  */
 
 const SLUG_LABELS: Record<string, { hinglish: string; english: string }> = {
@@ -32,7 +31,7 @@ function shortenEnglishName(name: string): string {
   return beforeSlash.slice(0, 22);
 }
 
-/** Primary Hinglish label + short English subtitle for a catalog / service row. */
+/** Short label + English subtitle for a catalog / service row. */
 export function garmentDisplayLabel(
   slug: string | null | undefined,
   name: string,

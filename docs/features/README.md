@@ -15,8 +15,10 @@ Per-feature specs. Template: `.cursor/templates/feature-spec.md`.
 | Reviews | shipped | [reviews.md](reviews.md) | 2 |
 | Partner onboarding | shipped | [partner-onboarding.md](partner-onboarding.md) | 3 |
 | Partner dashboard | shipped | [partner-dashboard.md](partner-dashboard.md) | 3 |
+| Partner Customers & Orders Hub | **review** (P1–P8) | [partner-customers-orders-hub.md](partner-customers-orders-hub.md) | Unify customers + orders + intake + print; Shop Floor mode retired · [QA matrix](../qa/partner-customers-orders-hub-matrix.md) |
+| Customers & Orders — Visual polish | **in-progress** | [partner-customers-orders-hub-ui-polish.md](partner-customers-orders-hub-ui-polish.md) | Density, filters, declutter, pillars contrast, badges · [prompts](../../.cursor/prompts/partner-customers-orders-hub-ui-polish.md) |
 | Partner Owner Command Center | in-progress (P4) | [partner-owner-command-center.md](partner-owner-command-center.md) | Advanced Mode ops (after Shop Floor) |
-| Partner Shop Floor Mode | in progress (Today + Ready boards) | [partner-shop-floor.md](partner-shop-floor.md) | Phase 2+ ops (after dashboard A+B+C) |
+| Partner Shop Floor Mode | mode retired → shared modules | [partner-shop-floor.md](partner-shop-floor.md) | Print + Cloth Wall kept; boards redirect to hub chips |
 | Partner inventory | shipped | [partner-inventory.md](partner-inventory.md) | 3 |
 | Partner QR tracking | shipped | [partner-qr-tracking.md](partner-qr-tracking.md) | 3 |
 | Partner staff | shipped | [partner-staff.md](partner-staff.md) | 3 |

@@ -35,9 +35,9 @@ export function PartnerActionCenter({ items }: PartnerActionCenterProps) {
             rejectMutation.isPending ||
             advanceMutation.isPending;
           return (
-            <li key={item.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <li key={item.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
               <div className="min-w-0">
-                <p className="font-medium">{item.title}</p>
+                <p className="text-sm font-medium">{item.title}</p>
                 <p className="mt-0.5 text-sm text-muted-foreground">{item.description}</p>
                 <Link
                   href={`/partner/orders/${item.orderId}`}
@@ -46,23 +46,27 @@ export function PartnerActionCenter({ items }: PartnerActionCenterProps) {
                   #{item.trackingCode}
                 </Link>
               </div>
-              <div className="flex shrink-0 flex-wrap gap-2">
+              <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                 {item.primaryAction === 'accept' && (
                   <>
                     <Button
                       type="button"
-                      size="lg"
-                      className="min-w-[100px]"
+                      size="sm"
+                      className="h-9 px-3"
                       disabled={busy}
                       onClick={() => acceptMutation.mutate(item.orderId)}
                     >
-                      {acceptMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Accept'}
+                      {acceptMutation.isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                      ) : (
+                        'Accept'
+                      )}
                     </Button>
                     <Button
                       type="button"
-                      size="lg"
+                      size="sm"
                       variant="outline"
-                      className="min-w-[100px]"
+                      className="h-9 px-3"
                       disabled={busy}
                       onClick={() => rejectMutation.mutate(item.orderId)}
                     >
@@ -73,16 +77,20 @@ export function PartnerActionCenter({ items }: PartnerActionCenterProps) {
                 {item.primaryAction === 'advance' && (
                   <Button
                     type="button"
-                    size="lg"
-                    className="min-w-[140px]"
+                    size="sm"
+                    className="h-9 px-3"
                     disabled={busy}
                     onClick={() => advanceOrder(item.orderId, item.status, item.orderSource)}
                   >
-                    {getPartnerAdvanceLabel(item.status, item.orderSource) ?? 'Next step'}
+                    {advanceMutation.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                    ) : (
+                      (getPartnerAdvanceLabel(item.status, item.orderSource) ?? 'Next step')
+                    )}
                   </Button>
                 )}
                 {item.primaryAction === 'view' && (
-                  <Button type="button" size="lg" variant="secondary" asChild>
+                  <Button type="button" size="sm" variant="secondary" className="h-9 px-3" asChild>
                     <Link href={`/partner/orders/${item.orderId}`}>View order</Link>
                   </Button>
                 )}

@@ -408,6 +408,8 @@ class PartnerService:
                 bucket="all",
                 status=None,
                 order_source=None,
+                payment_status=None,
+                created_today=False,
             ),
         )
         return [(row[0], row[1]) for row in result["items"]]
@@ -454,12 +456,40 @@ class PartnerService:
             stmt = stmt.where(Order.status.in_([OrderStatus.delivered, OrderStatus.cancelled]))
 
         if params.order_source:
-            try:
-                stmt = stmt.where(Order.order_source == OrderSource(params.order_source))
-            except ValueError:
-                from app.core.exceptions import ValidationError
+            # Hub chip "Doorstep" = everything except counter walk-in.
+            if params.order_source == "doorstep":
+                stmt = stmt.where(Order.order_source != OrderSource.walk_in)
+            else:
+                try:
+                    stmt = stmt.where(Order.order_source == OrderSource(params.order_source))
+                except ValueError:
+                    from app.core.exceptions import ValidationError
 
-                raise ValidationError("Invalid order_source filter") from None
+                    raise ValidationError("Invalid order_source filter") from None
+
+        if params.payment_status:
+            from app.models.enums import PaymentStatus
+
+            if params.payment_status == "unpaid":
+                stmt = stmt.where(
+                    Order.payment_status.in_((PaymentStatus.pending, PaymentStatus.pending_cod)),
+                )
+            else:
+                try:
+                    stmt = stmt.where(Order.payment_status == PaymentStatus(params.payment_status))
+                except ValueError:
+                    from app.core.exceptions import ValidationError
+
+                    raise ValidationError("Invalid payment_status filter") from None
+
+        if params.created_today:
+            from datetime import datetime
+            from zoneinfo import ZoneInfo
+
+            from sqlalchemy import cast, Date
+
+            today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
+            stmt = stmt.where(cast(Order.created_at, Date) == today)
 
         if params.search:
             term = f"%{params.search}%"

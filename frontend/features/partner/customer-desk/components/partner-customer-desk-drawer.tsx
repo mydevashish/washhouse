@@ -1,7 +1,15 @@
 'use client';
 
 import { useEffect, useId, useState } from 'react';
-import { MessageCircle, Phone, Store, UserRound } from 'lucide-react';
+import {
+  DoorOpen,
+  ListOrdered,
+  MessageCircle,
+  Phone,
+  RefreshCw,
+  Store,
+  UserRound,
+} from 'lucide-react';
 import Link from 'next/link';
 
 import { Badge } from '@/components/ui/badge';
@@ -18,12 +26,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerCustomerDeskBookingRequestsTab } from '@/features/partner/customer-desk/components/partner-customer-desk-booking-requests-tab';
 import { PartnerCustomerDeskOrdersTab } from '@/features/partner/customer-desk/components/partner-customer-desk-orders-tab';
 import { PartnerCustomerDeskPlaceOrderForm } from '@/features/partner/customer-desk/components/partner-customer-desk-place-order-form';
-import { buildCustomerWhatsAppUrl, buildWalkInPrefillHref } from '@/features/partner/customer-desk/phone';
-import { usePartnerCustomerDeskLookup } from '@/features/partner/customer-desk/hooks';
+import {
+  buildCustomerScopedOrdersHref,
+  buildCustomerWhatsAppUrl,
+  buildNewOrderHref,
+} from '@/features/partner/customer-desk/phone';
+import {
+  usePartnerCustomerDeskLookup,
+  usePartnerCustomerDeskOrders,
+} from '@/features/partner/customer-desk/hooks';
+import { OrderCreateSuccessPanel } from '@/features/partner-shop-floor/components/order-create-success-panel';
 import type {
+  AssistedOrderCreateResult,
   CustomerDeskLookupParams,
   ReorderPrefill,
 } from '@/features/partner/customer-desk/types';
+import { rememberRecentCustomer } from '@/features/partner/lib/partner-recent-customers';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { buildTelHref } from '@/features/marketing/contact/contact-constants';
 import { cn } from '@/lib/utils';
@@ -53,16 +71,33 @@ export function PartnerCustomerDeskDrawer({
 }: Props) {
   const [tab, setTab] = useState<PartnerDeskTab>(initialTab);
   const [reorder, setReorder] = useState<ReorderPrefill | null>(null);
+  const [createdOrder, setCreatedOrder] = useState<
+    (AssistedOrderCreateResult & { customer_name: string; customer_phone: string }) | null
+  >(null);
   const tablistId = useId();
   const profileQ = usePartnerCustomerDeskLookup(lookup, open);
   const profile = profileQ.data;
+
+  const lastOrdersQ = usePartnerCustomerDeskOrders(
+    profile ? { user_id: profile.user_id, phone: profile.phone } : null,
+    open && Boolean(profile),
+    { page: 1, page_size: 1 },
+  );
+  const lastOrder = lastOrdersQ.data?.items[0] ?? null;
+  const canRepeatLast = Boolean(lastOrder?.item_summary?.trim());
 
   useEffect(() => {
     if (open) {
       setTab(initialTab);
       if (initialTab !== 'place-order') setReorder(null);
+      setCreatedOrder(null);
     }
   }, [open, initialTab, lookup]);
+
+  useEffect(() => {
+    if (!open || !profile?.phone) return;
+    rememberRecentCustomer({ phone: profile.phone, name: profile.name });
+  }, [open, profile?.phone, profile?.name]);
 
   const whatsappMessage = profile
     ? `Hi${profile.name ? ` ${profile.name}` : ''} — this is ${profile.name ? 'your laundry' : 'WashHouse'} regarding your order.`
@@ -71,8 +106,22 @@ export function PartnerCustomerDeskDrawer({
     ? buildCustomerWhatsAppUrl(profile.phone, whatsappMessage)
     : null;
   const walkInHref = profile
-    ? buildWalkInPrefillHref(profile.phone, profile.name)
-    : '/partner/walk-in-orders';
+    ? buildNewOrderHref(profile.phone, profile.name, 'walk_in')
+    : '/partner/new-order?mode=walk_in';
+  const doorstepLabel = profile?.name?.trim() || profile?.phone || 'customer';
+  const viewAllOrdersHref = profile
+    ? buildCustomerScopedOrdersHref(profile.phone, profile.name)
+    : '/partner/orders';
+
+  function startRepeatLast() {
+    if (!lastOrder?.item_summary) return;
+    setReorder({
+      orderId: lastOrder.id,
+      trackingCode: lastOrder.tracking_code,
+      itemSummary: lastOrder.item_summary,
+    });
+    setTab('place-order');
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -106,7 +155,7 @@ export function PartnerCustomerDeskDrawer({
           ) : null}
 
           {profile ? (
-            <div className="space-y-2 text-left">
+            <div className="space-y-3 text-left">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-base font-semibold text-foreground">
                   {profile.name?.trim() || 'Guest caller'}
@@ -122,12 +171,45 @@ export function PartnerCustomerDeskDrawer({
                   ? ` · last ${new Date(profile.last_order_at).toLocaleDateString('en-IN')}`
                   : ''}
               </p>
-              <p className="text-[11px] text-muted-foreground">
-                Other shops&apos; orders for this customer are hidden.
-              </p>
-              <div className="flex flex-wrap gap-2 pt-0.5">
+
+              <div
+                className="grid grid-cols-2 gap-2"
+                role="group"
+                aria-label={`Primary actions for ${doorstepLabel}`}
+              >
+                <Button asChild size="sm" className="min-h-[44px] gap-1.5">
+                  <Link
+                    href={walkInHref}
+                    aria-label={`New walk-in order for ${doorstepLabel}`}
+                  >
+                    <Store className="h-3.5 w-3.5" aria-hidden />
+                    New walk-in
+                  </Link>
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="min-h-[44px] gap-1.5"
+                  onClick={() => {
+                    setReorder(null);
+                    setTab('place-order');
+                  }}
+                  aria-label={`New doorstep order for ${doorstepLabel}`}
+                >
+                  <DoorOpen className="h-3.5 w-3.5" aria-hidden />
+                  New doorstep
+                </Button>
+                {profile.phone ? (
+                  <Button asChild size="sm" variant="outline" className="min-h-[44px] gap-1.5">
+                    <a href={buildTelHref(profile.phone)} aria-label={`Call ${profile.phone}`}>
+                      <Phone className="h-3.5 w-3.5" aria-hidden />
+                      Call
+                    </a>
+                  </Button>
+                ) : null}
                 {whatsappUrl && profile.phone ? (
-                  <Button asChild size="sm" variant="outline" className="h-8 gap-1.5 text-xs">
+                  <Button asChild size="sm" variant="outline" className="min-h-[44px] gap-1.5">
                     <a
                       href={whatsappUrl}
                       target="_blank"
@@ -139,22 +221,39 @@ export function PartnerCustomerDeskDrawer({
                     </a>
                   </Button>
                 ) : null}
-                {profile.phone ? (
-                  <Button asChild size="sm" variant="ghost" className="h-8 gap-1.5 text-xs">
-                    <a href={buildTelHref(profile.phone)} aria-label={`Call ${profile.phone}`}>
-                      <Phone className="h-3.5 w-3.5" aria-hidden />
-                      Call
-                    </a>
-                  </Button>
-                ) : null}
-                <Button asChild size="sm" variant="ghost" className="h-8 gap-1.5 text-xs">
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button asChild size="sm" variant="ghost" className="min-h-[44px] gap-1.5">
                   <Link
-                    href={walkInHref}
-                    aria-label={`Record walk-in order for ${profile.name ?? profile.phone ?? 'customer'}`}
+                    href={viewAllOrdersHref}
+                    aria-label={`View all orders for ${doorstepLabel}`}
+                    onClick={() => onOpenChange(false)}
                   >
-                    <Store className="h-3.5 w-3.5" aria-hidden />
-                    Walk-in
+                    <ListOrdered className="h-3.5 w-3.5" aria-hidden />
+                    View all orders
                   </Link>
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="min-h-[44px] gap-1.5"
+                  disabled={!canRepeatLast}
+                  title={
+                    canRepeatLast
+                      ? undefined
+                      : 'No past line items to copy — place a new order instead'
+                  }
+                  onClick={startRepeatLast}
+                  aria-label={
+                    canRepeatLast
+                      ? `Order same as last time for ${doorstepLabel}`
+                      : 'Order same as last time unavailable — no past line items'
+                  }
+                >
+                  <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+                  Same as last
                 </Button>
               </div>
             </div>
@@ -243,16 +342,51 @@ export function PartnerCustomerDeskDrawer({
                 aria-labelledby={`${tablistId}-place-order`}
                 hidden={tab !== 'place-order'}
               >
-                {tab === 'place-order' ? (
+                {tab === 'place-order' && createdOrder ? (
+                  <div className="space-y-3" data-testid="desk-create-success">
+                    <OrderCreateSuccessPanel
+                      order={{
+                        id: createdOrder.id,
+                        tracking_code: createdOrder.tracking_code,
+                        customer_name: createdOrder.customer_name,
+                        customer_phone: createdOrder.customer_phone,
+                        total_inr: createdOrder.total_inr,
+                        status: createdOrder.status,
+                      }}
+                      anotherOrderHref={buildNewOrderHref(
+                        createdOrder.customer_phone,
+                        createdOrder.customer_name,
+                        'assisted',
+                      )}
+                      subtitle="Print tags for this doorstep order, then return to the customer history."
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-h-11 w-full"
+                      onClick={() => {
+                        setCreatedOrder(null);
+                        setTab('orders');
+                      }}
+                    >
+                      Back to customer orders
+                    </Button>
+                  </div>
+                ) : null}
+                {tab === 'place-order' && !createdOrder ? (
                   <PartnerCustomerDeskPlaceOrderForm
                     profile={profile}
                     reorder={reorder}
                     onCreateBookingRequest={() =>
                       onCreateBookingRequest(profile.phone, profile.name)
                     }
-                    onCreated={() => {
+                    onCreated={(result) => {
                       setReorder(null);
-                      setTab('orders');
+                      setCreatedOrder({
+                        ...result,
+                        customer_name: profile.name?.trim() || profile.phone || 'Customer',
+                        customer_phone: profile.phone,
+                      });
                     }}
                   />
                 ) : null}

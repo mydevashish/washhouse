@@ -45,7 +45,7 @@ export function ShopFloorPrintView() {
     <div className="mx-auto max-w-lg space-y-4 p-4" data-testid="shop-floor-print-center">
       <PartnerPanel
         title="Print"
-        description="Tags / bill / GST invoice — phone ya tracking se dhoondo"
+        description="Tags / bill / GST invoice — search by phone or tracking"
         bodyClassName="space-y-4 p-4"
       >
         <div className="relative">
@@ -73,7 +73,7 @@ export function ShopFloorPrintView() {
 
         {ordersQ.isError ? (
           <QueryErrorState
-            title="Orders load nahi hue"
+            title="Could not load orders"
             message={getApiErrorMessage(ordersQ.error, 'Try again')}
             onRetry={() => void ordersQ.refetch()}
             isRetrying={ordersQ.isFetching}
@@ -82,10 +82,10 @@ export function ShopFloorPrintView() {
 
         {!query.trim() ? (
           <p className="text-sm text-muted-foreground">
-            Order create ke baad Success → Print Tags / Bill / GST Invoice, ya yahan se reprint.
+            After you create an order, use Success → Print tags / Bill / GST invoice, or reprint here.
           </p>
         ) : matches.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Koi order nahi mila.</p>
+          <p className="text-sm text-muted-foreground">No matching orders.</p>
         ) : (
           <ul className="space-y-3">
             {matches.map((order) => (
@@ -112,7 +112,7 @@ export function ShopFloorPrintView() {
         )}
 
         <Button type="button" variant="ghost" size="sm" asChild>
-          <Link href="/partner/floor/ready">Ready / Diya handoff</Link>
+          <Link href="/partner/orders?chip=ready_today">Ready today</Link>
         </Button>
       </PartnerPanel>
     </div>

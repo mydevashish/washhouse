@@ -1,7 +1,8 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
-import { ExternalLink, Store } from 'lucide-react';
+import { ExternalLink, Package, Store } from 'lucide-react';
 
 import { InfoBanner } from '@/components/ui/info-banner';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,6 @@ import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { usePartnerAnalytics } from '@/features/partner/hooks/use-partner-operations';
 import { PartnerPracticeModeToggle } from '@/features/partner-shop-floor/components/partner-practice-mode-toggle';
 import { PartnerFloorVoiceToggle } from '@/features/partner-shop-floor/components/partner-floor-voice-toggle';
-import { PartnerUiModeToggle } from '@/features/partner-shop-floor/components/partner-ui-mode-toggle';
 
 export function PartnerSettingsView() {
   const analyticsQ = usePartnerAnalytics();
@@ -35,15 +35,38 @@ export function PartnerSettingsView() {
         </dl>
       </PartnerPanel>
 
-      <PartnerPanel title="Display mode" bodyClassName="px-4 py-4">
-        <PartnerUiModeToggle />
+      <PartnerPanel title="Where daily work lives" bodyClassName="px-4 py-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="relative mx-auto h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-muted sm:mx-0">
+            <Image
+              src="/catalog/heroes/fresh-laundry.webp"
+              alt="Folded laundry ready for customers"
+              fill
+              className="object-cover"
+              sizes="96px"
+            />
+          </div>
+          <div className="min-w-0 flex-1 space-y-3 text-center sm:text-left">
+            <p className="text-sm text-muted-foreground">
+              Orders, customers, and printing live under{' '}
+              <span className="font-medium text-foreground">Customers &amp; Orders</span>. There is
+              one partner workspace — no separate Shop Floor display mode.
+            </p>
+            <Button asChild variant="outline" className="w-full sm:w-auto">
+              <Link href="/partner/orders">
+                <Package className="h-4 w-4" aria-hidden />
+                Open Customers &amp; Orders
+              </Link>
+            </Button>
+          </div>
+        </div>
       </PartnerPanel>
 
       <PartnerPanel title="Practice / training" bodyClassName="px-4 py-4">
         <PartnerPracticeModeToggle />
       </PartnerPanel>
 
-      <PartnerPanel title="Voice / sound (Shop Floor)" bodyClassName="px-4 py-4">
+      <PartnerPanel title="Voice prompts" bodyClassName="px-4 py-4">
         <PartnerFloorVoiceToggle />
       </PartnerPanel>
 

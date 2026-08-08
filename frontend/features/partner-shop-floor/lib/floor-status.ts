@@ -23,15 +23,15 @@ export const FLOOR_STATUS_LABELS: Record<
   received: { hinglish: 'Received', english: 'Received' },
   washing: { hinglish: 'Washing', english: 'Washing' },
   ready: { hinglish: 'Ready', english: 'Ready' },
-  given: { hinglish: 'Diya', english: 'Given' },
+  given: { hinglish: 'Given', english: 'Given' },
 };
 
-/** Hinglish primary CTA for the next simplified step. */
+/** English primary CTA for the next simplified step. */
 export const FLOOR_ACTION_LABELS: Record<FloorAction, string> = {
-  accept: 'Accept karo',
-  start_wash: 'Dhulai shuru',
-  mark_ready: 'Ready',
-  mark_given: 'Diya / Given',
+  accept: 'Accept order',
+  start_wash: 'Start washing',
+  mark_ready: 'Mark ready',
+  mark_given: 'Mark given',
 };
 
 const RECEIVED_STATUSES = new Set(['confirmed', 'pickup_assigned', 'picked_up']);

@@ -43,7 +43,7 @@ export function OwnerFloorStrip({
     {
       label: 'Ready',
       value: String(ready),
-      href: '/partner/floor/ready',
+      href: '/partner/orders?chip=ready_today',
       icon: PackageCheck,
       accent: ready > 0 ? 'success' : 'default',
     },

@@ -210,9 +210,9 @@ export function PartnerOverviewView() {
       <OwnerMotionBlock delay={0.12}>
         <OwnerSectionHeader
           title="Your pillars"
-          description="Picture-first shortcuts — Orders, Logistics, People, Money."
+          description="Orders, logistics, people, money."
         />
-        <OwnerPillarMotionGrid className="mt-3 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        <OwnerPillarMotionGrid className="mt-2.5 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
           {OWNER_PILLARS.map((pillar, index) => (
             <OwnerPillarMotionItem key={pillar.id}>
               <OwnerPillarCard

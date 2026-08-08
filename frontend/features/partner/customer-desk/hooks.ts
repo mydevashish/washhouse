@@ -14,6 +14,7 @@ import {
 import {
   guestDeskProfile,
   type AssistedOrderCreatePayload,
+  type AssistedOrderCreateResult,
   type CustomerDeskLookupParams,
   type CustomerDeskOrdersFilters,
   type CustomerDeskProfile,
@@ -76,7 +77,7 @@ export function usePartnerCustomerDeskOrders(
 }
 
 export function usePartnerAssistedOrderMutations(options?: {
-  onCreated?: (trackingCode: string) => void;
+  onCreated?: (result: AssistedOrderCreateResult) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -106,7 +107,7 @@ export function usePartnerAssistedOrderMutations(options?: {
     onSuccess: (data, vars) => {
       toast.success(`Order ${data.tracking_code} created`);
       invalidateDesk(vars.payload.phone);
-      options?.onCreated?.(data.tracking_code);
+      options?.onCreated?.(data);
     },
     onError: (e) => toast.error(getApiErrorMessage(e, 'Could not create assisted order')),
   });

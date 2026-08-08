@@ -7,7 +7,7 @@ import {
 } from '@/features/partner-shop-floor/types';
 import { useStoreHydrated } from '@/lib/hooks/use-store-hydrated';
 
-/** Partner UI mode after localStorage rehydrate; defaults to shop_floor pre-hydrate. */
+/** Partner UI mode after localStorage rehydrate; defaults to advanced pre-hydrate. */
 export function usePartnerUiMode(): {
   mode: PartnerUiMode;
   hydrated: boolean;

@@ -13,4 +13,6 @@ export {
   buildCustomerWhatsAppUrl,
   buildNewOrderHref,
   buildWalkInPrefillHref,
+  buildDeskPrefillHref,
+  buildCustomerScopedOrdersHref,
 } from '@/features/partner/customer-desk/phone';

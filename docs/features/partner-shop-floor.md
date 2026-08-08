@@ -1,10 +1,10 @@
 # Feature: Partner Shop Floor Mode
 
-> Status: **in progress** (P1 Cloth Wall + tokens/tags; P2 bill/GST invoice; **Today + Ready Diya boards**; **literacy polish**)  
+> Status: **display mode retired** (P6 toggle removed; **P7** today/ready/more → hub chips / settings; print + Cloth Wall kept as shared modules under [partner-customers-orders-hub.md](partner-customers-orders-hub.md)). Historical P0–P3 delivery notes below remain valid for print + Cloth Wall + tokens.  
 > Owner: product-manager + frontend-architect + ui-ux-designer  
 > Last updated: 2026-08-08  
-> Related: [partner-dashboard.md](partner-dashboard.md), [partner-price-list.md](partner-price-list.md), [partner-inventory.md](partner-inventory.md), [partner-qr-tracking.md](partner-qr-tracking.md), [orders-hub.md](orders-hub.md), [order-placement.md](order-placement.md), [offline-booking-whatsapp.md](offline-booking-whatsapp.md)  
-> Product: India laundry counter ops; literacy-tolerant UX
+> Related: [partner-customers-orders-hub.md](partner-customers-orders-hub.md) (**supersedes display mode**), [partner-dashboard.md](partner-dashboard.md), [partner-price-list.md](partner-price-list.md), [partner-inventory.md](partner-inventory.md), [partner-qr-tracking.md](partner-qr-tracking.md), [orders-hub.md](orders-hub.md), [order-placement.md](order-placement.md), [offline-booking-whatsapp.md](offline-booking-whatsapp.md)  
+> Product: India laundry counter ops — **print + Cloth Wall + color tokens kept**; Shop Floor shell chrome (**home tiles, bottom nav, today/ready boards**) deleted; bookmarks redirect into Customers & Orders Hub
 
 ## Problem
 
@@ -129,7 +129,7 @@ Card per open order (not a data table):
 - One primary CTA: advance simplified status (*Dhulai shuru* / *Ready* / accept for online confirmed)
 - Filters: All / Received / Washing / Ready (Given hidden by default; “Aaj diya” toggle)
 
-**Shipped:** `ShopFloorTodayView` + `floor-status` map; advances via `POST …/accept` + `PATCH …/status` (doorstep `washing→ironing→ready` chained in FE).
+**Shipped (historical):** Today/Ready board views + `floor-status` map advanced via `POST …/accept` + `PATCH …/status`. **P7:** boards redirect to hub chips (`chip=today` / `chip=ready_today`); board UI deleted.
 
 ### 4. Ready handoff (`/partner/floor/ready`)
 

@@ -1,13 +1,15 @@
-import { RoleGuard } from '@/components/auth/role-guard';
-import { ShopFloorTodayView } from '@/features/partner-shop-floor/views/shop-floor-today-view';
-import { PARTNER_PORTAL_ROLES } from '@/lib/partner-roles';
+import { permanentRedirect } from 'next/navigation';
 
-export const metadata = { title: 'Partner · Aaj ka Kaam' };
+import {
+  buildPartnerOrdersQueuePath,
+  chipPresetUrlPatch,
+} from '@/features/partner/orders-hub/partner-orders-hub-queue';
 
-export default function PartnerFloorTodayPage() {
-  return (
-    <RoleGuard roles={PARTNER_PORTAL_ROLES}>
-      <ShopFloorTodayView />
-    </RoleGuard>
-  );
+export const metadata = { title: 'Partner · Today’s orders' };
+
+/**
+ * Legacy Shop Floor Today board → Customers & Orders hub “Today” chip.
+ */
+export default function PartnerFloorTodayRedirectPage() {
+  permanentRedirect(buildPartnerOrdersQueuePath(chipPresetUrlPatch('today')));
 }

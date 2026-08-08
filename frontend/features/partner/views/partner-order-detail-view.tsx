@@ -17,6 +17,10 @@ import { PartnerOrderCard } from '@/features/partner/partner-order-card';
 import { ColorTokenChip } from '@/features/partner-shop-floor/components/color-token-chip';
 import { PrintOrderActions } from '@/features/partner-shop-floor/components/print-order-actions';
 import {
+  getPrintLifecycleEmphasis,
+  getPrintLifecycleHint,
+} from '@/features/partner-shop-floor/lib/print-lifecycle';
+import {
   usePartnerOrderMutations,
   usePartnerQueriesEnabled,
 } from '@/features/partner/hooks/use-partner-operations';
@@ -70,6 +74,8 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
   }
 
   const tax = Number(order.cgst_inr) + Number(order.sgst_inr);
+  const printEmphasis = getPrintLifecycleEmphasis(order.status);
+  const printHint = getPrintLifecycleHint(order.status);
 
   return (
     <PartnerContent className="space-y-5">
@@ -116,7 +122,6 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
           <p className="text-muted-foreground">
             Payment: <span className="font-medium text-foreground">{order.payment_status}</span>
           </p>
-          <PrintOrderActions orderId={order.id} className="mt-2" />
         </PartnerPanel>
 
         <PartnerPanel title="Schedule" bodyClassName="space-y-2 p-4 text-sm">
@@ -135,6 +140,17 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
           <p className="text-muted-foreground">
             Source: {isWalkInOrder(order) ? 'Walk-in' : 'Doorstep / online'}
           </p>
+        </PartnerPanel>
+      </div>
+
+      <div data-testid="partner-order-print-panel">
+        <PartnerPanel title="Print" description={printHint} bodyClassName="space-y-3 p-4">
+          <PrintOrderActions
+            orderId={order.id}
+            size="default"
+            emphasize={printEmphasis}
+            className="sm:justify-start"
+          />
         </PartnerPanel>
       </div>
 

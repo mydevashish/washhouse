@@ -89,7 +89,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
       {!embedded ? (
         <PartnerPageHeader
           title="Customers"
-          description="Your laundry’s relationships — call, WhatsApp, or open desk history. Use Find customer for create/lookup."
+          description="Your laundry’s relationships — call, WhatsApp, view orders, or open Desk."
           actions={
             <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
               <Link href={buildOrdersHubPath('/partner/orders', 'desk')}>
@@ -102,7 +102,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
       ) : (
         <OwnerSectionHeader
           title="Customers"
-          description="Relationships for this laundry. Desk is still the find/create path."
+          description="Your laundry’s relationships — open Desk, view their orders, or start a new order."
           action={
             <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
               <Link href={buildOrdersHubPath('/partner/orders', 'desk')}>

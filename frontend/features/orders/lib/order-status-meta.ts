@@ -95,6 +95,13 @@ export function getOrderStatusLabel(status: string): string {
   return SHORT_LABEL[status] ?? status.replace(/_/g, ' ');
 }
 
+/** Icon for status badges — never rely on color alone (WCAG). */
+export function getOrderStatusIcon(status: string): LucideIcon {
+  if (isTrackingStatus(status)) return META[status].icon;
+  if (status === 'cancelled') return Package;
+  return Package;
+}
+
 export function formatOrderTimestamp(iso: string): string {
   return formatIndiaDateTime(iso);
 }

@@ -1,27 +1,40 @@
-import { Suspense } from 'react';
+import { permanentRedirect } from 'next/navigation';
 
-import { RoleGuard } from '@/components/auth/role-guard';
-import { PARTNER_PORTAL_ROLES } from '@/lib/partner-roles';
-import { PartnerWalkInOrdersView } from '@/features/partner/views/partner-walk-in-orders-view';
-import { Skeleton } from '@/components/ui/skeleton';
+import {
+  buildPartnerOrdersQueuePath,
+  chipPresetUrlPatch,
+} from '@/features/partner/orders-hub/partner-orders-hub-queue';
+import { buildNewOrderHref } from '@/features/partner/customer-desk/phone';
 
 export const metadata = { title: 'Partner · Walk-in orders' };
 
-function WalkInFallback() {
-  return (
-    <div className="space-y-4 p-4 sm:p-6">
-      <Skeleton className="h-8 w-48" />
-      <Skeleton className="h-40 w-full" />
-    </div>
-  );
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function firstString(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value;
 }
 
-export default function PartnerWalkInOrdersPage() {
-  return (
-    <RoleGuard roles={PARTNER_PORTAL_ROLES}>
-      <Suspense fallback={<WalkInFallback />}>
-        <PartnerWalkInOrdersView />
-      </Suspense>
-    </RoleGuard>
-  );
+/**
+ * Legacy Walk-in list → Customers & Orders hub Walk-in lens.
+ * Prefill create intents (phone / mode) land on New Order instead.
+ */
+export default async function PartnerWalkInOrdersRedirectPage({ searchParams }: PageProps) {
+  const incoming = await searchParams;
+  const phone = firstString(incoming.phone)?.trim();
+  const name = firstString(incoming.name)?.trim();
+  const modeRaw = firstString(incoming.mode)?.trim();
+  const mode = modeRaw === 'assisted' ? 'assisted' : modeRaw === 'walk_in' ? 'walk_in' : null;
+
+  if (phone) {
+    permanentRedirect(buildNewOrderHref(phone, name, mode ?? 'walk_in'));
+  }
+  if (mode) {
+    permanentRedirect(`/partner/new-order?mode=${mode}`);
+  }
+
+  const patch = chipPresetUrlPatch('walk_in');
+  permanentRedirect(buildPartnerOrdersQueuePath(patch));
 }

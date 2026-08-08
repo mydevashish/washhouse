@@ -210,7 +210,7 @@ describeFloor('Partner Shop Floor Cloth Wall', () => {
     await loginAsPartner(page);
 
     await page.goto('/partner/floor/new');
-    await expect(page.getByRole('heading', { name: /naya order/i })).toBeVisible({
+    await expect(page.getByRole('heading', { name: /new order/i })).toBeVisible({
       timeout: 30_000,
     });
 
@@ -263,131 +263,34 @@ describeFloor('Partner Shop Floor Cloth Wall', () => {
   });
 });
 
-const FLOOR_ORDER_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
-
-function baseFloorOrder(status: string) {
-  return {
-    id: FLOOR_ORDER_ID,
-    laundry_id: '00000000-0000-4000-8000-000000000001',
-    status,
-    tracking_code: 'DLMFLOOR01',
-    color_token: 'red',
-    token_code: 'R-42',
-    token_day_number: 42,
-    pickup_at: new Date().toISOString(),
-    delivery_at: new Date(Date.now() + 86400000).toISOString(),
-    subtotal_inr: '138.00',
-    delivery_fee_inr: '0.00',
-    cgst_inr: '12.42',
-    sgst_inr: '12.42',
-    total_inr: '162.84',
-    payment_status: 'pending',
-    customer_name: 'Floor Advance',
-    customer_phone: '9876543210',
-    order_source: 'walk_in',
-    items: [
-      {
-        service_name: 'Shirt / T-shirt · Dry clean',
-        quantity: 2,
-        line_total_inr: '138.00',
-      },
-    ],
-  };
-}
-
-async function mockFloorBoardApis(page: Page) {
-  let status = 'confirmed';
-  const patches: string[] = [];
-
-  await page.route(`**/api/v1/partner/orders/${FLOOR_ORDER_ID}/status`, async (route) => {
-    if (route.request().method() !== 'PATCH') {
-      await route.continue();
-      return;
-    }
-    const body = route.request().postDataJSON() as { status: string };
-    patches.push(body.status);
-    status = body.status;
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ data: baseFloorOrder(status), meta: {} }),
-    });
-  });
-
-  await page.route('**/api/v1/partner/orders', async (route) => {
-    if (route.request().method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ data: [baseFloorOrder(status)], meta: {} }),
-    });
-  });
-
-  return { getStatus: () => status, getPatches: () => patches };
-}
-
-describeFloor('Partner Shop Floor Today + Ready', () => {
+describeFloor('Partner floor route migration (P7)', () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
-  test('advance one walk-in order through simplified steps', async ({ page }) => {
-    const board = await mockFloorBoardApis(page);
+  test('legacy floor boards redirect; no Shop Floor chrome', async ({ page }) => {
     await page.addInitScript(() => {
-      window.localStorage.setItem('dlm.partner_ui_mode', 'shop_floor');
+      // Legacy shop_floor value must migrate to advanced (display mode retired).
+      window.localStorage.setItem(
+        'dlm.partner_ui_mode',
+        JSON.stringify({ state: { mode: 'shop_floor' }, version: 0 }),
+      );
     });
     await loginAsPartner(page);
 
     await page.goto('/partner');
-    await expect(page.getByTestId('shop-floor-home-tiles')).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId('shop-floor-tile-badge').first()).toBeVisible();
+    await expect(page.getByTestId('shop-floor-home-tiles')).toHaveCount(0);
+    await expect(page.locator('[data-testid="shop-floor-bottom-nav"]')).toHaveCount(0);
+    await expect(page.locator('#main-content')).toBeVisible({ timeout: 30_000 });
 
     await page.goto('/partner/floor/today');
-    await expect(page.getByTestId('shop-floor-today')).toBeVisible({ timeout: 15_000 });
-    const card = page.getByTestId('today-order-card');
-    await expect(card).toBeVisible();
-    await expect(card.getByTestId('color-token-chip')).toContainText('R-42');
-    await expect(card.getByTestId('floor-photo-stack')).toContainText('2 pcs');
+    await expect(page).toHaveURL(/\/partner\/orders/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/chip=today/);
+    await expect(page.locator('[data-testid="shop-floor-bottom-nav"]')).toHaveCount(0);
 
-    // Received → Washing
-    await expect(card.getByTestId('floor-advance-cta')).toHaveAttribute(
-      'data-floor-action',
-      'start_wash',
-    );
-    await card.getByTestId('floor-advance-cta').click();
-    await expect
-      .poll(() => board.getStatus(), { timeout: 10_000 })
-      .toBe('washing');
-    await expect(card).toHaveAttribute('data-floor-status', 'washing');
-
-    // Washing → Ready
-    await expect(card.getByTestId('floor-advance-cta')).toHaveAttribute(
-      'data-floor-action',
-      'mark_ready',
-    );
-    await card.getByTestId('floor-advance-cta').click();
-    await expect
-      .poll(() => board.getStatus(), { timeout: 10_000 })
-      .toBe('ready');
-
-    // Ready board → Diya confirm → Given (delivered)
     await page.goto('/partner/floor/ready');
-    await expect(page.getByTestId('shop-floor-ready')).toBeVisible({ timeout: 15_000 });
-    const readyCard = page.getByTestId('ready-order-card');
-    await expect(readyCard).toBeVisible();
-    await expect(readyCard.getByTestId('print-bill-link')).toBeVisible();
-    await expect(readyCard.getByTestId('floor-call-link')).toHaveAttribute(
-      'href',
-      /tel:\+919876543210/,
-    );
+    await expect(page).toHaveURL(/\/partner\/orders/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/chip=ready_today/);
 
-    await readyCard.getByTestId('floor-give-cta').click();
-    await expect(page.getByRole('heading', { name: /kapde de diye/i })).toBeVisible();
-    await page.getByRole('button', { name: /diya \/ given/i }).click();
-    await expect
-      .poll(() => board.getStatus(), { timeout: 10_000 })
-      .toBe('delivered');
-    expect(board.getPatches()).toEqual(['washing', 'ready', 'delivered']);
+    await page.goto('/partner/floor/more');
+    await expect(page).toHaveURL(/\/partner\/settings/, { timeout: 15_000 });
   });
 });

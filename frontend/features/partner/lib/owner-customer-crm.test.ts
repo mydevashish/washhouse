@@ -2,7 +2,9 @@ import {
   buildCustomerCrmInsights,
   countNewCustomersThisWeek,
   customerInitials,
+  customerScopedOrdersHref,
   customerSoftTag,
+  deskPrefillHref,
   filterCustomerRows,
   normalizeIndiaPhone,
   newOrderPrefillHref,
@@ -56,8 +58,21 @@ describe('owner-customer-crm', () => {
 
   it('builds new-order prefill href', () => {
     expect(newOrderPrefillHref({ name: 'Riya', phone: '+919876543210' })).toBe(
-      '/partner/new-order?mode=walk_in&phone=%2B919876543210&name=Riya',
+      '/partner/new-order?phone=%2B919876543210&name=Riya&mode=walk_in',
     );
+    expect(newOrderPrefillHref({ name: 'Riya', phone: '+919876543210' }, 'assisted')).toContain(
+      'mode=assisted',
+    );
+  });
+
+  it('builds desk and customer-scoped orders hrefs', () => {
+    expect(deskPrefillHref({ user_id: 'u-1', phone: '+919876543210' })).toBe(
+      '/partner/orders?user_id=u-1&tab=desk',
+    );
+    expect(customerScopedOrdersHref({ name: 'Riya', phone: '+919876543210' })).toBe(
+      '/partner/orders?phone=%2B919876543210&q=%2B919876543210&customer=Riya',
+    );
+    expect(customerScopedOrdersHref({ name: 'Riya', phone: null })).toBeNull();
   });
 
   it('counts new customers this week from first_order_at', () => {

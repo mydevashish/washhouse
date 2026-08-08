@@ -22,6 +22,7 @@ import { usePartnerAssistedOrderMutations } from '@/features/partner/customer-de
 import { buildWalkInPrefillHref } from '@/features/partner/customer-desk/phone';
 import type {
   AssistedOrderCreatePayload,
+  AssistedOrderCreateResult,
   CustomerDeskProfile,
   ReorderPrefill,
 } from '@/features/partner/customer-desk/types';
@@ -33,7 +34,7 @@ type Props = {
   profile: CustomerDeskProfile;
   reorder?: ReorderPrefill | null;
   onCreateBookingRequest: () => void;
-  onCreated?: (trackingCode: string) => void;
+  onCreated?: (result: AssistedOrderCreateResult) => void;
 };
 
 function toDatetimeLocalValue(d: Date): string {
@@ -199,8 +200,9 @@ export function PartnerCustomerDeskPlaceOrderForm({
       </InfoBanner>
 
       {reorder ? (
-        <InfoBanner variant="default" title={`Reorder #${reorder.trackingCode}`}>
-          Prefilling services from the past order. Prices refresh from your current catalog.
+        <InfoBanner variant="default" title={`Order same as last time (#${reorder.trackingCode})`}>
+          Prefilling services from the past order. Prices refresh from your current catalog — edit
+          before saving.
           {reorderWarnings.length ? (
             <ul className="mt-1 list-disc pl-4 text-xs">
               {reorderWarnings.map((w) => (

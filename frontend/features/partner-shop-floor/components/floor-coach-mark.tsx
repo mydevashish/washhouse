@@ -68,11 +68,10 @@ export function FloorCoachMark({ step, className, forceHide }: FloorCoachMarkPro
             Show my next step
           </p>
           <p className="mt-0.5 text-base font-semibold leading-snug text-foreground">
-            {copy.hinglish}
+            {copy.english}
           </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{copy.english}</p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Tip pehle {PARTNER_FLOOR_COACH_ORDER_LIMIT} orders — {remaining} bachi
+            Tip shows for the first {PARTNER_FLOOR_COACH_ORDER_LIMIT} orders — {remaining} left
           </p>
         </div>
         <button

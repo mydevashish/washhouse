@@ -7,15 +7,12 @@ import {
   IndianRupee,
   LayoutDashboard,
   Package,
-  PlusCircle,
   Radio,
   Settings,
   Sparkles,
   Star,
-  Store,
   Truck,
   UserCog,
-  Users,
   Wallet,
 } from 'lucide-react';
 
@@ -39,10 +36,13 @@ export type PartnerNavSection = {
   items: PartnerNavItem[];
 };
 
-/** Orders Hub home — collapsed Desk / Booking requests / insights land here. */
+/** Customers & Orders Hub — single Operations workplace. */
 export const PARTNER_ORDERS_HUB_HREF = '/partner/orders';
 
-/** People › Customers — legacy path redirects to Orders Hub `?tab=directory`. */
+/** Sidebar / page title for the unified hub. */
+export const PARTNER_CUSTOMERS_ORDERS_LABEL = 'Customers & Orders';
+
+/** Legacy customers path — redirects to hub `?tab=directory` (nav item removed). */
 export const PARTNER_PEOPLE_CUSTOMERS_HREF = '/partner/customers';
 
 /** Logistics hub — Pickups / Deliveries / Done today. */
@@ -52,16 +52,21 @@ export const PARTNER_LOGISTICS_HREF = '/partner/logistics';
 export const PARTNER_LOGISTICS_ALIASES = ['/partner/pickups', '/partner/deliveries'] as const;
 
 /**
- * Legacy ops paths that belong to Orders Hub (Prompt 2 redirects).
- * Active state / titles / breadcrumbs treat these as Orders.
- * `/partner/customers` is People › Customers (not Orders) — see isPartnerNavActive.
+ * Paths that belong to Customers & Orders Hub for active state / titles.
+ * Intake + print modules stay reachable but highlight the hub.
+ * Legacy `/partner/floor/today|ready|more` permanently redirect (P7).
  */
 export const PARTNER_ORDERS_HUB_ALIASES = [
   '/partner/customer-desk',
   '/partner/booking-requests',
+  '/partner/customers',
+  '/partner/new-order',
+  '/partner/walk-in-orders',
+  '/partner/floor/new',
+  '/partner/floor/print',
 ] as const;
 
-/** Search / quick-action aliases — old labels resolve into hub tabs. */
+/** Search / quick-action aliases — old labels resolve into hub tabs / intake. */
 export const PARTNER_ORDERS_HUB_SEARCH_ALIASES: ReadonlyArray<{
   id: string;
   label: string;
@@ -69,10 +74,16 @@ export const PARTNER_ORDERS_HUB_SEARCH_ALIASES: ReadonlyArray<{
   keywords: string;
 }> = [
   {
+    id: 'p-orders-hub',
+    label: PARTNER_CUSTOMERS_ORDERS_LABEL,
+    href: PARTNER_ORDERS_HUB_HREF,
+    keywords: 'customers orders hub queue crm',
+  },
+  {
     id: 'p-orders-hub-desk',
-    label: 'Customer Desk',
+    label: 'Find customer',
     href: `${PARTNER_ORDERS_HUB_HREF}?tab=desk`,
-    keywords: 'find customer phone lookup desk assisted',
+    keywords: 'find customer phone lookup desk assisted customer desk',
   },
   {
     id: 'p-orders-hub-requests',
@@ -82,27 +93,33 @@ export const PARTNER_ORDERS_HUB_SEARCH_ALIASES: ReadonlyArray<{
   },
   {
     id: 'p-orders-hub-directory',
-    label: 'Customer insights',
+    label: 'Customers',
     href: `${PARTNER_ORDERS_HUB_HREF}?tab=directory`,
     keywords: 'directory insights customers analytics people',
   },
   {
-    id: 'p-people-customers',
-    label: 'Customers',
-    href: PARTNER_PEOPLE_CUSTOMERS_HREF,
-    keywords: 'people customers directory',
+    id: 'p-orders-hub-new-order',
+    label: 'New Order',
+    href: '/partner/new-order',
+    keywords: 'new order create walk-in cloth wall intake',
   },
   {
-    id: 'p-orders-hub-find',
-    label: 'Find customer',
-    href: `${PARTNER_ORDERS_HUB_HREF}?tab=desk`,
-    keywords: 'desk phone search orders hub',
+    id: 'p-orders-hub-walk-in',
+    label: 'Walk-in orders',
+    href: `${PARTNER_ORDERS_HUB_HREF}?chip=walk_in&source=walk_in`,
+    keywords: 'walk-in counter offline',
+  },
+  {
+    id: 'p-orders-hub-print',
+    label: 'Print center',
+    href: '/partner/floor/print',
+    keywords: 'print tags bill invoice',
   },
 ];
 
 /**
- * Advanced Mode Owner Command Center nav — 5 pillars + secondary shop/system.
- * Shop Floor Mode uses its own nav; do not shrink this for floor literacy.
+ * Owner Command Center nav — single Customers & Orders workplace under Operations.
+ * Shop Floor display mode is retiring; this is the only partner shell after migration.
  */
 export const PARTNER_NAV_SECTIONS: PartnerNavSection[] = [
   {
@@ -114,14 +131,12 @@ export const PARTNER_NAV_SECTIONS: PartnerNavSection[] = [
     id: 'operations',
     label: 'Operations',
     items: [
-      { href: '/partner/new-order', label: 'New Order', icon: PlusCircle },
       {
         href: PARTNER_ORDERS_HUB_HREF,
-        label: 'Orders',
+        label: PARTNER_CUSTOMERS_ORDERS_LABEL,
         icon: Package,
         badgeKeys: ['orders', 'bookingRequests'],
       },
-      { href: '/partner/walk-in-orders', label: 'Walk-in orders', icon: Store },
     ],
   },
   {
@@ -139,10 +154,7 @@ export const PARTNER_NAV_SECTIONS: PartnerNavSection[] = [
   {
     id: 'people',
     label: 'People',
-    items: [
-      { href: PARTNER_PEOPLE_CUSTOMERS_HREF, label: 'Customers', icon: Users },
-      { href: '/partner/staff', label: 'Staff', icon: UserCog },
-    ],
+    items: [{ href: '/partner/staff', label: 'Staff', icon: UserCog }],
   },
   {
     id: 'money',
@@ -194,7 +206,7 @@ export function getNavHrefTab(hrefOrPath: string): string | null {
   return new URLSearchParams(hrefOrPath.slice(q + 1)).get('tab');
 }
 
-/** Map legacy desk/BR paths onto the Orders Hub pathname; logistics aliases → hub. */
+/** Map legacy desk/BR/customers/intake/print paths onto the Customers & Orders Hub pathname. */
 export function resolvePartnerNavPathname(pathname: string): string {
   const path = stripNavQuery(pathname);
   if (
@@ -223,49 +235,22 @@ function navFlatPaths(): string[] {
   return PARTNER_NAV_FLAT.map((item) => stripNavQuery(item.href));
 }
 
-function isPeopleCustomersPath(pathname: string, tab?: string | null): boolean {
-  const path = stripNavQuery(pathname);
-  if (path === '/partner/customers' || path.startsWith('/partner/customers/')) return true;
-  return path === PARTNER_ORDERS_HUB_HREF && tab === 'directory';
-}
-
 export function isPartnerNavActive(
   pathname: string,
   href: string,
   opts?: PartnerNavActiveOptions,
 ): boolean {
-  const hrefTab = getNavHrefTab(href);
   const effectiveHref = stripNavQuery(href);
-  const tab = opts?.tab ?? null;
-
-  // People › Customers (directory tab / legacy customers route)
-  if (
-    effectiveHref === PARTNER_PEOPLE_CUSTOMERS_HREF ||
-    (effectiveHref === PARTNER_ORDERS_HUB_HREF && hrefTab === 'directory')
-  ) {
-    return isPeopleCustomersPath(pathname, tab);
-  }
-
-  // Orders hub — yield directory tab to People › Customers
-  if (effectiveHref === PARTNER_ORDERS_HUB_HREF && !hrefTab) {
-    if (isPeopleCustomersPath(pathname, tab)) return false;
-    return isPathNavLinkActive(
-      resolvePartnerNavPathname(pathname),
-      effectiveHref,
-      navFlatPaths(),
-      ['/partner'],
-    );
-  }
-
   const effectivePath = resolvePartnerNavPathname(pathname);
+  // `opts.tab` reserved for future tab-scoped nav items; hub owns all `?tab=*`.
+  void opts;
   return isPathNavLinkActive(effectivePath, effectiveHref, navFlatPaths(), ['/partner']);
 }
 
 export function getPartnerPageTitle(pathname: string, tab?: string | null): string {
-  if (isPeopleCustomersPath(pathname, tab)) return 'Customers';
+  void tab;
   const effectivePath = resolvePartnerNavPathname(pathname);
   return (
-    PARTNER_NAV_FLAT.find((n) => isPartnerNavActive(effectivePath, n.href, { tab }))?.label ??
-    'Partner'
+    PARTNER_NAV_FLAT.find((n) => isPartnerNavActive(effectivePath, n.href))?.label ?? 'Partner'
   );
 }

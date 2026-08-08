@@ -45,7 +45,7 @@ describeJourney('Mahesh partner journey', () => {
     await seedPartnerIncomingOrder(page.request);
     await loginAsPartner(page);
     await page.goto('/partner/orders');
-    await expectPageSettled(page, /^orders$/i);
+    await expectPageSettled(page, /customers & orders|^orders$/i);
 
     const actionTab = page.getByRole('tab', { name: ORDERS_ACTION_TAB });
     if (await actionTab.isVisible().catch(() => false)) {
@@ -196,26 +196,35 @@ describeJourney('Mahesh partner journey', () => {
     ).toBeVisible({ timeout: 30_000 });
   });
 
-  test('6. Walk-in orders: create + advance status', async ({ page }) => {
+  test('6. Walk-in: hub redirect + Cloth Wall create + print tags CTA', async ({ page }) => {
     await loginAsPartner(page);
+
     await page.goto('/partner/walk-in-orders');
+    await expect(page).toHaveURL(/\/partner\/orders\?/);
+    await expect(page).toHaveURL(/chip=walk_in/);
     await expect(
-      page.locator('#main-content').getByRole('heading', { name: /walk-in orders/i }),
+      page.locator('#main-content').getByRole('heading', { name: /customers & orders/i }),
     ).toBeVisible({ timeout: 60_000 });
 
     const walkInName = `E2E Walk-in ${Date.now().toString(36)}`;
     const walkInPhone = `+9199${String(Date.now()).slice(-8)}`;
 
-    await page.getByRole('button', { name: /new entry/i }).click();
-    await page.locator('#customer_name').fill(walkInName);
-    await page.locator('#customer_phone').fill(walkInPhone);
+    await page.goto('/partner/new-order?mode=walk_in');
+    await expect(
+      page.locator('#main-content').getByRole('heading', { name: /new order/i }),
+    ).toBeVisible({ timeout: 60_000 });
 
-    const serviceSelect = page.locator('#service-0');
-    await expect(serviceSelect).toBeVisible({ timeout: 20_000 });
-    await expect
-      .poll(async () => serviceSelect.locator('option').count(), { timeout: 20_000 })
-      .toBeGreaterThan(1);
-    await serviceSelect.selectOption({ index: 1 });
+    await page.getByTestId('cloth-wall-phone').fill(walkInPhone);
+    await page.getByTestId('cloth-wall-name').fill(walkInName);
+    await page.getByTestId('cloth-wall-customer-next').click();
+    await expect(page.getByTestId('cloth-wall-step')).toBeVisible({ timeout: 20_000 });
+
+    await page.getByTestId('list-mode-toggle').click();
+    await expect(page.getByTestId('list-mode-picker')).toBeVisible({ timeout: 20_000 });
+    await page.getByTestId('list-mode-picker').getByRole('button', { name: '+' }).first().click();
+
+    await page.getByRole('button', { name: /^confirm$/i }).click();
+    await expect(page.getByTestId('cloth-wall-submit')).toBeVisible({ timeout: 15_000 });
 
     const createResponse = page.waitForResponse(
       (res) =>
@@ -224,19 +233,18 @@ describeJourney('Mahesh partner journey', () => {
         res.status() < 500,
       { timeout: 45_000 },
     );
-    await page.getByRole('button', { name: /^save walk-in order$/i }).click();
+    await page.getByTestId('cloth-wall-submit').click();
     const res = await createResponse;
     expect(res.ok()).toBeTruthy();
 
-    await expect(page.getByText(/walk-in order saved/i).first()).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText(new RegExp(walkInName, 'i')).first()).toBeVisible({
-      timeout: 30_000,
-    });
+    await expect(page.getByTestId('walk-in-success-panel')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('walk-in-success-print-tags')).toBeVisible();
+    await expect(page.getByTestId('walk-in-success-heading')).toHaveText(/order saved/i);
 
-    const advance = page.getByRole('button', { name: /start washing|mark ready|mark delivered/i }).first();
-    await expect(advance).toBeVisible({ timeout: 20_000 });
-    await advance.click();
-    await expect(page.getByText(/status updated/i).first()).toBeVisible({ timeout: 30_000 });
+    const startWash = page.getByRole('button', { name: /start wash/i });
+    await expect(startWash).toBeVisible();
+    await startWash.click();
+    await expect(page.getByText(/wash started|status/i).first()).toBeVisible({ timeout: 30_000 });
   });
 
   test('7. Settlements / operations / reviews pages load (even if empty)', async ({ page }) => {
@@ -298,24 +306,26 @@ describeJourney('Mahesh partner journey', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await loginAsPartner(page);
 
-    await page.goto('/partner/walk-in-orders');
+    await page.goto('/partner/orders');
     await expect(
-      page.locator('#main-content').getByRole('heading', { name: /walk-in orders/i }),
+      page.locator('#main-content').getByRole('heading', { name: /customers & orders/i }),
     ).toBeVisible({ timeout: 30_000 });
-    // Primary CTA is one tap away
-    await expect(page.getByRole('button', { name: /new entry/i })).toBeVisible();
+    await expect(page.getByTestId('partner-orders-new-order-fab')).toBeVisible();
+    await page.getByTestId('partner-orders-new-order-fab').click();
+    await expect(page.getByTestId('partner-orders-new-order-sheet')).toBeVisible();
+    await expect(page.getByTestId('partner-intake-choice-walk-in')).toBeVisible();
+    await page.keyboard.press('Escape');
 
-    const advance = page.getByRole('button', { name: /start washing|mark ready|mark delivered/i }).first();
-    if ((await advance.count()) > 0) {
-      await advance.click();
-      await expect(
-        page.getByText(/status updated|could not update/i).first(),
-      ).toBeVisible({ timeout: 20_000 });
-    }
+    await page.goto('/partner/walk-in-orders');
+    await expect(page).toHaveURL(/chip=walk_in/);
+    await expect(page.getByTestId('partner-orders-chip-walk_in')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
 
     await page.goto('/partner/orders');
     await expect(
-      page.locator('#main-content').getByRole('heading', { name: /^orders$/i }),
+      page.locator('#main-content').getByRole('heading', { name: /customers & orders/i }),
     ).toBeVisible({ timeout: 30_000 });
     // Mobile card stack uses large Accept / Reject / advance buttons + filter tabs
     await expect(page.getByRole('tablist', { name: /order filters/i })).toBeVisible({

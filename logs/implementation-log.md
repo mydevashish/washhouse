@@ -4,6 +4,127 @@
 
 ---
 
+## 2026-08-08 — Customers & Orders Hub visual polish (Prompts 0–5)
+
+- **Type:** polish
+- **Scope:** partner-customers-orders-hub-ui-polish
+- **Files:** polish spec; hub header/chips/filters/recent/scope/today/new-order/empty; `OwnerPillarCard`; status badge; order card/table; print compact; desk search `density`; tabs; tests; QA matrix section; docs/logs/status
+- **Summary:** Locked density system (h-8/h-9 controls, 3-col mobile filters); decluttered Orders first viewport; split-card pillars for AA text; crisper badges and compact print/actions.
+- **Risks:** Select default `min-h` overridden per-control — watch native select clipping on Android; compact desk search on hub must not regress full Desk tab.
+- **Next:** Manual light/dark visual QA @ 375/1280; mark polish review/done.
+- **Refs:** `.cursor/prompts/partner-customers-orders-hub-ui-polish.md`, `docs/features/partner-customers-orders-hub-ui-polish.md`
+
+---
+
+## 2026-08-08 — Partner Customers & Orders Hub (Prompt 8 — polish / a11y / QA)
+
+
+- **Type:** feat
+- **Scope:** partner-customers-orders-hub
+- **Files:** `partner-hub-motion.tsx`, shortcut chips, empty state, hub tabs/panels, orders table error/loading, success print aria, `docs/qa/partner-customers-orders-hub-matrix.md`, `partner-orders-hub.spec.ts`, feature/docs/logs/status
+- **Summary:** Production-hardened Customers & Orders workplace: calm chip/empty/queue motion, tab+chip keyboard/focus, consistent loading/error, WCAG labels; QA matrix + Playwright P8 smoke (pagination 10, directory scope, settings English, ready print). Spec → **review**.
+- **Risks:** Framer chip layout on low-end Android — reduced-motion path skips animation; PartnerOrderCard may still fire optional evidence queries on list rows.
+- **Next:** Staging manual checklist from prompt pack; mark feature **done** after seed partner sign-off.
+- **Refs:** `.cursor/prompts/partner-customers-orders-hub.md`, `docs/qa/partner-customers-orders-hub-matrix.md`
+
+---
+
+## 2026-08-08 — Partner Customers & Orders Hub (Prompt 7 — floor route migration)
+
+- **Type:** feat
+- **Scope:** partner-customers-orders-hub
+- **Files:** `partner-shell.tsx`, `partner-home-view.tsx`, floor `today`/`ready`/`more` redirect pages, deleted Shop Floor chrome (home/tiles/sidebar/bottom-nav/boards/nav), `shop-floor-print-view`, `owner-floor-strip`, E2E, docs/logs/status
+- **Summary:** `/partner` always Owner overview; legacy floor boards redirect to hub chips (`today` / `ready_today`) and More → Settings; Shop Floor sidebar/bottom nav never mount; print + Cloth Wall kept under Advanced shell.
+- **Risks:** Status advance UX that lived only on Today/Ready boards is gone — partners use order detail / hub queue until a later board view (out of scope).
+- **Next:** Prompt 8 — polish, a11y, Playwright matrix, docs.
+- **Refs:** `.cursor/prompts/partner-customers-orders-hub.md`, `docs/features/partner-customers-orders-hub.md`
+
+---
+
+## 2026-08-08 — Partner Customers & Orders Hub (Prompt 6 — English + remove mode toggle)
+
+- **Type:** feat
+- **Scope:** partner-customers-orders-hub
+- **Files:** `partner-settings-view.tsx`, deleted `partner-ui-mode-toggle.tsx`, `partner-ui-mode.store.ts`, `floor-voice.ts`, floor nav/today/ready/cloth-wall/coach/copy, shop-floor E2E, Jest, logs/spec/status
+- **Summary:** Removed Shop Floor / Advanced display-mode toggle from Settings, More, and home; Settings explains Customers & Orders workplace with picture-led help. English-first copy on reachable floor tools; voice TTS prefers `en-IN` (never Hindi), default OFF; store forces advanced.
+- **Risks:** `PartnerHomeView` still has a dead `shop_floor` branch until P7 route cleanup; leftover bilingual field names (`hinglish`) remain for data compat.
+- **Next:** Prompt 7 — floor route migration + delete dead mode chrome.
+- **Refs:** `.cursor/prompts/partner-customers-orders-hub.md`, `docs/features/partner-customers-orders-hub.md`
+
+---
+
+## 2026-08-08 — Partner Customers & Orders Hub (Prompt 5 — print lifecycle)
+
+- **Type:** feat
+- **Scope:** partner-customers-orders-hub
+- **Files:** `print-lifecycle.ts`, `print-order-actions.tsx`, `order-create-success-panel.tsx`, walk-in success wrapper, partner new-order assisted success, desk drawer create success, order detail Print panel, hub row/card compact print, hub Print center header, Jest + logs/spec/status
+- **Summary:** Print is part of the order loop: create success primary **Print tags** (walk-in / Cloth Wall / assisted / desk); Ready/delivered emphasize **Print bill** on detail + hub rows; Print center chip + header; reprints via shared `PrintOrderActions` (no new PDF engine).
+- **Risks:** Compact icon print on dense desktop rows may wrap on narrow md widths; WhatsApp share deferred.
+- **Next:** Prompt 6 — English-first + remove Shop Floor toggle UI.
+- **Refs:** `.cursor/prompts/partner-customers-orders-hub.md`, `docs/features/partner-customers-orders-hub.md`
+
+---
+
+## 2026-08-08 — Partner Customers & Orders Hub (Prompt 4 — customer CRM)
+
+- **Type:** feat
+- **Scope:** partner-customers-orders-hub
+- **Files:** desk drawer/search/orders-tab, `owner-customer-card`, hub queue `phone`/`customer` scope bar, recent-customers strip (localStorage), href helpers + Jest, partner-status-badge icons, logs/spec/status
+- **Summary:** Desk + directory are customer-centric: primary New walk-in / doorstep / Call; **View all orders** scopes Orders tab (`?phone=&q=&customer=`); sticky scope bar with New order CTAs; recent-today strip; **Same as last** when `item_summary` exists (else disabled reason); phone keypad on desk.
+- **Risks:** Recent strip is localStorage-only (no API); order search by full E.164 depends on partner orders `search` matching phone.
+- **Next:** Prompt 5 — print lifecycle CTAs.
+- **Refs:** `.cursor/prompts/partner-customers-orders-hub.md`, `docs/features/partner-customers-orders-hub.md`
+
+---
+
+## 2026-08-08 — Partner Customers & Orders Hub (Prompt 3 — merge intake)
+
+- **Type:** feat
+- **Scope:** partner-customers-orders-hub
+- **Files:** `partner-orders-new-order-sheet.tsx`, `partner-orders-hub.tsx`, `walk-in-orders/page.tsx` (redirect), `walk-in-success-panel.tsx`, `partner-new-order-gate.tsx`, `partner-new-order-view.tsx`, cloth-wall toasts, desk drawer href, `partner-nav` search alias, customer-desk `onCreated` result, hub/journey/offline/desk E2E + Jest, logs/spec/status
+- **Summary:** New Order + Walk-in live inside Customers & Orders: header + mobile FAB opens a picture-led Walk-in / Doorstep / Find customer sheet; `/partner/walk-in-orders` redirects to hub `chip=walk_in` (phone/mode prefill → `/partner/new-order`); create success emphasizes **Print tags** with English copy.
+- **Risks:** Partner-journey Cloth Wall list-mode create depends on active services; assisted create jumps straight to tags print (P5 may soften).
+- **Next:** Prompt 4 — customer-centric desk/directory.
+- **Refs:** `.cursor/prompts/partner-customers-orders-hub.md`, `docs/features/partner-customers-orders-hub.md`
+
+---
+
+## 2026-08-08 — Partner Customers & Orders Hub (Prompt 2 — chips/filters/search)
+
+- **Type:** feat
+- **Scope:** partner-customers-orders-hub
+- **Files:** `partner-orders-hub.tsx`, `partner-orders-hub-queue.ts`, `partner-orders-shortcut-chips.tsx`, `partner-orders-filter-bar.tsx`, `partner-orders-empty-state.tsx`, `use-partner-orders-queue-state.ts`, `partner-orders-table.tsx`, `services/partner.ts`, `partner_orders_list_params.py`, `partner_service.py`, hub Jest + Playwright smoke, feature spec/logs
+- **Summary:** Orders tab is now the daily workplace shell: shortcut chips (Needs action → Print), compact status/source/payment filters, debounced `q` search, deep-linkable `?chip=&q=&status=&source=&payment=`, and picture-led English empty states. Small API filters added for `doorstep`, `payment_status=unpaid`, and `created_today`.
+- **Risks:** Ready today is status=`ready` (not due-date scoped); repeat-customers chip deferred to P8; intake FAB still Prompt 3.
+- **Next:** Prompt 3 — merge New Order / Walk-in into hub + redirects.
+- **Refs:** `.cursor/prompts/partner-customers-orders-hub.md`, `docs/features/partner-customers-orders-hub.md`
+
+---
+
+## 2026-08-08 — Partner Customers & Orders Hub (Prompt 1 — nav + mode)
+
+- **Type:** feat
+- **Scope:** partner-customers-orders-hub
+- **Files:** `partner-nav.ts`, `partner-nav.test.ts`, `partner-shop-floor/types.ts`, `partner-ui-mode.store.ts`, `use-partner-ui-mode.ts`, `partner-ui-mode.test.ts`, `shop-floor-nav.test.ts`, `partner-ui-mode-toggle.test.tsx`, `logs/feature-progress.md`, `current-status.md`
+- **Summary:** Collapsed Operations to a single **Customers & Orders** workplace; removed New Order / Walk-in / People › Customers from the sidebar. Default partner UI mode is Advanced with one-time `shop_floor`→`advanced` hydrate migrate so PartnerShell no longer lands on Shop Floor chrome for fresh or migrated devices.
+- **Risks:** Toggle UI still present until P6 (session can switch back until reload remigrates); intake/print redirects deferred to P3/P7.
+- **Next:** Prompt 2 — hub chips, filters, search, image-led empty states.
+- **Refs:** `.cursor/prompts/partner-customers-orders-hub.md`, `docs/features/partner-customers-orders-hub.md`
+
+---
+
+## 2026-08-08 — Partner Customers & Orders Hub (Prompt 0 — spec)
+
+- **Type:** docs / product
+- **Scope:** partner-customers-orders-hub
+- **Files:** `docs/features/partner-customers-orders-hub.md`, `docs/features/README.md`, `orders-hub.md`, `partner-shop-floor.md`, `partner-owner-command-center.md`, `logs/feature-progress.md`, `.cursor/context/current-status.md`
+- **Summary:** Spec-locked one workplace (Customers & Orders → `/partner/orders`), chip/FAB intake, print lifecycle, English-first; retire Shop Floor display mode (keep print + Cloth Wall); P1–P8 slice map. No UI code.
+- **Risks:** Partners attached to 4-tile floor need clear redirects + chips in P2/P7.
+- **Next:** Prompt 1 — nav IA + mode migration foundation.
+- **Refs:** `.cursor/prompts/partner-customers-orders-hub.md`
+
+---
+
 ## 2026-08-08 — Fix frontend TypeScript build errors
 
 - **Type:** fix

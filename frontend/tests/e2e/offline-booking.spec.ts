@@ -95,7 +95,7 @@ test.describe('Offline booking mode', () => {
     await expect(page.getByRole('note').filter({ hasText: OFFLINE_BOOKING_TITLE })).toBeVisible();
   });
 
-  test('partner can open walk-in orders page', async ({ page }) => {
+  test('partner walk-in list redirects into Customers & Orders hub', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email').fill('partner.koramangala@demo.dlm');
     await page.getByLabel('Password').fill('Partner@1234');
@@ -103,8 +103,13 @@ test.describe('Offline booking mode', () => {
 
     await expect(page).toHaveURL(/\/partner/);
     await page.goto('/partner/walk-in-orders');
-    await expect(page.getByRole('heading', { name: /walk-in orders/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /new entry/i })).toBeVisible();
+    await expect(page).toHaveURL(/\/partner\/orders\?/);
+    await expect(page).toHaveURL(/chip=walk_in/);
+    await expect(page.getByRole('heading', { name: /customers & orders/i })).toBeVisible();
+    await expect(page.getByTestId('partner-orders-chip-walk_in')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 
   test('marketing sticky CTA emphasizes Book Pickup + WhatsApp', async ({ page }) => {

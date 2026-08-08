@@ -1,19 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { Headset, MessageCircle, Phone, Plus } from 'lucide-react';
+import { Headset, ListOrdered, MessageCircle, Phone, Plus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { ClientDate } from '@/components/ui/client-date';
 import { formatInr } from '@/features/discover/detail/order-pricing';
 import {
   customerInitials,
+  customerScopedOrdersHref,
   customerSoftTag,
+  deskPrefillHref,
   newOrderPrefillHref,
   telHref,
   whatsappHref,
 } from '@/features/partner/lib/owner-customer-crm';
-import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
+import { rememberRecentCustomer } from '@/features/partner/lib/partner-recent-customers';
 import { cn } from '@/lib/utils';
 import type { CustomerInsightRow } from '@/services/customer-insights';
 
@@ -21,8 +23,15 @@ export function OwnerCustomerCard({ customer }: { customer: CustomerInsightRow }
   const tag = customerSoftTag(customer.segment);
   const call = telHref(customer.phone);
   const wa = whatsappHref(customer.phone);
-  const deskHref = buildOrdersHubPath('/partner/orders', 'desk', { user_id: customer.user_id });
+  const deskHref = deskPrefillHref(customer);
   const newOrderHref = newOrderPrefillHref(customer);
+  const ordersHref = customerScopedOrdersHref(customer);
+
+  function remember() {
+    if (customer.phone) {
+      rememberRecentCustomer({ phone: customer.phone, name: customer.name });
+    }
+  }
 
   return (
     <article
@@ -108,16 +117,28 @@ export function OwnerCustomerCard({ customer }: { customer: CustomerInsightRow }
             WhatsApp
           </Button>
         )}
-        <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
-          <Link href={newOrderHref}>
+        <Button asChild variant="default" size="sm" className="min-h-[44px] gap-1.5">
+          <Link href={newOrderHref} onClick={remember} aria-label={`New order for ${customer.name}`}>
             <Plus className="h-3.5 w-3.5" aria-hidden />
             New order
           </Link>
         </Button>
-        <Button asChild variant="secondary" size="sm" className="min-h-[44px] gap-1.5">
-          <Link href={deskHref}>
+        {ordersHref ? (
+          <Button asChild variant="secondary" size="sm" className="min-h-[44px] gap-1.5">
+            <Link
+              href={ordersHref}
+              onClick={remember}
+              aria-label={`View orders for ${customer.name}`}
+            >
+              <ListOrdered className="h-3.5 w-3.5" aria-hidden />
+              View orders
+            </Link>
+          </Button>
+        ) : null}
+        <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
+          <Link href={deskHref} onClick={remember} aria-label={`Open desk for ${customer.name}`}>
             <Headset className="h-3.5 w-3.5" aria-hidden />
-            History
+            Desk
           </Link>
         </Button>
       </div>

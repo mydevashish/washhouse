@@ -3,13 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarClock, Headset, Package } from 'lucide-react';
+import { CalendarClock, Package } from 'lucide-react';
 import Link from 'next/link';
 import { isAxiosError } from 'axios';
 
-import { Button } from '@/components/ui/button';
 import { InfoBanner } from '@/components/ui/info-banner';
-import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { PartnerBookingRequestCreateDialog } from '@/features/partner/booking-requests/partner-booking-request-create-dialog';
 import type { PartnerBookingCreatePrefill } from '@/features/partner/booking-requests/types';
 import { usePartnerBookingRequestsList } from '@/features/partner/booking-requests/hooks';
@@ -183,42 +181,24 @@ export function PartnerOrdersTodayPanel(_props: PartnerOrdersTodayPanelProps = {
     setBrOpen(true);
   }
 
-  const requestRows = requestsQ.data?.items ?? [];
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div
-        className="flex flex-wrap gap-2"
+        className="flex gap-1.5 overflow-x-auto sm:flex-wrap"
         aria-label="Today snapshot"
         data-testid="partner-orders-today-strip"
       >
         <TodayChip icon={Package} label="Needs action" value={needsAction} />
-        <TodayChip icon={Package} label="Active orders" value={activeCount} />
-        <TodayChip icon={CalendarClock} label="Waiting requests" value={waitingRequests} />
+        <TodayChip icon={Package} label="Active" value={activeCount} />
+        <TodayChip icon={CalendarClock} label="Waiting" value={waitingRequests} />
       </div>
 
-      <PartnerPanel
-        title="Find customer"
-        description="Type a mobile number to see past orders and place a new one — without leaving Orders."
-        toolbar={
-          <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
-              <Link href={buildOrdersHubPath('/partner/orders', 'desk')}>
-                <Headset className="h-3.5 w-3.5" aria-hidden />
-                Full Customer Desk
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
-              <Link href={buildOrdersHubPath('/partner/orders', 'requests')}>
-                <CalendarClock className="h-3.5 w-3.5" aria-hidden />
-                All requests
-              </Link>
-            </Button>
-          </div>
-        }
-        bodyClassName="p-4 sm:p-5 space-y-4"
+      <div
+        className="rounded-xl border border-border/60 bg-card p-3 shadow-soft"
+        data-testid="partner-orders-find-strip"
       >
         <PartnerCustomerDeskSearch
+          density="compact"
           initialQuery={searchQuery || phoneParam || ''}
           isLookingUp={
             (deskOpen && previewQ.isFetching) || (Boolean(activeSearch) && searchQ.isFetching)
@@ -227,74 +207,56 @@ export function PartnerOrdersTodayPanel(_props: PartnerOrdersTodayPanelProps = {
           onOpenDesk={(v) => handleSubmit(v, 'orders')}
         />
 
-        <InfoBanner variant="default" title="Your laundry only">
-          History and new doorstep orders stay scoped to your shop.
-        </InfoBanner>
-
         {activeSearch ? (
-          <PartnerCustomerDeskResults
-            query={activeSearch}
-            results={searchQ.data ?? []}
-            isLoading={searchQ.isFetching}
-            onSelect={(p) => handleSelectResult(p, 'place-order')}
-          />
+          <div className="mt-2">
+            <PartnerCustomerDeskResults
+              query={activeSearch}
+              results={searchQ.data ?? []}
+              isLoading={searchQ.isFetching}
+              onSelect={(p) => handleSelectResult(p, 'place-order')}
+            />
+          </div>
         ) : null}
 
         {searchQ.isError && activeSearch ? (
-          <InfoBanner variant="destructive" title="Search failed">
-            {getApiErrorMessage(searchQ.error)}
-          </InfoBanner>
+          <div className="mt-2">
+            <InfoBanner variant="destructive" title="Search failed">
+              {getApiErrorMessage(searchQ.error)}
+            </InfoBanner>
+          </div>
         ) : null}
 
         {previewQ.isError && deskOpen ? (
-          <InfoBanner variant="destructive" title="Could not look up customer">
-            {getApiErrorMessage(previewQ.error)}
-          </InfoBanner>
+          <div className="mt-2">
+            <InfoBanner variant="destructive" title="Could not look up customer">
+              {getApiErrorMessage(previewQ.error)}
+            </InfoBanner>
+          </div>
         ) : null}
-      </PartnerPanel>
+      </div>
 
-      <PartnerPanel
-        title="Waiting requests"
-        description="Open booking requests that need a first reply."
-        toolbar={
-          <Button asChild variant="ghost" size="sm" className="min-h-[44px]">
-            <Link href={buildOrdersHubPath('/partner/orders', 'requests')}>View all</Link>
-          </Button>
-        }
-        bodyClassName="p-0"
-        meta={waitingRequests ? `${waitingRequests} waiting` : undefined}
-      >
-        {requestsQ.isLoading ? (
-          <p className="px-4 py-6 text-sm text-muted-foreground">Loading requests…</p>
-        ) : requestRows.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-muted-foreground">
-            No waiting requests. New leads appear here and in Booking requests.
-          </p>
-        ) : (
-          <ul className="divide-y divide-border/60">
-            {requestRows.map((row) => (
-              <li key={row.id}>
-                <Link
-                  href={buildOrdersHubPath('/partner/orders', 'requests', {
-                    phone: row.phone_e164,
-                  })}
-                  className={cn(
-                    'flex min-h-[52px] flex-col gap-0.5 px-4 py-3 transition-colors hover:bg-muted/40',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  )}
-                >
-                  <span className="text-sm font-medium text-foreground">
-                    {row.customer_name || 'Customer'} · {row.phone_e164}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {row.public_code} · {row.service_type} · {row.status}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+      <Link
+        href={buildOrdersHubPath('/partner/orders', 'requests')}
+        className={cn(
+          'flex h-9 items-center justify-between gap-2 rounded-lg px-3 text-sm',
+          'bg-muted/40 text-foreground ring-1 ring-border/50 transition-colors hover:bg-muted/70',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         )}
-      </PartnerPanel>
+        data-testid="partner-orders-waiting-link"
+        aria-label={
+          waitingRequests > 0
+            ? `${waitingRequests} waiting booking requests`
+            : 'Open booking requests'
+        }
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <CalendarClock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="truncate font-medium">Waiting requests</span>
+        </span>
+        <span className="tabular-nums text-muted-foreground">
+          {waitingRequests > 0 ? waitingRequests : 'View'}
+        </span>
+      </Link>
 
       <PartnerCustomerDeskDrawer
         lookup={lookup}
@@ -323,11 +285,11 @@ function TodayChip({
   value: number;
 }) {
   return (
-    <div className="flex min-h-[44px] min-w-[9.5rem] flex-1 items-center gap-2 rounded-lg bg-card px-3 py-2 shadow-soft ring-1 ring-border/60 sm:flex-none">
-      <Icon className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-50" aria-hidden />
-      <div className="min-w-0">
-        <p className="text-lg font-semibold leading-none tabular-nums text-foreground">{value}</p>
-        <p className="text-[11px] text-muted-foreground">{label}</p>
+    <div className="inline-flex h-9 min-w-[7.5rem] flex-1 items-center gap-2 rounded-full bg-muted/40 px-3 ring-1 ring-border/50 sm:flex-none">
+      <Icon className="h-3.5 w-3.5 shrink-0 text-brand-600 dark:text-brand-50" aria-hidden />
+      <div className="flex min-w-0 items-baseline gap-1.5">
+        <p className="text-sm font-semibold tabular-nums leading-none text-foreground">{value}</p>
+        <p className="truncate text-[11px] text-muted-foreground">{label}</p>
       </div>
     </div>
   );

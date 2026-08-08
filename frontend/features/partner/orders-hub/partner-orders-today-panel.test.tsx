@@ -11,6 +11,19 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('@/features/partner/hooks/use-partner-operations', () => ({
   usePartnerQueriesEnabled: () => true,
+  usePartnerOrders: () => ({
+    isLoading: false,
+    isError: false,
+    data: {
+      items: [],
+      page: 1,
+      page_size: 10,
+      total_records: 0,
+      total_pages: 0,
+      has_next: false,
+      has_previous: false,
+    },
+  }),
 }));
 
 jest.mock('@/features/partner/booking-requests/hooks', () => ({
@@ -88,20 +101,16 @@ function wrap(children: ReactNode) {
 }
 
 describe('PartnerOrdersTodayPanel', () => {
-  it('renders find-customer panel, today strip, requests preview, and desk deep-link', () => {
+  it('renders slim metrics, compact find strip, and waiting requests link', () => {
     render(wrap(<PartnerOrdersTodayPanel orders={[]} />));
 
     expect(screen.getByTestId('partner-orders-today-strip')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /find customer/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /full customer desk/i })).toHaveAttribute(
-      'href',
-      '/partner/orders?tab=desk',
-    );
-    expect(screen.getByRole('heading', { name: /waiting requests/i })).toBeInTheDocument();
-    expect(screen.getByText(/BR-TEST1/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /view all/i })).toHaveAttribute(
+    expect(screen.getByTestId('partner-orders-find-strip')).toBeInTheDocument();
+    expect(screen.getByLabelText(/find customer/i)).toBeInTheDocument();
+    expect(screen.getByTestId('partner-orders-waiting-link')).toHaveAttribute(
       'href',
       '/partner/orders?tab=requests',
     );
+    expect(screen.getByRole('link', { name: /1 waiting booking requests/i })).toBeInTheDocument();
   });
 });

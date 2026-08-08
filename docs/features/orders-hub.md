@@ -3,7 +3,8 @@
 > Status: **review** (Admin + Partner hub shells complete; Playwright partner matrix shipped)  
 > Owner: product-manager + frontend-architect  
 > Last updated: 2026-08-08  
-> Related: [customer-desk.md](customer-desk.md), [booking-requests.md](booking-requests.md), [partner-dashboard.md](partner-dashboard.md), [admin-dashboard.md](admin-dashboard.md), [order-placement.md](order-placement.md)  
+> **Partner IA note (2026-08-08):** Partner sidebar/intake unification continues in [partner-customers-orders-hub.md](partner-customers-orders-hub.md) (Customers & Orders workplace; Shop Floor mode retired). **Admin** hub IA in this doc remains authoritative. Tab keys `orders|desk|requests|directory` retained.  
+> Related: [customer-desk.md](customer-desk.md), [booking-requests.md](booking-requests.md), [partner-dashboard.md](partner-dashboard.md), [admin-dashboard.md](admin-dashboard.md), [order-placement.md](order-placement.md), [partner-customers-orders-hub.md](partner-customers-orders-hub.md)  
 > Pagination: Partner Orders queue uses **server-driven** `GET /partner/orders?page=&page_size=` (default **10**, buckets `action|active|done|all`) — see [`PAGINATION_STANDARD.md`](../../PAGINATION_STANDARD.md) · QA matrix [`partner-admin-pagination-matrix.md`](../qa/partner-admin-pagination-matrix.md)  
 > API: reuses [customer-desk.md](../api/endpoints/customer-desk.md) + existing order / booking-request / customers endpoints  
 > Product map: [offline-booking-ui-map.md](../product/offline-booking-ui-map.md)

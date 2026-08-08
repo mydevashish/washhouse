@@ -24,12 +24,7 @@ export function ColorTokenChip({
   if (!tokenCode && !colorToken) return null;
   const key = isColorTokenKey(colorToken) ? colorToken : null;
   const labels = key ? COLOR_TOKEN_LABELS[key] : null;
-  const a11yLabel = [
-    tokenCode,
-    labels ? `${labels.hinglish} / ${labels.en}` : null,
-  ]
-    .filter(Boolean)
-    .join(' — ');
+  const a11yLabel = [tokenCode, labels?.en].filter(Boolean).join(' — ');
 
   return (
     <span
@@ -41,7 +36,7 @@ export function ColorTokenChip({
         className,
       )}
       data-testid="color-token-chip"
-      title={labels ? `${labels.hinglish} / ${labels.en}` : tokenCode ?? undefined}
+      title={labels ? labels.en : tokenCode ?? undefined}
       aria-label={a11yLabel || undefined}
     >
       <ColorTokenBar
@@ -60,7 +55,7 @@ export function ColorTokenChip({
       </span>
       {showLabel && labels ? (
         <span className="font-sans text-xs font-normal text-muted-foreground" aria-hidden>
-          {labels.hinglish}
+          {labels.en}
         </span>
       ) : null}
     </span>

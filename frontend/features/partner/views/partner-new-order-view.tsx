@@ -21,16 +21,27 @@ import {
 } from '@/features/partner/customer-desk/phone';
 import { guestDeskProfile } from '@/features/partner/customer-desk/types';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
+import { OrderCreateSuccessPanel } from '@/features/partner-shop-floor/components/order-create-success-panel';
+import { WalkInSuccessPanel } from '@/features/partner-shop-floor/components/walk-in-success-panel';
 import { formatInr } from '@/features/discover/detail/order-pricing';
+import type { AssistedOrderCreateResult } from '@/features/partner/customer-desk/types';
 import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import { queryKeys } from '@/lib/query-keys';
 import { cn } from '@/lib/utils';
 import { listPartnerServices } from '@/services/partner-service-catalog';
-import { createWalkInOrder } from '@/services/partner-walk-in-orders';
+import {
+  advanceWalkInOrderStatus,
+  createWalkInOrder,
+} from '@/services/partner-walk-in-orders';
 
 type OrderMode = 'walk_in' | 'assisted';
 
 type LineItem = { service_id: string; quantity: number };
+
+type AssistedCreateSuccess = AssistedOrderCreateResult & {
+  customer_name: string;
+  customer_phone: string;
+};
 
 export function PartnerNewOrderView() {
   const router = useRouter();
@@ -94,6 +105,11 @@ export function PartnerNewOrderView() {
 
   const profile = lookupQ.data ?? (lookupPhone ? guestDeskProfile(lookupPhone) : null);
 
+  const [createdWalkIn, setCreatedWalkIn] = useState<Awaited<
+    ReturnType<typeof createWalkInOrder>
+  > | null>(null);
+  const [createdAssisted, setCreatedAssisted] = useState<AssistedCreateSuccess | null>(null);
+
   const createMutation = useMutation({
     mutationFn: createWalkInOrder,
     onSuccess: (order) => {
@@ -101,9 +117,21 @@ export function PartnerNewOrderView() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.partnerWalkInOrders() });
       void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.partnerAnalytics() });
-      router.push(`/partner/orders/${order.id}`);
+      setCreatedWalkIn(order);
     },
     onError: () => toast.error('Could not save walk-in order'),
+  });
+
+  const startWashMutation = useMutation({
+    mutationFn: (orderId: string) => advanceWalkInOrderStatus(orderId, 'washing'),
+    onSuccess: () => {
+      toast.success('Wash started');
+      if (createdWalkIn) {
+        setCreatedWalkIn({ ...createdWalkIn, status: 'washing' });
+      }
+      void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
+    },
+    onError: () => toast.error('Could not start wash'),
   });
 
   function addService(serviceId: string) {
@@ -179,10 +207,41 @@ export function PartnerNewOrderView() {
     setAssistedReady(true);
   }
 
+  if (createdWalkIn) {
+    return (
+      <PartnerContent className="space-y-4">
+        <WalkInSuccessPanel
+          order={createdWalkIn}
+          onStartWash={() => startWashMutation.mutate(createdWalkIn.id)}
+          startWashPending={startWashMutation.isPending}
+        />
+      </PartnerContent>
+    );
+  }
+
+  if (createdAssisted) {
+    return (
+      <PartnerContent className="space-y-4">
+        <OrderCreateSuccessPanel
+          order={{
+            id: createdAssisted.id,
+            tracking_code: createdAssisted.tracking_code,
+            customer_name: createdAssisted.customer_name,
+            customer_phone: createdAssisted.customer_phone,
+            total_inr: createdAssisted.total_inr,
+            status: createdAssisted.status,
+          }}
+          anotherOrderHref="/partner/new-order?mode=assisted"
+          subtitle="Print tags for pickup bags, then track this doorstep order from Customers & Orders."
+        />
+      </PartnerContent>
+    );
+  }
+
   return (
     <PartnerContent className="space-y-4">
       <PartnerPageHeader
-        title="New Order"
+        title="New order"
         description="Create a walk-in or doorstep assisted order"
         actions={
           <Button type="button" size="sm" variant="outline" asChild>
@@ -439,9 +498,14 @@ export function PartnerNewOrderView() {
                 onCreateBookingRequest={() =>
                   router.push(buildOrdersHubPath('/partner/orders', 'requests'))
                 }
-                onCreated={(trackingCode) => {
-                  toast.success(`Order #${trackingCode} created`);
-                  router.push('/partner/orders');
+                onCreated={(result) => {
+                  toast.success(`Order #${result.tracking_code} created`);
+                  setCreatedAssisted({
+                    ...result,
+                    customer_name:
+                      customerName.trim() || profile.name || profile.phone || 'Customer',
+                    customer_phone: profile.phone,
+                  });
                 }}
               />
             </PartnerPanel>

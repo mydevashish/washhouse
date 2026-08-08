@@ -71,7 +71,13 @@ function AdminOrdersHubBody() {
       />
 
       {tab === 'orders' ? (
-        <div className="space-y-5" data-testid="orders-hub-panel-orders">
+        <div
+          id="orders-hub-panel-orders"
+          role="tabpanel"
+          aria-labelledby="orders-hub-tab-orders"
+          className="space-y-5"
+          data-testid="orders-hub-panel-orders"
+        >
           <Suspense fallback={<HubFallback />}>
             <AdminOrdersTodayPanel />
           </Suspense>
@@ -80,7 +86,12 @@ function AdminOrdersHubBody() {
       ) : null}
 
       {tab === 'desk' ? (
-        <div data-testid="orders-hub-panel-desk">
+        <div
+          id="orders-hub-panel-desk"
+          role="tabpanel"
+          aria-labelledby="orders-hub-tab-desk"
+          data-testid="orders-hub-panel-desk"
+        >
           <Suspense fallback={<HubFallback />}>
             <CustomerDeskView embedded />
           </Suspense>
@@ -88,7 +99,12 @@ function AdminOrdersHubBody() {
       ) : null}
 
       {tab === 'requests' ? (
-        <div data-testid="orders-hub-panel-requests">
+        <div
+          id="orders-hub-panel-requests"
+          role="tabpanel"
+          aria-labelledby="orders-hub-tab-requests"
+          data-testid="orders-hub-panel-requests"
+        >
           <Suspense fallback={<HubFallback />}>
             <AdminBookingRequestsDatatable />
           </Suspense>
@@ -96,7 +112,12 @@ function AdminOrdersHubBody() {
       ) : null}
 
       {tab === 'directory' ? (
-        <div data-testid="orders-hub-panel-directory">
+        <div
+          id="orders-hub-panel-directory"
+          role="tabpanel"
+          aria-labelledby="orders-hub-tab-directory"
+          data-testid="orders-hub-panel-directory"
+        >
           <AdminCustomersView embedded />
         </div>
       ) : null}

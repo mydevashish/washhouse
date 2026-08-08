@@ -12,6 +12,8 @@ import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { InfoBanner } from '@/components/ui/info-banner';
 import { formatInr } from '@/features/discover/detail/order-pricing';
+import { PartnerStatusBadge } from '@/features/partner/components/partner-status-badge';
+import { buildCustomerScopedOrdersHref } from '@/features/partner/customer-desk/phone';
 import type {
   CustomerDeskOrderRow,
   ReorderPrefill,
@@ -29,7 +31,7 @@ const SOURCE_LABELS: Record<string, string> = {
 const PAGE_SIZE = 10;
 
 type Props = {
-  profile: { user_id: string | null; phone: string } | null;
+  profile: { user_id: string | null; phone: string; name?: string | null } | null;
   open: boolean;
   onPlaceFirstOrder: () => void;
   onReorder: (prefill: ReorderPrefill) => void;
@@ -50,6 +52,9 @@ export function PartnerCustomerDeskOrdersTab({
 
   const ordersQ = usePartnerCustomerDeskOrders(profile, open, { page, page_size: PAGE_SIZE });
   const data = ordersQ.data;
+  const viewAllHref = profile
+    ? buildCustomerScopedOrdersHref(profile.phone, profile.name)
+    : '/partner/orders';
 
   if (ordersQ.isLoading) {
     return (
@@ -92,9 +97,16 @@ export function PartnerCustomerDeskOrdersTab({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">
-        Showing only orders at your laundry ({data.total_records} total).
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">
+          Showing only orders at your laundry ({data.total_records} total).
+        </p>
+        <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5 text-xs">
+          <Link href={viewAllHref} aria-label="View all orders for this customer on Orders tab">
+            View all on Orders
+          </Link>
+        </Button>
+      </div>
       <ul className="space-y-2" aria-label="Past orders at your laundry">
         {data.items.map((order) => (
           <li key={order.id}>
@@ -143,6 +155,7 @@ function OrderHistoryCard({
   onReorder: (prefill: ReorderPrefill) => void;
 }) {
   const sourceLabel = SOURCE_LABELS[order.order_source] ?? order.order_source;
+  const canReorder = Boolean(order.item_summary?.trim());
 
   return (
     <article className="rounded-lg border border-border bg-card p-3">
@@ -150,9 +163,7 @@ function OrderHistoryCard({
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="font-mono text-xs font-semibold">#{order.tracking_code}</span>
-            <Badge variant="outline" className="text-[10px] font-medium">
-              {order.status.replace(/_/g, ' ')}
-            </Badge>
+            <PartnerStatusBadge status={order.status} />
             <Badge variant="secondary" className="text-[10px] font-medium">
               {sourceLabel}
             </Badge>
@@ -178,6 +189,8 @@ function OrderHistoryCard({
           variant="default"
           size="sm"
           className="h-8 gap-1.5 text-xs"
+          disabled={!canReorder}
+          title={canReorder ? undefined : 'This order has no line items to copy'}
           onClick={() =>
             onReorder({
               orderId: order.id,
@@ -185,9 +198,14 @@ function OrderHistoryCard({
               itemSummary: order.item_summary,
             })
           }
+          aria-label={
+            canReorder
+              ? `Order same as last time from ${order.tracking_code}`
+              : `Cannot copy order ${order.tracking_code} — no line items`
+          }
         >
           <RefreshCw className="h-3.5 w-3.5" aria-hidden />
-          Reorder
+          Same as last
         </Button>
         <Button asChild variant="outline" size="sm" className="h-8 text-xs">
           <Link href={`/partner/orders?q=${encodeURIComponent(order.tracking_code)}`}>

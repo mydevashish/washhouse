@@ -42,3 +42,31 @@ export function buildNewOrderHref(
 export function buildWalkInPrefillHref(phone: string, name?: string | null): string {
   return buildNewOrderHref(phone, name, 'walk_in');
 }
+
+/** Desk tab deep link with phone or user_id prefill. */
+export function buildDeskPrefillHref(opts: {
+  phone?: string | null;
+  user_id?: string | null;
+}): string {
+  const params = new URLSearchParams();
+  params.set('tab', 'desk');
+  if (opts.user_id?.trim()) params.set('user_id', opts.user_id.trim());
+  else if (opts.phone?.trim()) params.set('phone', opts.phone.trim());
+  return `/partner/orders?${params.toString()}`;
+}
+
+/**
+ * Orders tab scoped to one customer (P4).
+ * Sets `phone` (+ optional `customer` label) and `q` so the queue search API filters.
+ */
+export function buildCustomerScopedOrdersHref(
+  phone: string,
+  name?: string | null,
+): string {
+  const params = new URLSearchParams();
+  const trimmed = phone.trim();
+  params.set('phone', trimmed);
+  params.set('q', trimmed);
+  if (name?.trim()) params.set('customer', name.trim());
+  return `/partner/orders?${params.toString()}`;
+}

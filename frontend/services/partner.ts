@@ -84,7 +84,9 @@ export type PartnerOrdersBucket = 'action' | 'active' | 'done' | 'all';
 export type PartnerOrdersListParams = ListQueryState & {
   bucket?: PartnerOrdersBucket;
   status?: string;
-  order_source?: 'online' | 'walk_in' | string;
+  order_source?: 'online' | 'walk_in' | 'doorstep' | string;
+  payment_status?: string;
+  created_today?: boolean;
 };
 
 export async function listPartnerOrders(
@@ -100,6 +102,8 @@ export async function listPartnerOrders(
       bucket: params.bucket ?? 'all',
       status: params.status,
       order_source: params.order_source,
+      payment_status: params.payment_status,
+      created_today: params.created_today ? true : undefined,
     }),
   });
   return data.data;

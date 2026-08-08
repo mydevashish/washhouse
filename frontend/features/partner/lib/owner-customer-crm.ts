@@ -1,3 +1,5 @@
+import { buildNewOrderHref } from '@/features/partner/customer-desk/phone';
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import type { CustomerInsightRow, CustomerInsightsDashboard, CustomerSegment } from '@/services/customer-insights';
 
 export type CustomerSoftTag = 'new' | 'regular' | 'at_risk';
@@ -65,11 +67,37 @@ export function telHref(phone: string | null | undefined): string | null {
   return normalized ? `tel:+${normalized}` : null;
 }
 
-export function newOrderPrefillHref(customer: Pick<CustomerInsightRow, 'name' | 'phone'>): string {
-  const params = new URLSearchParams({ mode: 'walk_in' });
-  if (customer.phone) params.set('phone', customer.phone);
-  if (customer.name) params.set('name', customer.name);
-  return `/partner/new-order?${params.toString()}`;
+export function newOrderPrefillHref(
+  customer: Pick<CustomerInsightRow, 'name' | 'phone'>,
+  mode: 'walk_in' | 'assisted' = 'walk_in',
+): string {
+  if (!customer.phone?.trim()) return `/partner/new-order?mode=${mode}`;
+  return buildNewOrderHref(customer.phone, customer.name, mode);
+}
+
+/** Desk history for this customer (user_id preferred). */
+export function deskPrefillHref(
+  customer: Pick<CustomerInsightRow, 'user_id' | 'phone'>,
+): string {
+  if (customer.user_id) {
+    return buildOrdersHubPath('/partner/orders', 'desk', { user_id: customer.user_id });
+  }
+  if (customer.phone) {
+    return buildOrdersHubPath('/partner/orders', 'desk', { phone: customer.phone });
+  }
+  return buildOrdersHubPath('/partner/orders', 'desk');
+}
+
+/** Orders queue filtered to this customer’s phone. */
+export function customerScopedOrdersHref(
+  customer: Pick<CustomerInsightRow, 'name' | 'phone'>,
+): string | null {
+  if (!customer.phone?.trim()) return null;
+  const params = new URLSearchParams();
+  params.set('phone', customer.phone.trim());
+  params.set('q', customer.phone.trim());
+  if (customer.name?.trim()) params.set('customer', customer.name.trim());
+  return `/partner/orders?${params.toString()}`;
 }
 
 export type CustomerCrmInsights = {

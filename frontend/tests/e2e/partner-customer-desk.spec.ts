@@ -126,7 +126,7 @@ describeDesk('Partner Customer Desk smoke', () => {
     await loginAsPartner(page);
     await page.goto('/partner/customer-desk');
     await expect(page).toHaveURL(/\/partner\/orders\?tab=desk/);
-    await expect(page.getByRole('heading', { name: /^orders$/i })).toBeVisible({
+    await expect(page.getByRole('heading', { name: /customers & orders|^orders$/i })).toBeVisible({
       timeout: 30_000,
     });
     await expect(page.getByRole('heading', { name: /counter search/i })).toBeVisible();
@@ -170,8 +170,9 @@ describeDesk('Partner Customer Desk smoke', () => {
     const walkIn = dialog.getByRole('link', { name: /walk-in/i });
     await expect(walkIn).toBeVisible();
     await walkIn.click();
-    await expect(page).toHaveURL(/\/partner\/walk-in-orders/);
-    await expect(page.getByRole('heading', { name: /walk-in/i })).toBeVisible({
+    await expect(page).toHaveURL(/\/partner\/new-order/);
+    await expect(page).toHaveURL(/mode=walk_in/);
+    await expect(page.getByRole('heading', { name: /new order/i })).toBeVisible({
       timeout: 30_000,
     });
   });
@@ -187,7 +188,7 @@ describeDesk('Partner Customer Desk smoke', () => {
     });
     await loginAsPartner(page);
     await page.goto('/partner/orders');
-    await expect(page.getByRole('heading', { name: /^orders$/i })).toBeVisible({
+    await expect(page.getByRole('heading', { name: /customers & orders|^orders$/i })).toBeVisible({
       timeout: 30_000,
     });
     await expect(page.getByRole('heading', { name: /find customer/i })).toBeVisible();
@@ -209,7 +210,7 @@ describeDesk('Partner Customer Desk smoke', () => {
   test('Full Customer Desk deep-link opens Find customer hub tab', async ({ page }) => {
     await loginAsPartner(page);
     await page.goto('/partner/orders');
-    await expect(page.getByRole('heading', { name: /^orders$/i })).toBeVisible({
+    await expect(page.getByRole('heading', { name: /customers & orders|^orders$/i })).toBeVisible({
       timeout: 30_000,
     });
     await page.getByRole('link', { name: /full customer desk/i }).click();
