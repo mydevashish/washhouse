@@ -1,4 +1,5 @@
 import { api, type ApiEnvelope } from '@/lib/api';
+import type { PaginatedList } from '@/lib/pagination/types';
 import { mediaUrl } from '@/lib/media-url';
 import type { CustodyTimeline } from '@/services/custody-timeline';
 import type { DeliveryProofPhoto } from '@/services/delivery-proof';
@@ -171,16 +172,9 @@ export interface DisputeAdminRow {
   is_at_risk: boolean;
 }
 
-export interface DisputeAdminTable {
-  items: DisputeAdminRow[];
-  total_records: number;
+export interface DisputeAdminTable extends PaginatedList<DisputeAdminRow> {
   /** @deprecated Prefer total_records */
   total?: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
-  has_next?: boolean;
-  has_previous?: boolean;
 }
 
 export interface DisputeAdminMetrics {
