@@ -40,6 +40,8 @@ export const queryKeys = {
   partnerCustomerDeskSearch: (q: string) => ['partner-customer-desk', 'search', q] as const,
   partnerCustomerDeskOrders: (key: string, filters?: object) =>
     ['partner-customer-desk', 'orders', key, filters ?? {}] as const,
+  partnerCustomerInsightRow: (key: string) =>
+    ['partner-customer-insight-row', key] as const,
   partnerBookingRequests: (filters?: object) =>
     ['partner-booking-requests', filters ?? {}] as const,
   partnerBookingRequestDetail: (id: string) => ['partner-booking-request-detail', id] as const,
@@ -83,6 +85,7 @@ export const queryKeys = {
   partnerOperationsDrivers: () => ['partner-operations-drivers'] as const,
   partnerStorefront: () => ['partner-storefront'] as const,
   partnerServiceCatalog: () => ['partner-service-catalog'] as const,
+  partnerCoupons: () => ['partner-coupons'] as const,
   partnerPriceList: () => ['partner-price-list'] as const,
   partnerStorefrontTemplates: () => ['partner-storefront-templates'] as const,
   laundryStorefront: (id: string) => ['laundry-storefront', id] as const,

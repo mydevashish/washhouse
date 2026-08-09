@@ -28,6 +28,8 @@ export type GlobalNavbarProps = {
   notificationsHref: string;
   settingsHref: string;
   className?: string;
+  /** When the persistent sidebar appears (partner uses xl; admin uses lg). */
+  sidebarFrom?: 'lg' | 'xl';
 };
 
 export function GlobalNavbar({
@@ -39,7 +41,9 @@ export function GlobalNavbar({
   notificationsHref,
   settingsHref,
   className,
+  sidebarFrom = 'lg',
 }: GlobalNavbarProps) {
+  const sidebarMenuHiddenClass = sidebarFrom === 'xl' ? 'xl:hidden' : 'lg:hidden';
   const showCustomerBrand = app === 'customer';
 
   return (
@@ -57,7 +61,10 @@ export function GlobalNavbar({
             {onOpenSidebar && (
               <button
                 type="button"
-                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+                className={cn(
+                  'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  sidebarMenuHiddenClass,
+                )}
                 onClick={onOpenSidebar}
                 aria-label="Open navigation menu"
               >

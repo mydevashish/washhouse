@@ -16,7 +16,7 @@ import {
   OwnerSectionHeader,
 } from '@/features/partner/components/owner';
 import { usePartnerAnalytics } from '@/features/partner/hooks/use-partner-operations';
-import { formatInr } from '@/features/discover/detail/order-pricing';
+import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { cn } from '@/lib/utils';
 import type { PartnerAnalytics } from '@/services/partner';
@@ -177,7 +177,7 @@ export function PartnerRevenueView() {
           description="When orders are marked delivered, gross, platform cut, and your net show up here."
           imageSrc={OWNER_IMAGES.money}
           imageAlt="Premium laundry"
-          action={{ label: 'New Order', href: '/partner/new-order' }}
+          action={{ label: 'New Order', href: buildPartnerCreateOrderHref() }}
         />
       ) : !analyticsQ.isError ? (
         <section

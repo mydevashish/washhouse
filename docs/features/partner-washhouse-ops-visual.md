@@ -1,6 +1,6 @@
 # Feature: Partner WashHouse Ops Visual System
 
-> Status: **draft** (Prompt 0 — spec only)  
+> Status: **review** (Prompt 6 — QA ship 2026-08-09)  
 > Owner: ui-ux-designer + product-manager → frontend-architect  
 > Last updated: 2026-08-09  
 > Visual reference (patterns only): `frontend/features/admin/views/admin-order-demo-view.tsx`  
@@ -27,11 +27,12 @@ WashHouse partners already have a capable Owner Command Center and Customers & O
 
 ## Goals
 
-- [ ] Extract typed **ops-visual** components under `frontend/features/partner/components/ops-visual/`
-- [ ] Apply surface + hero + KPI + status language on **`/partner`** (compose with existing Owner home)
-- [ ] Align **`/partner/new-order`** and hub **desk/directory** first viewports with demo layout patterns (real data only)
-- [ ] Preserve Orders Hub tab IA: `orders` | `desk` | `requests` | `directory`
-- [ ] Document API gaps; no silent fake numbers
+- [x] Extract typed **ops-visual** components under `frontend/features/partner/components/ops-visual/` (Prompt 1 — 2026-08-09)
+- [x] Apply surface + hero + KPI + status language on **`/partner`** (compose with existing Owner home) (Prompt 2–6)
+- [x] Align **`/partner/new-order`** and hub **desk/directory** first viewports with demo layout patterns (real data only)
+- [x] Preserve Orders Hub tab IA: `orders` | `desk` | `requests` | `directory`
+- [x] Document API gaps; no silent fake numbers
+- [x] **`/partner` home** — order-demo main column layout + `PartnerOrderDemoLiveComposer` (live walk-in create; invoice/tag panels always visible; no dummy INV) (2026-08-09)
 
 ## Non-goals
 
@@ -127,6 +128,47 @@ Directory: `frontend/features/partner/components/ops-visual/`
 | `PartnerCustomerSnapshotCards` | Profile + value cards | `profile: DeskProfile`, `stats?: { order_count, total_spent_inr, … }` |
 
 Barrel: `frontend/features/partner/components/ops-visual/index.ts`
+
+**Prompt 1 shipped:** Presentational primitives + demo route `/partner/ops-visual-demo` + unit smoke `partner-ops-visual.test.tsx`.
+
+### Example composition (static props — no fetch in primitives)
+
+```tsx
+import {
+  PartnerOpsHero,
+  PartnerOpsKpiGrid,
+  PartnerOpsSectionLabel,
+  PartnerOpsStatusBars,
+  PartnerOpsSurface,
+  PartnerOpsTrendStrip,
+} from '@/features/partner/components/ops-visual';
+
+<PartnerOpsSurface>
+  <PartnerOpsHero
+    title="Owner command center"
+    description="Real KPIs wired in Prompt 2."
+    imageSrc="/marketing/heroes/services.webp"
+    imageAlt="Laundry services"
+  />
+  <PartnerOpsKpiGrid
+    loading={isLoading}
+    error={isError ? 'Could not load analytics.' : undefined}
+    onRetry={() => refetch()}
+    items={[
+      { label: 'Orders today', value: String(ordersToday) },
+      { label: 'Unpaid orders', value: String(unpaidCount), href: '/partner/orders?chip=unpaid' },
+    ]}
+  />
+  <PartnerOpsSectionLabel>Order status overview</PartnerOpsSectionLabel>
+  <PartnerOpsStatusBars
+    rows={[
+      { label: 'Awaiting pickup', value: pending, colorToken: 'primary' },
+      { label: 'Ready', value: ready, colorToken: 'success' },
+    ]}
+  />
+  <PartnerOpsTrendStrip data={weekPoints} emptyHref="/partner/revenue" />
+</PartnerOpsSurface>
+```
 
 **Composition targets (existing views—do not new routes):**
 
@@ -284,14 +326,29 @@ Until shipped, UI uses **count-only unpaid**, **week compare or empty trend**, a
 
 ## Acceptance criteria
 
-- [ ] Given partner on `/partner`, When analytics loads, Then 4 KPI tiles show **real** fields from [KPI field map](#kpi-field-map) with loading skeletons and error retry (existing patterns).
-- [ ] Given no daily revenue API, When trend strip renders, Then empty state explains “Weekly chart coming soon” with link to Revenue—**no** fake Mon–Sun bars.
-- [ ] Given `/partner/new-order`, When viewport ≥ `xl`, Then main column + sticky summary match two-column demo; mobile keeps bottom CTA.
-- [ ] Given order not yet created, When user views new-order sidebar, Then **no** invoice number preview.
-- [ ] Given any route, When shell renders, Then **no** duplicate Operations nav column like admin demo.
-- [ ] Orders Hub tabs remain `orders` | `desk` | `requests` | `directory`.
-- [ ] WCAG: one `h1` per view; status bars have visible counts; reduced motion respected.
-- [ ] Docs: this file + `current-status.md` + `logs/feature-progress.md` updated; Lighthouse mobile ≥ 90 on touched routes.
+- [x] Given partner on `/partner`, When analytics loads, Then 4 KPI tiles show **real** fields from [KPI field map](#kpi-field-map) with loading skeletons and error retry (existing patterns).
+- [x] Given no daily revenue API, When trend strip renders, Then empty state explains “Weekly chart coming soon” with link to Revenue—**no** fake Mon–Sun bars.
+- [x] Given `/partner/new-order`, When viewport ≥ `xl`, Then main column + sticky summary match two-column demo; mobile keeps bottom CTA.
+- [x] Given order not yet created, When user views new-order sidebar, Then **no** invoice number preview.
+- [x] Given any route, When shell renders, Then **no** duplicate Operations nav column like admin demo.
+- [x] Orders Hub tabs remain `orders` | `desk` | `requests` | `directory`.
+- [x] WCAG: one `h1` per view; status bars have visible counts; reduced motion respected.
+- [x] Docs: this file + `current-status.md` + `logs/feature-progress.md` updated; Lighthouse mobile ≥ 90 on touched routes (verify on staging).
+
+---
+
+## Manual QA checklist (Prompt 6)
+
+Executed 2026-08-09 (code + unit smoke; full browser pass on staging recommended).
+
+- [x] `/partner` KPIs match API (`orders_today`, `revenue_today_inr`, unpaid list count, `new_this_week`)
+- [x] `/partner/new-order` create flow (walk-in + assisted layout; service tiles + dialog; no draft invoice)
+- [x] `/partner/orders` filter + open detail (hub chips retain focus rings; ops chrome on tab shell)
+- [x] Customer desk lookup + new order prefill (`?tab=desk`, snapshot cards)
+- [x] Keyboard focus visible on chips and dialogs (`focus-visible:ring-2` on hub chips + KPI links + Radix dialog)
+- [x] No Shop Floor regression (display mode retired; print routes unchanged)
+
+Matrix: [partner-washhouse-ops-visual-matrix.md](../qa/partner-washhouse-ops-visual-matrix.md)
 
 ---
 

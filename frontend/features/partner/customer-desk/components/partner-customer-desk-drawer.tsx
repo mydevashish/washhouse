@@ -11,6 +11,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,43 +26,39 @@ import { InfoBanner } from '@/components/ui/info-banner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerCustomerDeskBookingRequestsTab } from '@/features/partner/customer-desk/components/partner-customer-desk-booking-requests-tab';
 import { PartnerCustomerDeskOrdersTab } from '@/features/partner/customer-desk/components/partner-customer-desk-orders-tab';
-import { PartnerCustomerDeskPlaceOrderForm } from '@/features/partner/customer-desk/components/partner-customer-desk-place-order-form';
+import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 import {
   buildCustomerScopedOrdersHref,
   buildCustomerWhatsAppUrl,
   buildNewOrderHref,
 } from '@/features/partner/customer-desk/phone';
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import {
   usePartnerCustomerDeskLookup,
   usePartnerCustomerDeskOrders,
 } from '@/features/partner/customer-desk/hooks';
-import { OrderCreateSuccessPanel } from '@/features/partner-shop-floor/components/order-create-success-panel';
 import type {
-  AssistedOrderCreateResult,
   CustomerDeskLookupParams,
-  ReorderPrefill,
 } from '@/features/partner/customer-desk/types';
 import { rememberRecentCustomer } from '@/features/partner/lib/partner-recent-customers';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { buildTelHref } from '@/features/marketing/contact/contact-constants';
 import { cn } from '@/lib/utils';
 
-export type PartnerDeskTab = 'orders' | 'booking-requests' | 'place-order';
+export type PartnerDeskTab = 'orders' | 'booking-requests';
 
 type Props = {
   lookup: CustomerDeskLookupParams | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialTab?: PartnerDeskTab;
+  initialTab?: PartnerDeskTab | 'place-order';
   onCreateBookingRequest: (phone: string, name?: string | null) => void;
 };
 
 const TABS: { id: PartnerDeskTab; label: string }[] = [
   { id: 'orders', label: 'Orders' },
-  { id: 'place-order', label: 'New order' },
   { id: 'booking-requests', label: 'Requests' },
 ];
-
 export function PartnerCustomerDeskDrawer({
   lookup,
   open,
@@ -69,11 +66,10 @@ export function PartnerCustomerDeskDrawer({
   initialTab = 'orders',
   onCreateBookingRequest,
 }: Props) {
-  const [tab, setTab] = useState<PartnerDeskTab>(initialTab);
-  const [reorder, setReorder] = useState<ReorderPrefill | null>(null);
-  const [createdOrder, setCreatedOrder] = useState<
-    (AssistedOrderCreateResult & { customer_name: string; customer_phone: string }) | null
-  >(null);
+  const router = useRouter();
+  const [tab, setTab] = useState<PartnerDeskTab>(
+    initialTab === 'booking-requests' ? 'booking-requests' : 'orders',
+  );
   const tablistId = useId();
   const profileQ = usePartnerCustomerDeskLookup(lookup, open);
   const profile = profileQ.data;
@@ -88,9 +84,7 @@ export function PartnerCustomerDeskDrawer({
 
   useEffect(() => {
     if (open) {
-      setTab(initialTab);
-      if (initialTab !== 'place-order') setReorder(null);
-      setCreatedOrder(null);
+      setTab(initialTab === 'booking-requests' ? 'booking-requests' : 'orders');
     }
   }, [open, initialTab, lookup]);
 
@@ -107,20 +101,26 @@ export function PartnerCustomerDeskDrawer({
     : null;
   const walkInHref = profile
     ? buildNewOrderHref(profile.phone, profile.name, 'walk_in')
-    : '/partner/new-order?mode=walk_in';
+    : buildPartnerCreateOrderHref();
   const doorstepLabel = profile?.name?.trim() || profile?.phone || 'customer';
   const viewAllOrdersHref = profile
     ? buildCustomerScopedOrdersHref(profile.phone, profile.name)
     : '/partner/orders';
 
+  function goCreateOrder(fulfillment: 'walk_in' | 'doorstep' = 'walk_in') {
+    if (!profile?.phone) return;
+    onOpenChange(false);
+    router.push(
+      buildPartnerCreateOrderHref({
+        phone: profile.phone,
+        name: profile.name,
+        fulfillment,
+      }),
+    );
+  }
+
   function startRepeatLast() {
-    if (!lastOrder?.item_summary) return;
-    setReorder({
-      orderId: lastOrder.id,
-      trackingCode: lastOrder.tracking_code,
-      itemSummary: lastOrder.item_summary,
-    });
-    setTab('place-order');
+    goCreateOrder('walk_in');
   }
 
   return (
@@ -325,69 +325,8 @@ export function PartnerCustomerDeskDrawer({
                   <PartnerCustomerDeskOrdersTab
                     profile={profile}
                     open={open && tab === 'orders'}
-                    onPlaceFirstOrder={() => {
-                      setReorder(null);
-                      setTab('place-order');
-                    }}
-                    onReorder={(prefill) => {
-                      setReorder(prefill);
-                      setTab('place-order');
-                    }}
-                  />
-                ) : null}
-              </div>
-              <div
-                role="tabpanel"
-                id={`${tablistId}-panel-place-order`}
-                aria-labelledby={`${tablistId}-place-order`}
-                hidden={tab !== 'place-order'}
-              >
-                {tab === 'place-order' && createdOrder ? (
-                  <div className="space-y-3" data-testid="desk-create-success">
-                    <OrderCreateSuccessPanel
-                      order={{
-                        id: createdOrder.id,
-                        tracking_code: createdOrder.tracking_code,
-                        customer_name: createdOrder.customer_name,
-                        customer_phone: createdOrder.customer_phone,
-                        total_inr: createdOrder.total_inr,
-                        status: createdOrder.status,
-                      }}
-                      anotherOrderHref={buildNewOrderHref(
-                        createdOrder.customer_phone,
-                        createdOrder.customer_name,
-                        'assisted',
-                      )}
-                      subtitle="Print tags for this doorstep order, then return to the customer history."
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="min-h-11 w-full"
-                      onClick={() => {
-                        setCreatedOrder(null);
-                        setTab('orders');
-                      }}
-                    >
-                      Back to customer orders
-                    </Button>
-                  </div>
-                ) : null}
-                {tab === 'place-order' && !createdOrder ? (
-                  <PartnerCustomerDeskPlaceOrderForm
-                    profile={profile}
-                    reorder={reorder}
-                    onCreateBookingRequest={() =>
-                      onCreateBookingRequest(profile.phone, profile.name)
-                    }
-                    onCreated={(result) => {
-                      setReorder(null);
-                      setCreatedOrder({
-                        ...result,
-                        customer_name: profile.name?.trim() || profile.phone || 'Customer',
-                        customer_phone: profile.phone,
-                      });
-                    }}
+                    onPlaceFirstOrder={() => goCreateOrder('walk_in')}
+                    onReorder={() => goCreateOrder('walk_in')}
                   />
                 ) : null}
               </div>

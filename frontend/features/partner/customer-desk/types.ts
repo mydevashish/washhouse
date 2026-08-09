@@ -84,6 +84,7 @@ export type AssistedOrderCreatePayload = {
   payment_method?: 'cod';
   reorder_from_order_id?: string | null;
   save_address_to_user?: boolean;
+  coupon_code?: string;
 };
 
 export type AssistedOrderQuote = {

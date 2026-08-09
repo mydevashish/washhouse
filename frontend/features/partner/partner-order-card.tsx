@@ -39,6 +39,7 @@ import { cn } from '@/lib/utils';
 
 type PartnerOrderCardProps = {
   order: PartnerOrder;
+  className?: string;
   onAccept: () => void;
   onReject: () => void;
   onAdvance: () => void;
@@ -50,6 +51,7 @@ type PartnerOrderCardProps = {
 
 export function PartnerOrderCard({
   order,
+  className,
   onAccept,
   onReject,
   onAdvance,
@@ -105,9 +107,10 @@ export function PartnerOrderCard({
       className={cn(
         needsAction && 'border-primary/40 ring-2 ring-primary/15',
         order.status === 'cancelled' && 'opacity-70',
+        className,
       )}
     >
-      <CardContent className="space-y-3 p-3">
+      <CardContent className={cn('space-y-3', className ? 'p-0' : 'p-3')}>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">

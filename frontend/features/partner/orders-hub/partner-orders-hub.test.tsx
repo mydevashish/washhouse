@@ -96,6 +96,11 @@ jest.mock('@/features/partner/views/partner-customers-view', () => ({
   ),
 }));
 
+jest.mock('@/features/partner/components/ops-visual', () => ({
+  PartnerOpsSurface: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  PartnerWalkInOrderWorkspace: () => <div data-testid="partner-walk-in-workspace-mock" />,
+}));
+
 function wrap(children: ReactNode) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -109,7 +114,7 @@ describe('PartnerOrdersHub', () => {
     searchParams = new URLSearchParams();
   });
 
-  it('renders four hub tabs and defaults to the orders panel', () => {
+  it('renders partner hub tabs including create and defaults to orders panel', () => {
     render(wrap(<PartnerOrdersHub />));
 
     expect(screen.getByTestId('orders-hub-tabs')).toBeInTheDocument();
@@ -117,6 +122,7 @@ describe('PartnerOrdersHub', () => {
       'aria-selected',
       'true',
     );
+    expect(screen.getByRole('tab', { name: /create order/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /find customer/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /requests/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /customers/i })).toBeInTheDocument();
@@ -131,7 +137,7 @@ describe('PartnerOrdersHub', () => {
     render(wrap(<PartnerOrdersHub />));
     expect(screen.getByRole('heading', { name: /customers & orders/i })).toBeInTheDocument();
     expect(
-      screen.getByText(/find customers, run the queue, print tags and bills/i),
+      screen.getByText(/queue, customer desk, booking requests, and directory/i),
     ).toBeInTheDocument();
   });
 
@@ -146,9 +152,14 @@ describe('PartnerOrdersHub', () => {
     expect(screen.getByTestId('orders-hub-panel-orders')).toBeInTheDocument();
   });
 
-  it('mounts desk, requests, and directory panels from ?tab=', () => {
-    searchParams = new URLSearchParams('tab=desk');
+  it('mounts create, desk, requests, and directory panels from ?tab=', () => {
+    searchParams = new URLSearchParams('tab=create');
     const { rerender } = render(wrap(<PartnerOrdersHub />));
+    expect(screen.getByTestId('orders-hub-panel-create')).toBeInTheDocument();
+    expect(screen.getByTestId('partner-walk-in-workspace-mock')).toBeInTheDocument();
+
+    searchParams = new URLSearchParams('tab=desk');
+    rerender(wrap(<PartnerOrdersHub />));
     expect(screen.getByTestId('orders-hub-panel-desk')).toBeInTheDocument();
     expect(screen.getByTestId('partner-customer-desk-view')).toHaveTextContent('embedded desk');
 

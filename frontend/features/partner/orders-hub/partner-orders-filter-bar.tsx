@@ -31,7 +31,7 @@ export function PartnerOrdersFilterBar({
 }: PartnerOrdersFilterBarProps) {
   return (
     <div
-      className="flex flex-col gap-2 sm:flex-row sm:items-center"
+      className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2"
       data-testid="partner-orders-filter-bar"
     >
       <Input

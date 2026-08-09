@@ -4,6 +4,17 @@ export const ORDERS_HUB_TABS = ['orders', 'desk', 'requests', 'directory'] as co
 
 export type OrdersHubTab = (typeof ORDERS_HUB_TABS)[number];
 
+/** Partner-only hub tab (counter intake wizard). */
+export type PartnerOrdersHubTab = OrdersHubTab | 'create';
+
+export const PARTNER_ORDERS_HUB_TABS = [
+  'orders',
+  'create',
+  'desk',
+  'requests',
+  'directory',
+] as const satisfies readonly PartnerOrdersHubTab[];
+
 export type OrdersHubBasePath = '/admin/orders' | '/partner/orders';
 
 export const ORDERS_HUB_TAB_LABELS: Record<OrdersHubTab, string> = {
@@ -13,11 +24,23 @@ export const ORDERS_HUB_TAB_LABELS: Record<OrdersHubTab, string> = {
   directory: 'Directory',
 };
 
+export const PARTNER_ORDERS_HUB_TAB_LABELS: Record<PartnerOrdersHubTab, string> = {
+  ...ORDERS_HUB_TAB_LABELS,
+  create: 'Create order',
+};
+
 export function parseOrdersHubTab(value: string | null | undefined): OrdersHubTab {
   if (value === 'desk' || value === 'requests' || value === 'directory' || value === 'orders') {
     return value;
   }
   return 'orders';
+}
+
+export function parsePartnerOrdersHubTab(
+  value: string | null | undefined,
+): PartnerOrdersHubTab {
+  if (value === 'create') return 'create';
+  return parseOrdersHubTab(value);
 }
 
 export type SearchParamsInput =
@@ -33,7 +56,7 @@ function appendSearchParam(params: URLSearchParams, key: string, value: string) 
 
 /** Copy query extras (phone, user_id, status, …) while applying the hub `tab`. */
 export function buildOrdersHubSearchParams(
-  tab: OrdersHubTab,
+  tab: OrdersHubTab | 'create',
   incoming?: SearchParamsInput,
 ): URLSearchParams {
   const params = new URLSearchParams();
@@ -62,7 +85,7 @@ export function buildOrdersHubSearchParams(
 
 export function buildOrdersHubPath(
   basePath: OrdersHubBasePath,
-  tab: OrdersHubTab,
+  tab: OrdersHubTab | 'create',
   incoming?: SearchParamsInput,
 ): string {
   const qs = buildOrdersHubSearchParams(tab, incoming).toString();

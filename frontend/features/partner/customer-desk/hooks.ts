@@ -24,6 +24,10 @@ import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-o
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { STALE } from '@/lib/query-config';
 import { queryKeys } from '@/lib/query-keys';
+import {
+  listPartnerCustomerInsights,
+  type CustomerInsightRow,
+} from '@/services/customer-insights';
 
 export function usePartnerCustomerDeskLookup(
   params: CustomerDeskLookupParams | null,
@@ -113,4 +117,36 @@ export function usePartnerAssistedOrderMutations(options?: {
   });
 
   return { quoteM, createM };
+}
+
+/** CRM row for snapshot cards (segment + lifetime spend). */
+export function usePartnerCustomerInsightRow(
+  profile: CustomerDeskProfile | null,
+  enabled: boolean,
+) {
+  const partnerEnabled = usePartnerQueriesEnabled();
+  const userId = profile?.user_id ?? null;
+  const phoneDigits = profile?.phone?.replace(/\D/g, '').slice(-10) ?? '';
+
+  return useQuery({
+    queryKey: queryKeys.partnerCustomerInsightRow(userId ?? phoneDigits),
+    queryFn: async (): Promise<CustomerInsightRow | null> => {
+      if (!profile) return null;
+      const search = phoneDigits.length >= 10 ? phoneDigits : profile.name?.trim() || undefined;
+      if (!search && !userId) return null;
+      const res = await listPartnerCustomerInsights({
+        search,
+        page: 1,
+        page_size: 15,
+      });
+      if (userId) {
+        return res.items.find((row) => row.user_id === userId) ?? null;
+      }
+      return res.items[0] ?? null;
+    },
+    enabled: Boolean(
+      partnerEnabled && enabled && profile && (userId || phoneDigits.length >= 10),
+    ),
+    staleTime: 60_000,
+  });
 }

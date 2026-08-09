@@ -11,16 +11,21 @@ import { Input } from '@/components/ui/input';
 import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 import {
   OWNER_IMAGES,
   OwnerEmptyState,
   OwnerSectionHeader,
 } from '@/features/partner/components/owner';
 import { OwnerCustomerCard } from '@/features/partner/components/owner/owner-customer-card';
-import { OwnerCustomerInsightsStrip } from '@/features/partner/components/owner/owner-customer-insights-strip';
+import {
+  PartnerOpsKpiGrid,
+  PartnerOpsSectionLabel,
+  PartnerOpsSurface,
+  type PartnerOpsKpiItem,
+} from '@/features/partner/components/ops-visual';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
-import { buildCustomerCrmInsights } from '@/features/partner/lib/owner-customer-crm';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import { useServerList } from '@/lib/pagination/use-server-list';
@@ -67,17 +72,26 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
     enabled,
   });
 
-  const topQ = useQuery({
-    queryKey: queryKeys.partnerCustomerInsights('top', ''),
-    queryFn: () => listPartnerCustomerInsights({ list_type: 'top', page: 1, page_size: 10 }),
-    enabled,
-    staleTime: 30_000,
-  });
-
-  const insights = useMemo(
-    () => buildCustomerCrmInsights(dashboardQ.data, topQ.data?.items ?? []),
-    [dashboardQ.data, topQ.data?.items],
-  );
+  const segmentKpiItems = useMemo((): PartnerOpsKpiItem[] => {
+    const d = dashboardQ.data;
+    if (!d) {
+      return [
+        { label: 'Total customers', value: '—' },
+        { label: 'New', value: '—' },
+        { label: 'Regular (active)', value: '—' },
+        { label: 'VIP', value: '—' },
+        { label: 'At risk', value: '—' },
+      ];
+    }
+    const atRisk = d.segments.at_risk + d.segments.inactive;
+    return [
+      { label: 'Total customers', value: String(d.total_customers) },
+      { label: 'New', value: String(d.segments.new) },
+      { label: 'Regular (active)', value: String(d.segments.active) },
+      { label: 'VIP', value: String(d.segments.vip) },
+      { label: 'At risk', value: String(atRisk) },
+    ];
+  }, [dashboardQ.data]);
 
   const customers = list.rows;
   const loadingList = list.isLoading || dashboardQ.isLoading;
@@ -114,48 +128,60 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
         />
       )}
 
-      {dashboardQ.isError ? (
-        <QueryErrorState
-          title="Could not load customer insights"
-          message={getApiErrorMessage(dashboardQ.error)}
-          onRetry={() => void dashboardQ.refetch()}
-          isRetrying={dashboardQ.isFetching}
+      <section aria-label="Customer insights" data-testid="owner-customer-insights">
+      <PartnerOpsSurface className="space-y-4">
+        {!embedded ? (
+          <PartnerOpsSectionLabel as="h2">Customer insights</PartnerOpsSectionLabel>
+        ) : null}
+        <PartnerOpsKpiGrid
+          items={segmentKpiItems}
+          loading={dashboardQ.isLoading}
+          error={
+            dashboardQ.isError ? getApiErrorMessage(dashboardQ.error) : undefined
+          }
+          onRetry={
+            dashboardQ.isError ? () => void dashboardQ.refetch() : undefined
+          }
         />
-      ) : (
-        <OwnerCustomerInsightsStrip
-          insights={insights}
-          loading={dashboardQ.isLoading || topQ.isLoading}
-        />
-      )}
+      </PartnerOpsSurface>
+      </section>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative min-w-0 flex-1">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            value={list.search}
-            onChange={(e) => list.setSearch(e.target.value)}
-            placeholder="Search name or phone"
-            aria-label="Search customers"
-            className="min-h-[44px] pl-9"
-            data-testid="owner-customer-search"
-          />
-        </div>
-        <div className="w-full sm:w-52">
-          <Select
-            value={segmentFilter}
-            onChange={(e) => setSegmentFilter(e.target.value as CustomerSegment | '')}
-            aria-label="Filter by relationship tag"
-            className="min-h-[44px]"
-          >
-            {SEGMENT_OPTIONS.map((o) => (
-              <option key={o.value || 'all'} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </Select>
+      <div className="grid gap-4 rounded-3xl border border-border bg-muted/40 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold">Search customer</p>
+            <p className="text-xs text-muted-foreground">Search by name or mobile number.</p>
+          </div>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <div className="relative min-w-0 flex-1 sm:min-w-[220px]">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
+              <Input
+                value={list.search}
+                onChange={(e) => list.setSearch(e.target.value)}
+                placeholder="Name or phone"
+                aria-label="Search customers"
+                className="min-h-[44px] bg-background pl-9"
+                data-testid="owner-customer-search"
+              />
+            </div>
+            <div className="w-full sm:w-52">
+              <Select
+                value={segmentFilter}
+                onChange={(e) => setSegmentFilter(e.target.value as CustomerSegment | '')}
+                aria-label="Filter by relationship tag"
+                className="min-h-[44px] bg-background"
+              >
+                {SEGMENT_OPTIONS.map((o) => (
+                  <option key={o.value || 'all'} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -176,7 +202,10 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
           description="First walk-in starts your book — take a phone number and place an order."
           imageSrc={OWNER_IMAGES.emptyCustomers}
           imageAlt="Quiet laundry shop ready for customers"
-          action={{ label: 'New walk-in order', href: '/partner/new-order?mode=walk_in' }}
+          action={{
+            label: 'New walk-in order',
+            href: buildPartnerCreateOrderHref(),
+          }}
         />
       ) : null}
 

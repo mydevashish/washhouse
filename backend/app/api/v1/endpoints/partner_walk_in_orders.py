@@ -58,7 +58,9 @@ async def create_walk_in_order(
         customer_phone=body.customer_phone,
         items=[item.model_dump(mode="json") for item in body.items],
         notes=body.notes,
+        customer_gender=body.customer_gender.value if body.customer_gender else None,
         expected_ready_at=body.expected_ready_at,
+        coupon_code=body.coupon_code,
     )
     return success_envelope(_walk_in_order_response(order), request)
 

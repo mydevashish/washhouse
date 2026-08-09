@@ -58,10 +58,10 @@ describe('owner-customer-crm', () => {
 
   it('builds new-order prefill href', () => {
     expect(newOrderPrefillHref({ name: 'Riya', phone: '+919876543210' })).toBe(
-      '/partner/new-order?phone=%2B919876543210&name=Riya&mode=walk_in',
+      '/partner/orders?phone=%2B919876543210&name=Riya&tab=create',
     );
     expect(newOrderPrefillHref({ name: 'Riya', phone: '+919876543210' }, 'assisted')).toContain(
-      'mode=assisted',
+      'fulfillment=doorstep',
     );
   });
 

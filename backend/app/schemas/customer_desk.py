@@ -91,6 +91,7 @@ class AssistedOrderCreateRequest(BaseModel):
     payment_method: PaymentMethod = PaymentMethod.cod
     reorder_from_order_id: UUID | None = None
     save_address_to_user: bool = False
+    coupon_code: str | None = Field(default=None, max_length=32)
 
     @model_validator(mode="after")
     def require_address_xor_snapshot(self) -> AssistedOrderCreateRequest:

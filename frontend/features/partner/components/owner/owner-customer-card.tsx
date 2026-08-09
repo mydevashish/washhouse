@@ -35,7 +35,7 @@ export function OwnerCustomerCard({ customer }: { customer: CustomerInsightRow }
 
   return (
     <article
-      className="flex flex-col gap-3 rounded-xl border border-border/70 bg-card p-4 shadow-sm"
+      className="flex flex-col gap-3 rounded-3xl border border-border/70 bg-card p-4 shadow-sm"
       data-testid="owner-customer-card"
     >
       <div className="flex items-start gap-3">

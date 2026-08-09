@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 
 import { PartnerOrdersNewOrderSheet } from '@/features/partner/orders-hub/partner-orders-new-order-sheet';
@@ -21,34 +20,17 @@ jest.mock('next/link', () => ({
   ),
 }));
 
-jest.mock('next/image', () => ({
-  __esModule: true,
-  default: ({ alt = '', ...rest }: { alt?: string; fill?: boolean; src?: string }) => {
-    const { fill: _fill, ...safe } = rest as { fill?: boolean } & Record<string, unknown>;
-    void _fill;
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img alt={alt} {...safe} />;
-  },
-}));
-
 describe('PartnerOrdersNewOrderSheet', () => {
-  it('opens picture-led Walk-in / Doorstep / Find customer choices', async () => {
-    const user = userEvent.setup();
-    render(<PartnerOrdersNewOrderSheet variant="header" />);
+  it('links header and FAB to Create order tab', () => {
+    const createHref = buildOrdersHubPath('/partner/orders', 'create');
+    const { rerender } = render(<PartnerOrdersNewOrderSheet variant="header" />);
 
-    await user.click(screen.getByTestId('partner-orders-new-order-header'));
-    expect(screen.getByTestId('partner-orders-new-order-sheet')).toBeInTheDocument();
-    expect(screen.getByTestId('partner-intake-choice-walk-in')).toHaveAttribute(
+    expect(screen.getByTestId('partner-orders-new-order-header')).toHaveAttribute(
       'href',
-      '/partner/new-order?mode=walk_in',
+      createHref,
     );
-    expect(screen.getByTestId('partner-intake-choice-doorstep')).toHaveAttribute(
-      'href',
-      '/partner/new-order?mode=assisted',
-    );
-    expect(screen.getByTestId('partner-intake-choice-desk')).toHaveAttribute(
-      'href',
-      buildOrdersHubPath('/partner/orders', 'desk'),
-    );
+
+    rerender(<PartnerOrdersNewOrderSheet variant="fab" />);
+    expect(screen.getByTestId('partner-orders-new-order-fab')).toHaveAttribute('href', createHref);
   });
 });

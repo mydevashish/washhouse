@@ -7,7 +7,6 @@ import { DataTablePagination } from '@/components/data-table/data-table-paginati
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerOrderCard } from '@/features/partner/partner-order-card';
-import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { PartnerOrderTableActionsMenu } from '@/features/partner/components/partner-order-table-actions-menu';
 import { PartnerPickupEvidenceDialog } from '@/features/partner/components/partner-pickup-evidence-dialog';
 import { CustodyTimelineDialog } from '@/features/chain-of-custody';
@@ -106,10 +105,12 @@ export function PartnerOrdersTable({
   }
 
   return (
-    <PartnerPanel
-      meta={<span className="tabular-nums">{list.totalRecords} orders</span>}
-      bodyClassName="p-0"
-    >
+    <div className="space-y-2" data-testid="partner-orders-table-root">
+      <div className="flex justify-end px-0.5">
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {list.totalRecords} orders
+        </span>
+      </div>
       {list.isError ? (
         <div
           role="alert"
@@ -136,22 +137,28 @@ export function PartnerOrdersTable({
         </div>
       ) : (
         <>
-          <div className="space-y-3 p-3 md:hidden">
+          <div className="space-y-3 md:hidden">
             {list.rows.map((o) => (
-              <PartnerOrderCard
+              <div
                 key={o.id}
-                order={o}
-                onAccept={() => acceptMutation.mutate(o.id)}
-                onReject={() => rejectMutation.mutate(o.id)}
-                onAdvance={() => advanceOrder(o.id, o.status, o.order_source)}
-                isAccepting={acceptMutation.isPending}
-                isRejecting={rejectMutation.isPending}
-                isAdvancing={advanceMutation.isPending}
-              />
+                className="rounded-3xl border border-border bg-background p-4 shadow-sm"
+              >
+                <PartnerOrderCard
+                  order={o}
+                  className="border-0 bg-transparent shadow-none ring-0"
+                  onAccept={() => acceptMutation.mutate(o.id)}
+                  onReject={() => rejectMutation.mutate(o.id)}
+                  onAdvance={() => advanceOrder(o.id, o.status, o.order_source)}
+                  isAccepting={acceptMutation.isPending}
+                  isRejecting={rejectMutation.isPending}
+                  isAdvancing={advanceMutation.isPending}
+                />
+              </div>
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto md:block">
+          <div className="hidden overflow-hidden rounded-3xl border border-border md:block">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="table-sticky-head border-b border-border/60 bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
@@ -227,6 +234,7 @@ export function PartnerOrdersTable({
                 })}
               </tbody>
             </table>
+            </div>
           </div>
           <DataTablePagination
             page={list.page}
@@ -253,6 +261,6 @@ export function PartnerOrdersTable({
         queryFn={getPartnerCustodyTimeline}
         scope="partner"
       />
-    </PartnerPanel>
+    </div>
   );
 }

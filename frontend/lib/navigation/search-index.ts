@@ -40,11 +40,13 @@ const ADMIN_EXTRA: SearchItem[] = [
   })),
 ];
 
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
+
 const PARTNER_EXTRA: SearchItem[] = [
   {
     id: 'p-new-order',
     label: 'New Order',
-    href: '/partner/new-order',
+    href: buildOrdersHubPath('/partner/orders', 'create'),
     group: 'Operations',
     keywords: 'create walk-in assisted desk order',
   },

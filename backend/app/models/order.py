@@ -82,6 +82,8 @@ class Order(Base, TimestampMixin, SoftDeleteMixin):
     delivery_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     subtotal_inr: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    discount_inr: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=Decimal("0"))
+    coupon_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
     delivery_fee_inr: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=Decimal("0"))
     gst_rate: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False, default=Decimal("18"))
     cgst_inr: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=Decimal("0"))

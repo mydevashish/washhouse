@@ -1,11 +1,13 @@
 # Feature: Partner dashboard
 
 > Status: **shipping** (Phase 1 ops UX redesign A+B+C)  
-> Last updated: 2026-08-08
+> Last updated: 2026-08-09
 
 ## UX goal
 
 Partners understand today’s floor within **10 seconds**: orders, needs action, ready, sales, pickups/deliveries — then create orders and advance status on a dedicated detail page.
+
+**WashHouse ops visual (2026-08-09):** Admin-demo patterns → shared `ops-visual` components on `/partner`, new-order, and hub desk/directory. Spec: [partner-washhouse-ops-visual.md](partner-washhouse-ops-visual.md). QA: [partner-washhouse-ops-visual-matrix.md](../qa/partner-washhouse-ops-visual-matrix.md).
 
 ## Phase 1 surfaces (WashHouse-inspired hierarchy)
 

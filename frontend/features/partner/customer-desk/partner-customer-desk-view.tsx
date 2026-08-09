@@ -3,13 +3,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Headset } from 'lucide-react';
 import { isAxiosError } from 'axios';
+import Link from 'next/link';
+import { ListOrdered, Plus } from 'lucide-react';
 
-import { EmptyState } from '@/components/ui/empty-state';
+import { Button } from '@/components/ui/button';
 import { InfoBanner } from '@/components/ui/info-banner';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  OWNER_IMAGES,
+  OwnerEmptyState,
+} from '@/features/partner/components/owner';
+import {
+  PartnerCustomerSnapshotCards,
+  PartnerOpsSurface,
+} from '@/features/partner/components/ops-visual';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
-import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { PartnerBookingRequestCreateDialog } from '@/features/partner/booking-requests/partner-booking-request-create-dialog';
 import type { PartnerBookingCreatePrefill } from '@/features/partner/booking-requests/types';
 import {
@@ -22,7 +31,11 @@ import {
   type PartnerDeskSearchSubmit,
 } from '@/features/partner/customer-desk/components/partner-customer-desk-search';
 import { lookupPartnerCustomer, searchPartnerCustomers } from '@/features/partner/customer-desk/api';
+import { usePartnerCustomerInsightRow } from '@/features/partner/customer-desk/hooks';
 import {
+  buildCustomerScopedOrdersHref,
+  buildNewOrderHref,
+  buildPartnerCreateOrderHref,
   isValidIndianMobileE164,
   normalizeIndianPhoneInput,
 } from '@/features/partner/customer-desk/phone';
@@ -106,10 +119,13 @@ export function PartnerCustomerDeskView({ embedded = false }: PartnerCustomerDes
         throw err;
       }
     },
-    enabled: Boolean(enabled && lookup && deskOpen),
+    enabled: Boolean(enabled && lookup),
     staleTime: STALE.partnerAnalytics,
     retry: false,
   });
+
+  const profile = previewQ.data ?? null;
+  const insightQ = usePartnerCustomerInsightRow(profile, Boolean(lookup && previewQ.isSuccess));
 
   const searchQ = useQuery({
     queryKey: queryKeys.partnerCustomerDeskSearch(activeSearch ?? ''),
@@ -138,7 +154,21 @@ export function PartnerCustomerDeskView({ embedded = false }: PartnerCustomerDes
     syncUrl(next);
   }
 
-  function handleSubmit(value: PartnerDeskSearchSubmit, tab: PartnerDeskTab) {
+  function handleSubmit(value: PartnerDeskSearchSubmit, tab: PartnerDeskTab | 'place-order') {
+    if (tab === 'place-order') {
+      if (value.kind === 'phone') {
+        router.push(buildPartnerCreateOrderHref({ phone: value.phone }));
+        return;
+      }
+      if (value.kind === 'user_id') {
+        router.push(buildOrdersHubPath('/partner/orders', 'create'));
+        return;
+      }
+      setSearchQuery(value.q);
+      setActiveSearch(value.q);
+      setDeskOpen(false);
+      return;
+    }
     if (value.kind === 'phone') {
       openWithLookup({ phone: value.phone }, tab);
       return;
@@ -152,7 +182,16 @@ export function PartnerCustomerDeskView({ embedded = false }: PartnerCustomerDes
     setDeskOpen(false);
   }
 
-  function handleSelectResult(profile: CustomerDeskProfile, tab: PartnerDeskTab = 'orders') {
+  function handleSelectResult(
+    profile: CustomerDeskProfile,
+    tab: PartnerDeskTab | 'place-order' = 'orders',
+  ) {
+    if (tab === 'place-order') {
+      router.push(
+        buildPartnerCreateOrderHref({ phone: profile.phone, name: profile.name }),
+      );
+      return;
+    }
     if (profile.user_id) {
       openWithLookup({ user_id: profile.user_id }, tab);
     } else {
@@ -175,72 +214,118 @@ export function PartnerCustomerDeskView({ embedded = false }: PartnerCustomerDes
     !previewQ.data.registered &&
     previewQ.data.order_count === 0;
 
+  const newOrderHref =
+    profile?.phone != null
+      ? buildNewOrderHref(profile.phone, profile.name, 'walk_in')
+      : buildPartnerCreateOrderHref();
+  const ordersHref =
+    profile?.phone != null
+      ? buildCustomerScopedOrdersHref(profile.phone, profile.name)
+      : null;
+
   const body = (
     <>
-      <PartnerPanel
-        title="Counter search"
-        description="Name or mobile — exact phone opens immediately; name shows matches at your shop."
-        bodyClassName="p-4 sm:p-5"
-      >
-        <div className="mx-auto w-full max-w-xl space-y-4">
-          <PartnerRecentCustomersStrip />
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-50">
-              <Headset className="h-5 w-5" aria-hidden />
-            </div>
-            <div className="min-w-0 flex-1">
-              <PartnerCustomerDeskSearch
-                initialQuery={searchQuery || phoneParam || ''}
-                isLookingUp={
-                  (deskOpen && previewQ.isFetching) || (Boolean(activeSearch) && searchQ.isFetching)
-                }
-                onNewOrder={(v) => handleSubmit(v, 'place-order')}
-                onOpenDesk={(v) => handleSubmit(v, 'orders')}
-              />
+      <PartnerOpsSurface variant="default" className="mx-auto w-full max-w-3xl space-y-4">
+        <div className="grid gap-4 rounded-3xl border border-border bg-muted/40 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold">Search customer</p>
+              <p className="text-xs text-muted-foreground">
+                Search by name, mobile or customer ID.
+              </p>
             </div>
           </div>
 
-          <InfoBanner variant="default" title="Your laundry only">
-            Order history is always scoped to your shop. You will never see another laundry&apos;s
-            rows for the same customer.
+        <PartnerRecentCustomersStrip />
+
+        <PartnerCustomerDeskSearch
+          initialQuery={searchQuery || phoneParam || ''}
+          isLookingUp={
+            (Boolean(lookup) && previewQ.isFetching) ||
+            (Boolean(activeSearch) && searchQ.isFetching)
+          }
+          onNewOrder={(v) => handleSubmit(v, 'place-order')}
+          onOpenDesk={(v) => handleSubmit(v, 'orders')}
+        />
+
+        {lookup && previewQ.isFetching && !previewQ.data ? (
+          <Skeleton className="h-40 w-full rounded-3xl" data-testid="partner-desk-snapshot-loading" />
+        ) : null}
+
+        {lookup && profile ? (
+          <div className="space-y-4" data-testid="partner-desk-customer-snapshot">
+            <PartnerCustomerSnapshotCards
+              profile={profile}
+              stats={
+                insightQ.data
+                  ? {
+                      lifetime_spend_inr: insightQ.data.lifetime_spend_inr,
+                      segment_label: insightQ.data.segment_label,
+                    }
+                  : null
+              }
+            />
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Customer actions">
+              <Button asChild size="sm" className="min-h-[44px] gap-1.5">
+                <Link href={newOrderHref}>
+                  <Plus className="h-3.5 w-3.5" aria-hidden />
+                  New order
+                </Link>
+              </Button>
+              {ordersHref ? (
+                <Button asChild variant="secondary" size="sm" className="min-h-[44px] gap-1.5">
+                  <Link href={ordersHref}>
+                    <ListOrdered className="h-3.5 w-3.5" aria-hidden />
+                    View orders
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {activeSearch ? (
+          <PartnerCustomerDeskResults
+            query={activeSearch}
+            results={searchQ.data ?? []}
+            isLoading={searchQ.isFetching}
+            onSelect={(p) => handleSelectResult(p, 'place-order')}
+          />
+        ) : null}
+
+        {searchQ.isError && activeSearch ? (
+          <InfoBanner variant="destructive" title="Search failed">
+            {getApiErrorMessage(searchQ.error)}
           </InfoBanner>
+        ) : null}
 
-          {activeSearch ? (
-            <PartnerCustomerDeskResults
-              query={activeSearch}
-              results={searchQ.data ?? []}
-              isLoading={searchQ.isFetching}
-              onSelect={(p) => handleSelectResult(p, 'place-order')}
-            />
-          ) : null}
+        {!lookup && !activeSearch ? (
+          <OwnerEmptyState
+            title="Waiting for a name or phone"
+            description="When a regular calls, search here to reorder or book doorstep pickup."
+            imageSrc={OWNER_IMAGES.people}
+            imageAlt="Laundry shop counter"
+          />
+        ) : null}
 
-          {searchQ.isError && activeSearch ? (
-            <InfoBanner variant="destructive" title="Search failed">
-              {getApiErrorMessage(searchQ.error)}
-            </InfoBanner>
-          ) : null}
+        {previewQ.isError && lookup ? (
+          <InfoBanner variant="destructive" title="Could not look up customer">
+            {getApiErrorMessage(previewQ.error)}
+          </InfoBanner>
+        ) : null}
 
-          {!lookup && !deskOpen && !activeSearch ? (
-            <EmptyState
-              icon={Headset}
-              title="Waiting for a name or phone"
-              description="When a regular calls, search here to reorder or book doorstep pickup."
-            />
-          ) : null}
-
-          {previewQ.isError && deskOpen ? (
-            <InfoBanner variant="destructive" title="Could not look up customer">
-              {getApiErrorMessage(previewQ.error)}
-            </InfoBanner>
-          ) : null}
-
-          {noMatchGuest && deskOpen ? (
-            <InfoBanner variant="default" title="No past orders at your laundry">
-              You can still place a doorstep order or record a walk-in for this phone.
-            </InfoBanner>
-          ) : null}
+        {noMatchGuest && lookup ? (
+          <InfoBanner variant="default" title="No past orders at your laundry">
+            You can still place a doorstep order or record a walk-in for this phone.
+          </InfoBanner>
+        ) : null}
         </div>
-      </PartnerPanel>
+
+        <InfoBanner variant="default" title="Your laundry only">
+          Order history is always scoped to your shop. You will never see another laundry&apos;s
+          rows for the same customer.
+        </InfoBanner>
+      </PartnerOpsSurface>
 
       <PartnerCustomerDeskDrawer
         lookup={lookup}

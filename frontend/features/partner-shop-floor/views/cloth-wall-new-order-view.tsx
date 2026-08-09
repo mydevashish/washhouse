@@ -1,5 +1,6 @@
 'use client';
 
+import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, List, LayoutGrid } from 'lucide-react';
@@ -12,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
+import { PartnerCustomerGenderField, type PartnerCustomerGender } from '@/features/partner/components/partner-customer-gender-field';
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import {
   isValidIndianMobileE164,
@@ -81,6 +83,7 @@ export function ClothWallNewOrderView({
   const [pickerMode, setPickerMode] = useState<PickerMode>('wall');
   const [customerName, setCustomerName] = useState(nameParam);
   const [customerPhone, setCustomerPhone] = useState(phoneParam);
+  const [customerGender, setCustomerGender] = useState<PartnerCustomerGender | null>(null);
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState<ClothWallLine[]>([]);
   const [tileProcess, setTileProcess] = useState<Record<string, ClothWallProcess>>({});
@@ -218,6 +221,10 @@ export function ClothWallNewOrderView({
       toast.error('Enter a valid Indian mobile (+91)');
       return;
     }
+    if (!customerGender) {
+      toast.error('Select Male or Female for tags');
+      return;
+    }
     setCustomerPhone(phone);
     setStep('wall');
   }
@@ -247,6 +254,7 @@ export function ClothWallNewOrderView({
     createMutation.mutate({
       customer_name: customerName.trim(),
       customer_phone: e164,
+      customer_gender: customerGender ?? undefined,
       items,
       notes: notes.trim() || undefined,
     });
@@ -307,7 +315,7 @@ export function ClothWallNewOrderView({
       ) : null}
 
       {step === 'customer' ? (
-        <PartnerPanel title="Customer" description="Step A — phone & name" bodyClassName="space-y-4 p-4">
+        <PartnerPanel title="Customer" description="Step A — phone, name & gender" bodyClassName="space-y-4 p-4">
           <div className="space-y-2">
             <Label htmlFor="cw-phone" className="text-base">
               Phone (WhatsApp)
@@ -342,6 +350,11 @@ export function ClothWallNewOrderView({
               data-testid="cloth-wall-name"
             />
           </div>
+          <PartnerCustomerGenderField
+            value={customerGender}
+            onChange={setCustomerGender}
+            size="floor"
+          />
           <Button
             type="button"
             className="min-h-14 w-full text-base font-semibold"
@@ -353,7 +366,7 @@ export function ClothWallNewOrderView({
           {!floorEntry ? (
             <p className="text-center text-xs text-muted-foreground">
               Doorstep assisted?{' '}
-              <Link href="/partner/new-order?mode=assisted" className="font-medium text-primary underline-offset-2 hover:underline">
+              <Link href={buildPartnerCreateOrderHref({ mode: 'assisted' })} className="font-medium text-primary underline-offset-2 hover:underline">
                 Open assisted flow
               </Link>
             </p>

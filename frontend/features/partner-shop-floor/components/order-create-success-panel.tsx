@@ -14,6 +14,7 @@ import { buildPartnerPrintPath } from '@/features/partner-shop-floor/lib/print-l
 import { FLOOR_VOICE_SUCCESS } from '@/features/partner-shop-floor/lib/floor-voice';
 import { formatInr } from '@/features/discover/detail/order-pricing';
 import { usePrefersReducedMotion } from '@/lib/hooks/use-prefers-reduced-motion';
+import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 import { cn } from '@/lib/utils';
 
 export type OrderCreateSuccessOrder = {
@@ -46,7 +47,7 @@ export function OrderCreateSuccessPanel({
   onStartWash,
   startWashPending,
   showStartWash = false,
-  anotherOrderHref = '/partner/new-order',
+  anotherOrderHref = buildPartnerCreateOrderHref(),
   subtitle = 'Print garment tags now so bags stay matched on the floor.',
 }: OrderCreateSuccessPanelProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);

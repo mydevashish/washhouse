@@ -30,6 +30,7 @@ function PartnerAdvancedSidebar({
   badges,
   laundryName,
   userName,
+  ordersToday,
   onNavigate,
 }: {
   pathname: string;
@@ -42,6 +43,7 @@ function PartnerAdvancedSidebar({
   };
   laundryName?: string;
   userName?: string;
+  ordersToday?: number;
   onNavigate?: () => void;
 }) {
   const navActiveOpts = { tab };
@@ -70,9 +72,9 @@ function PartnerAdvancedSidebar({
                       href={href}
                       onClick={onNavigate}
                       className={cn(
-                        'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors',
+                        'flex items-center gap-2.5 rounded-2xl px-3 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                         active
-                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          ? 'bg-primary/10 text-primary'
                           : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
                       )}
                       aria-current={active ? 'page' : undefined}
@@ -84,7 +86,7 @@ function PartnerAdvancedSidebar({
                           className={cn(
                             'flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold',
                             active
-                              ? 'bg-primary-foreground/20 text-primary-foreground'
+                              ? 'bg-primary/15 text-primary'
                               : 'bg-warning-muted text-warning',
                           )}
                         >
@@ -99,8 +101,17 @@ function PartnerAdvancedSidebar({
           </div>
         ))}
       </nav>
-      <div className="shrink-0 border-t border-border/60 px-3 py-2.5 text-[11px] text-muted-foreground">
-        <p className="truncate font-medium text-foreground">{userName ?? 'Partner'}</p>
+      <div className="shrink-0 space-y-1.5 border-t border-border/60 px-3 py-2.5 text-[11px] text-muted-foreground">
+        {ordersToday != null ? (
+          <Link
+            href="/partner"
+            onClick={onNavigate}
+            className="block rounded-lg px-1 py-0.5 font-medium text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Dashboard · {ordersToday} order{ordersToday === 1 ? '' : 's'}
+          </Link>
+        ) : null}
+        <p className="truncate px-1 font-medium text-foreground">{userName ?? 'Partner'}</p>
       </div>
     </div>
   );
@@ -134,6 +145,9 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
   const laundryName = mounted ? analyticsQ.data?.laundry_name : undefined;
   const userName = mounted ? user?.full_name : undefined;
 
+  const ordersToday =
+    mounted && analyticsQ.data?.orders_today != null ? analyticsQ.data.orders_today : undefined;
+
   const sidebar = (
     <PartnerAdvancedSidebar
       pathname={pathname}
@@ -141,6 +155,7 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
       badges={badges}
       laundryName={laundryName}
       userName={userName}
+      ordersToday={ordersToday}
       onNavigate={() => setMobileOpen(false)}
     />
   );
@@ -149,12 +164,12 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-muted/20">
-      <aside className="hidden h-full w-sidebar shrink-0 flex-col border-r border-border bg-background lg:flex">
+      <aside className="hidden h-full w-sidebar shrink-0 flex-col border-r border-border bg-background xl:flex">
         {sidebar}
       </aside>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 xl:hidden">
           <button
             type="button"
             className="absolute inset-0 overlay-scrim"
@@ -182,6 +197,7 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
           userRole={mounted ? user?.role : undefined}
           laundryName={mounted ? laundryName : undefined}
           onOpenSidebar={() => setMobileOpen(true)}
+          sidebarFrom="xl"
           notificationsHref="/partner/notifications"
           settingsHref="/partner/settings"
         />

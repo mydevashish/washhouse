@@ -388,5 +388,6 @@ async def partner_assisted_create(
         idempotency_key=key,
         partner_laundry_id=laundry_id,
         save_address_to_user=body.save_address_to_user,
+        coupon_code=body.coupon_code,
     )
     return success_envelope(AssistedOrderCreateResult.model_validate(order), request)

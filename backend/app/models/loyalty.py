@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from decimal import Decimal
 
-from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -38,8 +38,15 @@ class ReferralCode(Base, TimestampMixin):
 
 class Coupon(Base, TimestampMixin):
     __tablename__ = "coupons"
+    __table_args__ = (UniqueConstraint("laundry_id", "code", name="uq_coupons_laundry_code"),)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    code: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
+    laundry_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("laundries.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    code: Mapped[str] = mapped_column(String(32), nullable=False)
     discount_percent: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

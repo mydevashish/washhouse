@@ -1,4 +1,7 @@
-import { buildNewOrderHref } from '@/features/partner/customer-desk/phone';
+import {
+  buildNewOrderHref,
+  buildPartnerCreateOrderHref,
+} from '@/features/partner/customer-desk/phone';
 import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import type { CustomerInsightRow, CustomerInsightsDashboard, CustomerSegment } from '@/services/customer-insights';
 
@@ -71,7 +74,9 @@ export function newOrderPrefillHref(
   customer: Pick<CustomerInsightRow, 'name' | 'phone'>,
   mode: 'walk_in' | 'assisted' = 'walk_in',
 ): string {
-  if (!customer.phone?.trim()) return `/partner/new-order?mode=${mode}`;
+  if (!customer.phone?.trim()) {
+    return buildPartnerCreateOrderHref({ mode });
+  }
   return buildNewOrderHref(customer.phone, customer.name, mode);
 }
 

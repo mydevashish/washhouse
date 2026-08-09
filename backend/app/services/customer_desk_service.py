@@ -35,6 +35,7 @@ from app.repositories.order import OrderRepository
 from app.repositories.partner_service_catalog import PartnerServiceCatalogRepository
 from app.repositories.user import UserRepository
 from app.services.custody_event_service import CustodyEventService
+from app.services.partner_coupon_service import PartnerCouponService
 from app.services.order_events import publish_order_status_update
 from app.services.platform_config_service import PlatformConfigService
 from app.utils.phone import validate_strict_indian_mobile
@@ -450,6 +451,7 @@ class CustomerDeskService:
         payment_method: PaymentMethod = PaymentMethod.cod,
         partner_laundry_id: UUID | None = None,
         save_address_to_user: bool = False,
+        coupon_code: str | None = None,
     ) -> Order:
         if order_source not in {OrderSource.assisted_admin, OrderSource.assisted_partner}:
             raise ValidationError("Invalid assisted order_source")
@@ -523,6 +525,16 @@ class CustomerDeskService:
         if not priced["line_items"]:
             raise ValidationError("At least one valid service line is required")
 
+        discount_inr = Decimal("0")
+        applied_code: str | None = None
+        if coupon_code and order_source == OrderSource.assisted_partner:
+            discount_inr, applied_code = await PartnerCouponService(self._session).resolve_discount(
+                actor_user_id,
+                coupon_code=coupon_code,
+                subtotal=priced["subtotal"],
+            )
+            priced = self._apply_order_discount(priced, discount_inr)
+
         platform = PlatformConfigService(self._session)
         min_amount, max_amount = await platform.get_order_limits()
         total = priced["total"]
@@ -564,6 +576,8 @@ class CustomerDeskService:
             delivery_at=delivery,
             notes=notes,
             subtotal_inr=priced["subtotal"],
+            discount_inr=discount_inr,
+            coupon_code=applied_code,
             delivery_fee_inr=priced["delivery_fee"],
             gst_rate=GST_RATE_PERCENT,
             cgst_inr=priced["cgst"],
@@ -685,6 +699,17 @@ class CustomerDeskService:
             "total": total,
             "warnings": warnings,
         }
+
+    @staticmethod
+    def _apply_order_discount(priced: dict, discount_inr: Decimal) -> dict:
+        subtotal = priced["subtotal"]
+        delivery_fee = priced["delivery_fee"]
+        taxable = subtotal + delivery_fee - discount_inr
+        if taxable < Decimal("0"):
+            taxable = Decimal("0")
+        half_gst = (taxable * GST_RATE_PERCENT / Decimal("200")).quantize(Decimal("0.01"))
+        total = (taxable + half_gst + half_gst).quantize(Decimal("0.01"))
+        return {**priced, "cgst": half_gst, "sgst": half_gst, "total": total}
 
     @staticmethod
     def _resolve_laundry_id(laundry_id: UUID, partner_laundry_id: UUID | None) -> UUID:

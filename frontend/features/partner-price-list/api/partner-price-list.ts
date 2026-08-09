@@ -30,3 +30,22 @@ export async function applySuggestedPartnerPrices(): Promise<ApplySuggestedResul
   );
   return data.data;
 }
+
+export type PartnerPriceItemPatch = {
+  dry_clean_inr?: string | null;
+  press_inr?: string | null;
+  price_inr?: string | null;
+  is_offered?: boolean;
+  sort_order?: number;
+};
+
+export async function patchPartnerPriceItem(
+  catalogItemId: string,
+  body: PartnerPriceItemPatch,
+): Promise<PartnerPriceListResponse['items'][number]> {
+  const { data } = await api.patch<ApiEnvelope<PartnerPriceListResponse['items'][number]>>(
+    `/partner/price-list/${catalogItemId}`,
+    body,
+  );
+  return data.data;
+}

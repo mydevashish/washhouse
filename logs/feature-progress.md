@@ -141,10 +141,11 @@
 - Non-goals (going forward): keeping dual display mode; Hindi-primary UI
 
 ## Partner WashHouse Ops Visual
-- Status: **planned** (Prompt 0 spec — 2026-08-09)
+- Status: **in-progress** (Prompt 1 primitives — 2026-08-09)
 - Spec: `docs/features/partner-washhouse-ops-visual.md`
 - Why: Unify WashHouse ops chrome (hero, KPI, status bars, create layout) from admin demo reference into partner routes without forked nav or fake metrics.
-- Next: Prompt 1 — `frontend/features/partner/components/ops-visual/` primitives
+- Done (P1): `frontend/features/partner/components/ops-visual/*` (surface, section label, hero, KPI grid, status bars, trend strip); barrel `index.ts`; demo `/partner/ops-visual-demo`; smoke test `partner-ops-visual.test.tsx`
+- Next: Prompt 2 — wire `/partner` first viewport (`partner-overview-view.tsx`)
 
 ## Partner Owner Command Center (Advanced Mode)
 - Status: **in-progress** (P6 shipped 2026-08-08 — Prompt 6)
@@ -166,3 +167,11 @@
 - Done: Prompt 0–8; matrix + admin laundry pagination tests + Playwright `partner-pagination.spec.ts`; DoD gate in `PAGINATION_STANDARD.md`
 - Next: Dated deferrals only (public directory, notifications attention API, full CSV export, insights segment cap 500)
 - Non-goals (this pack): Shop Floor redesign; discover client-concat; full CSV export job; dedicated notifications API
+
+## Partner WashHouse Ops Visual
+- Status: **review** (Prompt 6 shipped 2026-08-09)
+- Spec: `docs/features/partner-washhouse-ops-visual.md`
+- Matrix: `docs/qa/partner-washhouse-ops-visual-matrix.md`
+- Done: Prompts 1–6 — `ops-visual` components; `/partner` hero + KPI + status + trend; new-order two-column; hub/desk snapshot cards; `partner-shell` admin-aligned nav (`rounded-2xl`, `bg-primary/10`), sidebar from `xl`, footer today line; dark-mode KPI/surface borders; catalog imagery standardization
+- Next: Staging Lighthouse + optional PostHog KPI events; API tickets OPS-VIS-API-1..3
+- Non-goals: duplicate admin demo sidebar; Mon–Sun fake trend; Shop Floor revival

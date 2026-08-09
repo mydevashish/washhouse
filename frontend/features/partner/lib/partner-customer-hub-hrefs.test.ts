@@ -12,10 +12,10 @@ import {
 describe('customer hub href builders (P4)', () => {
   it('builds walk-in and assisted new-order hrefs', () => {
     expect(buildNewOrderHref('+919876543210', 'Riya', 'walk_in')).toBe(
-      '/partner/new-order?phone=%2B919876543210&name=Riya&mode=walk_in',
+      '/partner/orders?phone=%2B919876543210&name=Riya&tab=create',
     );
     expect(buildNewOrderHref('+919876543210', null, 'assisted')).toBe(
-      '/partner/new-order?phone=%2B919876543210&mode=assisted',
+      '/partner/orders?phone=%2B919876543210&fulfillment=doorstep&tab=create',
     );
   });
 

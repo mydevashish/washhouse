@@ -1,7 +1,7 @@
 'use client';
 
 import { Headset, Store } from 'lucide-react';
-import Link from 'next/link';
+import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -135,7 +135,7 @@ export function PartnerWalkInOrdersView() {
               </Link>
             </Button>
             <Button asChild size="sm" className="min-h-[44px]">
-              <Link href="/partner/new-order?mode=walk_in">New Order</Link>
+              <Link href={buildPartnerCreateOrderHref()}>New Order</Link>
             </Button>
             <Button type="button" variant="outline" className="min-h-[44px]" onClick={() => setShowForm((v) => !v)}>
               {showForm ? 'Hide quick form' : 'Quick form'}

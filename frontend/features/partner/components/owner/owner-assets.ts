@@ -11,7 +11,7 @@ export const OWNER_IMAGES = {
   calm: '/catalog/services/hygienic-safe.webp',
   emptyCustomers: '/catalog/heroes/store-interior.webp',
   emptyStaff: '/catalog/heroes/store-interior.webp',
-  emptyLogistics: '/marketing/heroes/delivery.webp',
+  emptyLogistics: '/catalog/services/on-time-delivery.webp',
 } as const;
 
 export type OwnerImageKey = keyof typeof OWNER_IMAGES;

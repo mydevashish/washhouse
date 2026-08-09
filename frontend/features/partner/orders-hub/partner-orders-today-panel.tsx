@@ -36,8 +36,10 @@ import {
 } from '@/features/partner/hooks/use-partner-operations';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
+import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
+import { PartnerOrdersHubSection } from '@/features/partner/orders-hub/partner-orders-hub-section';
 import { cn } from '@/lib/utils';
 
 function parseLookupFromSearch(
@@ -154,7 +156,21 @@ export function PartnerOrdersTodayPanel(_props: PartnerOrdersTodayPanelProps = {
     syncUrl(next);
   }
 
-  function handleSubmit(value: PartnerDeskSearchSubmit, tab: PartnerDeskTab) {
+  function handleSubmit(value: PartnerDeskSearchSubmit, tab: PartnerDeskTab | 'place-order') {
+    if (tab === 'place-order') {
+      if (value.kind === 'phone') {
+        router.push(buildPartnerCreateOrderHref({ phone: value.phone }));
+        return;
+      }
+      if (value.kind === 'user_id') {
+        router.push(buildOrdersHubPath('/partner/orders', 'create'));
+        return;
+      }
+      setSearchQuery(value.q);
+      setActiveSearch(value.q);
+      setDeskOpen(false);
+      return;
+    }
     if (value.kind === 'phone') {
       openWithLookup({ phone: value.phone }, tab);
       return;
@@ -168,7 +184,16 @@ export function PartnerOrdersTodayPanel(_props: PartnerOrdersTodayPanelProps = {
     setDeskOpen(false);
   }
 
-  function handleSelectResult(profile: CustomerDeskProfile, tab: PartnerDeskTab = 'place-order') {
+  function handleSelectResult(
+    profile: CustomerDeskProfile,
+    tab: PartnerDeskTab | 'place-order' = 'place-order',
+  ) {
+    if (tab === 'place-order') {
+      router.push(
+        buildPartnerCreateOrderHref({ phone: profile.phone, name: profile.name }),
+      );
+      return;
+    }
     if (profile.user_id) {
       openWithLookup({ user_id: profile.user_id }, tab);
     } else {
@@ -182,81 +207,109 @@ export function PartnerOrdersTodayPanel(_props: PartnerOrdersTodayPanelProps = {
   }
 
   return (
-    <div className="space-y-3">
-      <div
-        className="flex gap-1.5 overflow-x-auto sm:flex-wrap"
-        aria-label="Today snapshot"
-        data-testid="partner-orders-today-strip"
-      >
-        <TodayChip icon={Package} label="Needs action" value={needsAction} />
-        <TodayChip icon={Package} label="Active" value={activeCount} />
-        <TodayChip icon={CalendarClock} label="Waiting" value={waitingRequests} />
+    <div className="space-y-4">
+      <div className="grid gap-4 xl:grid-cols-2 xl:items-start">
+        <div className="space-y-4">
+          <PartnerOrdersHubSection
+            id="hub-orders-today-snapshot"
+            title="Today's snapshot"
+            description="Live counts from your queue: orders waiting on you, active work in the shop, and assigned doorstep requests."
+            bordered={false}
+          >
+            <div
+              className="grid gap-2 sm:grid-cols-3"
+              aria-label="Today snapshot"
+              data-testid="partner-orders-today-strip"
+            >
+              <TodayChip icon={Package} label="Needs action" value={needsAction} />
+              <TodayChip icon={Package} label="Active" value={activeCount} />
+              <TodayChip icon={CalendarClock} label="Waiting" value={waitingRequests} />
+            </div>
+          </PartnerOrdersHubSection>
+
+          <PartnerOrdersHubSection
+            id="hub-orders-waiting"
+            title="Booking requests"
+            description="Doorstep requests assigned to your laundry — open the inbox to assign, contact, or convert to an order."
+            contentClassName="p-0"
+          >
+            <Link
+              href={buildOrdersHubPath('/partner/orders', 'requests')}
+              className={cn(
+                'flex min-h-11 items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-sm',
+                'text-foreground transition-colors hover:bg-muted/40',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+              )}
+              data-testid="partner-orders-waiting-link"
+              aria-label={
+                waitingRequests > 0
+                  ? `${waitingRequests} waiting booking requests`
+                  : 'Open booking requests'
+              }
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="min-w-0">
+                  <span className="block truncate font-medium">Waiting requests</span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    {waitingRequests > 0
+                      ? `${waitingRequests} in your inbox`
+                      : 'No requests waiting — view history'}
+                  </span>
+                </span>
+              </span>
+              <span className="shrink-0 tabular-nums text-muted-foreground">
+                {waitingRequests > 0 ? waitingRequests : 'Open'}
+              </span>
+            </Link>
+          </PartnerOrdersHubSection>
+        </div>
+
+        <PartnerOrdersHubSection
+          id="hub-orders-find-customer"
+          title="Find customer"
+          description="Search by Indian mobile, name, or customer ID. Start a new order or open the full desk drawer for history and notes."
+        >
+          <div data-testid="partner-orders-find-strip">
+          <PartnerCustomerDeskSearch
+            density="compact"
+            initialQuery={searchQuery || phoneParam || ''}
+            isLookingUp={
+              (deskOpen && previewQ.isFetching) || (Boolean(activeSearch) && searchQ.isFetching)
+            }
+            onNewOrder={(v) => handleSubmit(v, 'place-order')}
+            onOpenDesk={(v) => handleSubmit(v, 'orders')}
+          />
+
+          {activeSearch ? (
+            <div className="mt-3 border-t border-border/50 pt-3">
+              <PartnerCustomerDeskResults
+                query={activeSearch}
+                results={searchQ.data ?? []}
+                isLoading={searchQ.isFetching}
+                onSelect={(p) => handleSelectResult(p, 'place-order')}
+              />
+            </div>
+          ) : null}
+
+          {searchQ.isError && activeSearch ? (
+            <div className="mt-3">
+              <InfoBanner variant="destructive" title="Search failed">
+                {getApiErrorMessage(searchQ.error)}
+              </InfoBanner>
+            </div>
+          ) : null}
+
+          {previewQ.isError && deskOpen ? (
+            <div className="mt-3">
+              <InfoBanner variant="destructive" title="Could not look up customer">
+                {getApiErrorMessage(previewQ.error)}
+              </InfoBanner>
+            </div>
+          ) : null}
+          </div>
+        </PartnerOrdersHubSection>
       </div>
-
-      <div
-        className="rounded-xl border border-border/60 bg-card p-3 shadow-soft"
-        data-testid="partner-orders-find-strip"
-      >
-        <PartnerCustomerDeskSearch
-          density="compact"
-          initialQuery={searchQuery || phoneParam || ''}
-          isLookingUp={
-            (deskOpen && previewQ.isFetching) || (Boolean(activeSearch) && searchQ.isFetching)
-          }
-          onNewOrder={(v) => handleSubmit(v, 'place-order')}
-          onOpenDesk={(v) => handleSubmit(v, 'orders')}
-        />
-
-        {activeSearch ? (
-          <div className="mt-2">
-            <PartnerCustomerDeskResults
-              query={activeSearch}
-              results={searchQ.data ?? []}
-              isLoading={searchQ.isFetching}
-              onSelect={(p) => handleSelectResult(p, 'place-order')}
-            />
-          </div>
-        ) : null}
-
-        {searchQ.isError && activeSearch ? (
-          <div className="mt-2">
-            <InfoBanner variant="destructive" title="Search failed">
-              {getApiErrorMessage(searchQ.error)}
-            </InfoBanner>
-          </div>
-        ) : null}
-
-        {previewQ.isError && deskOpen ? (
-          <div className="mt-2">
-            <InfoBanner variant="destructive" title="Could not look up customer">
-              {getApiErrorMessage(previewQ.error)}
-            </InfoBanner>
-          </div>
-        ) : null}
-      </div>
-
-      <Link
-        href={buildOrdersHubPath('/partner/orders', 'requests')}
-        className={cn(
-          'flex h-9 items-center justify-between gap-2 rounded-lg px-3 text-sm',
-          'bg-muted/40 text-foreground ring-1 ring-border/50 transition-colors hover:bg-muted/70',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        )}
-        data-testid="partner-orders-waiting-link"
-        aria-label={
-          waitingRequests > 0
-            ? `${waitingRequests} waiting booking requests`
-            : 'Open booking requests'
-        }
-      >
-        <span className="flex min-w-0 items-center gap-2">
-          <CalendarClock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="truncate font-medium">Waiting requests</span>
-        </span>
-        <span className="tabular-nums text-muted-foreground">
-          {waitingRequests > 0 ? waitingRequests : 'View'}
-        </span>
-      </Link>
 
       <PartnerCustomerDeskDrawer
         lookup={lookup}
@@ -285,12 +338,10 @@ function TodayChip({
   value: number;
 }) {
   return (
-    <div className="inline-flex h-9 min-w-[7.5rem] flex-1 items-center gap-2 rounded-full bg-muted/40 px-3 ring-1 ring-border/50 sm:flex-none">
+    <div className="flex h-auto min-h-11 flex-col justify-center gap-0.5 rounded-xl bg-muted/40 px-3 py-2 ring-1 ring-border/50">
       <Icon className="h-3.5 w-3.5 shrink-0 text-brand-600 dark:text-brand-50" aria-hidden />
-      <div className="flex min-w-0 items-baseline gap-1.5">
-        <p className="text-sm font-semibold tabular-nums leading-none text-foreground">{value}</p>
-        <p className="truncate text-[11px] text-muted-foreground">{label}</p>
-      </div>
+      <p className="text-lg font-semibold tabular-nums leading-none text-foreground">{value}</p>
+      <p className="text-[11px] leading-snug text-muted-foreground">{label}</p>
     </div>
   );
 }

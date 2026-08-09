@@ -27,14 +27,29 @@ import type {
   ReorderPrefill,
 } from '@/features/partner/customer-desk/types';
 import { usePartnerAnalytics } from '@/features/partner/hooks/use-partner-operations';
+import {
+  PartnerCustomerSnapshotCards,
+  PartnerNewOrderLineItemsTable,
+  PartnerNewOrderPrintHintCard,
+  PartnerNewOrderServiceAddDialog,
+  PartnerOpsSectionLabel,
+  PartnerOpsSurface,
+  PartnerServiceTile,
+  type PartnerCustomerSnapshotStats,
+} from '@/features/partner/components/ops-visual';
+import { formatInr } from '@/features/discover/detail/order-pricing';
 import { listPartnerServices } from '@/services/partner-service-catalog';
+import type { ServiceCatalogItem } from '@/services/partner-service-catalog';
 import { queryKeys } from '@/lib/query-keys';
+import { cn } from '@/lib/utils';
 
 type Props = {
   profile: CustomerDeskProfile;
   reorder?: ReorderPrefill | null;
   onCreateBookingRequest: () => void;
   onCreated?: (result: AssistedOrderCreateResult) => void;
+  layout?: 'default' | 'ops';
+  insightStats?: PartnerCustomerSnapshotStats | null;
 };
 
 function toDatetimeLocalValue(d: Date): string {
@@ -59,13 +74,18 @@ export function PartnerCustomerDeskPlaceOrderForm({
   reorder = null,
   onCreateBookingRequest,
   onCreated,
+  layout = 'default',
+  insightStats = null,
 }: Props) {
+  const isOps = layout === 'ops';
   const slots = defaultSlots();
   const { createM } = usePartnerAssistedOrderMutations({ onCreated });
   const analyticsQ = usePartnerAnalytics();
   const laundryId = analyticsQ.data?.laundry_id ?? '';
   const laundryName = analyticsQ.data?.laundry_name ?? 'Your laundry';
   const [reorderWarnings, setReorderWarnings] = useState<string[]>([]);
+  const [dialogService, setDialogService] = useState<ServiceCatalogItem | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const servicesQ = useQuery({
     queryKey: queryKeys.partnerServiceCatalog(),
@@ -152,7 +172,59 @@ export function PartnerCustomerDeskPlaceOrderForm({
     name: 'items',
   });
 
+  const watchedItems = form.watch('items');
+
+  const lineRows = useMemo(() => {
+    return watchedItems
+      .filter((item) => item.service_id)
+      .map((item) => {
+        const svc = services.find((s) => s.id === item.service_id);
+        const rate = Number(svc?.price_inr ?? 0);
+        const quantity = Number(item.quantity) || 1;
+        return {
+          service_id: item.service_id,
+          name: svc?.name ?? 'Service',
+          quantity,
+          rate,
+          amount: rate * quantity,
+        };
+      });
+  }, [watchedItems, services]);
+
+  const subtotal = lineRows.reduce((sum, row) => sum + row.amount, 0);
+
   const walkInHref = buildWalkInPrefillHref(profile.phone, profile.name);
+
+  function addAssistedService(serviceId: string, qty: number) {
+    const items = form.getValues('items');
+    const idx = items.findIndex((i) => i.service_id === serviceId);
+    if (idx >= 0) {
+      const current = Number(items[idx]?.quantity) || 0;
+      form.setValue(`items.${idx}.quantity`, current + qty);
+      return;
+    }
+    const emptyIdx = items.findIndex((i) => !i.service_id);
+    if (emptyIdx >= 0) {
+      form.setValue(`items.${emptyIdx}.service_id`, serviceId);
+      form.setValue(`items.${emptyIdx}.quantity`, qty);
+    } else {
+      append({ service_id: serviceId, quantity: qty });
+    }
+  }
+
+  function setAssistedLineQty(serviceId: string, quantity: number) {
+    const items = form.getValues('items');
+    const idx = items.findIndex((i) => i.service_id === serviceId);
+    if (idx < 0) return;
+    if (quantity < 1) {
+      remove(idx);
+      if (form.getValues('items').length === 0) {
+        append({ service_id: '', quantity: 1 });
+      }
+    } else {
+      form.setValue(`items.${idx}.quantity`, quantity);
+    }
+  }
 
   function onSubmit(values: AssistedOrderFormValues) {
     if (!laundryId) {
@@ -187,18 +259,12 @@ export function PartnerCustomerDeskPlaceOrderForm({
     createM.mutate({ payload, idempotencyKey });
   }
 
-  return (
-    <form
-      className="space-y-4"
-      onSubmit={form.handleSubmit(onSubmit)}
-      noValidate
-      aria-label="Place assisted doorstep order"
-    >
+  const banners = (
+    <>
       <InfoBanner variant="default" title="Doorstep pickup">
         Creates an assisted doorstep order for <strong>{laundryName}</strong> (not walk-in).
         Payment defaults to COD.
       </InfoBanner>
-
       {reorder ? (
         <InfoBanner variant="default" title={`Order same as last time (#${reorder.trackingCode})`}>
           Prefilling services from the past order. Prices refresh from your current catalog — edit
@@ -212,182 +278,309 @@ export function PartnerCustomerDeskPlaceOrderForm({
           ) : null}
         </InfoBanner>
       ) : null}
+    </>
+  );
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="partner-desk-customer-name">Customer name</Label>
-          <Input
-            id="partner-desk-customer-name"
-            autoComplete="name"
-            {...form.register('customer_name')}
-          />
-          {form.formState.errors.customer_name ? (
-            <p className="text-sm text-danger" role="alert">
-              {form.formState.errors.customer_name.message}
-            </p>
-          ) : null}
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="partner-desk-phone">Phone</Label>
-          <Input
-            id="partner-desk-phone"
-            className="font-mono"
-            readOnly
-            aria-readonly="true"
-            {...form.register('phone')}
-          />
-        </div>
-      </div>
-
-      <fieldset className="space-y-3 rounded-lg border border-border/80 p-3">
-        <legend className="px-1 text-sm font-medium">Pickup address</legend>
-        <div className="space-y-1.5">
-          <Label htmlFor="partner-desk-line1">Address line 1</Label>
-          <Input id="partner-desk-line1" {...form.register('address_line1')} />
-          {form.formState.errors.address_line1 ? (
-            <p className="text-sm text-danger" role="alert">
-              {form.formState.errors.address_line1.message}
-            </p>
-          ) : null}
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="partner-desk-line2">Address line 2 (optional)</Label>
-          <Input id="partner-desk-line2" {...form.register('address_line2')} />
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="partner-desk-city">City</Label>
-            <Input id="partner-desk-city" {...form.register('address_city')} />
-            {form.formState.errors.address_city ? (
-              <p className="text-sm text-danger" role="alert">
-                {form.formState.errors.address_city.message}
-              </p>
-            ) : null}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="partner-desk-pincode">Pincode</Label>
-            <Input
-              id="partner-desk-pincode"
-              inputMode="numeric"
-              maxLength={6}
-              {...form.register('address_pincode')}
-            />
-            {form.formState.errors.address_pincode ? (
-              <p className="text-sm text-danger" role="alert">
-                {form.formState.errors.address_pincode.message}
-              </p>
-            ) : null}
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="partner-desk-landmark">Landmark (optional)</Label>
-          <Input id="partner-desk-landmark" {...form.register('address_landmark')} />
-        </div>
-      </fieldset>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="partner-desk-pickup">Pickup</Label>
-          <Input id="partner-desk-pickup" type="datetime-local" {...form.register('pickup_at')} />
-          {form.formState.errors.pickup_at ? (
-            <p className="text-sm text-danger" role="alert">
-              {form.formState.errors.pickup_at.message}
-            </p>
-          ) : null}
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="partner-desk-delivery">Delivery</Label>
-          <Input
-            id="partner-desk-delivery"
-            type="datetime-local"
-            {...form.register('delivery_at')}
-          />
-          {form.formState.errors.delivery_at ? (
-            <p className="text-sm text-danger" role="alert">
-              {form.formState.errors.delivery_at.message}
-            </p>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <Label>Services</Label>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1 text-xs"
-            onClick={() => append({ service_id: '', quantity: 1 })}
-            disabled={!services.length}
-          >
-            <Plus className="h-3.5 w-3.5" aria-hidden />
-            Add line
-          </Button>
-        </div>
-        {servicesQ.isLoading ? (
-          <p className="text-xs text-muted-foreground">Loading services…</p>
-        ) : services.length === 0 ? (
-          <p className="text-xs text-muted-foreground">
-            No active services — add them in your catalog first.
-          </p>
-        ) : null}
-        {fields.map((field, index) => (
-          <div
-            key={field.id}
-            className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-end"
-          >
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <Label htmlFor={`partner-desk-service-${index}`}>Service</Label>
-              <Select
-                id={`partner-desk-service-${index}`}
-                {...form.register(`items.${index}.service_id`)}
-                disabled={!services.length}
-              >
-                <option value="">Select service</option>
-                {services.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} — ₹{s.price_inr}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="w-full space-y-1.5 sm:w-24">
-              <Label htmlFor={`partner-desk-qty-${index}`}>Qty</Label>
-              <Input
-                id={`partner-desk-qty-${index}`}
-                type="number"
-                min={1}
-                {...form.register(`items.${index}.quantity`)}
-              />
-            </div>
-            {fields.length > 1 ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="shrink-0 text-danger"
-                aria-label={`Remove service line ${index + 1}`}
-                onClick={() => remove(index)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            ) : null}
-          </div>
-        ))}
-        {form.formState.errors.items?.message || form.formState.errors.items?.root?.message ? (
-          <p className="text-sm text-danger" role="alert">
-            {form.formState.errors.items.message ?? form.formState.errors.items.root?.message}
-          </p>
-        ) : null}
-      </div>
-
+  const customerFields = (
+    <div className="grid gap-3 sm:grid-cols-2">
       <div className="space-y-1.5">
-        <Label htmlFor="partner-desk-notes">Notes (optional)</Label>
-        <Textarea id="partner-desk-notes" rows={2} {...form.register('notes')} />
+        <Label htmlFor="partner-desk-customer-name">Customer name</Label>
+        <Input
+          id="partner-desk-customer-name"
+          autoComplete="name"
+          className={isOps ? 'min-h-[44px]' : undefined}
+          {...form.register('customer_name')}
+        />
+        {form.formState.errors.customer_name ? (
+          <p className="text-sm text-danger" role="alert">
+            {form.formState.errors.customer_name.message}
+          </p>
+        ) : null}
       </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="partner-desk-phone">Phone</Label>
+        <Input
+          id="partner-desk-phone"
+          className={isOps ? 'min-h-[44px] font-mono' : 'font-mono'}
+          readOnly
+          aria-readonly="true"
+          {...form.register('phone')}
+        />
+      </div>
+    </div>
+  );
 
-      <div className="flex flex-col gap-2 border-t border-border/60 pt-3">
+  const addressFieldset = (
+    <fieldset
+      className={
+        isOps
+          ? 'space-y-3 rounded-3xl border border-border bg-muted/20 p-4'
+          : 'space-y-3 rounded-lg border border-border/80 p-3'
+      }
+    >
+      <legend className="px-1 text-sm font-medium">Pickup address</legend>
+      <div className="space-y-1.5">
+        <Label htmlFor="partner-desk-line1">Address line 1</Label>
+        <Input id="partner-desk-line1" {...form.register('address_line1')} />
+        {form.formState.errors.address_line1 ? (
+          <p className="text-sm text-danger" role="alert">
+            {form.formState.errors.address_line1.message}
+          </p>
+        ) : null}
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="partner-desk-line2">Address line 2 (optional)</Label>
+        <Input id="partner-desk-line2" {...form.register('address_line2')} />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="partner-desk-city">City</Label>
+          <Input id="partner-desk-city" {...form.register('address_city')} />
+          {form.formState.errors.address_city ? (
+            <p className="text-sm text-danger" role="alert">
+              {form.formState.errors.address_city.message}
+            </p>
+          ) : null}
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="partner-desk-pincode">Pincode</Label>
+          <Input
+            id="partner-desk-pincode"
+            inputMode="numeric"
+            maxLength={6}
+            {...form.register('address_pincode')}
+          />
+          {form.formState.errors.address_pincode ? (
+            <p className="text-sm text-danger" role="alert">
+              {form.formState.errors.address_pincode.message}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="partner-desk-landmark">Landmark (optional)</Label>
+        <Input id="partner-desk-landmark" {...form.register('address_landmark')} />
+      </div>
+    </fieldset>
+  );
+
+  const scheduleFields = (
+    <div className={cn('grid gap-3', isOps ? 'grid-cols-1' : 'sm:grid-cols-2')}>
+      <div className="space-y-1.5">
+        <Label htmlFor="partner-desk-pickup">Pickup</Label>
+        <Input
+          id="partner-desk-pickup"
+          type="datetime-local"
+          className={isOps ? 'min-h-[44px]' : undefined}
+          {...form.register('pickup_at')}
+        />
+        {form.formState.errors.pickup_at ? (
+          <p className="text-sm text-danger" role="alert">
+            {form.formState.errors.pickup_at.message}
+          </p>
+        ) : null}
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="partner-desk-delivery">Delivery</Label>
+        <Input
+          id="partner-desk-delivery"
+          type="datetime-local"
+          className={isOps ? 'min-h-[44px]' : undefined}
+          {...form.register('delivery_at')}
+        />
+        {form.formState.errors.delivery_at ? (
+          <p className="text-sm text-danger" role="alert">
+            {form.formState.errors.delivery_at.message}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  const defaultServicesBlock = (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <Label>Services</Label>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1 text-xs"
+          onClick={() => append({ service_id: '', quantity: 1 })}
+          disabled={!services.length}
+        >
+          <Plus className="h-3.5 w-3.5" aria-hidden />
+          Add line
+        </Button>
+      </div>
+      {servicesQ.isLoading ? (
+        <p className="text-xs text-muted-foreground">Loading services…</p>
+      ) : services.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          No active services — add them in your catalog first.
+        </p>
+      ) : null}
+      {fields.map((field, index) => (
+        <div
+          key={field.id}
+          className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-end"
+        >
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Label htmlFor={`partner-desk-service-${index}`}>Service</Label>
+            <Select
+              id={`partner-desk-service-${index}`}
+              {...form.register(`items.${index}.service_id`)}
+              disabled={!services.length}
+            >
+              <option value="">Select service</option>
+              {services.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} — ₹{s.price_inr}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="w-full space-y-1.5 sm:w-24">
+            <Label htmlFor={`partner-desk-qty-${index}`}>Qty</Label>
+            <Input
+              id={`partner-desk-qty-${index}`}
+              type="number"
+              min={1}
+              {...form.register(`items.${index}.quantity`)}
+            />
+          </div>
+          {fields.length > 1 ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0 text-danger"
+              aria-label={`Remove service line ${index + 1}`}
+              onClick={() => remove(index)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          ) : null}
+        </div>
+      ))}
+      {form.formState.errors.items?.message || form.formState.errors.items?.root?.message ? (
+        <p className="text-sm text-danger" role="alert">
+          {form.formState.errors.items.message ?? form.formState.errors.items.root?.message}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  const opsServicesBlock = (
+    <div className="space-y-3">
+      <PartnerOpsSectionLabel>Services</PartnerOpsSectionLabel>
+      {servicesQ.isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading services…</p>
+      ) : services.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No active services — add them in your catalog first.
+        </p>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {services.map((svc) => (
+            <PartnerServiceTile
+              key={svc.id}
+              service={svc}
+              onAdd={() => {
+                setDialogService(svc);
+                setDialogOpen(true);
+              }}
+            />
+          ))}
+        </div>
+      )}
+      <PartnerOpsSectionLabel>Line items</PartnerOpsSectionLabel>
+      <div className="overflow-hidden rounded-3xl border border-border">
+        <PartnerNewOrderLineItemsTable
+          rows={lineRows}
+          emptyMessage="Add services from the tiles above."
+          onSetQty={setAssistedLineQty}
+          onRemove={(serviceId: string) => setAssistedLineQty(serviceId, 0)}
+        />
+      </div>
+      {form.formState.errors.items?.message || form.formState.errors.items?.root?.message ? (
+        <p className="text-sm text-danger" role="alert">
+          {form.formState.errors.items.message ?? form.formState.errors.items.root?.message}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  const footerActions = (
+    <div className="flex flex-col gap-2 border-t border-border/60 pt-3">
+      <Button
+        type="submit"
+        className="min-h-[48px] w-full text-base"
+        disabled={createM.isPending || !laundryId}
+        aria-busy={createM.isPending}
+      >
+        {createM.isPending ? (
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+        ) : (
+          'Place doorstep order'
+        )}
+      </Button>
+      <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:justify-between">
+        <Button asChild type="button" variant="outline" className="min-h-[44px] gap-1.5">
+          <Link
+            href={walkInHref}
+            aria-label={`Record walk-in order for ${profile.name ?? profile.phone ?? 'customer'}`}
+          >
+            <Store className="h-4 w-4" aria-hidden />
+            Record walk-in instead
+          </Link>
+        </Button>
+        <Button
+          type="button"
+          variant="link"
+          className="h-auto justify-start px-0 text-sm"
+          onClick={onCreateBookingRequest}
+        >
+          Create booking request
+        </Button>
+      </div>
+    </div>
+  );
+
+  const opsSummaryAside = (
+    <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+      <PartnerOpsSurface variant="muted" className="space-y-4 !p-4">
+        <div>
+          <PartnerOpsSectionLabel as="h2">Order summary</PartnerOpsSectionLabel>
+          <p className="mt-1 text-sm text-muted-foreground">Doorstep · COD</p>
+        </div>
+        <div className="space-y-3 rounded-3xl border border-border bg-background/80 p-4">
+          {scheduleFields}
+          <div className="space-y-1.5">
+            <Label htmlFor="partner-desk-notes">Notes (optional)</Label>
+            <Textarea id="partner-desk-notes" rows={2} {...form.register('notes')} />
+          </div>
+          <div className="space-y-2 border-t border-border/60 pt-3 text-sm">
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
+                {lineRows.length} service{lineRows.length === 1 ? '' : 's'}
+              </span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground">Subtotal (catalog)</span>
+              <span className="font-medium tabular-nums">{formatInr(subtotal)}</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Delivery fee and GST are calculated when the order is saved.
+            </p>
+          </div>
+        </div>
+        <div className="rounded-3xl bg-muted p-4">
+          <div className="flex items-center justify-between text-base font-semibold">
+            <span>Grand total (est.)</span>
+            <span className="tabular-nums">{formatInr(subtotal)}</span>
+          </div>
+        </div>
         <Button
           type="submit"
           className="min-h-[48px] w-full text-base"
@@ -400,12 +593,9 @@ export function PartnerCustomerDeskPlaceOrderForm({
             'Place doorstep order'
           )}
         </Button>
-        <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:justify-between">
+        <div className="flex flex-col gap-2">
           <Button asChild type="button" variant="outline" className="min-h-[44px] gap-1.5">
-            <Link
-              href={walkInHref}
-              aria-label={`Record walk-in order for ${profile.name ?? profile.phone ?? 'customer'}`}
-            >
+            <Link href={walkInHref}>
               <Store className="h-4 w-4" aria-hidden />
               Record walk-in instead
             </Link>
@@ -419,7 +609,68 @@ export function PartnerCustomerDeskPlaceOrderForm({
             Create booking request
           </Button>
         </div>
+      </PartnerOpsSurface>
+      <PartnerNewOrderPrintHintCard />
+    </aside>
+  );
+
+  if (isOps) {
+    return (
+      <form
+        className="grid gap-5 xl:grid-cols-[1.55fr_0.95fr]"
+        onSubmit={form.handleSubmit(onSubmit)}
+        noValidate
+        aria-label="Place assisted doorstep order"
+      >
+        <PartnerNewOrderServiceAddDialog
+          service={dialogService}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onConfirm={(qty: number) => {
+            if (dialogService) addAssistedService(dialogService.id, qty);
+          }}
+        />
+        <PartnerOpsSurface className="space-y-6">
+          <div className="space-y-1">
+            <p className="text-lg font-semibold tracking-tight">New order / Create order</p>
+            <p className="text-sm text-muted-foreground">
+              Search customer and add services with popup entry.
+            </p>
+          </div>
+          {banners}
+          <div className="grid gap-4 rounded-3xl border border-border bg-muted/40 p-4">
+            <div>
+              <p className="text-sm font-semibold">Search customer</p>
+              <p className="text-xs text-muted-foreground">Profile from phone lookup.</p>
+            </div>
+            {customerFields}
+            <PartnerCustomerSnapshotCards profile={profile} stats={insightStats} />
+          </div>
+          {addressFieldset}
+          {opsServicesBlock}
+        </PartnerOpsSurface>
+        {opsSummaryAside}
+      </form>
+    );
+  }
+
+  return (
+    <form
+      className="space-y-4"
+      onSubmit={form.handleSubmit(onSubmit)}
+      noValidate
+      aria-label="Place assisted doorstep order"
+    >
+      {banners}
+      {customerFields}
+      {addressFieldset}
+      {scheduleFields}
+      {defaultServicesBlock}
+      <div className="space-y-1.5">
+        <Label htmlFor="partner-desk-notes-default">Notes (optional)</Label>
+        <Textarea id="partner-desk-notes-default" rows={2} {...form.register('notes')} />
       </div>
+      {footerActions}
     </form>
   );
 }

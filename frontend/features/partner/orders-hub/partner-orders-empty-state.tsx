@@ -1,6 +1,3 @@
-'use client';
-
-import Image from 'next/image';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
@@ -58,7 +55,7 @@ export function PartnerOrdersEmptyState({
           <Link href={buildOrdersHubPath('/partner/orders', 'desk')}>Find customer</Link>
         </Button>
         <Button asChild variant={filtered ? 'ghost' : 'outline'} size="sm" className="h-9">
-          <Link href="/partner/new-order">New order</Link>
+          <Link href={buildOrdersHubPath('/partner/orders', 'create')}>New order</Link>
         </Button>
       </div>
     </HubMotionBlock>

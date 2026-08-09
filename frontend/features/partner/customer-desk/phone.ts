@@ -25,17 +25,34 @@ export function buildCustomerWhatsAppUrl(phone: string, message?: string): strin
   return message ? `${base}?text=${encodeURIComponent(message)}` : base;
 }
 
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
+
+export type PartnerCreateFulfillment = 'walk_in' | 'doorstep';
+
+/** Customers & Orders → Create order tab with optional prefill. */
+export function buildPartnerCreateOrderHref(opts?: {
+  phone?: string | null;
+  name?: string | null;
+  fulfillment?: PartnerCreateFulfillment;
+  /** @deprecated Prefer `fulfillment`; `assisted` maps to doorstep. */
+  mode?: 'walk_in' | 'assisted';
+}): string {
+  const params = new URLSearchParams();
+  if (opts?.phone?.trim()) params.set('phone', opts.phone.trim());
+  if (opts?.name?.trim()) params.set('name', opts.name.trim());
+  const fulfillment =
+    opts?.fulfillment ?? (opts?.mode === 'assisted' ? 'doorstep' : 'walk_in');
+  if (fulfillment === 'doorstep') params.set('fulfillment', 'doorstep');
+  return buildOrdersHubPath('/partner/orders', 'create', params);
+}
+
 /** New Order workspace deep link (walk-in or assisted) with phone/name prefill. */
 export function buildNewOrderHref(
   phone: string,
   name?: string | null,
   mode: 'walk_in' | 'assisted' = 'walk_in',
 ): string {
-  const params = new URLSearchParams();
-  params.set('phone', phone);
-  if (name?.trim()) params.set('name', name.trim());
-  params.set('mode', mode);
-  return `/partner/new-order?${params.toString()}`;
+  return buildPartnerCreateOrderHref({ phone, name, mode });
 }
 
 /** @deprecated Prefer buildNewOrderHref — kept for walk-in list deep links. */

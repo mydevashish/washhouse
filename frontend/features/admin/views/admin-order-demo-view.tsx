@@ -50,8 +50,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 import { AdminContent } from '@/features/admin/components/admin-content';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
+import {
+  PartnerContent,
+  PartnerPageHeader,
+} from '@/features/partner/components/partner-content';
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 
 const customer = {
   name: 'Rahul Sharma',
@@ -215,7 +221,12 @@ const drycleanCategories = {
   },
 } as const;
 
-export function AdminOrderDemoView() {
+export type WashhouseOrderDemoVariant = 'admin' | 'partner';
+
+export function AdminOrderDemoView({
+  variant = 'admin',
+}: { variant?: WashhouseOrderDemoVariant } = {}) {
+  const isPartner = variant === 'partner';
   const [query, setQuery] = useState('Rahul Sharma');
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>(initialOrderItems);
   const [couponCode, setCouponCode] = useState('WELCOME10');
@@ -415,9 +426,16 @@ export function AdminOrderDemoView() {
     { label: 'Settings', icon: ShieldCheck, href: '/admin/settings' },
   ];
 
+  const Shell = isPartner ? PartnerContent : AdminContent;
+
   return (
-    <AdminContent className="space-y-5">
-      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+    <Shell className="space-y-5">
+      <div
+        className={cn(
+          isPartner ? 'space-y-5' : 'grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]',
+        )}
+      >
+        {!isPartner ? (
         <aside className="hidden xl:block">
           <div className="sticky top-6 space-y-4 rounded-[32px] border border-border bg-background p-5 shadow-sm">
             <div className="space-y-3 rounded-[28px] bg-primary/5 p-4 text-center">
@@ -465,8 +483,25 @@ export function AdminOrderDemoView() {
             </div>
           </div>
         </aside>
+        ) : null}
 
         <div className="space-y-5">
+          {isPartner ? (
+            <PartnerPageHeader
+              title="New Order / Laundry Dashboard"
+              description="Search customer, add services, print tags, invoice preview, and delivery dispatch."
+              actions={
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild size="sm" variant="outline">
+                    <Link href="/partner/orders">Orders</Link>
+                  </Button>
+                  <Button asChild size="sm">
+                    <Link href={buildOrdersHubPath('/partner/orders', 'desk')}>Customers</Link>
+                  </Button>
+                </div>
+              }
+            />
+          ) : (
           <AdminPageHeader
             title="New Order / Laundry Dashboard"
             description={`Section: ${activeMenu} · frontend demo with sidebar, photos, graphs and service add dialog.`}
@@ -481,6 +516,7 @@ export function AdminOrderDemoView() {
               </div>
             }
           />
+          )}
 
           <section className="grid gap-4 xl:grid-cols-[1.4fr_0.9fr]">
             <div className="space-y-4 rounded-[32px] border border-border bg-background p-5 shadow-sm">
@@ -1126,6 +1162,6 @@ export function AdminOrderDemoView() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AdminContent>
+    </Shell>
   );
 }

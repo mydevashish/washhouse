@@ -28,7 +28,7 @@ import {
 } from '@/features/partner/lib/owner-logistics';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { getApiErrorMessage } from '@/lib/api-error-message';
-import { formatInr } from '@/features/discover/detail/order-pricing';
+import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import { cn } from '@/lib/utils';
@@ -281,7 +281,7 @@ export function OwnerLogisticsBoard({
           description="New doorstep orders needing collection will show here."
           imageSrc={OWNER_IMAGES.logistics}
           imageAlt="Pickup van"
-          action={{ label: 'New Order', href: '/partner/new-order' }}
+          action={{ label: 'New Order', href: buildPartnerCreateOrderHref() }}
         />
       ) : null}
 

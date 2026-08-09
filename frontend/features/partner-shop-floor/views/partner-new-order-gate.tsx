@@ -1,27 +1,35 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 
-import { PartnerNewOrderView } from '@/features/partner/views/partner-new-order-view';
-import { ClothWallNewOrderView } from '@/features/partner-shop-floor/views/cloth-wall-new-order-view';
+import { Skeleton } from '@/components/ui/skeleton';
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 
 /**
- * `/partner/new-order` — Cloth Wall walk-in wizard by default;
- * `?mode=assisted` keeps the doorstep assisted desk flow.
- * Hub FAB / header sheet chooses the mode (P3).
+ * `/partner/new-order` — legacy bookmark; always opens Customers & Orders → Create order tab.
  */
 export function PartnerNewOrderGate() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const mode = searchParams.get('mode');
 
-  if (mode === 'assisted') {
-    return <PartnerNewOrderView />;
-  }
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const mode = params.get('mode');
+    if (mode === 'assisted') {
+      params.delete('mode');
+      params.set('fulfillment', 'doorstep');
+    } else if (mode === 'walk_in') {
+      params.delete('mode');
+    }
+    router.replace(buildOrdersHubPath('/partner/orders', 'create', params));
+  }, [router, searchParams]);
 
   return (
-    <ClothWallNewOrderView
-      title="New order"
-      description="Walk-in Cloth Wall — phone, tap clothes, confirm, then print tags"
-    />
+    <div className="space-y-4 p-4 sm:p-6" role="status" aria-live="polite">
+      <span className="sr-only">Opening create order</span>
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-40 w-full" />
+    </div>
   );
 }

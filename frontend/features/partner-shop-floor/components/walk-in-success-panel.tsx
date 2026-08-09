@@ -4,6 +4,7 @@ import {
   OrderCreateSuccessPanel,
   type OrderCreateSuccessOrder,
 } from '@/features/partner-shop-floor/components/order-create-success-panel';
+import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 import type { WalkInOrder } from '@/services/partner-walk-in-orders';
 
 type WalkInSuccessPanelProps = {
@@ -37,7 +38,7 @@ export function WalkInSuccessPanel({
       onStartWash={onStartWash}
       startWashPending={startWashPending}
       showStartWash
-      anotherOrderHref="/partner/new-order?mode=walk_in"
+      anotherOrderHref={buildPartnerCreateOrderHref()}
     />
   );
 }

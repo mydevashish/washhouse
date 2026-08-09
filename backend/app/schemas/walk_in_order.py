@@ -21,6 +21,13 @@ class WalkInCatalogProcess(str, Enum):
     single = "single"
 
 
+class WalkInCustomerGender(str, Enum):
+    """Counter intake — printed on tags to reduce mix-ups."""
+
+    male = "male"
+    female = "female"
+
+
 class WalkInOrderLineItemRequest(BaseModel):
     """Exactly one of ``service_id`` (legacy list) or ``catalog_item_id`` (Cloth Wall)."""
 
@@ -47,9 +54,11 @@ class WalkInOrderCreateRequest(BaseModel):
 
     customer_name: str = Field(min_length=1, max_length=200)
     customer_phone: str = Field(pattern=r"^\+?[1-9]\d{9,14}$")
+    customer_gender: WalkInCustomerGender | None = None
     items: list[WalkInOrderLineItemRequest] = Field(min_length=1)
     notes: str | None = Field(default=None, max_length=2000)
     expected_ready_at: datetime | None = None
+    coupon_code: str | None = Field(default=None, max_length=32)
 
 
 class WalkInOrderResponse(BaseModel):

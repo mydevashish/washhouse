@@ -2,6 +2,7 @@ import {
   buildOrdersHubPath,
   buildOrdersHubSearchParams,
   parseOrdersHubTab,
+  parsePartnerOrdersHubTab,
 } from '@/lib/navigation/orders-hub';
 
 describe('orders-hub navigation helpers', () => {
@@ -35,6 +36,15 @@ describe('orders-hub navigation helpers', () => {
     expect(buildOrdersHubPath('/partner/orders', 'directory', new URLSearchParams('foo=1'))).toBe(
       '/partner/orders?foo=1&tab=directory',
     );
+  });
+
+  it('builds partner create tab path', () => {
+    expect(buildOrdersHubPath('/partner/orders', 'create')).toBe('/partner/orders?tab=create');
+  });
+
+  it('parses partner create tab', () => {
+    expect(parsePartnerOrdersHubTab('create')).toBe('create');
+    expect(parsePartnerOrdersHubTab('desk')).toBe('desk');
   });
 
   it('omits tab query for the default orders tab', () => {

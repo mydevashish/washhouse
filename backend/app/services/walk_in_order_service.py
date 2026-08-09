@@ -28,9 +28,11 @@ from app.services.custody_event_service import CustodyEventService
 from app.services.order_events import publish_order_status_update
 from app.services.notifications.order_status_whatsapp_notifier import OrderStatusWhatsAppNotifier
 from app.services.platform_config_service import PlatformConfigService
+from app.services.partner_coupon_service import PartnerCouponService
 
 GST_RATE_PERCENT = Decimal("18")
 WALK_IN_NOTE = "Walk-in order recorded by partner"
+GENDER_NOTE_PREFIX = "Gender:"
 
 
 class WalkInOrderService:
@@ -51,7 +53,9 @@ class WalkInOrderService:
         customer_phone: str,
         items: list[dict[str, Any]],
         notes: str | None = None,
+        customer_gender: str | None = None,
         expected_ready_at: datetime | None = None,
+        coupon_code: str | None = None,
     ) -> Order:
         laundry = await self._laundries.get_by_owner(partner_user_id)
         if not laundry:
@@ -83,7 +87,15 @@ class WalkInOrderService:
                 ),
             )
 
-        taxable = subtotal
+        discount_inr, applied_code = await PartnerCouponService(self._session).resolve_discount(
+            partner_user_id,
+            coupon_code=coupon_code,
+            subtotal=subtotal,
+        )
+
+        taxable = subtotal - discount_inr
+        if taxable < Decimal("0"):
+            taxable = Decimal("0")
         half_gst = (taxable * GST_RATE_PERCENT / Decimal("200")).quantize(Decimal("0.01"))
         cgst = half_gst
         sgst = half_gst
@@ -109,7 +121,7 @@ class WalkInOrderService:
             order_source=OrderSource.walk_in,
             customer_name=customer_name.strip(),
             customer_phone=phone,
-            partner_notes=notes,
+            partner_notes=self._compose_partner_notes(notes, customer_gender),
             status=OrderStatus.confirmed,
             tracking_code=tracking_code,
             color_token=token.color_token,
@@ -119,6 +131,8 @@ class WalkInOrderService:
             pickup_at=now,
             delivery_at=ready_at,
             subtotal_inr=subtotal,
+            discount_inr=discount_inr,
+            coupon_code=applied_code,
             delivery_fee_inr=Decimal("0"),
             gst_rate=GST_RATE_PERCENT,
             cgst_inr=cgst,
@@ -309,6 +323,16 @@ class WalkInOrderService:
             if not existing:
                 return code
         raise ConflictError("Could not allocate tracking code")
+
+    @staticmethod
+    def _compose_partner_notes(notes: str | None, customer_gender: str | None) -> str | None:
+        parts: list[str] = []
+        if customer_gender:
+            label = "Male" if customer_gender == "male" else "Female"
+            parts.append(f"{GENDER_NOTE_PREFIX} {label}")
+        if notes and notes.strip():
+            parts.append(notes.strip())
+        return " · ".join(parts) if parts else None
 
     @staticmethod
     def _ensure_aware(value: datetime) -> datetime:

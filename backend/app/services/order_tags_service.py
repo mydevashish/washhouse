@@ -22,6 +22,20 @@ def phone_last4(phone: str | None) -> str:
     return digits or "----"
 
 
+def gender_short_from_notes(partner_notes: str | None) -> str | None:
+    if not partner_notes:
+        return None
+    for segment in partner_notes.split(" · "):
+        segment = segment.strip()
+        if segment.startswith("Gender:"):
+            rest = segment.removeprefix("Gender:").strip().lower()
+            if rest.startswith("m"):
+                return "M"
+            if rest.startswith("f"):
+                return "F"
+    return None
+
+
 class OrderTagsService:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -95,6 +109,10 @@ class OrderTagsService:
                 )
 
         phone = order.customer_phone or ""
+        gender = gender_short_from_notes(order.partner_notes)
+        customer_meta = order.customer_name or "Walk-in customer"
+        if gender:
+            customer_meta = f"{customer_meta} ({gender})"
         return OrderTagsResponse(
             order_id=order.id,
             laundry_id=order.laundry_id,
@@ -103,7 +121,7 @@ class OrderTagsService:
             token_code=order.token_code,
             token_day_number=order.token_day_number,
             token_assigned_on=order.token_assigned_on,
-            customer_name=order.customer_name or "Walk-in customer",
+            customer_name=customer_meta,
             customer_phone=phone,
             customer_phone_last4=phone_last4(phone),
             tracking_code=order.tracking_code,

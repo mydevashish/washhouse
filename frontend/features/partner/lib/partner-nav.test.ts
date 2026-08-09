@@ -27,9 +27,17 @@ describe('partner Customers & Orders Hub nav (P1)', () => {
       'shop',
       'system',
     ]);
-    expect(operations?.items.map((i) => i.label)).toEqual([PARTNER_CUSTOMERS_ORDERS_LABEL]);
-    expect(operations?.items.map((i) => i.href)).toEqual([PARTNER_ORDERS_HUB_HREF]);
-    expect(operations?.items.some((i) => i.label === 'New Order')).toBe(false);
+    expect(operations?.items.map((i) => i.label)).toEqual([
+      PARTNER_CUSTOMERS_ORDERS_LABEL,
+      'Services',
+      'Coupons',
+    ]);
+    expect(operations?.items.map((i) => i.href)).toEqual([
+      PARTNER_ORDERS_HUB_HREF,
+      '/partner/services',
+      '/partner/coupons',
+    ]);
+    expect(operations?.items.some((i) => i.label === 'New order')).toBe(false);
     expect(operations?.items.some((i) => i.label === 'Walk-in orders')).toBe(false);
     expect(operations?.items.some((i) => i.label === 'Customer Desk')).toBe(false);
     expect(operations?.items.some((i) => i.label === 'Booking requests')).toBe(false);
@@ -65,6 +73,7 @@ describe('partner Customers & Orders Hub nav (P1)', () => {
     expect(resolvePartnerNavPathname('/partner/customers')).toBe(PARTNER_ORDERS_HUB_HREF);
     expect(resolvePartnerNavPathname('/partner/floor/print/abc/tags')).toBe(PARTNER_ORDERS_HUB_HREF);
     expect(resolvePartnerNavPathname('/partner/floor/new')).toBe(PARTNER_ORDERS_HUB_HREF);
+    expect(resolvePartnerNavPathname('/partner/new-order')).toBe(PARTNER_ORDERS_HUB_HREF);
   });
 
   it('highlights Customers & Orders for hub tabs, legacy CRM, intake, and print', () => {
@@ -79,14 +88,17 @@ describe('partner Customers & Orders Hub nav (P1)', () => {
     expect(isPartnerNavActive('/partner/booking-requests', PARTNER_ORDERS_HUB_HREF)).toBe(true);
     expect(isPartnerNavActive(PARTNER_PEOPLE_CUSTOMERS_HREF, PARTNER_ORDERS_HUB_HREF)).toBe(true);
     expect(isPartnerNavActive('/partner/new-order', PARTNER_ORDERS_HUB_HREF)).toBe(true);
+    expect(
+      isPartnerNavActive('/partner/orders', PARTNER_ORDERS_HUB_HREF, { tab: 'create' }),
+    ).toBe(true);
     expect(isPartnerNavActive('/partner/walk-in-orders', PARTNER_ORDERS_HUB_HREF)).toBe(true);
     expect(isPartnerNavActive('/partner/floor/new', PARTNER_ORDERS_HUB_HREF)).toBe(true);
     expect(isPartnerNavActive('/partner/floor/print', PARTNER_ORDERS_HUB_HREF)).toBe(true);
     expect(isPartnerNavActive('/partner/customer-desk', '/partner/staff')).toBe(false);
   });
 
-  it('titles hub, aliases, and Today correctly', () => {
-    expect(getPartnerPageTitle('/partner')).toBe('Today');
+  it('titles hub, aliases, and Dashboard correctly', () => {
+    expect(getPartnerPageTitle('/partner')).toBe('Dashboard');
     expect(getPartnerPageTitle('/partner/orders')).toBe(PARTNER_CUSTOMERS_ORDERS_LABEL);
     expect(getPartnerPageTitle('/partner/orders/11111111-1111-4111-8111-111111111111')).toBe(
       PARTNER_CUSTOMERS_ORDERS_LABEL,
@@ -94,6 +106,7 @@ describe('partner Customers & Orders Hub nav (P1)', () => {
     expect(getPartnerPageTitle('/partner/orders', 'directory')).toBe(PARTNER_CUSTOMERS_ORDERS_LABEL);
     expect(getPartnerPageTitle('/partner/customers')).toBe(PARTNER_CUSTOMERS_ORDERS_LABEL);
     expect(getPartnerPageTitle('/partner/new-order')).toBe(PARTNER_CUSTOMERS_ORDERS_LABEL);
+    expect(getPartnerPageTitle('/partner/orders', 'create')).toBe('New order');
     expect(getPartnerPageTitle('/partner/walk-in-orders')).toBe(PARTNER_CUSTOMERS_ORDERS_LABEL);
     expect(getPartnerPageTitle('/partner/floor/print')).toBe(PARTNER_CUSTOMERS_ORDERS_LABEL);
     expect(getPartnerPageTitle('/partner/customer-desk')).toBe(PARTNER_CUSTOMERS_ORDERS_LABEL);

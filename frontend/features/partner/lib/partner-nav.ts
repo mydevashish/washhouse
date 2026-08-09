@@ -11,12 +11,14 @@ import {
   Settings,
   Sparkles,
   Star,
+  Ticket,
   Truck,
   UserCog,
   Wallet,
 } from 'lucide-react';
 
 import { isPathNavLinkActive } from '@/lib/navigation/nav-active';
+import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 
 export type PartnerNavBadgeKey = 'orders' | 'pickups' | 'notifications' | 'bookingRequests';
 
@@ -51,6 +53,12 @@ export const PARTNER_LOGISTICS_HREF = '/partner/logistics';
 /** Legacy logistics paths map onto the Logistics hub for active state / titles. */
 export const PARTNER_LOGISTICS_ALIASES = ['/partner/pickups', '/partner/deliveries'] as const;
 
+/** Legacy intake bookmark — redirects into hub `?tab=create`. */
+export const PARTNER_NEW_ORDER_HREF = '/partner/new-order';
+
+/** Partner-managed discount codes. */
+export const PARTNER_COUPONS_HREF = '/partner/coupons';
+
 /**
  * Paths that belong to Customers & Orders Hub for active state / titles.
  * Intake + print modules stay reachable but highlight the hub.
@@ -60,8 +68,8 @@ export const PARTNER_ORDERS_HUB_ALIASES = [
   '/partner/customer-desk',
   '/partner/booking-requests',
   '/partner/customers',
-  '/partner/new-order',
   '/partner/walk-in-orders',
+  '/partner/new-order',
   '/partner/floor/new',
   '/partner/floor/print',
 ] as const;
@@ -98,10 +106,22 @@ export const PARTNER_ORDERS_HUB_SEARCH_ALIASES: ReadonlyArray<{
     keywords: 'directory insights customers analytics people',
   },
   {
+    id: 'p-ops-services',
+    label: 'Services',
+    href: '/partner/services',
+    keywords: 'service catalog dry clean wash fold pricing crud',
+  },
+  {
     id: 'p-orders-hub-new-order',
     label: 'New Order',
-    href: '/partner/new-order',
+    href: buildOrdersHubPath('/partner/orders', 'create'),
     keywords: 'new order create walk-in cloth wall intake',
+  },
+  {
+    id: 'p-partner-coupons',
+    label: 'Coupons',
+    href: PARTNER_COUPONS_HREF,
+    keywords: 'coupon discount promo code crud',
   },
   {
     id: 'p-orders-hub-walk-in',
@@ -124,8 +144,8 @@ export const PARTNER_ORDERS_HUB_SEARCH_ALIASES: ReadonlyArray<{
 export const PARTNER_NAV_SECTIONS: PartnerNavSection[] = [
   {
     id: 'today',
-    label: 'Today',
-    items: [{ href: '/partner', label: 'Today', icon: LayoutDashboard }],
+    label: 'Dashboard',
+    items: [{ href: '/partner', label: 'Dashboard', icon: LayoutDashboard }],
   },
   {
     id: 'operations',
@@ -137,6 +157,8 @@ export const PARTNER_NAV_SECTIONS: PartnerNavSection[] = [
         icon: Package,
         badgeKeys: ['orders', 'bookingRequests'],
       },
+      { href: '/partner/services', label: 'Services', icon: ClipboardList },
+      { href: PARTNER_COUPONS_HREF, label: 'Coupons', icon: Ticket },
     ],
   },
   {
@@ -242,15 +264,22 @@ export function isPartnerNavActive(
 ): boolean {
   const effectiveHref = stripNavQuery(href);
   const effectivePath = resolvePartnerNavPathname(pathname);
-  // `opts.tab` reserved for future tab-scoped nav items; hub owns all `?tab=*`.
-  void opts;
+  const tab = opts?.tab ?? null;
+
+  if (effectiveHref === PARTNER_ORDERS_HUB_HREF && tab === 'create') {
+    return true;
+  }
+
   return isPathNavLinkActive(effectivePath, effectiveHref, navFlatPaths(), ['/partner']);
 }
 
 export function getPartnerPageTitle(pathname: string, tab?: string | null): string {
-  void tab;
   const effectivePath = resolvePartnerNavPathname(pathname);
+  if (effectivePath === PARTNER_ORDERS_HUB_HREF && tab === 'create') {
+    return 'New order';
+  }
   return (
-    PARTNER_NAV_FLAT.find((n) => isPartnerNavActive(effectivePath, n.href))?.label ?? 'Partner'
+    PARTNER_NAV_FLAT.find((n) => isPartnerNavActive(effectivePath, n.href, { tab }))?.label ??
+    'Partner'
   );
 }

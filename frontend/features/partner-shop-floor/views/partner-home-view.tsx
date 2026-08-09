@@ -1,8 +1,8 @@
 'use client';
 
-import { PartnerOverviewView } from '@/features/partner/views/partner-overview-view';
+import { PartnerLaundryDashboardView } from '@/features/partner/views/partner-laundry-dashboard-view';
 
-/** `/partner` — always Owner Command Center overview (Shop Floor home retired). */
+/** `/partner` — WashHouse ops dashboard (demo layout, live APIs). */
 export function PartnerHomeView() {
-  return <PartnerOverviewView />;
+  return <PartnerLaundryDashboardView />;
 }

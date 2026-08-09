@@ -4,7 +4,7 @@ import {
   buildPartnerOrdersQueuePath,
   chipPresetUrlPatch,
 } from '@/features/partner/orders-hub/partner-orders-hub-queue';
-import { buildNewOrderHref } from '@/features/partner/customer-desk/phone';
+import { buildNewOrderHref, buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 
 export const metadata = { title: 'Partner · Walk-in orders' };
 
@@ -32,7 +32,7 @@ export default async function PartnerWalkInOrdersRedirectPage({ searchParams }: 
     permanentRedirect(buildNewOrderHref(phone, name, mode ?? 'walk_in'));
   }
   if (mode) {
-    permanentRedirect(`/partner/new-order?mode=${mode}`);
+    permanentRedirect(buildPartnerCreateOrderHref({ mode }));
   }
 
   const patch = chipPresetUrlPatch('walk_in');
