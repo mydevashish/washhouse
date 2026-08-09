@@ -2,7 +2,7 @@
 
 > Updated whenever a major milestone shifts. The source of truth for "where are we?".
 
-**Last updated:** 2026-08-08
+**Last updated:** 2026-08-09
 
 ## Phase
 
@@ -26,6 +26,7 @@
 - **Partner Shop Floor Mode** (2026-08-08): **display mode retired** — no toggle; no floor home/boards chrome; print + Cloth Wall remain as shared modules; `today`/`ready`/`more` redirect to hub chips / settings. Spec history: [partner-shop-floor.md](../../docs/features/partner-shop-floor.md).
 - **Partner Owner Command Center** (2026-08-08): **in progress** — P1–P6 (nav, agentic home, money, logistics, customer CRM, staff roster/coverage). Spec: [partner-owner-command-center.md](../../docs/features/partner-owner-command-center.md). Next: Prompt 7 (polish/QA). Evolve nav with Customers & Orders Hub (do not fork).
 - **UI fix + backend pagination** (2026-08-08): Prompts **0–8** **done**. List pagination standard enforced (default **10**); QA matrix + regression tests locked. Pack: [ui-fix-and-backend-pagination.md](../prompts/ui-fix-and-backend-pagination.md). Matrix: [partner-admin-pagination-matrix.md](../../docs/qa/partner-admin-pagination-matrix.md).
+- **Partner WashHouse Ops Visual** (2026-08-09): **draft (Prompt 0)** — Admin demo patterns → typed `ops-visual` components; shell = overview-only metrics on `/partner` (no duplicate nav). Spec: [partner-washhouse-ops-visual.md](../../docs/features/partner-washhouse-ops-visual.md). Next: Prompt 1 primitives.
 
 ## Blocked / Waiting
 

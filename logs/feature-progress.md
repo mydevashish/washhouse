@@ -140,6 +140,12 @@
 - Next: Optional QR image on tags; no further dual-mode work
 - Non-goals (going forward): keeping dual display mode; Hindi-primary UI
 
+## Partner WashHouse Ops Visual
+- Status: **planned** (Prompt 0 spec — 2026-08-09)
+- Spec: `docs/features/partner-washhouse-ops-visual.md`
+- Why: Unify WashHouse ops chrome (hero, KPI, status bars, create layout) from admin demo reference into partner routes without forked nav or fake metrics.
+- Next: Prompt 1 — `frontend/features/partner/components/ops-visual/` primitives
+
 ## Partner Owner Command Center (Advanced Mode)
 - Status: **in-progress** (P6 shipped 2026-08-08 — Prompt 6)
 - Spec: `docs/features/partner-owner-command-center.md`

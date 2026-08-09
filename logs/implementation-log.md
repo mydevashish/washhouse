@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-08-09 — Partner WashHouse Ops Visual (Prompt 0 spec)
+
+- **Type:** docs
+- **Scope:** partner-washhouse-ops-visual
+- **Files:** `docs/features/partner-washhouse-ops-visual.md`, `.cursor/context/current-status.md`, `logs/feature-progress.md`
+- **Summary:** Locked admin-demo adoption checklist, overview-only shell metrics strategy, component map, route wireframes, KPI/status data bindings, and Prompts 1–6 file plan.
+- **Risks:** Unpaid KPI requires extra list query until analytics aggregate ships.
+- **Next:** Prompt 1 — ops-visual primitives + prompt pack file.
+
+---
+
 ## 2026-08-08 — Customers & Orders Hub visual polish (Prompts 0–5)
 
 - **Type:** polish
