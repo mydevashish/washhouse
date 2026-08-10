@@ -2,6 +2,8 @@ import { api, type ApiEnvelope } from '@/lib/api';
 import { buildListQueryParams } from '@/lib/pagination/build-query';
 import type { ListQueryState, PaginatedList } from '@/lib/pagination/types';
 import type { OrderItem } from '@/services/orders';
+import { isAxiosError } from 'axios';
+import { partnerAnalyticsOverviewFromSummary } from '@/features/partner/lib/partner-analytics-overview-fallback';
 
 export interface PartnerAnalytics {
   laundry_id: string | null;
@@ -176,11 +178,19 @@ export interface PartnerAnalyticsOverview {
 export async function getPartnerAnalyticsOverview(
   period: PartnerDashboardPeriodParam,
 ): Promise<PartnerAnalyticsOverview> {
-  const { data } = await api.get<ApiEnvelope<PartnerAnalyticsOverview>>(
-    '/partner/analytics/overview',
-    { params: { period } },
-  );
-  return data.data;
+  try {
+    const { data } = await api.get<ApiEnvelope<PartnerAnalyticsOverview>>(
+      '/partner/analytics/overview',
+      { params: { period } },
+    );
+    return data.data;
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 404) {
+      const summary = await getPartnerAnalytics();
+      return partnerAnalyticsOverviewFromSummary(period, summary);
+    }
+    throw error;
+  }
 }
 
 export async function listPartnerCustomers(): Promise<PartnerCustomer[]> {
