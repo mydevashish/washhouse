@@ -75,9 +75,10 @@ export function PartnerCustomerDeskView({ embedded = false }: PartnerCustomerDes
   const phoneParam = searchParams.get('phone');
   const userIdParam = searchParams.get('user_id');
   const rawTab = searchParams.get('tab');
-  const tabParam =
+  type DeskUrlTab = PartnerDeskTab | 'place-order';
+  const tabParam: DeskUrlTab | null =
     rawTab === 'place-order' || rawTab === 'booking-requests' || rawTab === 'orders'
-      ? (rawTab as PartnerDeskTab)
+      ? rawTab
       : null;
 
   const urlLookup = useMemo(
@@ -88,7 +89,7 @@ export function PartnerCustomerDeskView({ embedded = false }: PartnerCustomerDes
   const [lookup, setLookup] = useState<CustomerDeskLookupParams | null>(urlLookup);
   const [deskOpen, setDeskOpen] = useState(Boolean(urlLookup));
   const [initialTab, setInitialTab] = useState<PartnerDeskTab>(
-    tabParam === 'place-order' || tabParam === 'booking-requests' ? tabParam : 'orders',
+    tabParam === 'booking-requests' ? 'booking-requests' : 'orders',
   );
   const [searchQuery, setSearchQuery] = useState(
     urlLookup && 'phone' in urlLookup ? urlLookup.phone : '',
@@ -100,12 +101,18 @@ export function PartnerCustomerDeskView({ embedded = false }: PartnerCustomerDes
   useEffect(() => {
     if (!urlLookup) return;
     setLookup(urlLookup);
-    setDeskOpen(true);
     if ('phone' in urlLookup) setSearchQuery(urlLookup.phone);
-    if (tabParam === 'place-order' || tabParam === 'booking-requests') {
-      setInitialTab(tabParam);
+    if (tabParam === 'place-order') {
+      router.replace(
+        buildPartnerCreateOrderHref('phone' in urlLookup ? { phone: urlLookup.phone } : {}),
+      );
+      return;
     }
-  }, [urlLookup, tabParam]);
+    setDeskOpen(true);
+    if (tabParam === 'booking-requests') {
+      setInitialTab('booking-requests');
+    }
+  }, [urlLookup, tabParam, router]);
 
   const previewQ = useQuery({
     queryKey: queryKeys.partnerCustomerDeskLookup(lookup ? customerDeskLookupKey(lookup) : ''),

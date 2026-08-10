@@ -9,6 +9,7 @@ import { PackageCheck, Phone, Search } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { ClientDate } from '@/components/ui/client-date';
+import { formatInr } from '@/features/discover/detail/order-pricing';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';

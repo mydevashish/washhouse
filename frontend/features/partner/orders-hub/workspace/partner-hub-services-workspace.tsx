@@ -59,7 +59,7 @@ export function usePartnerHubServicesKpis() {
   const active = useMemo(() => rows.filter((s) => s.is_active !== false), [rows]);
   const minPrice = useMemo(() => {
     if (active.length === 0) return null;
-    return Math.min(...active.map((s) => s.price_inr));
+    return Math.min(...active.map((s) => Number(s.price_inr)));
   }, [active]);
 
   return {

@@ -191,10 +191,7 @@ export function PartnerCustomerDeskDrawer({
                   size="sm"
                   variant="secondary"
                   className="min-h-[44px] gap-1.5"
-                  onClick={() => {
-                    setReorder(null);
-                    setTab('place-order');
-                  }}
+                  onClick={() => goCreateOrder('doorstep')}
                   aria-label={`New doorstep order for ${doorstepLabel}`}
                 >
                   <DoorOpen className="h-3.5 w-3.5" aria-hidden />
@@ -277,22 +274,17 @@ export function PartnerCustomerDeskDrawer({
                   aria-selected={tab === t.id}
                   aria-controls={`${tablistId}-panel-${t.id}`}
                   tabIndex={tab === t.id ? 0 : -1}
-                  onClick={() => {
-                    setTab(t.id);
-                    if (t.id !== 'place-order') setReorder(null);
-                  }}
+                  onClick={() => setTab(t.id)}
                   onKeyDown={(e) => {
                     const idx = TABS.findIndex((x) => x.id === tab);
                     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
                       e.preventDefault();
                       const next = TABS[(idx + 1) % TABS.length]!;
                       setTab(next.id);
-                      if (next.id !== 'place-order') setReorder(null);
                     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
                       e.preventDefault();
                       const next = TABS[(idx - 1 + TABS.length) % TABS.length]!;
                       setTab(next.id);
-                      if (next.id !== 'place-order') setReorder(null);
                     } else if (e.key === 'Home') {
                       e.preventDefault();
                       setTab(TABS[0]!.id);

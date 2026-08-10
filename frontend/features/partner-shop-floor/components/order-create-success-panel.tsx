@@ -16,6 +16,7 @@ import { FLOOR_VOICE_SUCCESS } from '@/features/partner-shop-floor/lib/floor-voi
 import { formatInr } from '@/features/discover/detail/order-pricing';
 import { usePrefersReducedMotion } from '@/lib/hooks/use-prefers-reduced-motion';
 import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
+import type { OrderItem } from '@/services/orders';
 import { cn } from '@/lib/utils';
 
 export type OrderCreateSuccessOrder = {
@@ -30,7 +31,7 @@ export type OrderCreateSuccessOrder = {
   payment_status?: string;
   delivery_at?: string;
   expected_ready_at?: string | null;
-  items?: { service_name: string; quantity: number }[];
+  items?: OrderItem[];
   whatsapp_order_received?: {
     eligible: boolean;
     status: string;

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Headset, Store } from 'lucide-react';
 import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';

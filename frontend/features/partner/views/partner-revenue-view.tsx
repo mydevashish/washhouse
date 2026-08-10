@@ -15,6 +15,7 @@ import {
   OwnerMoneyStat,
   OwnerSectionHeader,
 } from '@/features/partner/components/owner';
+import { formatInr } from '@/features/discover/detail/order-pricing';
 import { usePartnerAnalytics } from '@/features/partner/hooks/use-partner-operations';
 import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 import { getApiErrorMessage } from '@/lib/api-error-message';

@@ -22,7 +22,7 @@ describe('buildWalkInOrderReceivedWhatsAppBody', () => {
     expected_ready_at: '2026-08-12T14:30:00Z',
     token_code: 'R-42',
     color_token: 'red',
-    items: [{ service_name: 'Shirt', quantity: 2, unit_price_inr: '50', line_total_inr: '100' }],
+    items: [{ service_name: 'Shirt', quantity: 2, line_total_inr: '100' }],
   };
 
   it('includes items, token, and balance due', () => {
