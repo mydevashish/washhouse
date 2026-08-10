@@ -1,35 +1,35 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
+import { PartnerWalkInOrderWorkspace } from '@/features/partner/components/ops-visual';
 
-/**
- * `/partner/new-order` — legacy bookmark; always opens Customers & Orders → Create order tab.
- */
-export function PartnerNewOrderGate() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    const mode = params.get('mode');
-    if (mode === 'assisted') {
-      params.delete('mode');
-      params.set('fulfillment', 'doorstep');
-    } else if (mode === 'walk_in') {
-      params.delete('mode');
-    }
-    router.replace(buildOrdersHubPath('/partner/orders', 'create', params));
-  }, [router, searchParams]);
-
+function NewOrderFallback() {
   return (
-    <div className="space-y-4 p-4 sm:p-6" role="status" aria-live="polite">
-      <span className="sr-only">Opening create order</span>
+    <div className="space-y-4" role="status" aria-busy="true">
       <Skeleton className="h-8 w-48" />
       <Skeleton className="h-40 w-full" />
     </div>
+  );
+}
+
+/** `/partner/new-order` — walk-in / doorstep intake (no hub tab). */
+export function PartnerNewOrderGate() {
+  const searchParams = useSearchParams();
+  const mode = searchParams.get('mode');
+  const fulfillment =
+    searchParams.get('fulfillment') === 'doorstep' || mode === 'assisted' ? 'doorstep' : 'walk_in';
+
+  return (
+    <Suspense fallback={<NewOrderFallback />}>
+      <PartnerWalkInOrderWorkspace
+        embedded
+        initialName={searchParams.get('name') ?? ''}
+        initialPhone={searchParams.get('phone') ?? ''}
+        initialFulfillment={fulfillment}
+      />
+    </Suspense>
   );
 }

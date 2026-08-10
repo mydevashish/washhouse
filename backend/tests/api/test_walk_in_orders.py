@@ -353,11 +353,13 @@ async def test_send_order_status_whatsapp_uses_provider(
     mock_provider.send_template.assert_awaited_once()
     call_args = mock_provider.send_template.await_args
     assert call_args.args[0] == "+919900011122"
-    assert call_args.args[1] == "order_received"
+    assert call_args.args[1] == "order_received_detailed"
     variables = call_args.args[2]
     assert variables["customer_name"] == "WhatsApp Test"
     assert variables["tracking_code"] == order.tracking_code
     assert variables["laundry_name"] == laundry.name
+    assert "items_summary" in variables
+    assert variables["bag_token"].startswith("R-")
 
 
 @patch("app.tasks.order_notifications.send_order_status_whatsapp")

@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { AlertTriangle, ChevronLeft, ChevronRight, Loader2, Shirt, Sparkles } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -36,6 +38,7 @@ import {
 import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 import {
   usePartnerWalkInOrderComposer,
+  type PartnerWalkInOrderComposer,
   type WalkInComposerFulfillment,
   type WalkInComposerStep,
 } from '@/features/partner/hooks/use-partner-walk-in-order-composer';
@@ -43,7 +46,9 @@ import type { ServiceCatalogItem } from '@/services/partner-service-catalog';
 import { applySuggestedPartnerPrices } from '@/features/partner-price-list/api/partner-price-list';
 import { PartnerGarmentOfferDialog } from '@/features/partner-price-list/components/partner-garment-offer-dialog';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { listPartnerCoupons } from '@/services/partner-coupons';
 import { queryKeys } from '@/lib/query-keys';
+import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -53,6 +58,13 @@ type Props = {
   initialName?: string;
   initialPhone?: string;
   initialFulfillment?: WalkInComposerFulfillment;
+  /** When set (e.g. dashboard dialog), reuse this composer instance. */
+  composer?: PartnerWalkInOrderComposer;
+  presentation?: 'page' | 'dialog';
+  /** Skip full-page success UI — parent handles post-create (dashboard modal). */
+  suppressSuccessScreen?: boolean;
+  lookupOnlyOnCustomerStep?: boolean;
+  debounceLookupMs?: number;
 };
 
 const STEPS: { id: WalkInComposerStep; label: string }[] = [
@@ -118,15 +130,59 @@ export function PartnerWalkInOrderWorkspace({
   initialName = '',
   initialPhone = '',
   initialFulfillment = 'walk_in',
+  composer: composerProp,
+  presentation = 'page',
+  suppressSuccessScreen = false,
+  lookupOnlyOnCustomerStep = true,
+  debounceLookupMs,
 }: Props) {
-  const renderPostCreatePanels = showPostCreatePanels || !embedded;
-  const c = usePartnerWalkInOrderComposer({
+  const composerFromHook = usePartnerWalkInOrderComposer({
     initialName,
     initialPhone,
     initialFulfillment,
     lookupActive: true,
-    lookupOnlyOnCustomerStep: true,
+    lookupOnlyOnCustomerStep,
+    debounceLookupMs,
   });
+  const c = composerProp ?? composerFromHook;
+
+  return (
+    <PartnerWalkInOrderWorkspaceContent
+      c={c}
+      embedded={embedded}
+      showPostCreatePanels={showPostCreatePanels}
+      hideTopChrome={hideTopChrome}
+      presentation={presentation}
+      suppressSuccessScreen={suppressSuccessScreen}
+    />
+  );
+}
+
+function PartnerWalkInOrderWorkspaceContent({
+  c,
+  embedded,
+  showPostCreatePanels,
+  hideTopChrome,
+  presentation,
+  suppressSuccessScreen,
+}: {
+  c: PartnerWalkInOrderComposer;
+  embedded: boolean;
+  showPostCreatePanels: boolean;
+  hideTopChrome: boolean;
+  presentation: 'page' | 'dialog';
+  suppressSuccessScreen: boolean;
+}) {
+  const partnerQueriesEnabled = usePartnerQueriesEnabled();
+  const activeCouponsQ = useQuery({
+    queryKey: queryKeys.partnerCoupons(),
+    queryFn: listPartnerCoupons,
+    enabled: partnerQueriesEnabled && presentation === 'dialog',
+  });
+  const activeCoupons = (activeCouponsQ.data ?? []).filter((row) => row.is_active);
+
+  const renderPostCreatePanels = showPostCreatePanels || !embedded;
+  const isDialog = presentation === 'dialog';
 
   const [dialogService, setDialogService] = useState<ServiceCatalogItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -154,7 +210,7 @@ export function PartnerWalkInOrderWorkspace({
         }
       : null;
 
-  if (c.createdDoorstepOrder) {
+  if (c.createdDoorstepOrder && !(suppressSuccessScreen && isDialog)) {
     return (
       <div className="space-y-5" id="partner-walk-in-workspace" data-testid="partner-walk-in-workspace">
         <OrderCreateSuccessPanel
@@ -180,7 +236,7 @@ export function PartnerWalkInOrderWorkspace({
     );
   }
 
-  if (c.createdOrder) {
+  if (c.createdOrder && !(suppressSuccessScreen && isDialog)) {
     return (
       <div className="space-y-5" id="partner-walk-in-workspace" data-testid="partner-walk-in-workspace">
         <WalkInSuccessPanel
@@ -203,22 +259,34 @@ export function PartnerWalkInOrderWorkspace({
     );
   }
 
+  if (suppressSuccessScreen && isDialog && (c.createdOrder || c.createdDoorstepOrder)) {
+    return (
+      <p className="py-8 text-center text-sm text-muted-foreground" role="status">
+        Order saved…
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-5" id="partner-walk-in-workspace" data-testid="partner-walk-in-workspace">
-      {!hideTopChrome ? (
+      {!hideTopChrome || isDialog ? (
         <PartnerOpsSurface className="space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-lg font-semibold tracking-tight">
-                {c.fulfillment === 'doorstep' ? 'Create doorstep order' : 'Create walk-in order'}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Phone &amp; name → services{c.fulfillment === 'walk_in' ? ' or garments' : ''} →
-                print tags.
-              </p>
+          {!hideTopChrome && !isDialog ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-lg font-semibold tracking-tight">
+                  {c.fulfillment === 'doorstep' ? 'Create doorstep order' : 'Create walk-in order'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Phone &amp; name → services{c.fulfillment === 'walk_in' ? ' or garments' : ''} →
+                  print tags.
+                </p>
+              </div>
+              <StepRail step={c.step} onJump={c.setStep} lockedAfter={null} />
             </div>
+          ) : (
             <StepRail step={c.step} onJump={c.setStep} lockedAfter={null} />
-          </div>
+          )}
           <div
             className="flex rounded-lg bg-muted/60 p-0.5"
             role="tablist"
@@ -276,7 +344,22 @@ export function PartnerWalkInOrderWorkspace({
                 required
                 className="min-h-9"
                 data-testid="create-order-phone"
+                aria-describedby={isDialog ? 'ws-phone-lookup-hint' : undefined}
               />
+              {isDialog && c.walkInLookupPhone ? (
+                <p id="ws-phone-lookup-hint" className="text-xs text-muted-foreground">
+                  {c.walkInLookupQ.isFetching ? (
+                    <span className="inline-flex items-center gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                      Looking up customer…
+                    </span>
+                  ) : c.walkInProfile?.registered ? (
+                    'Existing customer — order will link to this phone.'
+                  ) : (
+                    'New phone — enter name to create profile on save.'
+                  )}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ws-name">Customer name</Label>
@@ -292,6 +375,34 @@ export function PartnerWalkInOrderWorkspace({
           </div>
 
           <PartnerCustomerGenderField value={c.customerGender} onChange={c.setCustomerGender} />
+
+          {isDialog ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="ws-email">Email (optional)</Label>
+              <Input
+                id="ws-email"
+                type="email"
+                autoComplete="email"
+                value={c.customerEmail}
+                onChange={(e) => c.setCustomerEmail(e.target.value)}
+                className="min-h-9"
+                placeholder="For receipts — not required for walk-in"
+              />
+            </div>
+          ) : null}
+
+          {isDialog && c.fulfillment === 'walk_in' ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="ws-ready">Promised ready (optional)</Label>
+              <Input
+                id="ws-ready"
+                type="date"
+                value={c.expectedReadyAt}
+                onChange={(e) => c.setExpectedReadyAt(e.target.value)}
+                className="min-h-9"
+              />
+            </div>
+          ) : null}
 
           {c.fulfillment === 'doorstep' ? (
             <fieldset className="space-y-3 rounded-xl border border-border/60 p-3">
@@ -374,6 +485,12 @@ export function PartnerWalkInOrderWorkspace({
             <PartnerCustomerSnapshotCards profile={walkInSnapshotProfile} stats={c.insightStats} />
           ) : null}
 
+          {isDialog && walkInSnapshotProfile && c.walkInProfile?.registered ? (
+            <Badge variant="secondary" className="w-fit text-xs">
+              Linked to shop customer record
+            </Badge>
+          ) : null}
+
           <Button
             type="button"
             className="min-h-10 w-full sm:w-auto"
@@ -446,7 +563,7 @@ export function PartnerWalkInOrderWorkspace({
                     Add wash, dry clean, and iron packages in your catalog first.
                   </p>
                   <Button type="button" size="sm" className="mt-3" variant="secondary" asChild>
-                    <Link href="/partner/services">Manage services</Link>
+                    <Link href="/partner/orders?workspace=services">Manage services</Link>
                   </Button>
                 </div>
               ) : (
@@ -559,15 +676,71 @@ export function PartnerWalkInOrderWorkspace({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="ws-notes">Counter notes (optional)</Label>
+              <Label htmlFor="ws-notes">Special instructions (optional)</Label>
               <Textarea
                 id="ws-notes"
                 value={c.notes}
                 onChange={(e) => c.setNotes(e.target.value)}
                 rows={2}
-                placeholder="Stain on collar, express, etc."
+                placeholder="Stain on collar, handle with care, etc."
               />
             </div>
+
+            {isDialog ? (
+              <div className="space-y-3 rounded-2xl border border-border/60 p-3">
+                <p className="text-sm font-medium">Order options</p>
+                {activeCoupons.length > 0 ? (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ws-coupon-pick">Shop coupon</Label>
+                    <Select
+                      id="ws-coupon-pick"
+                      value={c.couponCode}
+                      onChange={(e) => {
+                        c.setCouponCode(e.target.value);
+                        c.setCouponApplied(false);
+                        c.setCouponDiscountInr(0);
+                      }}
+                      className="min-h-9"
+                    >
+                      <option value="">Select coupon…</option>
+                      {activeCoupons.map((coupon) => (
+                        <option key={coupon.id} value={coupon.code}>
+                          {coupon.code} ({coupon.discount_percent}% off)
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                ) : null}
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-border"
+                    checked={c.expressOrder}
+                    onChange={(e) => c.setExpressOrder(e.target.checked)}
+                  />
+                  Express service
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-border"
+                    checked={c.gstInvoiceRequested}
+                    onChange={(e) => c.setGstInvoiceRequested(e.target.checked)}
+                  />
+                  GST invoice requested (B2B)
+                </label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ws-staff-note">Internal staff note</Label>
+                  <Textarea
+                    id="ws-staff-note"
+                    value={c.staffNote}
+                    onChange={(e) => c.setStaffNote(e.target.value)}
+                    rows={2}
+                    placeholder="Not shown on customer tag"
+                  />
+                </div>
+              </div>
+            ) : null}
 
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" size="sm" onClick={() => c.setStep('intake')}>
@@ -577,7 +750,7 @@ export function PartnerWalkInOrderWorkspace({
             </div>
           </PartnerOpsSurface>
 
-          <div className="space-y-4">
+          <div className={cn('space-y-4', isDialog && 'lg:sticky lg:top-0')}>
             <PartnerOrderCheckoutAside
               totals={c.checkoutTotals}
               couponCode={c.couponCode}
@@ -606,6 +779,8 @@ export function PartnerWalkInOrderWorkspace({
                   : 'Save order & open print tags'
               }
               onSubmit={c.submitOrder}
+              hideSubmitButton={isDialog}
+              className={isDialog ? 'lg:max-h-none' : undefined}
             />
             {c.fulfillment === 'walk_in' ? <PartnerNewOrderPrintHintCard /> : null}
           </div>

@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import type { ComponentPropsWithoutRef } from 'react';
 
 export type PartnerOpsSurfaceVariant = 'default' | 'muted' | 'flush';
 
@@ -16,11 +17,16 @@ export function PartnerOpsSurface({
   variant = 'default',
   className,
   as: Component = 'div',
+  ...rest
 }: {
   children: React.ReactNode;
   variant?: PartnerOpsSurfaceVariant;
   className?: string;
   as?: 'div' | 'section' | 'article';
-}) {
-  return <Component className={cn(variantClass[variant], className)}>{children}</Component>;
+} & ComponentPropsWithoutRef<'div'>) {
+  return (
+    <Component className={cn(variantClass[variant], className)} {...rest}>
+      {children}
+    </Component>
+  );
 }

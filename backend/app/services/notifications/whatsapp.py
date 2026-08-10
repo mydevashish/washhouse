@@ -22,6 +22,7 @@ log = structlog.get_logger(__name__)
 
 _TEMPLATE_CONTENT_SIDS: dict[str, str] = {
     "order_received": "TWILIO_WA_TEMPLATE_ORDER_RECEIVED",
+    "order_received_detailed": "TWILIO_WA_TEMPLATE_ORDER_RECEIVED_DETAILED",
     "order_in_progress": "TWILIO_WA_TEMPLATE_ORDER_IN_PROGRESS",
     "order_ready_for_pickup": "TWILIO_WA_TEMPLATE_ORDER_READY",
     "order_delivered": "TWILIO_WA_TEMPLATE_ORDER_DELIVERED",
@@ -31,6 +32,14 @@ _PLAIN_BODIES: dict[str, str] = {
     "otp_login": "Your DLM login code is {code}. Valid for 10 minutes.",
     "order_received": (
         "Hi {customer_name}! We've received your laundry order {tracking_code} at {laundry_name}. "
+        "Status: {status_label}. We'll notify you as it progresses. Thank you for choosing DLM."
+    ),
+    "order_received_detailed": (
+        "Hi {customer_name}! We've received your laundry order {tracking_code} at {laundry_name}.\n"
+        "Items: {items_summary}\n"
+        "Bag token: {bag_token}\n"
+        "Ready by: {ready_window}\n"
+        "{payment_summary}\n"
         "Status: {status_label}. We'll notify you as it progresses. Thank you for choosing DLM."
     ),
     "order_in_progress": (

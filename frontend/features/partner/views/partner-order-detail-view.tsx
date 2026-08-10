@@ -242,6 +242,7 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
               <p className="text-xs text-muted-foreground">{printHint}</p>
               <PrintOrderActions
                 orderId={order.id}
+                orderStatus={order.status}
                 size="default"
                 emphasize={printEmphasis}
                 className="sm:justify-start"

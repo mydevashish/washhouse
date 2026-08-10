@@ -8,6 +8,7 @@ import { Check, Loader2, Plus, Tag, Waves } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
 import { ColorTokenChip } from '@/features/partner-shop-floor/components/color-token-chip';
+import { PartnerCreateWhatsAppNotice } from '@/features/partner/components/partner-create-whatsapp-notice';
 import { PrintOrderActions } from '@/features/partner-shop-floor/components/print-order-actions';
 import { usePartnerFloorVoice } from '@/features/partner-shop-floor/hooks/use-partner-floor-voice';
 import { buildPartnerPrintPath } from '@/features/partner-shop-floor/lib/print-lifecycle';
@@ -26,6 +27,15 @@ export type OrderCreateSuccessOrder = {
   color_token?: string | null;
   token_code?: string | null;
   status?: string;
+  payment_status?: string;
+  delivery_at?: string;
+  expected_ready_at?: string | null;
+  items?: { service_name: string; quantity: number }[];
+  whatsapp_order_received?: {
+    eligible: boolean;
+    status: string;
+    message_body?: string | null;
+  } | null;
 };
 
 type OrderCreateSuccessPanelProps = {
@@ -126,6 +136,32 @@ export function OrderCreateSuccessPanel({
           </p>
           <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
         </div>
+
+        <PartnerCreateWhatsAppNotice
+          order={{
+            id: order.id,
+            laundry_id: '',
+            status: order.status ?? 'confirmed',
+            tracking_code: order.tracking_code,
+            pickup_at: order.delivery_at ?? '',
+            delivery_at: order.delivery_at ?? '',
+            subtotal_inr: String(order.total_inr),
+            delivery_fee_inr: '0',
+            cgst_inr: '0',
+            sgst_inr: '0',
+            total_inr: String(order.total_inr),
+            payment_status: order.payment_status ?? 'pending',
+            customer_name: order.customer_name,
+            customer_phone: order.customer_phone,
+            partner_notes: null,
+            user_id: null,
+            expected_ready_at: order.expected_ready_at ?? order.delivery_at ?? null,
+            token_code: order.token_code,
+            color_token: order.color_token,
+            items: order.items ?? [],
+            whatsapp_order_received: order.whatsapp_order_received,
+          }}
+        />
 
         <div className="space-y-2">
           <Button type="button" size="lg" className="min-h-14 w-full gap-2 text-base" asChild>

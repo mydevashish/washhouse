@@ -176,13 +176,14 @@ describeJourney('Mahesh partner journey', () => {
     await loginAsPartner(page);
 
     await page.goto('/partner/services');
-    await expect(
-      page.locator('#main-content').getByRole('heading', { name: /service catalog/i }),
-    ).toBeVisible({ timeout: 60_000 });
+    await expect(page).toHaveURL(/\/partner\/orders\?/);
+    await expect(page).toHaveURL(/workspace=services/);
+    await expect(page.getByTestId('hub-workspace-services')).toBeVisible({ timeout: 60_000 });
     const serviceName = `E2E Express ${Date.now().toString(36)}`;
-    await page.getByPlaceholder(/shirt wash|service/i).first().fill(serviceName);
-    await page.locator('input[type="number"][min="1"]').first().fill('149');
-    await page.getByRole('button', { name: /add service/i }).click();
+    const servicesDialog = page.getByTestId('hub-workspace-services');
+    await servicesDialog.getByPlaceholder(/shirt wash|service/i).first().fill(serviceName);
+    await servicesDialog.locator('input[type="number"][min="1"]').first().fill('149');
+    await servicesDialog.getByRole('button', { name: /add service/i }).click();
     await expect(page.getByText(new RegExp(serviceName, 'i')).first()).toBeVisible({
       timeout: 20_000,
     });

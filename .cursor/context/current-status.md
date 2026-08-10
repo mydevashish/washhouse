@@ -2,7 +2,7 @@
 
 > Updated whenever a major milestone shifts. The source of truth for "where are we?".
 
-**Last updated:** 2026-08-09
+**Last updated:** 2026-08-10
 
 ## Phase
 
@@ -27,6 +27,8 @@
 - **Partner Owner Command Center** (2026-08-08): **in progress** — P1–P6 (nav, agentic home, money, logistics, customer CRM, staff roster/coverage). Spec: [partner-owner-command-center.md](../../docs/features/partner-owner-command-center.md). Next: Prompt 7 (polish/QA). Evolve nav with Customers & Orders Hub (do not fork).
 - **UI fix + backend pagination** (2026-08-08): Prompts **0–8** **done**. List pagination standard enforced (default **10**); QA matrix + regression tests locked. Pack: [ui-fix-and-backend-pagination.md](../prompts/ui-fix-and-backend-pagination.md). Matrix: [partner-admin-pagination-matrix.md](../../docs/qa/partner-admin-pagination-matrix.md).
 - **Customers & Orders — single create + coupons** (2026-08-09): Sidebar **New order** removed; intake via hub **Create order** tab only; walk-in + doorstep (address) in one wizard; shop **Coupons** CRUD (`/partner/coupons`). Spec: [partner-coupons.md](../../docs/features/partner-coupons.md).
+- **Partner laundry dashboard redesign** (2026-08-10): **review** — Prompt pack **0–8** on `/partner` (period overview, chart, recent 10, create modal, success print, WhatsApp, invoice gating, polish). Spec: [partner-laundry-dashboard-redesign.md](../../docs/features/partner-laundry-dashboard-redesign.md).
+- **Partner Customers & Orders — four pillars workspace** (2026-08-10): **review** — Prompt pack **0–8** (Customers · Orders · Coupons · Services tiles + modals on `/partner/orders`; nav redirects; `POST /partner/customers`). Spec: [partner-customers-orders-four-pillars-workspace.md](../../docs/features/partner-customers-orders-four-pillars-workspace.md). Matrix: [partner-four-pillars-workspace-matrix.md](../../docs/qa/partner-four-pillars-workspace-matrix.md).
 
 ## Blocked / Waiting
 

@@ -147,14 +147,40 @@ async function mockPartnerOpsApis(page: Page) {
 describeOps('Partner Ops UX Phase 1', () => {
   test('A: dashboard KPIs and recent orders', async ({ page }) => {
     await mockPartnerOpsApis(page);
+    await page.route('**/api/v1/partner/analytics/overview**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: {
+            period: 'today',
+            period_label_ist: 'Today (IST)',
+            period_start_utc: '2026-08-09T18:30:00.000Z',
+            period_end_utc: '2026-08-10T18:30:00.000Z',
+            orders_count: 3,
+            pending_orders_count: 1,
+            revenue_gross_inr: '1200.00',
+            revenue_net_inr: '1080.00',
+            commission_inr: '120.00',
+            effective_commission_rate: '10.00',
+            pending_payment_count: 0,
+            pending_payment_inr: '0.00',
+            customers_count_period: 2,
+            customers_count_all_time: 18,
+            chart_series: [],
+          },
+          meta: {},
+        }),
+      });
+    });
     await loginAsPartner(page);
     await page.goto('/partner');
-    await expect(page.getByRole('heading', { name: /^dashboard$/i })).toBeVisible({
+    await expect(page.getByRole('heading', { name: /command desk/i })).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByText(/today's orders/i).first()).toBeVisible();
-    await expect(page.getByText(/recent orders/i).first()).toBeVisible();
-    await expect(page.getByRole('link', { name: /new order/i }).first()).toBeVisible();
+    await expect(page.getByRole('region', { name: /quick overview/i })).toBeVisible();
+    await expect(page.getByTestId('partner-dashboard-recent-orders')).toBeVisible();
+    await expect(page.getByTestId('partner-dashboard-create-order')).toBeVisible();
   });
 
   test('B: new order workspace loads walk-in mode', async ({ page }) => {

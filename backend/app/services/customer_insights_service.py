@@ -106,6 +106,12 @@ class CustomerInsightsService:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
         self._repo = CustomerInsightsRepository(session)
+        from app.repositories.laundry_customer_registration import LaundryCustomerRegistrationRepository
+
+        self._registrations = LaundryCustomerRegistrationRepository(session)
+
+    async def resolve_laundry_for_actor(self, actor_user_id: UUID, actor_role: str):
+        return await self._resolve_laundry(actor_user_id, actor_role)
 
     async def _resolve_laundry(self, actor_user_id: UUID, actor_role: str):
         if actor_role == UserRole.partner.value:
@@ -200,7 +206,10 @@ class CustomerInsightsService:
     async def partner_dashboard(self, actor_user_id: UUID, actor_role: str) -> dict:
         laundry = await self._resolve_laundry(actor_user_id, actor_role)
         now = datetime.now(UTC)
-        rows = self._enrich_rows(await self._repo.customer_aggregates(laundry.id), now)
+        raw = await self._repo.customer_aggregates(laundry.id)
+        reg_only = await self._registrations.registration_only_rows(laundry.id)
+        raw = raw + reg_only
+        rows = self._enrich_rows(raw, now)
 
         segments = {k: 0 for k in SEGMENT_LABELS}
         for row in rows:
@@ -219,6 +228,25 @@ class CustomerInsightsService:
             1
             for r in rows
             if r.get("first_order_at") is not None and r["first_order_at"] >= week_ago
+        )
+        new_this_week += sum(
+            1
+            for r in reg_only
+            if r.get("registered_at") is not None and r["registered_at"] >= week_ago
+        )
+
+        # Hub pillar order KPIs — Option A: single dashboard round-trip (see four-pillars spec).
+        from app.services.partner_analytics_period import (
+            PartnerOverviewPeriod,
+            resolve_partner_overview_period,
+        )
+
+        week_bounds = resolve_partner_overview_period(PartnerOverviewPeriod.week, now=now)
+        orders_count_all_time = await self._repo.count_laundry_orders(laundry.id)
+        orders_count_this_week = await self._repo.count_laundry_orders(
+            laundry.id,
+            created_from=week_bounds.period_start_utc,
+            created_to=week_bounds.period_end_utc,
         )
 
         return {
@@ -239,6 +267,8 @@ class CustomerInsightsService:
                 (total_spend / total_orders).quantize(Decimal("0.01")) if total_orders else Decimal("0"),
             ),
             "new_this_week": new_this_week,
+            "orders_count_all_time": orders_count_all_time,
+            "orders_count_this_week": orders_count_this_week,
         }
 
     async def partner_list_customers(
@@ -262,14 +292,34 @@ class CustomerInsightsService:
 
         # Common directory path: page in SQL (fixed VIP thresholds — no full dump).
         if not list_type and not segment:
-            total = await self._repo.count_customer_aggregates(laundry.id, search=search)
-            raw = await self._repo.customer_aggregates(
-                laundry.id,
-                search=search,
-                limit=safe_size,
-                offset=offset,
-            )
-            rows = self._enrich_rows(raw, now, use_percentile_vip=False)
+            order_total = await self._repo.count_customer_aggregates(laundry.id, search=search)
+            reg_total = await self._registrations.count_registration_only(laundry.id, search=search)
+            total = order_total + reg_total
+            offset = (safe_page - 1) * safe_size
+
+            reg_rows = await self._registrations.registration_only_rows(laundry.id, search=search)
+            reg_rows.sort(key=lambda r: (str(r.get("name") or "").lower(), str(r.get("phone") or "")))
+
+            if offset >= order_total:
+                page_raw = reg_rows[offset - order_total : offset - order_total + safe_size]
+            elif offset + safe_size <= order_total:
+                page_raw = await self._repo.customer_aggregates(
+                    laundry.id,
+                    search=search,
+                    limit=safe_size,
+                    offset=offset,
+                )
+            else:
+                order_part = await self._repo.customer_aggregates(
+                    laundry.id,
+                    search=search,
+                    limit=order_total - offset,
+                    offset=offset,
+                )
+                reg_take = safe_size - len(order_part)
+                page_raw = order_part + reg_rows[:reg_take]
+
+            rows = self._enrich_rows(page_raw, now, use_percentile_vip=False)
             return build_paginated_response(
                 items=[self._serialize_row(r) for r in rows],
                 total_records=total,

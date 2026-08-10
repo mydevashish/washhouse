@@ -69,6 +69,39 @@ Use these **exact** variable names in Meta / Twilio Content Templates and in bac
 
 Submit each template separately in Meta Business Manager (via Twilio Content Template Builder). Category: **Utility**. Language: **English (India)** or **English** as appropriate.
 
+### `order_received_detailed` (walk-in create — rich summary)
+
+Submit as a separate Utility template when upgrading from the short `order_received` message.
+Variable names must match backend `content_variables`:
+
+| Variable | Example |
+| -------- | ------- |
+| `customer_name` | Priya |
+| `tracking_code` | DLM-A1B2C3 |
+| `laundry_name` | Sparkle Wash |
+| `status_label` | received |
+| `items_summary` | 2 × Shirt · Wash, 1 Pant |
+| `bag_token` | R-42 (red) |
+| `ready_window` | Sun 10 Aug, 8:00 PM IST |
+| `payment_summary` | Total: ₹118.00 — balance due at pickup/collection |
+
+Sample body:
+
+```
+Hi {{customer_name}}! We've received your laundry order {{tracking_code}} at {{laundry_name}}.
+Items: {{items_summary}}
+Bag token: {{bag_token}}
+Ready by: {{ready_window}}
+{{payment_summary}}
+Status: {{status_label}}. We'll notify you as it progresses. Thank you for choosing DLM.
+```
+
+Env: `TWILIO_WA_TEMPLATE_ORDER_RECEIVED_DETAILED` (Content SID `HX…`).
+When set, **confirmed** walk-in WhatsApp uses this template. The legacy four-variable `order_received`
+SID remains for partners who have not migrated yet. Sandbox / dev with no SIDs sends the same text as a plain body.
+
+Partner retry: `POST /api/v1/partner/orders/{order_id}/whatsapp/order-received` (idempotent).
+
 ### `order_received`
 
 ```
@@ -115,6 +148,7 @@ TWILIO_WA_TEMPLATE_ORDER_DELIVERED=
 | Env variable | Template name |
 | ------------ | ------------- |
 | `TWILIO_WA_TEMPLATE_ORDER_RECEIVED` | `order_received` |
+| `TWILIO_WA_TEMPLATE_ORDER_RECEIVED_DETAILED` | `order_received_detailed` |
 | `TWILIO_WA_TEMPLATE_ORDER_IN_PROGRESS` | `order_in_progress` |
 | `TWILIO_WA_TEMPLATE_ORDER_READY` | `order_ready_for_pickup` |
 | `TWILIO_WA_TEMPLATE_ORDER_DELIVERED` | `order_delivered` |

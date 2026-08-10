@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Header, Query, Request
 
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_admin, get_current_partner
+from app.api.v1.endpoints.partner_customer_insights import get_insights_actor
 from app.core.exceptions import ValidationError
 from app.core.pagination import DEFAULT_PAGE_SIZE, normalize_page_size
 from app.models.enums import OrderSource, OrderStatus
@@ -21,7 +22,9 @@ from app.schemas.customer_desk import (
     CustomerDeskOrderRow,
     CustomerDeskProfile,
 )
+from app.schemas.partner import PartnerCustomerCreateRequest
 from app.services.customer_desk_service import CustomerDeskService
+from app.services.partner_customer_service import PartnerCustomerService
 
 admin_router = APIRouter(prefix="/admin/customers", tags=["Admin"])
 partner_router = APIRouter(prefix="/partner/customers", tags=["Partner"])
@@ -153,6 +156,31 @@ async def admin_customer_orders(
         },
     )
     return success_envelope(payload, request)
+
+
+@partner_router.post(
+    "",
+    summary="Create or link a customer for this laundry",
+    description=(
+        "Registers an Indian mobile for the partner laundry directory. "
+        "Idempotent on phone — updates display name when provided. "
+        "Zero-order customers appear in customer insights after registration."
+    ),
+    responses={422: {"description": "Validation error"}},
+)
+async def partner_customer_create(
+    request: Request,
+    session: SessionDep,
+    body: PartnerCustomerCreateRequest,
+    payload: Annotated[dict, Depends(get_insights_actor)],
+) -> dict:
+    data = await PartnerCustomerService(session).create_or_link(
+        actor_user_id=UUID(payload["sub"]),
+        actor_role=payload["role"],
+        name=body.name,
+        phone=body.phone,
+    )
+    return success_envelope(CustomerDeskProfile.model_validate(data), request)
 
 
 @partner_router.get(

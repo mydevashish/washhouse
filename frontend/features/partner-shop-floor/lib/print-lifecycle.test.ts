@@ -1,6 +1,7 @@
 import {
   PARTNER_PRINT_CENTER_HREF,
   buildPartnerPrintPath,
+  canPrintBillOrInvoice,
   getPrintLifecycleEmphasis,
   getPrintLifecycleHint,
   shouldEmphasizePrintBill,
@@ -24,6 +25,12 @@ describe('print-lifecycle', () => {
   it('returns English hints', () => {
     expect(getPrintLifecycleHint('ready')).toMatch(/bill|invoice/i);
     expect(getPrintLifecycleHint('washing')).toMatch(/tags/i);
+  });
+
+  it('gates bill and GST invoice to handover statuses', () => {
+    expect(canPrintBillOrInvoice('washing')).toBe(false);
+    expect(canPrintBillOrInvoice('ready')).toBe(true);
+    expect(canPrintBillOrInvoice('delivered')).toBe(true);
   });
 
   it('builds print paths and print center href', () => {

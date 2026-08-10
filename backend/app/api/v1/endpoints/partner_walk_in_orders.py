@@ -13,13 +13,23 @@ from app.core.exceptions import NotFoundError
 from app.core.pagination import DEFAULT_PAGE_SIZE, build_paginated_response
 from app.schemas.common import PaginatedListResponse
 from app.schemas.order import OrderItemResponse
-from app.schemas.walk_in_order import WalkInOrderCreateRequest, WalkInOrderResponse
+from app.schemas.walk_in_order import (
+    WalkInOrderCreateRequest,
+    WalkInOrderResponse,
+    WalkInOrderWhatsAppNotifyResponse,
+)
+from app.services.notifications.order_received_whatsapp import whatsapp_order_received_meta
 from app.services.walk_in_order_service import WalkInOrderService
 
 router = APIRouter(prefix="/partner/walk-in-orders", tags=["partner"])
 
 
-def _walk_in_order_response(order) -> WalkInOrderResponse:
+def _walk_in_order_response(order, *, laundry_name: str | None = None) -> WalkInOrderResponse:
+    whatsapp_meta = None
+    if laundry_name:
+        whatsapp_meta = WalkInOrderWhatsAppNotifyResponse.model_validate(
+            whatsapp_order_received_meta(order, laundry_name=laundry_name),
+        )
     return WalkInOrderResponse(
         id=order.id,
         laundry_id=order.laundry_id,
@@ -42,6 +52,7 @@ def _walk_in_order_response(order) -> WalkInOrderResponse:
         user_id=order.user_id,
         expected_ready_at=order.delivery_at,
         items=[OrderItemResponse.model_validate(i) for i in order.items],
+        whatsapp_order_received=whatsapp_meta,
     )
 
 
@@ -62,7 +73,11 @@ async def create_walk_in_order(
         expected_ready_at=body.expected_ready_at,
         coupon_code=body.coupon_code,
     )
-    return success_envelope(_walk_in_order_response(order), request)
+    from app.repositories.laundry import LaundryRepository
+
+    laundry = await LaundryRepository(session).get_by_id(order.laundry_id)
+    laundry_name = laundry.name if laundry else "your laundry"
+    return success_envelope(_walk_in_order_response(order, laundry_name=laundry_name), request)
 
 
 @router.get("")

@@ -4,6 +4,36 @@
 
 ---
 
+## 2026-08-10 — Four pillars workspace Prompt 3 (Customers pillar + modal)
+
+- **Type:** feat
+- **Scope:** partner-customers-orders-four-pillars-workspace
+- **Files:** `partner-hub-customers-*.tsx`, `partner-hub-customers-search.ts`, `partner-orders-hub.tsx`, `customer-desk/api.ts` (`createPartnerCustomer`), `partner-orders-hub.test.tsx`
+- **Summary:** Wired Customers pillar KPIs (insights dashboard), hub modal with debounced search + page_size 10, row actions (call/WA/new order/desk), Add customer via POST `/partner/customers`, integrated pillar grid above hub tabs (other three tiles placeholder until P4–6).
+- **Next:** Prompt 4 — Orders pillar + modal.
+
+---
+
+## 2026-08-10 — Partner Dashboard Tags section (Prompt 6 QA/tests)
+
+- **Type:** test
+- **Scope:** partner-dashboard-tags-section
+- **Files:** `partner-dashboard-tags-section.test.tsx`; `partner-laundry-dashboard.spec.ts`; `docs/features/partner-dashboard-tags-section.md`; `logs/feature-progress.md`
+- **Summary:** RTL: idle, search results + print href, verify panel (`getPartnerOrderTags` mock). Playwright smoke: Tags below Recent orders + search visible. Jest: `npm test -- --testPathPattern="partner-dashboard-tags-section|partner-tags-order-search"` (8 passed).
+- **Next:** Manual QA matrix (375/1280, light/dark, live search on staging).
+
+---
+
+## 2026-08-10 — Partner Dashboard Tags section (Prompt 5 wire)
+
+- **Type:** feat
+- **Scope:** partner-dashboard-tags-section
+- **Files:** `partner-laundry-dashboard-view.tsx`; `docs/features/partner-laundry-dashboard-redesign.md`; `docs/features/partner-dashboard-tags-section.md`; `logs/feature-progress.md`
+- **Summary:** Wired `PartnerDashboardTagsSection` on `/partner` immediately after Recent orders and before create success panel; updated command-desk IA/goals for Tags (find · verify · reprint).
+- **Next:** Prompt 6 — RTL/Playwright + manual QA checklist.
+
+---
+
 ## 2026-08-09 — Partner WashHouse Ops Visual (Prompt 0 spec)
 
 - **Type:** docs

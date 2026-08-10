@@ -29,6 +29,10 @@ export interface CustomerInsightsDashboard {
   avg_order_value_inr: string;
   /** Customers whose first order at this laundry was in the last 7 days. */
   new_this_week?: number;
+  /** All orders for this laundry (hub pillar KPI). */
+  orders_count_all_time?: number;
+  /** Orders created this IST week (aligned with partner analytics). */
+  orders_count_this_week?: number;
 }
 
 export interface CustomerInsightRow {

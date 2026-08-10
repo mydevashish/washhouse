@@ -1,10 +1,10 @@
 import { permanentRedirect } from 'next/navigation';
 
-import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
+import { buildPartnerHubOrderCreateHref } from '@/features/partner/orders-hub/workspace/partner-hub-order-create-url';
 
 export const metadata = { title: 'Partner · New order' };
 
-/** Cloth Wall intake lives on the hub Create order tab. */
+/** Cloth Wall intake → dedicated new-order page. */
 export default function PartnerFloorNewOrderPage() {
-  permanentRedirect(buildOrdersHubPath('/partner/orders', 'create'));
+  permanentRedirect(buildPartnerHubOrderCreateHref());
 }

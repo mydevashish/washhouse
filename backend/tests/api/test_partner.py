@@ -215,6 +215,30 @@ async def test_partner_a_cannot_patch_partner_b_order(
 
 
 @patch("app.tasks.order_notifications.send_order_status_whatsapp")
+async def test_partner_a_cannot_fetch_partner_b_order_tags(
+    mock_whatsapp: MagicMock,
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    mock_whatsapp.delay = MagicMock()
+    _a, _laundry_a, token_a = await _seed_partner(db_session, email_prefix="tags.a")
+    _b, laundry_b, _token_b = await _seed_partner(db_session, email_prefix="tags.b")
+    order_b = await _seed_confirmed_order(db_session, laundry_id=laundry_b.id)
+
+    tags_json = await client.get(
+        f"/api/v1/partner/orders/{order_b.id}/tags",
+        headers=_headers(token_a),
+    )
+    assert tags_json.status_code == 404
+
+    tags_print = await client.get(
+        f"/api/v1/partner/orders/{order_b.id}/tags/print",
+        headers=_headers(token_a),
+    )
+    assert tags_print.status_code == 404
+
+
+@patch("app.tasks.order_notifications.send_order_status_whatsapp")
 async def test_partner_scan_updates_owned_order_only(
     mock_whatsapp: MagicMock,
     client: AsyncClient,
@@ -314,9 +338,6 @@ async def test_partner_cannot_mutate_other_laundry_staff(
     assert delete.status_code == 404
 
 
-# ---------- Analytics / inventory smoke ----------
-
-
 async def test_analytics_summary_returns_kpis(
     client: AsyncClient,
     db_session: AsyncSession,
@@ -339,6 +360,70 @@ async def test_analytics_summary_returns_kpis(
     assert "commission_today_inr" in data
     assert "growth_today_pct" in data
     assert data["growth_today_pct"] is None or isinstance(data["growth_today_pct"], str)
+
+
+async def test_analytics_overview_requires_auth(client: AsyncClient) -> None:
+    assert (await client.get("/api/v1/partner/analytics/overview")).status_code == 401
+
+
+async def test_analytics_overview_empty_laundry(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    partner = User(
+        email=f"nopartner.{uuid4().hex[:8]}@test.dlm",
+        password_hash=hash_password("Partner@1234"),
+        full_name="No Laundry Partner",
+        role=UserRole.partner,
+        is_email_verified=True,
+    )
+    db_session.add(partner)
+    await db_session.flush()
+    token = create_access_token(subject=str(partner.id), role=UserRole.partner.value)
+
+    response = await client.get(
+        "/api/v1/partner/analytics/overview?period=today",
+        headers=_headers(token),
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["orders_count"] == 0
+    assert data["period"] == "today"
+    assert len(data["chart_series"]) == 24
+    assert data["customers_count_all_time"] == 0
+
+
+async def test_analytics_overview_period_kpis(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    _partner, laundry, token = await _seed_partner(db_session, email_prefix="overview")
+    await _seed_confirmed_order(db_session, laundry_id=laundry.id)
+
+    response = await client.get(
+        "/api/v1/partner/analytics/overview?period=week",
+        headers=_headers(token),
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["period"] == "week"
+    assert data["orders_count"] >= 1
+    assert data["pending_orders_count"] >= 1
+    assert len(data["chart_series"]) == 7
+    assert "period_start_utc" in data
+    assert "revenue_gross_inr" in data
+
+
+async def test_analytics_overview_invalid_period(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    _partner, _laundry, token = await _seed_partner(db_session, email_prefix="overviewbad")
+    response = await client.get(
+        "/api/v1/partner/analytics/overview?period=quarter",
+        headers=_headers(token),
+    )
+    assert response.status_code == 422
 
 
 async def test_analytics_money_intelligence_uses_order_commission_snapshot(
@@ -529,6 +614,60 @@ async def test_partner_orders_paginated_default_page_size(
     assert bad_size.json()["data"]["page_size"] == 10
 
 
+async def test_partner_orders_list_search_tracking_phone_token_name(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """Dashboard Tags section: server search covers tracking, phone, token, customer name."""
+    from app.models.enums import ColorToken
+
+    _partner, laundry, token = await _seed_partner(db_session, email_prefix="tags.search")
+    customer = User(
+        email=f"tags.search.{uuid4().hex[:8]}@test.dlm",
+        password_hash=hash_password("Customer@1234"),
+        full_name="Tags Lookup Person",
+        role=UserRole.customer,
+        is_email_verified=True,
+    )
+    db_session.add(customer)
+    await db_session.flush()
+
+    order = await _seed_confirmed_order(db_session, laundry_id=laundry.id, customer=customer)
+    order.tracking_code = "WH-TAGSSEARCH01"
+    order.customer_phone = "+91 98765-43210"
+    order.customer_name = "Walk-in Alias Name"
+    order.token_code = "R-42"
+    order.color_token = ColorToken.red
+    await db_session.flush()
+
+    headers = _headers(token)
+    base = "/api/v1/partner/orders?bucket=all&page_size=10"
+
+    by_tracking = await client.get(f"{base}&search=WH-TAGSSEARCH01", headers=headers)
+    assert by_tracking.status_code == 200
+    assert any(row["id"] == str(order.id) for row in by_tracking.json()["data"]["items"])
+
+    by_phone_full = await client.get(f"{base}&search=9876543210", headers=headers)
+    assert by_phone_full.status_code == 200
+    assert any(row["id"] == str(order.id) for row in by_phone_full.json()["data"]["items"])
+
+    by_phone_last4 = await client.get(f"{base}&search=3210", headers=headers)
+    assert by_phone_last4.status_code == 200
+    assert any(row["id"] == str(order.id) for row in by_phone_last4.json()["data"]["items"])
+
+    by_token = await client.get(f"{base}&search=R-42", headers=headers)
+    assert by_token.status_code == 200
+    assert any(row["id"] == str(order.id) for row in by_token.json()["data"]["items"])
+
+    by_user_name = await client.get(f"{base}&search=Tags%20Lookup", headers=headers)
+    assert by_user_name.status_code == 200
+    assert any(row["id"] == str(order.id) for row in by_user_name.json()["data"]["items"])
+
+    by_order_customer_name = await client.get(f"{base}&search=Walk-in%20Alias", headers=headers)
+    assert by_order_customer_name.status_code == 200
+    assert any(row["id"] == str(order.id) for row in by_order_customer_name.json()["data"]["items"])
+
+
 async def test_partner_customer_insights_paginated_default_page_size(
     client: AsyncClient,
     db_session: AsyncSession,
@@ -582,7 +721,80 @@ async def test_partner_customer_insights_paginated_default_page_size(
         headers=_headers(token),
     )
     assert dash.status_code == 200
-    assert "new_this_week" in dash.json()["data"]
+    dash_data = dash.json()["data"]
+    assert "new_this_week" in dash_data
+    assert "orders_count_all_time" in dash_data
+    assert "orders_count_this_week" in dash_data
+
+
+async def test_partner_create_customer_and_insights_list(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    _partner, laundry, token = await _seed_partner(db_session, email_prefix="crm.create")
+    phone_local = f"9876{uuid4().int % 100000:05d}"
+
+    created = await client.post(
+        "/api/v1/partner/customers",
+        headers=_headers(token),
+        json={"name": "Counter Add", "phone": phone_local},
+    )
+    assert created.status_code == 200, created.text
+    body = created.json()["data"]
+    assert body["registered"] is True
+    assert body["name"] == "Counter Add"
+    user_id = body["user_id"]
+
+    again = await client.post(
+        "/api/v1/partner/customers",
+        headers=_headers(token),
+        json={"name": "Counter Add Updated", "phone": phone_local},
+    )
+    assert again.status_code == 200
+    assert again.json()["data"]["user_id"] == user_id
+    assert again.json()["data"]["name"] == "Counter Add Updated"
+
+    listed = await client.get(
+        "/api/v1/partner/customer-insights/customers?search=Counter%20Add",
+        headers=_headers(token),
+    )
+    assert listed.status_code == 200
+    names = [row["name"] for row in listed.json()["data"]["items"]]
+    assert "Counter Add Updated" in names
+
+    _partner_b, _laundry_b, token_b = await _seed_partner(db_session, email_prefix="crm.other")
+    listed_b = await client.get(
+        f"/api/v1/partner/customer-insights/customers?search={phone_local}",
+        headers=_headers(token_b),
+    )
+    assert listed_b.status_code == 200
+    assert listed_b.json()["data"]["total_records"] == 0
+
+
+async def test_partner_insights_dashboard_order_counts(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    partner, laundry, token = await _seed_partner(db_session, email_prefix="crm.orders.kpi")
+    customer = User(
+        email=f"crm.kpi.{uuid4().hex[:8]}@test.dlm",
+        password_hash=hash_password("Customer@1234"),
+        full_name="KPI Customer",
+        role=UserRole.customer,
+        is_email_verified=True,
+    )
+    db_session.add(customer)
+    await db_session.flush()
+    await _seed_confirmed_order(db_session, laundry_id=laundry.id, customer=customer)
+
+    dash = await client.get(
+        "/api/v1/partner/customer-insights/dashboard",
+        headers=_headers(token),
+    )
+    assert dash.status_code == 200
+    data = dash.json()["data"]
+    assert data["orders_count_all_time"] >= 1
+    assert data["orders_count_this_week"] >= 1
 
 
 async def test_partner_staff_activity_paginated_default_page_size(

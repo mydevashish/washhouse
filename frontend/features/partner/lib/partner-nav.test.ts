@@ -27,16 +27,8 @@ describe('partner Customers & Orders Hub nav (P1)', () => {
       'shop',
       'system',
     ]);
-    expect(operations?.items.map((i) => i.label)).toEqual([
-      PARTNER_CUSTOMERS_ORDERS_LABEL,
-      'Services',
-      'Coupons',
-    ]);
-    expect(operations?.items.map((i) => i.href)).toEqual([
-      PARTNER_ORDERS_HUB_HREF,
-      '/partner/services',
-      '/partner/coupons',
-    ]);
+    expect(operations?.items.map((i) => i.label)).toEqual([PARTNER_CUSTOMERS_ORDERS_LABEL]);
+    expect(operations?.items.map((i) => i.href)).toEqual([PARTNER_ORDERS_HUB_HREF]);
     expect(operations?.items.some((i) => i.label === 'New order')).toBe(false);
     expect(operations?.items.some((i) => i.label === 'Walk-in orders')).toBe(false);
     expect(operations?.items.some((i) => i.label === 'Customer Desk')).toBe(false);
@@ -111,5 +103,7 @@ describe('partner Customers & Orders Hub nav (P1)', () => {
     expect(getPartnerPageTitle('/partner/floor/print')).toBe(PARTNER_CUSTOMERS_ORDERS_LABEL);
     expect(getPartnerPageTitle('/partner/customer-desk')).toBe(PARTNER_CUSTOMERS_ORDERS_LABEL);
     expect(getPartnerPageTitle('/partner/booking-requests')).toBe(PARTNER_CUSTOMERS_ORDERS_LABEL);
+    expect(getPartnerPageTitle('/partner/coupons')).toBe(PARTNER_CUSTOMERS_ORDERS_LABEL);
+    expect(getPartnerPageTitle('/partner/services')).toBe(PARTNER_CUSTOMERS_ORDERS_LABEL);
   });
 });

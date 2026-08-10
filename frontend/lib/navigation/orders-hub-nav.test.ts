@@ -11,10 +11,14 @@ describe('Orders Hub nav aliases in chrome', () => {
     expect(buildBreadcrumbs('/admin/customers', 'admin')[1]?.label).toBe('Orders');
   });
 
-  it('breadcrumbs map legacy partner paths to Orders (customers → People)', () => {
-    expect(buildBreadcrumbs('/partner/customer-desk', 'partner')[1]?.label).toBe('Orders');
-    expect(buildBreadcrumbs('/partner/booking-requests', 'partner')[1]?.label).toBe('Orders');
-    expect(buildBreadcrumbs('/partner/customers', 'partner')[1]?.label).toBe('Customers');
+  it('breadcrumbs map legacy partner paths to Customers & Orders hub', () => {
+    expect(buildBreadcrumbs('/partner/customer-desk', 'partner')[1]?.label).toBe(
+      'Customers & Orders',
+    );
+    expect(buildBreadcrumbs('/partner/booking-requests', 'partner')[1]?.label).toBe(
+      'Customers & Orders',
+    );
+    expect(buildBreadcrumbs('/partner/customers', 'partner')[1]?.label).toBe('Customers & Orders');
   });
 
   it('search still finds old labels and routes them into hub tabs', () => {
@@ -28,9 +32,9 @@ describe('Orders Hub nav aliases in chrome', () => {
     expect(requests?.href).toBe('/admin/orders?tab=requests');
 
     const partner = getSearchIndex('partner');
-    const insights = filterSearchItems(partner, 'Customer insights').find(
-      (i) => i.label === 'Customer insights',
+    const customers = filterSearchItems(partner, 'Customers').find(
+      (i) => i.href === '/partner/orders?workspace=customers',
     );
-    expect(insights?.href).toBe('/partner/orders?tab=directory');
+    expect(customers?.href).toBe('/partner/orders?workspace=customers');
   });
 });

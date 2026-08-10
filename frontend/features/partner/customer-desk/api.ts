@@ -18,6 +18,15 @@ function buildOrderParams(filters: CustomerDeskOrdersFilters = {}): Record<strin
   return p;
 }
 
+/** Register or update a customer for this laundry (idempotent on phone). */
+export async function createPartnerCustomer(payload: {
+  name: string;
+  phone: string;
+}): Promise<CustomerDeskProfile> {
+  const { data } = await api.post<ApiEnvelope<CustomerDeskProfile>>('/partner/customers', payload);
+  return data.data;
+}
+
 /** Slice 1b — search by name / phone (laundry-scoped, max 20). */
 export async function searchPartnerCustomers(q: string): Promise<CustomerDeskProfile[]> {
   const { data } = await api.get<ApiEnvelope<CustomerDeskProfile[]>>('/partner/customers/search', {

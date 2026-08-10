@@ -25,11 +25,11 @@ export function buildCustomerWhatsAppUrl(phone: string, message?: string): strin
   return message ? `${base}?text=${encodeURIComponent(message)}` : base;
 }
 
-import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
+import { buildPartnerHubOrderCreateHref } from '@/features/partner/orders-hub/workspace/partner-hub-order-create-url';
 
 export type PartnerCreateFulfillment = 'walk_in' | 'doorstep';
 
-/** Customers & Orders → Create order tab with optional prefill. */
+/** Customers & Orders hub → create dialog via `?tab=create` on `/partner/orders`. */
 export function buildPartnerCreateOrderHref(opts?: {
   phone?: string | null;
   name?: string | null;
@@ -37,13 +37,13 @@ export function buildPartnerCreateOrderHref(opts?: {
   /** @deprecated Prefer `fulfillment`; `assisted` maps to doorstep. */
   mode?: 'walk_in' | 'assisted';
 }): string {
-  const params = new URLSearchParams();
-  if (opts?.phone?.trim()) params.set('phone', opts.phone.trim());
-  if (opts?.name?.trim()) params.set('name', opts.name.trim());
   const fulfillment =
     opts?.fulfillment ?? (opts?.mode === 'assisted' ? 'doorstep' : 'walk_in');
-  if (fulfillment === 'doorstep') params.set('fulfillment', 'doorstep');
-  return buildOrdersHubPath('/partner/orders', 'create', params);
+  return buildPartnerHubOrderCreateHref({
+    phone: opts?.phone,
+    name: opts?.name,
+    fulfillment,
+  });
 }
 
 /** New Order workspace deep link (walk-in or assisted) with phone/name prefill. */
@@ -60,13 +60,13 @@ export function buildWalkInPrefillHref(phone: string, name?: string | null): str
   return buildNewOrderHref(phone, name, 'walk_in');
 }
 
-/** Desk tab deep link with phone or user_id prefill. */
+/** Desk → Customers workspace with optional prefill. */
 export function buildDeskPrefillHref(opts: {
   phone?: string | null;
   user_id?: string | null;
 }): string {
   const params = new URLSearchParams();
-  params.set('tab', 'desk');
+  params.set('workspace', 'customers');
   if (opts.user_id?.trim()) params.set('user_id', opts.user_id.trim());
   else if (opts.phone?.trim()) params.set('phone', opts.phone.trim());
   return `/partner/orders?${params.toString()}`;
@@ -85,5 +85,6 @@ export function buildCustomerScopedOrdersHref(
   params.set('phone', trimmed);
   params.set('q', trimmed);
   if (name?.trim()) params.set('customer', name.trim());
+  params.set('workspace', 'orders');
   return `/partner/orders?${params.toString()}`;
 }

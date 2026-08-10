@@ -160,6 +160,12 @@
 - Next: **Prompt 7** — Aesthetic polish, a11y, Playwright, docs ship (Operations already = Customers & Orders from hub P1)
 - Non-goals: dual Shop Floor shell; Admin rebuild; fake metrics; map SDK; LLM chatbot
 
+## Partner Dashboard — Tags section (find · verify · reprint)
+- Status: **review** (Prompt 6 tests 2026-08-10)
+- Spec: `docs/features/partner-dashboard-tags-section.md`
+- Done: Prompts 0–6 — BE search confirm; shared `usePartnerTagsOrderSearch`; dashboard Tags UI + verify panel; wired on `/partner`; RTL + Playwright placement smoke
+- Next: Manual QA matrix (375/1280, light/dark, live API search)
+
 ## UI fix + backend pagination
 - Status: **done** (Prompt 8 QA lock 2026-08-08)
 - Spec/pack: `PAGINATION_STANDARD.md`, `.cursor/prompts/ui-fix-and-backend-pagination.md`, `docs/qa/ui-and-pagination-inventory.md`, `docs/qa/partner-admin-pagination-matrix.md`

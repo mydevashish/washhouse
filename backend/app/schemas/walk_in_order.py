@@ -61,6 +61,28 @@ class WalkInOrderCreateRequest(BaseModel):
     coupon_code: str | None = Field(default=None, max_length=32)
 
 
+class WalkInOrderWhatsAppNotifyResponse(BaseModel):
+    """WhatsApp order-received notification meta (async Celery + manual retry)."""
+
+    eligible: bool
+    status: str = Field(
+        description=(
+            "scheduled | skipped_invalid_phone | skipped_not_walk_in | skipped_not_confirmed"
+        ),
+    )
+    message_body: str | None = Field(
+        default=None,
+        description="Plain-text body for wa.me fallback and dev stub preview",
+    )
+
+
+class WalkInOrderWhatsAppRetryResponse(BaseModel):
+    sent: bool
+    skip_reason: str | None = None
+    error: str | None = None
+    message_body: str | None = None
+
+
 class WalkInOrderResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -85,3 +107,4 @@ class WalkInOrderResponse(BaseModel):
     user_id: UUID | None
     expected_ready_at: datetime | None = None
     items: list[OrderItemResponse] = Field(default_factory=list)
+    whatsapp_order_received: WalkInOrderWhatsAppNotifyResponse | None = None

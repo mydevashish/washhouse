@@ -58,19 +58,22 @@ describe('owner-customer-crm', () => {
 
   it('builds new-order prefill href', () => {
     expect(newOrderPrefillHref({ name: 'Riya', phone: '+919876543210' })).toBe(
-      '/partner/orders?phone=%2B919876543210&name=Riya&tab=create',
+      '/partner/orders?tab=create&phone=%2B919876543210&name=Riya',
     );
     expect(newOrderPrefillHref({ name: 'Riya', phone: '+919876543210' }, 'assisted')).toContain(
       'fulfillment=doorstep',
+    );
+    expect(newOrderPrefillHref({ name: 'Riya', phone: '+919876543210' }, 'assisted')).toContain(
+      'tab=create',
     );
   });
 
   it('builds desk and customer-scoped orders hrefs', () => {
     expect(deskPrefillHref({ user_id: 'u-1', phone: '+919876543210' })).toBe(
-      '/partner/orders?user_id=u-1&tab=desk',
+      '/partner/orders?workspace=customers&user_id=u-1',
     );
     expect(customerScopedOrdersHref({ name: 'Riya', phone: '+919876543210' })).toBe(
-      '/partner/orders?phone=%2B919876543210&q=%2B919876543210&customer=Riya',
+      '/partner/orders?workspace=orders&phone=%2B919876543210&q=%2B919876543210&customer=Riya',
     );
     expect(customerScopedOrdersHref({ name: 'Riya', phone: null })).toBeNull();
   });

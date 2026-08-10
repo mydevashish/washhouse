@@ -39,6 +39,7 @@ async def partner_customer_insights_dashboard(
     session: SessionDep,
     payload: Annotated[dict, Depends(get_insights_actor)],
 ) -> dict:
+    """Dashboard KPIs for CRM + hub pillars (includes order counts — Option A in four-pillars spec)."""
     data = await CustomerInsightsService(session).partner_dashboard(UUID(payload["sub"]), payload["role"])
     return success_envelope(CustomerInsightsDashboard.model_validate(data), request)
 

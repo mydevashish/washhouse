@@ -13,6 +13,57 @@ from app.tasks.celery_app import celery_app
 log = structlog.get_logger(__name__)
 
 
+from app.services.notifications.order_received_whatsapp import (
+    build_order_received_variables,
+    is_valid_e164_phone,
+    order_received_template_variables,
+    render_order_received_detailed_plain,
+    whatsapp_order_received_meta,
+)
+from app.services.notifications.whatsapp import get_whatsapp_provider
+
+log = structlog.get_logger(__name__)
+
+
+async def deliver_order_received_whatsapp(
+    session,
+    order,
+    *,
+    laundry_name: str,
+) -> dict:
+    """Synchronous send for partner retry; idempotent body."""
+    from app.services.notifications.dispatch import is_channel_enabled
+
+    body = render_order_received_detailed_plain(
+        build_order_received_variables(order, laundry_name=laundry_name),
+    )
+
+    if order.order_source != OrderSource.walk_in:
+        return {"sent": False, "skip_reason": "skipped_not_walk_in", "message_body": body}
+    if not is_valid_e164_phone(order.customer_phone):
+        return {"sent": False, "skip_reason": "skipped_invalid_phone", "message_body": None}
+    if order.status == OrderStatus.cancelled:
+        return {"sent": False, "skip_reason": "skipped_cancelled", "message_body": body}
+
+    if not await is_channel_enabled(session, "sms"):
+        return {"sent": False, "skip_reason": "skipped_channel_disabled", "message_body": body}
+
+    template, variables = order_received_template_variables(order, laundry_name=laundry_name)
+    provider = get_whatsapp_provider()
+    try:
+        await provider.send_template(order.customer_phone, template, variables)
+    except Exception as exc:
+        log.error(
+            "order.whatsapp_order_received_retry_failed",
+            order_id=str(order.id),
+            phone=order.customer_phone[-4:],
+            error=str(exc),
+        )
+        return {"sent": False, "error": str(exc), "message_body": body}
+
+    return {"sent": True, "message_body": body}
+
+
 async def _send_order_status_whatsapp(order_id: UUID, status: OrderStatus) -> None:
     from app.db.session import AsyncSessionLocal
     from app.repositories.laundry import LaundryRepository
@@ -36,16 +87,25 @@ async def _send_order_status_whatsapp(order_id: UUID, status: OrderStatus) -> No
         laundry = await LaundryRepository(session).get_by_id(order.laundry_id)
         laundry_name = laundry.name if laundry else "your laundry"
 
-        variables = {
-            "customer_name": (order.customer_name or "Customer").strip(),
-            "tracking_code": order.tracking_code,
-            "laundry_name": laundry_name,
-            "status_label": STATUS_LABELS.get(status, status.value.replace("_", " ")),
-        }
+        if status == OrderStatus.confirmed:
+            from app.services.notifications.order_received_whatsapp import (
+                order_received_template_variables,
+            )
 
-        template = template_for_status(status)
-        if not template:
-            return
+            template, variables = order_received_template_variables(
+                order,
+                laundry_name=laundry_name,
+            )
+        else:
+            variables = {
+                "customer_name": (order.customer_name or "Customer").strip(),
+                "tracking_code": order.tracking_code,
+                "laundry_name": laundry_name,
+                "status_label": STATUS_LABELS.get(status, status.value.replace("_", " ")),
+            }
+            template = template_for_status(status)
+            if not template:
+                return
 
         provider = get_whatsapp_provider()
         try:

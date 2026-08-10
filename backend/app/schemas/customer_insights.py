@@ -32,6 +32,8 @@ class CustomerInsightsDashboard(BaseModel):
     avg_lifetime_spend_inr: str
     avg_order_value_inr: str
     new_this_week: int = 0
+    orders_count_all_time: int = 0
+    orders_count_this_week: int = 0
 
 
 class CustomerInsightRow(BaseModel):

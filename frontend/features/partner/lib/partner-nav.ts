@@ -11,7 +11,6 @@ import {
   Settings,
   Sparkles,
   Star,
-  Ticket,
   Truck,
   UserCog,
   Wallet,
@@ -44,7 +43,7 @@ export const PARTNER_ORDERS_HUB_HREF = '/partner/orders';
 /** Sidebar / page title for the unified hub. */
 export const PARTNER_CUSTOMERS_ORDERS_LABEL = 'Customers & Orders';
 
-/** Legacy customers path — redirects to hub `?tab=directory` (nav item removed). */
+/** Legacy customers path — redirects to hub customers workspace modal. */
 export const PARTNER_PEOPLE_CUSTOMERS_HREF = '/partner/customers';
 
 /** Logistics hub — Pickups / Deliveries / Done today. */
@@ -53,11 +52,16 @@ export const PARTNER_LOGISTICS_HREF = '/partner/logistics';
 /** Legacy logistics paths map onto the Logistics hub for active state / titles. */
 export const PARTNER_LOGISTICS_ALIASES = ['/partner/pickups', '/partner/deliveries'] as const;
 
-/** Legacy intake bookmark — redirects into hub `?tab=create`. */
-export const PARTNER_NEW_ORDER_HREF = '/partner/new-order';
+/** Legacy intake bookmark — opens create dialog on the hub (`?tab=create`). */
+export const PARTNER_NEW_ORDER_HREF = buildOrdersHubPath('/partner/orders', 'create');
 
-/** Partner-managed discount codes. */
+/** Legacy coupons bookmark — redirects to hub workspace modal. */
 export const PARTNER_COUPONS_HREF = '/partner/coupons';
+
+/** Hub workspace deep links (pillars modal). */
+export const PARTNER_ORDERS_HUB_WORKSPACE_CUSTOMERS_HREF = `${PARTNER_ORDERS_HUB_HREF}?workspace=customers`;
+export const PARTNER_ORDERS_HUB_WORKSPACE_COUPONS_HREF = `${PARTNER_ORDERS_HUB_HREF}?workspace=coupons`;
+export const PARTNER_ORDERS_HUB_WORKSPACE_SERVICES_HREF = `${PARTNER_ORDERS_HUB_HREF}?workspace=services`;
 
 /**
  * Paths that belong to Customers & Orders Hub for active state / titles.
@@ -72,6 +76,8 @@ export const PARTNER_ORDERS_HUB_ALIASES = [
   '/partner/new-order',
   '/partner/floor/new',
   '/partner/floor/print',
+  PARTNER_COUPONS_HREF,
+  '/partner/services',
 ] as const;
 
 /** Search / quick-action aliases — old labels resolve into hub tabs / intake. */
@@ -90,37 +96,37 @@ export const PARTNER_ORDERS_HUB_SEARCH_ALIASES: ReadonlyArray<{
   {
     id: 'p-orders-hub-desk',
     label: 'Find customer',
-    href: `${PARTNER_ORDERS_HUB_HREF}?tab=desk`,
+    href: PARTNER_ORDERS_HUB_WORKSPACE_CUSTOMERS_HREF,
     keywords: 'find customer phone lookup desk assisted customer desk',
   },
   {
     id: 'p-orders-hub-requests',
     label: 'Booking requests',
-    href: `${PARTNER_ORDERS_HUB_HREF}?tab=requests`,
+    href: '/partner/booking-requests',
     keywords: 'leads inbox requests booking',
   },
   {
     id: 'p-orders-hub-directory',
     label: 'Customers',
-    href: `${PARTNER_ORDERS_HUB_HREF}?tab=directory`,
+    href: PARTNER_ORDERS_HUB_WORKSPACE_CUSTOMERS_HREF,
     keywords: 'directory insights customers analytics people',
   },
   {
     id: 'p-ops-services',
     label: 'Services',
-    href: '/partner/services',
+    href: PARTNER_ORDERS_HUB_WORKSPACE_SERVICES_HREF,
     keywords: 'service catalog dry clean wash fold pricing crud',
   },
   {
     id: 'p-orders-hub-new-order',
     label: 'New Order',
-    href: buildOrdersHubPath('/partner/orders', 'create'),
+    href: PARTNER_NEW_ORDER_HREF,
     keywords: 'new order create walk-in cloth wall intake',
   },
   {
     id: 'p-partner-coupons',
     label: 'Coupons',
-    href: PARTNER_COUPONS_HREF,
+    href: PARTNER_ORDERS_HUB_WORKSPACE_COUPONS_HREF,
     keywords: 'coupon discount promo code crud',
   },
   {
@@ -157,8 +163,6 @@ export const PARTNER_NAV_SECTIONS: PartnerNavSection[] = [
         icon: Package,
         badgeKeys: ['orders', 'bookingRequests'],
       },
-      { href: '/partner/services', label: 'Services', icon: ClipboardList },
-      { href: PARTNER_COUPONS_HREF, label: 'Coupons', icon: Ticket },
     ],
   },
   {

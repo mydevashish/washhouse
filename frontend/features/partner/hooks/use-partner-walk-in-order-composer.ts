@@ -1,7 +1,8 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { toast } from 'sonner';
 
 import { getPartnerPriceList } from '@/features/partner-price-list/api/partner-price-list';
@@ -82,12 +83,15 @@ export type UsePartnerWalkInOrderComposerOptions = {
   lookupActive?: boolean;
   /** Wizard mode: lookup only on customer step. Dashboard: false. */
   lookupOnlyOnCustomerStep?: boolean;
+  /** Debounce phone lookup (ms). Omit for immediate lookup on valid E.164. */
+  debounceLookupMs?: number;
 };
 
 function invalidatePartnerOrderQueries(queryClient: ReturnType<typeof useQueryClient>) {
   void queryClient.invalidateQueries({ queryKey: queryKeys.partnerWalkInOrders() });
   void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
   void queryClient.invalidateQueries({ queryKey: queryKeys.partnerAnalytics() });
+  void queryClient.invalidateQueries({ queryKey: ['partner-analytics-overview'] });
   void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsDashboard() });
   void queryClient.invalidateQueries({ queryKey: queryKeys.partnerCustomerInsightsDashboard() });
 }
@@ -99,6 +103,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     initialFulfillment = 'walk_in',
     lookupActive = true,
     lookupOnlyOnCustomerStep = true,
+    debounceLookupMs,
   } = options;
   const enabled = usePartnerQueriesEnabled();
   const queryClient = useQueryClient();
@@ -136,6 +141,14 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   const [deliveryType, setDeliveryType] = useState<PartnerDeliveryType>('Both');
   const [preferredDeliveryDate, setPreferredDeliveryDate] = useState('');
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [expressOrder, setExpressOrder] = useState(false);
+  const [staffNote, setStaffNote] = useState('');
+  const [gstInvoiceRequested, setGstInvoiceRequested] = useState(false);
+
+  const debouncedPhoneRaw = useDebouncedValue(customerPhone, debounceLookupMs ?? 0);
+  const phoneInputForLookup =
+    debounceLookupMs != null && debounceLookupMs > 0 ? debouncedPhoneRaw : customerPhone;
 
   const servicesQ = useQuery({
     queryKey: queryKeys.partnerServiceCatalog(),
@@ -170,9 +183,9 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   const visibleGarmentTiles = filterTilesByCategory(garmentTiles, category);
 
   const walkInLookupPhone = useMemo(() => {
-    const normalized = normalizeIndianPhoneInput(customerPhone);
+    const normalized = normalizeIndianPhoneInput(phoneInputForLookup);
     return isValidIndianMobileE164(normalized) ? normalized : null;
-  }, [customerPhone]);
+  }, [phoneInputForLookup]);
 
   const walkInLookupQ = usePartnerCustomerDeskLookup(
     walkInLookupPhone ? { phone: walkInLookupPhone } : null,
@@ -187,6 +200,18 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
 
   const walkInProfile =
     walkInLookupQ.data ?? (walkInLookupPhone ? guestDeskProfile(walkInLookupPhone) : null);
+
+  useEffect(() => {
+    const profileName = walkInLookupQ.data?.name?.trim();
+    if (!profileName || createdOrder || createdDoorstepOrder) return;
+    setCustomerName((prev) => (prev.trim() ? prev : profileName));
+  }, [walkInLookupQ.data?.name, createdOrder, createdDoorstepOrder]);
+
+  useEffect(() => {
+    const profileEmail = walkInLookupQ.data?.email?.trim();
+    if (!profileEmail || createdOrder || createdDoorstepOrder) return;
+    setCustomerEmail((prev) => (prev.trim() ? prev : profileEmail));
+  }, [walkInLookupQ.data?.email, createdOrder, createdDoorstepOrder]);
 
   const walkInSnapshotProfile =
     customerName.trim() && walkInLookupPhone && walkInProfile ? walkInProfile : null;
@@ -528,6 +553,15 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     return true;
   }
 
+  function buildOrderNotes(): string | undefined {
+    const parts: string[] = [];
+    if (notes.trim()) parts.push(notes.trim());
+    if (expressOrder) parts.push('Express service requested.');
+    if (gstInvoiceRequested) parts.push('GST invoice requested (B2B).');
+    if (staffNote.trim()) parts.push(`[Staff] ${staffNote.trim()}`);
+    return parts.length ? parts.join('\n') : undefined;
+  }
+
   function submitOrder() {
     if (createdOrder || createdDoorstepOrder || createMutation.isPending || createDoorstepMutation.isPending) {
       return;
@@ -559,7 +593,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
         pickup_at: new Date(pickupAtLocal).toISOString(),
         delivery_at: new Date(deliveryAtLocal).toISOString(),
         items: serviceItems.map((i) => ({ service_id: i.service_id, quantity: i.quantity })),
-        notes: notes.trim() || undefined,
+        notes: buildOrderNotes(),
         payment_method: 'cod' as const,
         save_address_to_user: false,
         coupon_code: couponApplied && couponCode.trim() ? couponCode.trim() : undefined,
@@ -577,7 +611,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       customer_phone: e164,
       customer_gender: customerGender ?? undefined,
       items: buildWalkInItems(),
-      notes: notes.trim() || undefined,
+      notes: buildOrderNotes(),
       expected_ready_at: expectedReadyAt ? `${expectedReadyAt}T12:00:00.000Z` : undefined,
       coupon_code: couponApplied && couponCode.trim() ? couponCode.trim() : undefined,
     });
@@ -595,6 +629,10 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setCouponCode('');
     setCouponApplied(false);
     setCouponDiscountInr(0);
+    setCustomerEmail('');
+    setExpressOrder(false);
+    setStaffNote('');
+    setGstInvoiceRequested(false);
     const slots = defaultDoorstepSlots();
     setPickupAtLocal(slots.pickup_at);
     setDeliveryAtLocal(slots.delivery_at);
@@ -667,6 +705,14 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setCustomerPhone,
     customerGender,
     setCustomerGender,
+    customerEmail,
+    setCustomerEmail,
+    expressOrder,
+    setExpressOrder,
+    staffNote,
+    setStaffNote,
+    gstInvoiceRequested,
+    setGstInvoiceRequested,
     notes,
     setNotes,
     expectedReadyAt,
@@ -716,6 +762,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     visibleGarmentTiles,
     loadingGarments: priceListQ.isLoading || servicesQ.isLoading,
     walkInLookupQ,
+    walkInLookupPhone,
     walkInProfile,
     walkInSnapshotProfile,
     walkInInsightQ,

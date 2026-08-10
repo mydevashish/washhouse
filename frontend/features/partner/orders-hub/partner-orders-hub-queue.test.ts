@@ -145,5 +145,6 @@ describe('partner-orders-hub-queue', () => {
       new URLSearchParams('phone=%2B919876543210&customer=Riya&q=%2B919876543210'),
     );
     expect(cleared).toBe('/partner/orders');
+    expect(buildPartnerOrdersQueuePath({ chip: 'walk_in' }, null)).toContain('workspace=orders');
   });
 });

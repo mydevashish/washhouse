@@ -8,9 +8,11 @@ import { useMounted } from '@/lib/hooks/use-mounted';
 import { DEFAULT_PAGE_SIZE } from '@/lib/pagination/types';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
+import type { PartnerDashboardPeriod } from '@/features/partner/dashboard/partner-dashboard-period';
 import {
   acceptOrder,
   getPartnerAnalytics,
+  getPartnerAnalyticsOverview,
   listPartnerOrders,
   rejectOrder,
   updateOrderStatus,
@@ -30,6 +32,16 @@ export function usePartnerAnalytics() {
   return useQuery({
     queryKey: queryKeys.partnerAnalytics(),
     queryFn: getPartnerAnalytics,
+    staleTime: STALE.partnerAnalytics,
+    enabled,
+  });
+}
+
+export function usePartnerAnalyticsOverview(period: PartnerDashboardPeriod) {
+  const enabled = usePartnerQueriesEnabled();
+  return useQuery({
+    queryKey: queryKeys.partnerAnalyticsOverview(period),
+    queryFn: () => getPartnerAnalyticsOverview(period),
     staleTime: STALE.partnerAnalytics,
     enabled,
   });
@@ -71,6 +83,7 @@ export function usePartnerOrderMutations() {
     void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
     void queryClient.invalidateQueries({ queryKey: ['partner-order'] });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerAnalytics() });
+    void queryClient.invalidateQueries({ queryKey: ['partner-analytics-overview'] });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerCustomers() });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerWalkInOrders() });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsDashboard() });

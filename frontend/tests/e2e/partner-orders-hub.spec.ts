@@ -3,9 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { loginAsPartner } from './helpers/auth';
 
 /**
- * Partner Customers & Orders Hub smoke — tabs, chips, nav IA, desk path, legacy redirects.
- * Requires: FE :3000, API :8000, seed_qa (partner.koramangala@demo.dlm).
- * Skip with E2E_SKIP_AUTH=1 when DB is not seeded.
+ * Partner Customers & Orders Hub — four pillar tiles + workspace modals.
  */
 const describeHub =
   process.env.E2E_SKIP_AUTH === '1' ? test.describe.skip : test.describe;
@@ -152,6 +150,18 @@ async function mockHubApis(page: Page) {
     });
   });
 
+  await page.route('**/api/v1/partner/coupons**', async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: [], meta: {} }),
+    });
+  });
+
   await page.route('**/api/v1/partner/services**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -190,108 +200,59 @@ async function mockHubApis(page: Page) {
 describeHub('Partner Orders Hub smoke', () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
-  test('hub tabs, chips, search, nav IA, and legacy redirects', async ({ page }) => {
+  test('four pillars, modals, nav IA, and legacy redirects', async ({ page }) => {
     await mockHubApis(page);
     await loginAsPartner(page);
 
     await page.goto('/partner/orders');
-    await expect(page.getByRole('heading', { name: /customers & orders/i })).toBeVisible({
-      timeout: 30_000,
-    });
-    await expect(page.getByText(/customers and their orders in one place/i)).toBeVisible();
-    await expect(page.getByTestId('partner-orders-hub')).toBeVisible();
-    await expect(page.getByTestId('orders-hub-tabs')).toBeVisible();
-    await expect(page.getByTestId('orders-hub-panel-orders')).toBeVisible();
-    await expect(page.getByTestId('partner-orders-shortcut-chips')).toBeVisible();
-    await expect(page.getByTestId('partner-orders-filter-bar')).toBeVisible();
-    await expect(page.getByTestId('partner-orders-empty-state')).toBeVisible();
+    await expect(page.getByTestId('partner-orders-hub')).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('hub-pillar-grid')).toBeVisible();
+    await expect(page.getByTestId('hub-pillar-customers')).toBeVisible();
+    await expect(page.getByTestId('hub-pillar-orders')).toBeVisible();
+    await expect(page.getByTestId('hub-pillar-coupons')).toBeVisible();
+    await expect(page.getByTestId('hub-pillar-services')).toBeVisible();
+    await expect(page.getByTestId('orders-hub-tabs')).toHaveCount(0);
+    await expect(page.getByTestId('partner-orders-shortcut-chips')).toHaveCount(0);
 
-    await expect(page.getByTestId('orders-hub-tab-badge-requests')).toHaveText('3');
-    await expect(page.getByTestId('orders-hub-header-requests-badge')).toHaveText('3');
+    await page.getByTestId('hub-pillar-customers').click();
+    await expect(page.getByTestId('hub-workspace-customers')).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveURL(/workspace=customers/);
+    await page.keyboard.press('Escape');
+    await expect(page).not.toHaveURL(/workspace=customers/);
 
-    // Shortcut chips — Ready today / Walk-in in ≤ 2 taps; URL deep-links.
-    await page.getByTestId('partner-orders-chip-ready_today').click();
-    await expect(page).toHaveURL(/chip=ready_today/);
-    await expect(page).toHaveURL(/status=ready/);
-    await page.getByTestId('partner-orders-chip-walk_in').click();
-    await expect(page).toHaveURL(/chip=walk_in/);
-    await expect(page).toHaveURL(/source=walk_in/);
-
-    await expect(page.getByTestId('partner-orders-chip-print')).toHaveAttribute(
-      'href',
-      '/partner/floor/print',
-    );
-
-    // Operations nav: single Customers & Orders workplace (P1).
     await page.getByRole('button', { name: /open navigation menu/i }).click();
     const partnerNav = page.getByRole('navigation', { name: /partner navigation/i });
     await expect(partnerNav.getByRole('link', { name: /customers & orders/i })).toBeVisible();
-    await expect(partnerNav.getByRole('link', { name: /^new order$/i })).toHaveCount(0);
-    await expect(partnerNav.getByRole('link', { name: /^walk-in orders$/i })).toHaveCount(0);
+    await expect(partnerNav.getByRole('link', { name: /^coupons$/i })).toHaveCount(0);
+    await expect(partnerNav.getByRole('link', { name: /^services$/i })).toHaveCount(0);
     await page.getByRole('button', { name: /^close$/i }).click();
 
-    await page.getByRole('tab', { name: /find customer/i }).click();
-    await expect(page).toHaveURL(/tab=desk/);
-    await expect(page.getByTestId('orders-hub-panel-desk')).toBeVisible();
-    await expect(page.getByRole('heading', { name: /counter search/i })).toBeVisible();
-    await expect(page.getByText(/your laundry only/i)).toBeVisible();
-
-    // Search -> place-order path (laundry-scoped desk).
-    const phone = page.getByPlaceholder(/98765/);
-    await phone.fill('9876543210');
-    await page.getByRole('button', { name: /^new order$/i }).click();
-    const dialog = page.getByRole('dialog');
-    await expect(dialog).toBeVisible({ timeout: 20_000 });
-    await dialog.getByRole('tab', { name: /new order/i }).click();
-    await expect(dialog.getByRole('button', { name: /place doorstep order/i })).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(dialog.getByRole('link', { name: /walk-in/i })).toBeVisible();
-    await page.keyboard.press('Escape');
-
-    await page.getByRole('tab', { name: /requests/i }).click();
-    await expect(page).toHaveURL(/tab=requests/);
-    await expect(page.getByTestId('orders-hub-panel-requests')).toBeVisible();
-    await expect(page.getByRole('button', { name: /new request/i })).toBeVisible();
-
-    await page.getByRole('tab', { name: /customers/i }).click();
-    await expect(page).toHaveURL(/tab=directory/);
-    await expect(page.getByTestId('orders-hub-panel-directory')).toBeVisible();
-    await expect(page.getByText(/total customers/i)).toBeVisible();
+    await page.goto('/partner/customers');
+    await expect(page).toHaveURL(/workspace=customers/);
 
     await page.goto('/partner/customer-desk?phone=%2B919876543210');
-    await expect(page).toHaveURL(/\/partner\/orders\?.*tab=desk/);
+    await expect(page).toHaveURL(/workspace=customers/);
     await expect(page).toHaveURL(/phone=%2B919876543210/);
-    await expect(page.getByTestId('orders-hub-panel-desk')).toBeVisible();
-    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20_000 });
 
     await page.goto('/partner/booking-requests');
-    await expect(page).toHaveURL(/\/partner\/orders\?tab=requests/);
+    await expect(page).toHaveURL(/\/partner\/booking-requests/);
+    await expect(page.getByRole('heading', { name: /booking requests/i })).toBeVisible({
+      timeout: 15_000,
+    });
 
-    await page.goto('/partner/customers');
-    await expect(page).toHaveURL(/\/partner\/orders\?tab=directory/);
-
-    // P3 - intake FAB + walk-in list redirect into hub.
-    await page.goto('/partner/orders');
-    await page.getByTestId('partner-orders-new-order-fab').click();
-    await expect(page.getByTestId('partner-orders-new-order-sheet')).toBeVisible();
-    await expect(page.getByTestId('partner-intake-choice-walk-in')).toHaveAttribute(
-      'href',
-      '/partner/new-order?mode=walk_in',
-    );
-    await expect(page.getByTestId('partner-intake-choice-doorstep')).toHaveAttribute(
-      'href',
-      '/partner/new-order?mode=assisted',
-    );
-    await page.keyboard.press('Escape');
+    await page.goto('/partner/new-order');
+    await expect(page).toHaveURL(/\/partner\/new-order/);
 
     await page.goto('/partner/walk-in-orders');
-    await expect(page).toHaveURL(/\/partner\/orders\?/);
+    await expect(page).toHaveURL(/workspace=orders/);
     await expect(page).toHaveURL(/chip=walk_in/);
-    await expect(page).toHaveURL(/source=walk_in/);
+
+    await page.goto('/partner/coupons');
+    await expect(page).toHaveURL(/workspace=coupons/);
+    await expect(page.getByTestId('hub-workspace-coupons')).toBeVisible({ timeout: 15_000 });
   });
 
-  test('P8 matrix: chips, pagination default 10, directory scope, settings English', async ({
+  test('P8 matrix: orders workspace pagination, customer scope link, settings English', async ({
     page,
   }) => {
     await mockHubApis(page);
@@ -343,31 +304,19 @@ describeHub('Partner Orders Hub smoke', () => {
 
     await loginAsPartner(page);
 
-    // Needs action chip deep-link.
-    await page.goto('/partner/orders');
-    await expect(page.getByTestId('partner-orders-hub')).toBeVisible({ timeout: 30_000 });
-    await page.getByTestId('partner-orders-chip-needs_action').click();
-    await expect(page).toHaveURL(/chip=needs_action/);
-
-    // Pagination default 10 (matrix row 8).
+    await page.goto('/partner/orders?workspace=orders');
+    await expect(page.getByTestId('hub-workspace-orders')).toBeVisible({ timeout: 30_000 });
     await expect.poll(() => ordersPageSize).toBe('10');
 
-    // Ready lens + print actions on row (matrix row 3/4).
-    await page.getByTestId('partner-orders-chip-ready_today').click();
-    await expect(page).toHaveURL(/chip=ready_today/);
-    await expect(page.getByTestId('print-order-actions').first()).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId('print-bill-link').first()).toBeVisible();
-    await expect(page.getByTestId('print-gst-invoice-link').first()).toBeVisible();
-
-    // Directory → View orders scopes hub (matrix row 5).
-    await page.getByRole('tab', { name: /customers/i }).click();
-    await expect(page).toHaveURL(/tab=directory/);
-    await expect(page.getByTestId('owner-customer-card')).toBeVisible({ timeout: 15_000 });
+    await page.goto('/partner/orders');
+    await page.getByTestId('hub-pillar-customers').click();
+    await expect(page.getByTestId('hub-workspace-customers')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('link', { name: /view orders for hub directory riya/i })).toBeVisible({
+      timeout: 15_000,
+    });
     await page.getByRole('link', { name: /view orders for hub directory riya/i }).click();
-    await expect(page).toHaveURL(/\/partner\/orders\?/);
+    await expect(page).toHaveURL(/workspace=orders/);
     await expect(page).toHaveURL(/phone=%2B919876543210/);
-    await expect(page).toHaveURL(/customer=/);
-    await expect(page.getByTestId('partner-customer-scope-bar')).toBeVisible({ timeout: 15_000 });
 
     // Settings: no Shop Floor mode toggle; English help (matrix rows 6–7).
     await page.goto('/partner/settings');

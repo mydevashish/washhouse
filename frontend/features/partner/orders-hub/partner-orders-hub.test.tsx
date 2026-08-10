@@ -1,32 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 
 import { PartnerOrdersHub } from '@/features/partner/orders-hub/partner-orders-hub';
 
 const replace = jest.fn();
+const push = jest.fn();
 let searchParams = new URLSearchParams();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ replace, push: jest.fn() }),
+  useRouter: () => ({ replace, push }),
   useSearchParams: () => searchParams,
-}));
-
-jest.mock('next/link', () => ({
-  __esModule: true,
-  default: ({
-    children,
-    href,
-    ...rest
-  }: {
-    children: ReactNode;
-    href: string;
-  } & React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-    <a href={href} {...rest}>
-      {children}
-    </a>
-  ),
 }));
 
 jest.mock('@/features/partner/hooks/use-partner-operations', () => ({
@@ -46,59 +31,72 @@ jest.mock('@/features/partner/hooks/use-partner-operations', () => ({
   }),
 }));
 
-jest.mock('@/features/partner/components/partner-orders-table', () => ({
-  PartnerOrdersTable: () => <div data-testid="partner-orders-table-mock" />,
+jest.mock('@/features/partner/components/partner-create-order-dialog', () => ({
+  PartnerCreateOrderDialog: ({
+    open,
+  }: {
+    open: boolean;
+  }) => (open ? <div data-testid="partner-create-order-dialog" /> : null),
 }));
 
-jest.mock('@/features/partner/orders-hub/partner-orders-today-panel', () => ({
-  PartnerOrdersTodayPanel: () => <div data-testid="partner-orders-today-mock" />,
-}));
-
-jest.mock('@/features/partner/booking-requests/hooks', () => ({
-  usePartnerBookingRequestsBadge: () => ({
-    isLoading: false,
+jest.mock('@/features/partner/orders-hub/workspace/partner-hub-orders-workspace', () => ({
+  usePartnerHubOrdersList: () => ({
+    search: '',
+    setSearch: jest.fn(),
+    setPage: jest.fn(),
     data: {
       items: [],
       page: 1,
-      page_size: 1,
-      total: 4,
+      page_size: 10,
+      total_records: 0,
       total_pages: 1,
       has_next: false,
       has_previous: false,
-      inbox: { overdue: 1, new: 0, reviewing: 0 },
     },
+    isPending: false,
+    isError: false,
   }),
+  usePartnerHubOrdersKpis: () => ({ needsAction: 0, isLoadingAction: false }),
+  PartnerHubOrdersWorkspaceToolbar: () => <div data-testid="hub-orders-toolbar" />,
+  PartnerHubOrdersWorkspaceBody: () => <div data-testid="hub-orders-body" />,
 }));
 
-jest.mock('@/features/partner/orders-hub/partner-orders-today-panel', () => ({
-  PartnerOrdersTodayPanel: () => <div data-testid="partner-orders-today-panel">today</div>,
+jest.mock('@/services/customer-insights', () => ({
+  getPartnerCustomerInsightsDashboard: jest.fn().mockResolvedValue({
+    total_customers: 12,
+    new_this_week: 2,
+    orders_count_all_time: 48,
+    orders_count_this_week: 5,
+    segments: { new: 0, active: 0, vip: 0, at_risk: 0, inactive: 0 },
+    lists: { top: 0, repeat: 0, vip: 0, inactive: 0, high_risk: 0 },
+    avg_retention_score: '0',
+    avg_lifetime_spend_inr: '0',
+    avg_order_value_inr: '0',
+  }),
+  listPartnerCustomerInsights: jest.fn().mockResolvedValue({
+    items: [],
+    page: 1,
+    page_size: 10,
+    total_records: 0,
+    total_pages: 1,
+    has_next: false,
+    has_previous: false,
+  }),
+  createPartnerCustomer: jest.fn(),
 }));
 
-jest.mock('@/features/partner/components/partner-orders-table', () => ({
-  PartnerOrdersTable: () => <div data-testid="partner-orders-table">orders table</div>,
+jest.mock('@/services/partner-coupons', () => ({
+  listPartnerCoupons: jest.fn().mockResolvedValue([
+    { id: 'c1', code: 'SAVE10', discount_percent: 10, is_active: true },
+  ]),
+  createPartnerCoupon: jest.fn(),
+  updatePartnerCoupon: jest.fn(),
+  deletePartnerCoupon: jest.fn(),
 }));
 
-jest.mock('@/features/partner/customer-desk', () => ({
-  PartnerCustomerDeskView: ({ embedded }: { embedded?: boolean }) => (
-    <div data-testid="partner-customer-desk-view">{embedded ? 'embedded desk' : 'desk'}</div>
-  ),
-}));
-
-jest.mock('@/features/partner/booking-requests', () => ({
-  PartnerBookingRequestsInbox: () => (
-    <div data-testid="partner-booking-requests">booking requests</div>
-  ),
-}));
-
-jest.mock('@/features/partner/views/partner-customers-view', () => ({
-  PartnerCustomersView: ({ embedded }: { embedded?: boolean }) => (
-    <div data-testid="partner-customers-view">{embedded ? 'embedded insights' : 'insights'}</div>
-  ),
-}));
-
-jest.mock('@/features/partner/components/ops-visual', () => ({
-  PartnerOpsSurface: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  PartnerWalkInOrderWorkspace: () => <div data-testid="partner-walk-in-workspace-mock" />,
+jest.mock('@/services/partner-service-catalog', () => ({
+  listPartnerServices: jest.fn().mockResolvedValue([]),
+  listPartnerServiceCategories: jest.fn().mockResolvedValue([]),
 }));
 
 function wrap(children: ReactNode) {
@@ -111,118 +109,89 @@ function wrap(children: ReactNode) {
 describe('PartnerOrdersHub', () => {
   beforeEach(() => {
     replace.mockClear();
+    push.mockClear();
     searchParams = new URLSearchParams();
   });
 
-  it('renders partner hub tabs including create and defaults to orders panel', () => {
+  it('renders only the four pillar tiles (no tabs, queue, or header chrome)', () => {
     render(wrap(<PartnerOrdersHub />));
 
-    expect(screen.getByTestId('orders-hub-tabs')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /^orders$/i })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
-    expect(screen.getByRole('tab', { name: /create order/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /find customer/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /requests/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /customers/i })).toBeInTheDocument();
+    expect(screen.getByTestId('partner-orders-hub')).toBeInTheDocument();
+    expect(screen.getByTestId('hub-pillar-grid')).toBeInTheDocument();
+    expect(screen.getByTestId('hub-pillar-customers')).toBeInTheDocument();
+    expect(screen.getByTestId('hub-pillar-orders')).toBeInTheDocument();
+    expect(screen.getByTestId('hub-pillar-coupons')).toBeInTheDocument();
+    expect(screen.getByTestId('hub-pillar-services')).toBeInTheDocument();
 
-    expect(screen.getByTestId('orders-hub-panel-orders')).toBeInTheDocument();
-    expect(screen.getByTestId('partner-orders-today-panel')).toBeInTheDocument();
-    expect(screen.getByTestId('partner-orders-shortcut-chips')).toBeInTheDocument();
-    expect(screen.getByTestId('partner-orders-filter-bar')).toBeInTheDocument();
+    expect(screen.queryByTestId('orders-hub-tabs')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('orders-hub-panel-orders')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('partner-orders-shortcut-chips')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('partner-orders-new-order-fab')).not.toBeInTheDocument();
   });
 
-  it('shows English hub header copy', () => {
-    render(wrap(<PartnerOrdersHub />));
-    expect(screen.getByRole('heading', { name: /customers & orders/i })).toBeInTheDocument();
-    expect(
-      screen.getByText(/queue, customer desk, booking requests, and directory/i),
-    ).toBeInTheDocument();
-  });
-
-  it('falls unknown tab values back to orders', () => {
-    searchParams = new URLSearchParams('tab=place-order');
-    render(wrap(<PartnerOrdersHub />));
-
-    expect(screen.getByRole('tab', { name: /^orders$/i })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
-    expect(screen.getByTestId('orders-hub-panel-orders')).toBeInTheDocument();
-  });
-
-  it('mounts create, desk, requests, and directory panels from ?tab=', () => {
-    searchParams = new URLSearchParams('tab=create');
-    const { rerender } = render(wrap(<PartnerOrdersHub />));
-    expect(screen.getByTestId('orders-hub-panel-create')).toBeInTheDocument();
-    expect(screen.getByTestId('partner-walk-in-workspace-mock')).toBeInTheDocument();
-
-    searchParams = new URLSearchParams('tab=desk');
-    rerender(wrap(<PartnerOrdersHub />));
-    expect(screen.getByTestId('orders-hub-panel-desk')).toBeInTheDocument();
-    expect(screen.getByTestId('partner-customer-desk-view')).toHaveTextContent('embedded desk');
-
-    searchParams = new URLSearchParams('tab=requests');
-    rerender(wrap(<PartnerOrdersHub />));
-    expect(screen.getByTestId('orders-hub-panel-requests')).toBeInTheDocument();
-
+  it('redirects legacy ?tab=directory to customers workspace', () => {
     searchParams = new URLSearchParams('tab=directory');
+    render(wrap(<PartnerOrdersHub />));
+    expect(replace).toHaveBeenCalledWith('/partner/orders?workspace=customers', { scroll: false });
+  });
+
+  it('opens create dialog from legacy ?tab=create and clears tab from URL', async () => {
+    searchParams = new URLSearchParams('tab=create&phone=%2B919876543210');
+    const { rerender } = render(wrap(<PartnerOrdersHub />));
+
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/partner/orders?phone=%2B919876543210', {
+        scroll: false,
+      });
+    });
+    expect(screen.getByTestId('partner-create-order-dialog')).toBeInTheDocument();
+
+    searchParams = new URLSearchParams('phone=%2B919876543210');
     rerender(wrap(<PartnerOrdersHub />));
-    expect(screen.getByTestId('orders-hub-panel-directory')).toBeInTheDocument();
-    expect(screen.getByTestId('partner-customers-view')).toHaveTextContent('embedded insights');
+    expect(screen.getByTestId('partner-create-order-dialog')).toBeInTheDocument();
   });
 
-  it('shows requests badge on the hub header and Requests tab', () => {
-    render(wrap(<PartnerOrdersHub />));
-
-    expect(screen.getByTestId('orders-hub-header-requests-badge')).toHaveTextContent('4');
-    expect(screen.getByTestId('orders-hub-tab-badge-requests')).toHaveTextContent('4');
-  });
-
-  it('switches tabs via URL replace', async () => {
+  it('opens customers workspace modal from pillar', async () => {
     const user = userEvent.setup();
-    render(wrap(<PartnerOrdersHub />));
+    const { rerender } = render(wrap(<PartnerOrdersHub />));
 
-    await user.click(screen.getByRole('tab', { name: /find customer/i }));
-    expect(replace).toHaveBeenCalledWith('/partner/orders?tab=desk', { scroll: false });
+    await user.click(screen.getByTestId('hub-pillar-customers'));
+    expect(replace).toHaveBeenCalledWith('/partner/orders?workspace=customers', { scroll: false });
+
+    searchParams = new URLSearchParams('workspace=customers');
+    rerender(wrap(<PartnerOrdersHub />));
+    expect(screen.getByTestId('hub-workspace-customers')).toBeInTheDocument();
   });
 
-  it('selects Ready today and Walk-in chips into URL state', async () => {
+  it('opens orders workspace modal from pillar', async () => {
     const user = userEvent.setup();
-    render(wrap(<PartnerOrdersHub />));
+    const { rerender } = render(wrap(<PartnerOrdersHub />));
 
-    await user.click(screen.getByTestId('partner-orders-chip-ready_today'));
-    expect(replace).toHaveBeenCalled();
-    const readyCall = replace.mock.calls.at(-1)?.[0] as string;
-    expect(readyCall).toContain('chip=ready_today');
-    expect(readyCall).toContain('status=ready');
+    await user.click(screen.getByTestId('hub-pillar-orders'));
+    expect(replace).toHaveBeenCalledWith('/partner/orders?workspace=orders', { scroll: false });
 
-    await user.click(screen.getByTestId('partner-orders-chip-walk_in'));
-    const walkCall = replace.mock.calls.at(-1)?.[0] as string;
-    expect(walkCall).toContain('chip=walk_in');
-    expect(walkCall).toContain('source=walk_in');
+    searchParams = new URLSearchParams('workspace=orders');
+    rerender(wrap(<PartnerOrdersHub />));
+    expect(screen.getByTestId('hub-workspace-orders')).toBeInTheDocument();
   });
 
-  it('links Print chip to the print center', () => {
-    render(wrap(<PartnerOrdersHub />));
-    expect(screen.getByTestId('partner-orders-chip-print')).toHaveAttribute(
-      'href',
-      '/partner/floor/print',
-    );
+  it('opens coupons workspace modal from pillar', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(wrap(<PartnerOrdersHub />));
+
+    await user.click(screen.getByTestId('hub-pillar-coupons'));
+    searchParams = new URLSearchParams('workspace=coupons');
+    rerender(wrap(<PartnerOrdersHub />));
+    expect(screen.getByTestId('hub-workspace-coupons')).toBeInTheDocument();
   });
 
-  it('exposes Print center header action (P5)', () => {
-    render(wrap(<PartnerOrdersHub />));
-    expect(screen.getByTestId('partner-orders-print-center')).toHaveAttribute(
-      'href',
-      '/partner/floor/print',
-    );
-  });
+  it('opens services workspace modal from pillar', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(wrap(<PartnerOrdersHub />));
 
-  it('exposes New order header control and mobile FAB (P3)', () => {
-    render(wrap(<PartnerOrdersHub />));
-    expect(screen.getByTestId('partner-orders-new-order-header')).toBeInTheDocument();
-    expect(screen.getByTestId('partner-orders-new-order-fab')).toBeInTheDocument();
+    await user.click(screen.getByTestId('hub-pillar-services'));
+    searchParams = new URLSearchParams('workspace=services');
+    rerender(wrap(<PartnerOrdersHub />));
+    expect(screen.getByTestId('hub-workspace-services')).toBeInTheDocument();
   });
 });

@@ -1,8 +1,8 @@
 import {
   buildNewOrderHref,
   buildPartnerCreateOrderHref,
+  buildDeskPrefillHref,
 } from '@/features/partner/customer-desk/phone';
-import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import type { CustomerInsightRow, CustomerInsightsDashboard, CustomerSegment } from '@/services/customer-insights';
 
 export type CustomerSoftTag = 'new' | 'regular' | 'at_risk';
@@ -84,13 +84,10 @@ export function newOrderPrefillHref(
 export function deskPrefillHref(
   customer: Pick<CustomerInsightRow, 'user_id' | 'phone'>,
 ): string {
-  if (customer.user_id) {
-    return buildOrdersHubPath('/partner/orders', 'desk', { user_id: customer.user_id });
-  }
-  if (customer.phone) {
-    return buildOrdersHubPath('/partner/orders', 'desk', { phone: customer.phone });
-  }
-  return buildOrdersHubPath('/partner/orders', 'desk');
+  return buildDeskPrefillHref({
+    user_id: customer.user_id,
+    phone: customer.phone,
+  });
 }
 
 /** Orders queue filtered to this customer’s phone. */
@@ -99,6 +96,7 @@ export function customerScopedOrdersHref(
 ): string | null {
   if (!customer.phone?.trim()) return null;
   const params = new URLSearchParams();
+  params.set('workspace', 'orders');
   params.set('phone', customer.phone.trim());
   params.set('q', customer.phone.trim());
   if (customer.name?.trim()) params.set('customer', customer.name.trim());

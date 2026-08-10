@@ -313,6 +313,7 @@ export function PartnerOrderCard({
             <span className="text-[11px] font-medium text-muted-foreground">Print</span>
             <PrintOrderActions
               orderId={order.id}
+              orderStatus={order.status}
               layout="compact"
               emphasize={printEmphasis}
               className="justify-start"

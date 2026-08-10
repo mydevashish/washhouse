@@ -20,7 +20,7 @@ import {
   isOrderNeedsAction,
 } from '@/features/partner/lib/partner-status';
 import { usePartnerOrderMutations } from '@/features/partner/hooks/use-partner-operations';
-import { getPrintLifecycleEmphasis } from '@/features/partner-shop-floor/lib/print-lifecycle';
+import { getPrintLifecycleEmphasis, canPrintBillOrInvoice } from '@/features/partner-shop-floor/lib/print-lifecycle';
 import { formatInr } from '@/features/discover/detail/order-pricing';
 import { ClientDate } from '@/components/ui/client-date';
 import { useServerList } from '@/lib/pagination/use-server-list';
@@ -28,12 +28,19 @@ import { queryKeys } from '@/lib/query-keys';
 import { listPartnerOrders, type PartnerOrder, type PartnerOrdersBucket } from '@/services/partner';
 import { getPartnerCustodyTimeline } from '@/services/custody-timeline';
 
-type PartnerOrdersTableFilters = {
+type HubOrdersFilters = {
   bucket?: PartnerOrdersBucket;
   status?: string;
   order_source?: string;
   payment_status?: string;
   created_today?: boolean;
+};
+
+export type PartnerOrdersServerList = ReturnType<
+  typeof useServerList<PartnerOrder, HubOrdersFilters>
+>;
+
+type PartnerOrdersTableFilters = HubOrdersFilters & {
   /** Hub-debounced `q` — overrides useServerList internal search. */
   search?: string;
 };
@@ -52,6 +59,10 @@ type PartnerOrdersTableProps = {
   onClearFilters?: () => void;
   /** @deprecated Search moves to hub filter bar. */
   showSearch?: boolean;
+  /** Hub workspace modal — parent owns pagination footer. */
+  hidePagination?: boolean;
+  /** When set, uses this list state instead of an internal `useServerList`. */
+  serverList?: PartnerOrdersServerList;
 };
 
 export function PartnerOrdersTable({
@@ -60,6 +71,8 @@ export function PartnerOrdersTable({
   search = '',
   hasActiveLens = false,
   onClearFilters,
+  hidePagination = false,
+  serverList,
 }: PartnerOrdersTableProps) {
   const [evidenceOrder, setEvidenceOrder] = useState<PartnerOrder | null>(null);
   const [custodyOrder, setCustodyOrder] = useState<PartnerOrder | null>(null);
@@ -79,13 +92,16 @@ export function PartnerOrdersTable({
     [filters, legacyFilter, search],
   );
 
-  const list = useServerList<PartnerOrder, PartnerOrdersTableFilters>({
+  const internalList = useServerList<PartnerOrder, PartnerOrdersTableFilters>({
     queryKey: queryKeys.partnerOrders({ surface: 'table' }),
     fetcher: (params) => listPartnerOrders(params),
     filters: listFilters,
     defaultSort: { sort_by: 'created_at', sort_order: 'desc' },
     defaultPageSize: 10,
+    enabled: !serverList,
   });
+
+  const list = serverList ?? internalList;
 
   if (list.isLoading) {
     return (
@@ -218,6 +234,7 @@ export function PartnerOrdersTable({
                           showPhotos={!walkIn && o.status === 'pickup_assigned'}
                           nextLabel={nextLabel}
                           printEmphasis={printEmphasis}
+                          showBillInvoice={canPrintBillOrInvoice(o.status)}
                           isBusy={isBusy}
                           isAccepting={acceptMutation.isPending}
                           isRejecting={rejectMutation.isPending}
@@ -236,16 +253,18 @@ export function PartnerOrdersTable({
             </table>
             </div>
           </div>
-          <DataTablePagination
-            page={list.page}
-            pageCount={list.pageCount}
-            pageSize={list.pageSize}
-            pageStart={list.pageStart}
-            pageEnd={list.pageEnd}
-            totalCount={list.totalRecords}
-            onPageChange={list.setPage}
-            onPageSizeChange={list.setPageSize}
-          />
+          {!hidePagination ? (
+            <DataTablePagination
+              page={list.page}
+              pageCount={list.pageCount}
+              pageSize={list.pageSize}
+              pageStart={list.pageStart}
+              pageEnd={list.pageEnd}
+              totalCount={list.totalRecords}
+              onPageChange={list.setPage}
+              onPageSizeChange={list.setPageSize}
+            />
+          ) : null}
         </>
       )}
       <PartnerPickupEvidenceDialog

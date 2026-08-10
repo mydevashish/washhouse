@@ -7,12 +7,12 @@ export type OrdersHubTab = (typeof ORDERS_HUB_TABS)[number];
 /** Partner-only hub tab (counter intake wizard). */
 export type PartnerOrdersHubTab = OrdersHubTab | 'create';
 
+/** Partner hub tabs — customer directory lives in `?workspace=customers` (four pillars). */
 export const PARTNER_ORDERS_HUB_TABS = [
   'orders',
   'create',
   'desk',
   'requests',
-  'directory',
 ] as const satisfies readonly PartnerOrdersHubTab[];
 
 export type OrdersHubBasePath = '/admin/orders' | '/partner/orders';

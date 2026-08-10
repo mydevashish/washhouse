@@ -129,6 +129,7 @@ export function PrintOrderTagsView({ orderId }: PrintOrderTagsViewProps) {
           return (
             <article
               key={`${tag.kind}-${idx}`}
+              id={tag.kind === 'bag_master' ? 'tag-bag-master' : undefined}
               className={cn(
                 'tag-card overflow-hidden rounded-xl border border-border bg-white text-black shadow-sm',
                 'print:rounded-none print:border-0 print:shadow-none',

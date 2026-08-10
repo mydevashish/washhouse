@@ -6,10 +6,11 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.enums import ColorToken, OrderSource, OrderStatus, PartnerStaffRole
 from app.schemas.order import OrderItemResponse
+from app.utils.phone import validate_strict_indian_mobile
 
 
 class InventoryUpdateRequest(BaseModel):
@@ -113,12 +114,62 @@ class PartnerAnalyticsResponse(BaseModel):
     revenue_doorstep_month_inr: str = Field(default="0.00")
 
 
+class PartnerAnalyticsOverviewChartPoint(BaseModel):
+    bucket_label: str
+    bucket_start_utc: str = Field(description="ISO-8601 UTC start of bucket")
+    orders_count: int = Field(description="Orders created in bucket (IST)")
+    pending_orders_count: int = Field(
+        description="Non-terminal orders created in bucket (delivered/cancelled excluded)",
+    )
+    pending_payment_count: int = Field(description="Unpaid orders created in bucket")
+    pending_payment_inr: str = Field(description="Outstanding ₹ for unpaid orders created in bucket")
+    customers_count: int = Field(description="Distinct customers with orders created in bucket")
+    revenue_gross_inr: str = Field(description="Delivered gross in bucket (updated_at IST)")
+    revenue_net_inr: str = Field(description="Gross minus snapshotted commission in bucket")
+
+
+class PartnerAnalyticsOverviewResponse(BaseModel):
+    """Period-scoped partner dashboard KPIs + chart series (IST calendar windows)."""
+
+    period: str = Field(description="today | week | month")
+    period_label_ist: str
+    period_start_utc: str
+    period_end_utc: str
+    orders_count: int
+    pending_orders_count: int = Field(
+        description="Non-terminal orders created in period (delivered/cancelled excluded)",
+    )
+    revenue_gross_inr: str = Field(description="Delivered gross in period (updated_at IST window)")
+    revenue_net_inr: str
+    commission_inr: str
+    effective_commission_rate: str = Field(
+        description="Resolved laundry platform commission percent (e.g. 10.00)",
+    )
+    pending_payment_count: int
+    pending_payment_inr: str
+    customers_count_period: int
+    customers_count_all_time: int
+    chart_series: list[PartnerAnalyticsOverviewChartPoint]
+
+
 class PartnerCustomerSummary(BaseModel):
     user_id: UUID
     name: str
     order_count: int
     total_spent_inr: str
     last_order_at: str | None
+
+
+class PartnerCustomerCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=200)
+    phone: str = Field(max_length=20)
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str) -> str:
+        return validate_strict_indian_mobile(value)
 
 
 class PartnerOrderResponse(BaseModel):
@@ -135,6 +186,11 @@ class PartnerOrderResponse(BaseModel):
     token_day_number: int | None = None
     pickup_at: datetime
     delivery_at: datetime
+    created_at: datetime
+    address_line1: str | None = None
+    address_line2: str | None = None
+    address_city: str | None = None
+    address_pincode: str | None = None
     subtotal_inr: Decimal
     delivery_fee_inr: Decimal
     cgst_inr: Decimal

@@ -362,6 +362,288 @@ class PartnerService:
             "revenue_doorstep_month_inr": money_str(door_month),
         }
 
+    async def empty_analytics_overview(self, partner_user_id: UUID, period_key: str) -> dict:
+        """Zeros when partner has no laundry yet (matches empty_analytics_summary pattern)."""
+        from app.services.partner_analytics_period import (
+            parse_partner_overview_period,
+            resolve_partner_overview_period,
+        )
+
+        period = parse_partner_overview_period(period_key)
+        bounds = resolve_partner_overview_period(period)
+        empty_series = [
+            {
+                "bucket_label": b.bucket_label,
+                "bucket_start_utc": b.bucket_start_utc.isoformat(),
+                "orders_count": 0,
+                "pending_orders_count": 0,
+                "pending_payment_count": 0,
+                "pending_payment_inr": money_str(0),
+                "customers_count": 0,
+                "revenue_gross_inr": money_str(0),
+                "revenue_net_inr": money_str(0),
+            }
+            for b in bounds.chart_buckets
+        ]
+        money = empty_money_fields()
+        return {
+            "period": period.value,
+            "period_label_ist": bounds.period_label_ist,
+            "period_start_utc": bounds.period_start_utc.isoformat(),
+            "period_end_utc": bounds.period_end_utc.isoformat(),
+            "orders_count": 0,
+            "pending_orders_count": 0,
+            "revenue_gross_inr": money_str(0),
+            "revenue_net_inr": money_str(0),
+            "commission_inr": money_str(0),
+            "effective_commission_rate": money["effective_commission_rate"],
+            "pending_payment_count": 0,
+            "pending_payment_inr": money_str(0),
+            "customers_count_period": 0,
+            "customers_count_all_time": 0,
+            "chart_series": empty_series,
+        }
+
+    async def analytics_overview(self, partner_user_id: UUID, period_key: str) -> dict:
+        from sqlalchemy import String, cast, or_
+
+        from app.models.enums import PaymentStatus
+        from app.services.partner_analytics_period import (
+            bucket_key_from_def,
+            ist_sql_bucket_key,
+            parse_partner_overview_period,
+            resolve_partner_overview_period,
+        )
+
+        laundry = await self._laundry_for_partner(partner_user_id)
+        period = parse_partner_overview_period(period_key)
+        bounds = resolve_partner_overview_period(period)
+        start = bounds.period_start_utc
+        end = bounds.period_end_utc
+        terminal = (OrderStatus.delivered, OrderStatus.cancelled)
+        granularity = "hour" if period.value == "today" else "day"
+
+        base = and_(
+            Order.laundry_id == laundry.id,
+            Order.deleted_at.is_(None),
+        )
+
+        orders_count = int(
+            await self._session.scalar(
+                select(func.count())
+                .select_from(Order)
+                .where(base, Order.created_at >= start, Order.created_at < end),
+            )
+            or 0,
+        )
+
+        pending_orders_count = int(
+            await self._session.scalar(
+                select(func.count())
+                .select_from(Order)
+                .where(
+                    base,
+                    Order.created_at >= start,
+                    Order.created_at < end,
+                    Order.status.notin_(terminal),
+                ),
+            )
+            or 0,
+        )
+
+        revenue_gross, commission_total = await self._delivered_gross_commission(
+            laundry.id,
+            time_col=Order.updated_at,
+            start=start,
+            end=end,
+        )
+        revenue_net = partner_net(revenue_gross, commission_total)
+
+        unpaid_filter = Order.payment_status.in_((PaymentStatus.pending, PaymentStatus.pending_cod))
+        pending_payment_count = int(
+            await self._session.scalar(
+                select(func.count())
+                .select_from(Order)
+                .where(
+                    base,
+                    Order.created_at >= start,
+                    Order.created_at < end,
+                    unpaid_filter,
+                ),
+            )
+            or 0,
+        )
+        pending_payment_sum = await self._session.scalar(
+            select(func.coalesce(func.sum(Order.total_inr), 0)).where(
+                base,
+                Order.created_at >= start,
+                Order.created_at < end,
+                unpaid_filter,
+            ),
+        )
+        pending_payment_inr = Decimal(str(pending_payment_sum or 0))
+
+        customer_key = func.coalesce(cast(Order.user_id, String), Order.customer_phone)
+        customers_count_period = int(
+            await self._session.scalar(
+                select(func.count(func.distinct(customer_key))).where(
+                    base,
+                    Order.created_at >= start,
+                    Order.created_at < end,
+                    or_(Order.user_id.isnot(None), Order.customer_phone.isnot(None)),
+                ),
+            )
+            or 0,
+        )
+        customers_count_all_time = int(
+            await self._session.scalar(
+                select(func.count(func.distinct(customer_key))).where(
+                    base,
+                    or_(Order.user_id.isnot(None), Order.customer_phone.isnot(None)),
+                ),
+            )
+            or 0,
+        )
+
+        created_bucket = func.date_trunc(
+            granularity,
+            func.timezone("Asia/Kolkata", Order.created_at),
+        )
+        created_rows = await self._session.execute(
+            select(
+                created_bucket.label("bucket"),
+                func.count().label("cnt"),
+            )
+            .where(base, Order.created_at >= start, Order.created_at < end)
+            .group_by(created_bucket),
+        )
+        orders_by_bucket = {
+            ist_sql_bucket_key(row.bucket, granularity=granularity): int(row.cnt)
+            for row in created_rows.all()
+        }
+
+        pending_rows = await self._session.execute(
+            select(
+                created_bucket.label("bucket"),
+                func.count().label("cnt"),
+            )
+            .where(
+                base,
+                Order.created_at >= start,
+                Order.created_at < end,
+                Order.status.notin_(terminal),
+            )
+            .group_by(created_bucket),
+        )
+        pending_by_bucket = {
+            ist_sql_bucket_key(row.bucket, granularity=granularity): int(row.cnt)
+            for row in pending_rows.all()
+        }
+
+        pending_pay_rows = await self._session.execute(
+            select(
+                created_bucket.label("bucket"),
+                func.count().label("cnt"),
+                func.coalesce(func.sum(Order.total_inr), 0).label("inr"),
+            )
+            .where(
+                base,
+                Order.created_at >= start,
+                Order.created_at < end,
+                unpaid_filter,
+            )
+            .group_by(created_bucket),
+        )
+        pending_pay_count_by_bucket: dict[object, int] = {}
+        pending_pay_inr_by_bucket: dict[object, Decimal] = {}
+        for row in pending_pay_rows.all():
+            key = ist_sql_bucket_key(row.bucket, granularity=granularity)
+            pending_pay_count_by_bucket[key] = int(row.cnt)
+            pending_pay_inr_by_bucket[key] = Decimal(str(row.inr or 0))
+
+        customers_rows = await self._session.execute(
+            select(
+                created_bucket.label("bucket"),
+                func.count(func.distinct(customer_key)).label("cnt"),
+            )
+            .where(
+                base,
+                Order.created_at >= start,
+                Order.created_at < end,
+                or_(Order.user_id.isnot(None), Order.customer_phone.isnot(None)),
+            )
+            .group_by(created_bucket),
+        )
+        customers_by_bucket = {
+            ist_sql_bucket_key(row.bucket, granularity=granularity): int(row.cnt)
+            for row in customers_rows.all()
+        }
+
+        delivered_bucket = func.date_trunc(
+            granularity,
+            func.timezone("Asia/Kolkata", Order.updated_at),
+        )
+        revenue_rows = await self._session.execute(
+            select(
+                delivered_bucket.label("bucket"),
+                func.coalesce(func.sum(Order.total_inr), 0).label("gross"),
+                func.coalesce(func.sum(_commission_expr()), 0).label("commission"),
+            )
+            .where(
+                base,
+                Order.status == OrderStatus.delivered,
+                Order.updated_at >= start,
+                Order.updated_at < end,
+            )
+            .group_by(delivered_bucket),
+        )
+        revenue_by_bucket: dict[object, tuple[Decimal, Decimal]] = {}
+        for row in revenue_rows.all():
+            key = ist_sql_bucket_key(row.bucket, granularity=granularity)
+            revenue_by_bucket[key] = (
+                Decimal(str(row.gross or 0)),
+                Decimal(str(row.commission or 0)),
+            )
+
+        chart_series = []
+        for bucket_def in bounds.chart_buckets:
+            key = bucket_key_from_def(bucket_def, granularity=granularity)
+            orders_in_bucket = orders_by_bucket.get(key, 0)
+            gross, comm = revenue_by_bucket.get(key, (Decimal("0"), Decimal("0")))
+            chart_series.append(
+                {
+                    "bucket_label": bucket_def.bucket_label,
+                    "bucket_start_utc": bucket_def.bucket_start_utc.isoformat(),
+                    "orders_count": orders_in_bucket,
+                    "pending_orders_count": pending_by_bucket.get(key, 0),
+                    "pending_payment_count": pending_pay_count_by_bucket.get(key, 0),
+                    "pending_payment_inr": money_str(pending_pay_inr_by_bucket.get(key, Decimal("0"))),
+                    "customers_count": customers_by_bucket.get(key, 0),
+                    "revenue_gross_inr": money_str(gross),
+                    "revenue_net_inr": money_str(partner_net(gross, comm)),
+                },
+            )
+
+        effective_rate = await PlatformConfigService(self._session).resolve_commission_rate(laundry)
+
+        return {
+            "period": period.value,
+            "period_label_ist": bounds.period_label_ist,
+            "period_start_utc": bounds.period_start_utc.isoformat(),
+            "period_end_utc": bounds.period_end_utc.isoformat(),
+            "orders_count": orders_count,
+            "pending_orders_count": pending_orders_count,
+            "revenue_gross_inr": money_str(revenue_gross),
+            "revenue_net_inr": money_str(revenue_net),
+            "commission_inr": money_str(commission_total),
+            "effective_commission_rate": money_str(effective_rate),
+            "pending_payment_count": pending_payment_count,
+            "pending_payment_inr": money_str(pending_payment_inr),
+            "customers_count_period": customers_count_period,
+            "customers_count_all_time": customers_count_all_time,
+            "chart_series": chart_series,
+        }
+
     async def list_customers(self, partner_user_id: UUID) -> list[dict]:
         laundry_ids = await self._laundry_ids_for_partner(partner_user_id)
         result = await self._session.execute(

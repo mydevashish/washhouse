@@ -12,25 +12,25 @@ import {
 describe('customer hub href builders (P4)', () => {
   it('builds walk-in and assisted new-order hrefs', () => {
     expect(buildNewOrderHref('+919876543210', 'Riya', 'walk_in')).toBe(
-      '/partner/orders?phone=%2B919876543210&name=Riya&tab=create',
+      '/partner/orders?tab=create&phone=%2B919876543210&name=Riya',
     );
     expect(buildNewOrderHref('+919876543210', null, 'assisted')).toBe(
-      '/partner/orders?phone=%2B919876543210&fulfillment=doorstep&tab=create',
+      '/partner/orders?tab=create&phone=%2B919876543210&fulfillment=doorstep&mode=assisted',
     );
   });
 
   it('builds desk prefill href', () => {
     expect(buildDeskPrefillHref({ phone: '+919876543210' })).toBe(
-      '/partner/orders?tab=desk&phone=%2B919876543210',
+      '/partner/orders?workspace=customers&phone=%2B919876543210',
     );
     expect(buildDeskPrefillHref({ user_id: 'u-42' })).toBe(
-      '/partner/orders?tab=desk&user_id=u-42',
+      '/partner/orders?workspace=customers&user_id=u-42',
     );
   });
 
   it('builds customer-scoped orders href', () => {
     expect(buildCustomerScopedOrdersHref('+919876543210', 'Riya')).toBe(
-      '/partner/orders?phone=%2B919876543210&q=%2B919876543210&customer=Riya',
+      '/partner/orders?phone=%2B919876543210&q=%2B919876543210&customer=Riya&workspace=orders',
     );
   });
 });

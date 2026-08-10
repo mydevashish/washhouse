@@ -30,6 +30,7 @@ from app.models.inventory_verification import (
 )
 from app.models.catalog import LaundryItemPrice, PlatformCatalogItem
 from app.models.laundry import Laundry, LaundryService
+from app.models.laundry_customer_registration import LaundryCustomerRegistration
 from app.models.storefront import LaundryStorefront
 from app.models.loyalty import Coupon, LoyaltyAccount, ReferralCode
 from app.models.marketing import (
@@ -77,6 +78,7 @@ __all__ = [
     "ComplaintStatusEvent",
     "Coupon",
     "Laundry",
+    "LaundryCustomerRegistration",
     "LaundryItemPrice",
     "LaundryService",
     "PlatformCatalogItem",

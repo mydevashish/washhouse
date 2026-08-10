@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
 import { Loader2, Search } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -11,35 +10,14 @@ import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { ColorTokenChip } from '@/features/partner-shop-floor/components/color-token-chip';
 import { PrintOrderActions } from '@/features/partner-shop-floor/components/print-order-actions';
 import { PartnerPanel } from '@/features/partner/components/partner-panel';
+import { usePartnerTagsOrderSearch } from '@/features/partner/hooks/use-partner-tags-order-search';
 import { getApiErrorMessage } from '@/lib/api-error-message';
-import { queryKeys } from '@/lib/query-keys';
-import { STALE } from '@/lib/query-config';
-import { listPartnerOrders, type PartnerOrder } from '@/services/partner';
-
-function matchesQuery(order: PartnerOrder, raw: string): boolean {
-  const q = raw.trim().toLowerCase();
-  if (!q) return false;
-  const phone = (order.customer_phone ?? '').replace(/\D/g, '');
-  const qDigits = q.replace(/\D/g, '');
-  if (qDigits.length >= 4 && phone.endsWith(qDigits)) return true;
-  if (order.tracking_code.toLowerCase().includes(q)) return true;
-  if (order.token_code?.toLowerCase().includes(q)) return true;
-  return false;
-}
 
 export function ShopFloorPrintView() {
   const [query, setQuery] = useState('');
-  const ordersQ = useQuery({
-    queryKey: queryKeys.partnerOrders({ surface: 'floor', page_size: 50 }),
-    queryFn: () => listPartnerOrders({ page: 1, page_size: 50, bucket: 'active' }),
-    staleTime: STALE.partnerAnalytics,
-  });
-
-  const matches = useMemo(() => {
-    const rows = ordersQ.data?.items ?? [];
-    if (!query.trim()) return [];
-    return rows.filter((o) => matchesQuery(o, query)).slice(0, 12);
-  }, [ordersQ.data, query]);
+  const trimmedQuery = query.trim();
+  const { orders, shouldSearch, isLoading, isError, error, refetch, isFetching } =
+    usePartnerTagsOrderSearch(query);
 
   return (
     <div className="mx-auto max-w-lg space-y-4 p-4" data-testid="shop-floor-print-center">
@@ -64,31 +42,35 @@ export function ShopFloorPrintView() {
           />
         </div>
 
-        {ordersQ.isLoading ? (
+        {shouldSearch && isLoading ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             Loading orders…
           </p>
         ) : null}
 
-        {ordersQ.isError ? (
+        {shouldSearch && isError ? (
           <QueryErrorState
             title="Could not load orders"
-            message={getApiErrorMessage(ordersQ.error, 'Try again')}
-            onRetry={() => void ordersQ.refetch()}
-            isRetrying={ordersQ.isFetching}
+            message={getApiErrorMessage(error, 'Try again')}
+            onRetry={() => void refetch()}
+            isRetrying={isFetching}
           />
         ) : null}
 
-        {!query.trim() ? (
+        {!trimmedQuery ? (
           <p className="text-sm text-muted-foreground">
             After you create an order, use Success → Print tags / Bill / GST invoice, or reprint here.
           </p>
-        ) : matches.length === 0 ? (
+        ) : !shouldSearch ? (
+          <p className="text-sm text-muted-foreground">
+            Enter at least 3 characters, or a tracking code (WH-) or token (R-).
+          </p>
+        ) : !isLoading && !isError && orders.length === 0 ? (
           <p className="text-sm text-muted-foreground">No matching orders.</p>
-        ) : (
+        ) : shouldSearch && orders.length > 0 ? (
           <ul className="space-y-3">
-            {matches.map((order) => (
+            {orders.map((order) => (
               <li
                 key={order.id}
                 className="rounded-xl border border-border bg-card px-3 py-3"
@@ -109,7 +91,7 @@ export function ShopFloorPrintView() {
               </li>
             ))}
           </ul>
-        )}
+        ) : null}
 
         <Button type="button" variant="ghost" size="sm" asChild>
           <Link href="/partner/orders?chip=ready_today">Ready today</Link>

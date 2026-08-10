@@ -227,6 +227,18 @@ export function buildPartnerOrdersQueuePath(
   if (next.phone) params.set('phone', next.phone);
   if (next.customer) params.set('customer', next.customer);
 
+  if (
+    next.chip ||
+    next.q ||
+    next.status ||
+    next.source ||
+    next.payment ||
+    next.phone ||
+    next.customer
+  ) {
+    params.set('workspace', 'orders');
+  }
+
   const qs = params.toString();
   return qs ? `/partner/orders?${qs}` : '/partner/orders';
 }

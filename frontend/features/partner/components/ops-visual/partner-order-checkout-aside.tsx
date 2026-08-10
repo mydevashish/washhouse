@@ -87,6 +87,7 @@ type Props = {
   submitLabel?: string;
   onSubmit?: () => void;
   className?: string;
+  hideSubmitButton?: boolean;
 };
 
 export function PartnerOrderCheckoutAside({
@@ -111,6 +112,7 @@ export function PartnerOrderCheckoutAside({
   submitLabel = 'Create order & generate tags',
   onSubmit,
   className,
+  hideSubmitButton,
 }: Props) {
   const breakdown = [
     { label: 'Sub total', value: formatInr(totals.subtotal) },
@@ -132,25 +134,29 @@ export function PartnerOrderCheckoutAside({
       <Card className="flex min-h-0 flex-1 flex-col border-border">
         <CardHeader className="shrink-0 space-y-3">
           <CardTitle>Order summary</CardTitle>
-          <Button
-            type={onSubmit ? 'button' : 'submit'}
-            size="lg"
-            className="min-h-12 w-full text-base"
-            disabled={submitDisabled || submitPending}
-            aria-busy={submitPending}
-            data-testid="partner-create-order-submit"
-            onClick={onSubmit}
-          >
-            {submitPending ? (
-              <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-            ) : (
-              submitLabel
-            )}
-          </Button>
-          {submitDisabled && !submitPending ? (
-            <p className="text-center text-xs text-muted-foreground">
-              Add at least one service in the line items table, then tap create order.
-            </p>
+          {!hideSubmitButton ? (
+            <>
+              <Button
+                type={onSubmit ? 'button' : 'submit'}
+                size="lg"
+                className="min-h-12 w-full text-base"
+                disabled={submitDisabled || submitPending}
+                aria-busy={submitPending}
+                data-testid="partner-create-order-submit"
+                onClick={onSubmit}
+              >
+                {submitPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                ) : (
+                  submitLabel
+                )}
+              </Button>
+              {submitDisabled && !submitPending ? (
+                <p className="text-center text-xs text-muted-foreground">
+                  Add at least one service in the line items table, then tap create order.
+                </p>
+              ) : null}
+            </>
           ) : null}
         </CardHeader>
         <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto">

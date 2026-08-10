@@ -3,18 +3,23 @@
 import Link from 'next/link';
 import {
   ChevronDown,
+  Copy,
   FileText,
   Loader2,
+  MessageCircle,
   Printer,
   Shield,
   Tag,
   Camera,
+  LayoutGrid,
 } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import {
   buildPartnerPrintPath,
+  canPrintBillOrInvoice,
   type PrintLifecycleEmphasis,
 } from '@/features/partner-shop-floor/lib/print-lifecycle';
 import { cn } from '@/lib/utils';
@@ -28,6 +33,8 @@ type PartnerOrderTableActionsMenuProps = {
   showPhotos: boolean;
   nextLabel: string | null;
   printEmphasis: PrintLifecycleEmphasis | null;
+  /** When false, bill / GST invoice menu items are hidden (handover statuses only). */
+  showBillInvoice?: boolean;
   isBusy: boolean;
   isAccepting: boolean;
   isRejecting: boolean;
@@ -37,6 +44,11 @@ type PartnerOrderTableActionsMenuProps = {
   onAdvance: () => void;
   onPhotos: () => void;
   onCustody: () => void;
+  /** Dashboard / hub handoff — when set, shows hub link + copy tracking. */
+  hubHref?: string | null;
+  whatsappHref?: string | null;
+  tagsLabel?: string;
+  detailLabel?: string;
 };
 
 function MenuSeparator() {
@@ -62,6 +74,7 @@ export function PartnerOrderTableActionsMenu({
   showPhotos,
   nextLabel,
   printEmphasis,
+  showBillInvoice = true,
   isBusy,
   isAccepting,
   isRejecting,
@@ -71,6 +84,10 @@ export function PartnerOrderTableActionsMenu({
   onAdvance,
   onPhotos,
   onCustody,
+  hubHref,
+  whatsappHref,
+  tagsLabel = 'Print tags',
+  detailLabel = 'View order',
 }: PartnerOrderTableActionsMenuProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -106,31 +123,35 @@ export function PartnerOrderTableActionsMenu({
         data-testid="print-tags-link"
       >
         <Tag className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
-        Print tags
-      </Link>,
-      <Link
-        key="bill"
-        href={buildPartnerPrintPath(orderId, 'bill')}
-        role="menuitem"
-        className={menuItemClass(false, printEmphasis === 'bill')}
-        onClick={close}
-        data-testid="print-bill-link"
-      >
-        <Printer className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
-        Print bill
-      </Link>,
-      <Link
-        key="invoice"
-        href={buildPartnerPrintPath(orderId, 'invoice')}
-        role="menuitem"
-        className={menuItemClass()}
-        onClick={close}
-        data-testid="print-gst-invoice-link"
-      >
-        <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
-        Print GST invoice
+        {tagsLabel}
       </Link>,
     );
+    if (showBillInvoice) {
+      printItems.push(
+        <Link
+          key="bill"
+          href={buildPartnerPrintPath(orderId, 'bill')}
+          role="menuitem"
+          className={menuItemClass(false, printEmphasis === 'bill')}
+          onClick={close}
+          data-testid="print-bill-link"
+        >
+          <Printer className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          Print bill
+        </Link>,
+        <Link
+          key="invoice"
+          href={buildPartnerPrintPath(orderId, 'invoice')}
+          role="menuitem"
+          className={menuItemClass()}
+          onClick={close}
+          data-testid="print-gst-invoice-link"
+        >
+          <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          Print GST invoice
+        </Link>,
+      );
+    }
   }
 
   return (
@@ -166,8 +187,51 @@ export function PartnerOrderTableActionsMenu({
             className={menuItemClass()}
             onClick={close}
           >
-            View order
+            {detailLabel}
           </Link>
+
+          {hubHref ? (
+            <Link href={hubHref} role="menuitem" className={menuItemClass()} onClick={close}>
+              <LayoutGrid className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+              Open in Customers &amp; Orders hub
+            </Link>
+          ) : null}
+
+          {hubHref || whatsappHref ? (
+            <>
+              <MenuSeparator />
+              <button
+                type="button"
+                role="menuitem"
+                className={menuItemClass()}
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(trackingCode);
+                    toast.success('Tracking code copied');
+                  } catch {
+                    toast.error('Could not copy tracking code');
+                  }
+                  close();
+                }}
+              >
+                <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                Copy tracking code
+              </button>
+              {whatsappHref ? (
+                <Link
+                  href={whatsappHref}
+                  role="menuitem"
+                  className={menuItemClass()}
+                  onClick={close}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MessageCircle className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                  WhatsApp customer
+                </Link>
+              ) : null}
+            </>
+          ) : null}
 
           {printItems.length > 0 ? (
             <>

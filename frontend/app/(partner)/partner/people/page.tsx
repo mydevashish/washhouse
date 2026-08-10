@@ -1,7 +1,5 @@
 import { permanentRedirect } from 'next/navigation';
 
-import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
-
 export const metadata = { title: 'Partner · People' };
 
 type PageProps = {
@@ -18,5 +16,5 @@ export default async function PartnerPeopleRedirectPage({ searchParams }: PagePr
   if (raw === 'staff') {
     permanentRedirect('/partner/staff');
   }
-  permanentRedirect(buildOrdersHubPath('/partner/orders', 'directory', params));
+  permanentRedirect('/partner/orders?workspace=customers');
 }

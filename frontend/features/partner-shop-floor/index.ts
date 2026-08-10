@@ -37,6 +37,7 @@ export {
   PARTNER_PRINT_CENTER_HREF,
   PRINT_BILL_EMPHASIS_STATUSES,
   buildPartnerPrintPath,
+  canPrintBillOrInvoice,
   getPrintLifecycleEmphasis,
   getPrintLifecycleHint,
   shouldEmphasizePrintBill,

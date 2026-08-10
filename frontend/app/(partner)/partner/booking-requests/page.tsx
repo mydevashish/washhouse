@@ -1,14 +1,29 @@
-import { permanentRedirect } from 'next/navigation';
+import { Suspense } from 'react';
 
-import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
+import { RoleGuard } from '@/components/auth/role-guard';
+import { Skeleton } from '@/components/ui/skeleton';
+import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
+import { PartnerBookingRequestsInbox } from '@/features/partner/booking-requests';
+import { PARTNER_PORTAL_ROLES } from '@/lib/partner-roles';
 
 export const metadata = { title: 'Partner · Booking requests' };
 
-type PageProps = {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-};
+function InboxFallback() {
+  return <Skeleton className="h-96 w-full rounded-2xl" />;
+}
 
-/** Legacy route → Orders Hub Requests tab. */
-export default async function PartnerBookingRequestsRedirectPage({ searchParams }: PageProps) {
-  permanentRedirect(buildOrdersHubPath('/partner/orders', 'requests', await searchParams));
+export default function PartnerBookingRequestsPage() {
+  return (
+    <RoleGuard roles={PARTNER_PORTAL_ROLES}>
+      <PartnerContent className="space-y-5">
+        <PartnerPageHeader
+          title="Booking requests"
+          description="Doorstep leads — assign, contact, and convert to shop orders."
+        />
+        <Suspense fallback={<InboxFallback />}>
+          <PartnerBookingRequestsInbox />
+        </Suspense>
+      </PartnerContent>
+    </RoleGuard>
+  );
 }

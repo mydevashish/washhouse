@@ -5,6 +5,7 @@ import { FileText, Printer, Tag } from 'lucide-react';
 
 import {
   buildPartnerPrintPath,
+  canPrintBillOrInvoice,
   type PrintLifecycleEmphasis,
 } from '@/features/partner-shop-floor/lib/print-lifecycle';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,8 @@ import { cn } from '@/lib/utils';
 
 type PrintOrderActionsProps = {
   orderId: string;
+  /** When set, bill / GST invoice default to handover statuses only. */
+  orderStatus?: string | null;
   className?: string;
   size?: 'sm' | 'default';
   /** Compact icon row for hub lists. */
@@ -26,14 +29,18 @@ type PrintOrderActionsProps = {
 
 export function PrintOrderActions({
   orderId,
+  orderStatus,
   className,
   size = 'sm',
   layout = 'default',
   emphasize = null,
   showTags = true,
-  showBill = true,
-  showInvoice = true,
+  showBill,
+  showInvoice,
 }: PrintOrderActionsProps) {
+  const handoverPrint = orderStatus !== undefined ? canPrintBillOrInvoice(orderStatus) : true;
+  const showBillResolved = showBill ?? handoverPrint;
+  const showInvoiceResolved = showInvoice ?? handoverPrint;
   const btnClass = size === 'sm' ? 'h-9 gap-1.5' : 'min-h-12 gap-2 text-base';
   const compactClass = 'h-8 w-8 px-0';
 
@@ -63,7 +70,7 @@ export function PrintOrderActions({
             </Link>
           </Button>
         ) : null}
-        {showBill ? (
+        {showBillResolved ? (
           <Button
             type="button"
             size="sm"
@@ -81,7 +88,7 @@ export function PrintOrderActions({
             </Link>
           </Button>
         ) : null}
-        {showInvoice ? (
+        {showInvoiceResolved ? (
           <Button type="button" size="sm" variant="outline" className={compactClass} asChild>
             <Link
               href={buildPartnerPrintPath(orderId, 'invoice')}
@@ -117,7 +124,7 @@ export function PrintOrderActions({
           </Link>
         </Button>
       ) : null}
-      {showBill ? (
+      {showBillResolved ? (
         <Button
           type="button"
           size={size}
@@ -131,7 +138,7 @@ export function PrintOrderActions({
           </Link>
         </Button>
       ) : null}
-      {showInvoice ? (
+      {showInvoiceResolved ? (
         <Button type="button" size={size} variant="outline" className={btnClass} asChild>
           <Link
             href={buildPartnerPrintPath(orderId, 'invoice')}

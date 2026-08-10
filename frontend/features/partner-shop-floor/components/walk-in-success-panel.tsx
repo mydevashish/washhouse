@@ -30,6 +30,11 @@ export function WalkInSuccessPanel({
     color_token: order.color_token,
     token_code: order.token_code,
     status: order.status,
+    payment_status: order.payment_status,
+    delivery_at: order.delivery_at,
+    expected_ready_at: order.expected_ready_at,
+    items: order.items,
+    whatsapp_order_received: order.whatsapp_order_received,
   };
 
   return (

@@ -120,3 +120,21 @@ class CustomerInsightsRepository:
             term = f"%{search.strip()}%"
             stmt = stmt.where(User.full_name.ilike(term) | User.phone.ilike(term))
         return int(await self._session.scalar(stmt) or 0)
+
+    async def count_laundry_orders(
+        self,
+        laundry_id: UUID,
+        *,
+        created_from: datetime | None = None,
+        created_to: datetime | None = None,
+    ) -> int:
+        """All orders for laundry (matches partner list_orders bucket=all — includes cancelled)."""
+        stmt = select(func.count()).select_from(Order).where(
+            Order.laundry_id == laundry_id,
+            Order.deleted_at.is_(None),
+        )
+        if created_from is not None:
+            stmt = stmt.where(Order.created_at >= created_from)
+        if created_to is not None:
+            stmt = stmt.where(Order.created_at < created_to)
+        return int(await self._session.scalar(stmt) or 0)

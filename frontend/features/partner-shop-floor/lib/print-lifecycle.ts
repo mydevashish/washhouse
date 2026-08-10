@@ -28,6 +28,11 @@ export function shouldEmphasizePrintBill(status: string | null | undefined): boo
   return getPrintLifecycleEmphasis(status) === 'bill';
 }
 
+/** Bill + GST invoice print routes — ready / handover / collected (hub P5). */
+export function canPrintBillOrInvoice(status: string | null | undefined): boolean {
+  return shouldEmphasizePrintBill(status);
+}
+
 /** English copy for detail / row print panels. */
 export function getPrintLifecycleHint(status: string | null | undefined): string {
   if (shouldEmphasizePrintBill(status)) {

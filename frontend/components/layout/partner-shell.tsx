@@ -163,7 +163,10 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
   const pageTitle = getPartnerPageTitle(pathname, ordersTab);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-muted/20">
+    <div
+      data-partner-shell
+      className="flex h-dvh max-h-dvh min-h-0 overflow-hidden bg-muted/20"
+    >
       <aside className="hidden h-full w-sidebar shrink-0 flex-col border-r border-border bg-background xl:flex">
         {sidebar}
       </aside>
@@ -190,7 +193,11 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div
+        id="main-content"
+        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden overscroll-y-contain"
+        tabIndex={-1}
+      >
         <GlobalNavbar
           app="partner"
           pageTitle={pageTitle}
@@ -201,11 +208,7 @@ export function PartnerShell({ children }: { children: React.ReactNode }) {
           notificationsHref="/partner/notifications"
           settingsHref="/partner/settings"
         />
-        <main
-          id="main-content"
-          className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
-          tabIndex={-1}
-        >
+        <main className="min-h-0 flex-1 focus:outline-none">
           {mounted && user && <AnnouncementBannerStack />}
           {mounted && user ? <PartnerPracticeModeBanner /> : null}
           {children}

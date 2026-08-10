@@ -139,6 +139,7 @@ class Settings(BaseSettings):
     TWILIO_WHATSAPP_FROM: str | None = None
     # Walk-in order WhatsApp Content SIDs (prod); omit for sandbox plain-text body
     TWILIO_WA_TEMPLATE_ORDER_RECEIVED: str | None = None
+    TWILIO_WA_TEMPLATE_ORDER_RECEIVED_DETAILED: str | None = None
     TWILIO_WA_TEMPLATE_ORDER_IN_PROGRESS: str | None = None
     TWILIO_WA_TEMPLATE_ORDER_READY: str | None = None
     TWILIO_WA_TEMPLATE_ORDER_DELIVERED: str | None = None
@@ -280,6 +281,7 @@ class Settings(BaseSettings):
         "TWILIO_FROM_NUMBER",
         "TWILIO_WHATSAPP_FROM",
         "TWILIO_WA_TEMPLATE_ORDER_RECEIVED",
+        "TWILIO_WA_TEMPLATE_ORDER_RECEIVED_DETAILED",
         "TWILIO_WA_TEMPLATE_ORDER_IN_PROGRESS",
         "TWILIO_WA_TEMPLATE_ORDER_READY",
         "TWILIO_WA_TEMPLATE_ORDER_DELIVERED",

@@ -21,6 +21,15 @@
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
   }
+  /* Partner app shell owns vertical scroll — avoid body + main double scrollbars. */
+  html:has([data-partner-shell]),
+  html:has([data-partner-shell]) body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  body:has([role='dialog'][data-state='open']) [data-partner-shell] #main-content {
+    overflow: hidden !important;
+  }
   *:focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }

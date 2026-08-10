@@ -19,6 +19,7 @@ from app.schemas.partner import (
     InventoryResponse,
     InventoryUpdateRequest,
     PartnerAnalyticsResponse,
+    PartnerAnalyticsOverviewResponse,
     PartnerCustomerSummary,
     PartnerOrderResponse,
     StaffCreateRequest,
@@ -32,7 +33,10 @@ from app.schemas.order_invoice import InvoicePrintVariant
 from app.services.order_invoice_service import OrderInvoiceService
 from app.services.order_tags_service import OrderTagsService
 from app.services.partner_service import PartnerService
+from app.repositories.laundry import LaundryRepository
 from app.repositories.order import OrderRepository
+from app.schemas.walk_in_order import WalkInOrderWhatsAppRetryResponse
+from app.tasks.order_notifications import deliver_order_received_whatsapp
 
 router = APIRouter(prefix="/partner", tags=["partner"])
 
@@ -80,6 +84,11 @@ def _partner_order_response(order, customer_name: str) -> PartnerOrderResponse:
         token_day_number=order.token_day_number,
         pickup_at=order.pickup_at,
         delivery_at=order.delivery_at,
+        created_at=order.created_at,
+        address_line1=order.address_line1,
+        address_line2=order.address_line2,
+        address_city=order.address_city,
+        address_pincode=order.address_pincode,
         subtotal_inr=order.subtotal_inr,
         delivery_fee_inr=order.delivery_fee_inr,
         cgst_inr=order.cgst_inr,
@@ -246,6 +255,32 @@ async def update_order_status(
     return success_envelope(OrderResponse.model_validate(order), request)
 
 
+@router.post("/orders/{order_id}/whatsapp/order-received")
+async def retry_order_received_whatsapp(
+    order_id: UUID,
+    request: Request,
+    session: SessionDep,
+    payload: Annotated[dict, Depends(get_current_partner)],
+) -> dict:
+    from app.core.exceptions import NotFoundError
+
+    partner_id = UUID(payload["sub"])
+    laundry = await LaundryRepository(session).get_by_owner(partner_id)
+    if not laundry:
+        raise NotFoundError("Partner laundry not found")
+
+    order = await OrderRepository(session).get_by_id(order_id)
+    if not order or order.laundry_id != laundry.id:
+        raise NotFoundError("Order not found")
+
+    result = await deliver_order_received_whatsapp(
+        session,
+        order,
+        laundry_name=laundry.name,
+    )
+    return success_envelope(WalkInOrderWhatsAppRetryResponse.model_validate(result), request)
+
+
 @router.post("/orders/{order_id}/accept")
 async def accept_order(
     order_id: UUID,
@@ -282,6 +317,23 @@ async def partner_analytics(
     except NotFoundError:
         data = await PartnerService(session).empty_analytics_summary(partner_id)
     return success_envelope(PartnerAnalyticsResponse.model_validate(data), request)
+
+
+@router.get("/analytics/overview")
+async def partner_analytics_overview(
+    request: Request,
+    session: SessionDep,
+    payload: Annotated[dict, Depends(get_current_partner)],
+    period: Annotated[str, Query(description="today | week | month")] = "today",
+) -> dict:
+    from app.core.exceptions import NotFoundError
+
+    partner_id = UUID(payload["sub"])
+    try:
+        data = await PartnerService(session).analytics_overview(partner_id, period)
+    except NotFoundError:
+        data = await PartnerService(session).empty_analytics_overview(partner_id, period)
+    return success_envelope(PartnerAnalyticsOverviewResponse.model_validate(data), request)
 
 
 @router.get("/trust-score")

@@ -24,6 +24,20 @@ export interface WalkInOrder {
   user_id: string | null;
   expected_ready_at: string | null;
   items: OrderItem[];
+  whatsapp_order_received?: WalkInOrderWhatsAppNotify | null;
+}
+
+export interface WalkInOrderWhatsAppNotify {
+  eligible: boolean;
+  status: string;
+  message_body?: string | null;
+}
+
+export interface WalkInOrderWhatsAppRetryResult {
+  sent: boolean;
+  skip_reason?: string | null;
+  error?: string | null;
+  message_body?: string | null;
 }
 
 export interface WalkInOrderLineItem {
@@ -54,6 +68,15 @@ export async function createWalkInOrder(body: {
   coupon_code?: string;
 }): Promise<WalkInOrder> {
   const { data } = await api.post<ApiEnvelope<WalkInOrder>>('/partner/walk-in-orders', body);
+  return data.data;
+}
+
+export async function retryWalkInOrderReceivedWhatsApp(
+  orderId: string,
+): Promise<WalkInOrderWhatsAppRetryResult> {
+  const { data } = await api.post<ApiEnvelope<WalkInOrderWhatsAppRetryResult>>(
+    `/partner/orders/${orderId}/whatsapp/order-received`,
+  );
   return data.data;
 }
 

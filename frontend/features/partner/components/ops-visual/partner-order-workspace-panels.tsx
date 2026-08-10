@@ -25,7 +25,7 @@ import {
 import { formatInr } from '@/features/discover/detail/order-pricing';
 import { ColorTokenChip } from '@/features/partner-shop-floor/components/color-token-chip';
 import { PrintOrderActions } from '@/features/partner-shop-floor/components/print-order-actions';
-import { buildPartnerPrintPath } from '@/features/partner-shop-floor/lib/print-lifecycle';
+import { buildPartnerPrintPath, canPrintBillOrInvoice } from '@/features/partner-shop-floor/lib/print-lifecycle';
 import type { PartnerNewOrderLineRow } from '@/features/partner/components/ops-visual/partner-new-order-line-items-table';
 import { PartnerOpsSectionLabel } from '@/features/partner/components/ops-visual/partner-ops-section-label';
 import type { WalkInOrder } from '@/services/partner-walk-in-orders';
@@ -77,6 +77,7 @@ export function PartnerOrderWorkspacePanels({
 }: Props) {
   const tracking = order?.tracking_code ?? '—';
   const totalDisplay = order ? Number(order.total_inr) : estimatedGrandTotal;
+  const handoverPrint = order ? canPrintBillOrInvoice(order.status) : false;
   const serviceSummary =
     lineRows.length > 0
       ? lineRows
@@ -118,9 +119,15 @@ export function PartnerOrderWorkspacePanels({
             </div>
             {order ? (
               <div className="grid gap-3">
-                <Button type="button" size="sm" variant="outline" asChild>
-                  <Link href={buildPartnerPrintPath(order.id, 'invoice')}>Download invoice PDF</Link>
-                </Button>
+                {handoverPrint ? (
+                  <Button type="button" size="sm" variant="outline" asChild>
+                    <Link href={buildPartnerPrintPath(order.id, 'invoice')}>Download invoice PDF</Link>
+                  </Button>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Bill and GST invoice unlock when the order is ready for handover.
+                  </p>
+                )}
                 <Button type="button" size="sm" variant="secondary" asChild>
                   <Link href={buildPartnerPrintPath(order.id, 'tags')}>Print tag / label</Link>
                 </Button>
@@ -140,7 +147,7 @@ export function PartnerOrderWorkspacePanels({
               <CardDescription>Tags and invoice are ready from your print routes.</CardDescription>
             </CardHeader>
             <CardContent>
-              <PrintOrderActions orderId={order.id} className="flex-wrap" />
+              <PrintOrderActions orderId={order.id} orderStatus={order.status} className="flex-wrap" />
             </CardContent>
             {onCreateAnother ? (
               <CardFooter>

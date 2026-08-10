@@ -67,6 +67,11 @@ export interface PartnerOrder {
   token_day_number?: number | null;
   pickup_at: string;
   delivery_at: string;
+  created_at?: string;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  address_city?: string | null;
+  address_pincode?: string | null;
   subtotal_inr: string;
   delivery_fee_inr: string;
   cgst_inr: string;
@@ -133,6 +138,48 @@ export async function rejectOrder(orderId: string): Promise<PartnerOrder> {
 
 export async function getPartnerAnalytics(): Promise<PartnerAnalytics> {
   const { data } = await api.get<ApiEnvelope<PartnerAnalytics>>('/partner/analytics/summary');
+  return data.data;
+}
+
+export type PartnerDashboardPeriodParam = 'today' | 'week' | 'month';
+
+export interface PartnerAnalyticsOverviewChartPoint {
+  bucket_label: string;
+  bucket_start_utc: string;
+  orders_count: number;
+  pending_orders_count: number;
+  pending_payment_count: number;
+  pending_payment_inr: string;
+  customers_count: number;
+  revenue_gross_inr: string;
+  revenue_net_inr: string;
+}
+
+export interface PartnerAnalyticsOverview {
+  period: PartnerDashboardPeriodParam;
+  period_label_ist: string;
+  period_start_utc: string;
+  period_end_utc: string;
+  orders_count: number;
+  pending_orders_count: number;
+  revenue_gross_inr: string;
+  revenue_net_inr: string;
+  commission_inr: string;
+  effective_commission_rate: string;
+  pending_payment_count: number;
+  pending_payment_inr: string;
+  customers_count_period: number;
+  customers_count_all_time: number;
+  chart_series: PartnerAnalyticsOverviewChartPoint[];
+}
+
+export async function getPartnerAnalyticsOverview(
+  period: PartnerDashboardPeriodParam,
+): Promise<PartnerAnalyticsOverview> {
+  const { data } = await api.get<ApiEnvelope<PartnerAnalyticsOverview>>(
+    '/partner/analytics/overview',
+    { params: { period } },
+  );
   return data.data;
 }
 

@@ -405,7 +405,7 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
               <div className="rounded-2xl border border-dashed border-border p-4 text-sm">
                 <p className="font-medium">No active services</p>
                 <Button type="button" size="sm" className="mt-3" variant="secondary" asChild>
-                  <Link href="/partner/services">Manage services</Link>
+                  <Link href="/partner/orders?workspace=services">Manage services</Link>
                 </Button>
               </div>
             ) : (
