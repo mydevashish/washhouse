@@ -37,14 +37,20 @@ export type PartnerNavSection = {
   items: PartnerNavItem[];
 };
 
-/** Customers & Orders Hub — single Operations workplace. */
-export const PARTNER_ORDERS_HUB_HREF = '/partner/orders';
+/** Orders list page. */
+export const PARTNER_ORDERS_HREF = '/partner/orders';
+
+/** Backward-compatible alias for legacy hub code paths. */
+export const PARTNER_ORDERS_HUB_HREF = PARTNER_ORDERS_HREF;
+
+/** Customer directory page. */
+export const PARTNER_CUSTOMERS_HREF = '/partner/customers';
 
 /** Sidebar / page title for the unified hub. */
 export const PARTNER_CUSTOMERS_ORDERS_LABEL = 'Customers & Orders';
 
 /** Legacy customers path — redirects to hub customers workspace modal. */
-export const PARTNER_PEOPLE_CUSTOMERS_HREF = '/partner/customers';
+export const PARTNER_PEOPLE_CUSTOMERS_HREF = PARTNER_CUSTOMERS_HREF;
 
 /** Logistics hub — Pickups / Deliveries / Done today. */
 export const PARTNER_LOGISTICS_HREF = '/partner/logistics';
@@ -59,9 +65,9 @@ export const PARTNER_NEW_ORDER_HREF = buildOrdersHubPath('/partner/orders', 'cre
 export const PARTNER_COUPONS_HREF = '/partner/coupons';
 
 /** Hub workspace deep links (pillars modal). */
-export const PARTNER_ORDERS_HUB_WORKSPACE_CUSTOMERS_HREF = `${PARTNER_ORDERS_HUB_HREF}?workspace=customers`;
-export const PARTNER_ORDERS_HUB_WORKSPACE_COUPONS_HREF = `${PARTNER_ORDERS_HUB_HREF}?workspace=coupons`;
-export const PARTNER_ORDERS_HUB_WORKSPACE_SERVICES_HREF = `${PARTNER_ORDERS_HUB_HREF}?workspace=services`;
+export const PARTNER_ORDERS_HUB_WORKSPACE_CUSTOMERS_HREF = `${PARTNER_ORDERS_HREF}?workspace=customers`;
+export const PARTNER_ORDERS_HUB_WORKSPACE_COUPONS_HREF = `${PARTNER_ORDERS_HREF}?workspace=coupons`;
+export const PARTNER_ORDERS_HUB_WORKSPACE_SERVICES_HREF = `${PARTNER_ORDERS_HREF}?workspace=services`;
 
 /**
  * Paths that belong to Customers & Orders Hub for active state / titles.
@@ -77,7 +83,6 @@ export const PARTNER_ORDERS_HUB_ALIASES = [
   '/partner/floor/new',
   '/partner/floor/print',
   PARTNER_COUPONS_HREF,
-  '/partner/services',
 ] as const;
 
 /** Search / quick-action aliases — old labels resolve into hub tabs / intake. */
@@ -90,7 +95,7 @@ export const PARTNER_ORDERS_HUB_SEARCH_ALIASES: ReadonlyArray<{
   {
     id: 'p-orders-hub',
     label: PARTNER_CUSTOMERS_ORDERS_LABEL,
-    href: PARTNER_ORDERS_HUB_HREF,
+    href: PARTNER_ORDERS_HREF,
     keywords: 'customers orders hub queue crm',
   },
   {
@@ -108,7 +113,7 @@ export const PARTNER_ORDERS_HUB_SEARCH_ALIASES: ReadonlyArray<{
   {
     id: 'p-orders-hub-directory',
     label: 'Customers',
-    href: PARTNER_ORDERS_HUB_WORKSPACE_CUSTOMERS_HREF,
+    href: PARTNER_CUSTOMERS_HREF,
     keywords: 'directory insights customers analytics people',
   },
   {
@@ -157,9 +162,10 @@ export const PARTNER_NAV_SECTIONS: PartnerNavSection[] = [
     id: 'operations',
     label: 'Operations',
     items: [
+      { href: PARTNER_CUSTOMERS_HREF, label: 'Customers', icon: UserCog },
       {
-        href: PARTNER_ORDERS_HUB_HREF,
-        label: PARTNER_CUSTOMERS_ORDERS_LABEL,
+        href: PARTNER_ORDERS_HREF,
+        label: 'Orders',
         icon: Package,
         badgeKeys: ['orders', 'bookingRequests'],
       },
@@ -235,12 +241,18 @@ export function getNavHrefTab(hrefOrPath: string): string | null {
 /** Map legacy desk/BR/customers/intake/print paths onto the Customers & Orders Hub pathname. */
 export function resolvePartnerNavPathname(pathname: string): string {
   const path = stripNavQuery(pathname);
+  if (path === PARTNER_CUSTOMERS_HREF || path.startsWith(`${PARTNER_CUSTOMERS_HREF}/`)) {
+    return PARTNER_CUSTOMERS_HREF;
+  }
+  if (path === PARTNER_ORDERS_HREF || path.startsWith(`${PARTNER_ORDERS_HREF}/`)) {
+    return PARTNER_ORDERS_HREF;
+  }
   if (
     PARTNER_ORDERS_HUB_ALIASES.some(
       (alias) => path === alias || path.startsWith(`${alias}/`),
     )
   ) {
-    return PARTNER_ORDERS_HUB_HREF;
+    return PARTNER_ORDERS_HREF;
   }
   if (
     PARTNER_LOGISTICS_ALIASES.some(
@@ -270,7 +282,7 @@ export function isPartnerNavActive(
   const effectivePath = resolvePartnerNavPathname(pathname);
   const tab = opts?.tab ?? null;
 
-  if (effectiveHref === PARTNER_ORDERS_HUB_HREF && tab === 'create') {
+  if (effectiveHref === PARTNER_ORDERS_HREF && tab === 'create') {
     return true;
   }
 
@@ -279,7 +291,7 @@ export function isPartnerNavActive(
 
 export function getPartnerPageTitle(pathname: string, tab?: string | null): string {
   const effectivePath = resolvePartnerNavPathname(pathname);
-  if (effectivePath === PARTNER_ORDERS_HUB_HREF && tab === 'create') {
+  if (effectivePath === PARTNER_ORDERS_HREF && tab === 'create') {
     return 'New order';
   }
   return (

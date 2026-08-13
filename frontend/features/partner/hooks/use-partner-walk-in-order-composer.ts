@@ -85,6 +85,8 @@ export type UsePartnerWalkInOrderComposerOptions = {
   lookupOnlyOnCustomerStep?: boolean;
   /** Debounce phone lookup (ms). Omit for immediate lookup on valid E.164. */
   debounceLookupMs?: number;
+  /** Temporarily suppress customer phone lookups after search selection or popup creation. */
+  lookupSuppressed?: boolean;
 };
 
 function invalidatePartnerOrderQueries(queryClient: ReturnType<typeof useQueryClient>) {
@@ -104,6 +106,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     lookupActive = true,
     lookupOnlyOnCustomerStep = true,
     debounceLookupMs,
+    lookupSuppressed = false,
   } = options;
   const enabled = usePartnerQueriesEnabled();
   const queryClient = useQueryClient();
@@ -137,12 +140,18 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   const [couponCode, setCouponCode] = useState('');
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponDiscountInr, setCouponDiscountInr] = useState(0);
+  const [discountType, setDiscountType] = useState<'percent' | 'flat'>('percent');
+  const [discountValue, setDiscountValue] = useState(10);
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [deliveryType, setDeliveryType] = useState<PartnerDeliveryType>('Both');
   const [preferredDeliveryDate, setPreferredDeliveryDate] = useState('');
   const [couponError, setCouponError] = useState<string | null>(null);
   const [customerEmail, setCustomerEmail] = useState('');
   const [expressOrder, setExpressOrder] = useState(false);
+  const [pickupChargeOverride, setPickupChargeOverride] = useState(30);
+  const [deliveryChargeOverride, setDeliveryChargeOverride] = useState(30);
+  const [advancePaid, setAdvancePaid] = useState(0);
+  const [lookupSuppressedState, setLookupSuppressedState] = useState(lookupSuppressed);
   const [staffNote, setStaffNote] = useState('');
   const [gstInvoiceRequested, setGstInvoiceRequested] = useState(false);
 
@@ -194,6 +203,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
         walkInLookupPhone &&
         !createdOrder &&
         !createdDoorstepOrder &&
+        !lookupSuppressed &&
         (!lookupOnlyOnCustomerStep || step === 'customer'),
     ),
   );
@@ -447,6 +457,38 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     applyCouponMutation.mutate(code);
   }
 
+  function applyManualDiscount() {
+    const subtotal =
+      intakeMode === 'services'
+        ? lineRows.reduce((sum, row) => sum + row.amount, 0)
+        : clothWallSubtotalInr(garmentLines);
+    if (subtotal <= 0) {
+      setCouponApplied(false);
+      setCouponDiscountInr(0);
+      return;
+    }
+
+    const discount =
+      discountType === 'flat'
+        ? Math.min(subtotal, Math.round(discountValue))
+        : Math.min(subtotal, Math.round((subtotal * Math.min(100, Number(discountValue || 0))) / 100));
+
+    setCouponDiscountInr(discount);
+    setCouponApplied(true);
+    setCouponError(null);
+  }
+
+  function handleDiscountValueChange(nextValue: number) {
+    setDiscountValue(nextValue);
+    setCouponApplied(false);
+    setCouponDiscountInr(0);
+    setCouponError(null);
+  }
+
+  useEffect(() => {
+    setLookupSuppressedState(lookupSuppressed);
+  }, [lookupSuppressed]);
+
   function validateCustomer(): boolean {
     const phone = normalizeIndianPhoneInput(customerPhone);
     if (!customerName.trim()) {
@@ -455,10 +497,6 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     }
     if (!isValidIndianMobileE164(phone)) {
       toast.error('Enter a valid Indian mobile (+91)');
-      return false;
-    }
-    if (!customerGender) {
-      toast.error('Select Male or Female — tags use this to avoid mix-ups');
       return false;
     }
     if (fulfillment === 'doorstep') {
@@ -557,7 +595,6 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     const parts: string[] = [];
     if (notes.trim()) parts.push(notes.trim());
     if (expressOrder) parts.push('Express service requested.');
-    if (gstInvoiceRequested) parts.push('GST invoice requested (B2B).');
     if (staffNote.trim()) parts.push(`[Staff] ${staffNote.trim()}`);
     return parts.length ? parts.join('\n') : undefined;
   }
@@ -609,7 +646,6 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     createMutation.mutate({
       customer_name: customerName.trim(),
       customer_phone: e164,
-      customer_gender: customerGender ?? undefined,
       items: buildWalkInItems(),
       notes: buildOrderNotes(),
       expected_ready_at: expectedReadyAt ? `${expectedReadyAt}T12:00:00.000Z` : undefined,
@@ -643,18 +679,31 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       computePartnerCheckoutTotals({
         subtotal: estimatedSubtotal,
         couponApplied,
+        couponDiscountType: discountType,
         couponDiscountInr,
+        discountType,
+        discountValue,
         deliveryType,
         lineCount: lineRows.length,
         itemQty: pieceCount,
+        expressOrder,
+        pickupChargeOverride: pickupChargeOverride,
+        deliveryChargeOverride: deliveryChargeOverride,
+        advancePaid,
       }),
     [
       couponApplied,
       couponDiscountInr,
       deliveryType,
+      discountType,
+      discountValue,
       estimatedSubtotal,
+      expressOrder,
       lineRows.length,
       pieceCount,
+      pickupChargeOverride,
+      deliveryChargeOverride,
+      advancePaid,
     ],
   );
 
@@ -707,6 +756,8 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setCustomerGender,
     customerEmail,
     setCustomerEmail,
+    lookupSuppressed: lookupSuppressedState,
+    setLookupSuppressed: setLookupSuppressedState,
     expressOrder,
     setExpressOrder,
     staffNote,
@@ -744,15 +795,27 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setCouponApplied,
     couponDiscountInr,
     setCouponDiscountInr,
+    discountType,
+    setDiscountType,
+    discountValue,
+    setDiscountValue,
     paymentMethod,
     setPaymentMethod,
     deliveryType,
     setDeliveryType,
     preferredDeliveryDate,
     setPreferredDeliveryDate,
+    pickupChargeOverride,
+    setPickupChargeOverride,
+    deliveryChargeOverride,
+    setDeliveryChargeOverride,
+    advancePaid,
+    setAdvancePaid,
     checkoutTotals,
     toggleCouponApplied,
     applyCoupon,
+    applyManualDiscount,
+    handleDiscountValueChange,
     applyCouponPending: applyCouponMutation.isPending,
     couponError,
     services,

@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatInr } from '@/features/discover/detail/order-pricing';
 import { cn } from '@/lib/utils';
 
-export type PartnerDeliveryType = 'Pickup' | 'Delivery' | 'Both';
+export type PartnerDeliveryType = 'Pickup' | 'Delivery' | 'Both' | 'Walk-in';
 
 export type PartnerCheckoutTotals = {
   subtotal: number;
@@ -19,8 +19,9 @@ export type PartnerCheckoutTotals = {
   pickupCharge: number;
   deliveryCharge: number;
   packingCharge: number;
-  sgst: number;
-  cgst: number;
+  expressCharge: number;
+  advancePaid: number;
+  balanceDue: number;
   grandTotal: number;
   serviceCount: number;
   itemCount: number;
@@ -29,27 +30,60 @@ export type PartnerCheckoutTotals = {
 export function computePartnerCheckoutTotals(input: {
   subtotal: number;
   couponApplied: boolean;
-  /** Fixed discount in INR when coupon validated; falls back to 7% cap when omitted. */
+  couponDiscountType?: 'percent' | 'flat';
   couponDiscountInr?: number;
+  discountType?: 'percent' | 'flat';
+  discountValue?: number;
   deliveryType: PartnerDeliveryType;
   lineCount: number;
   itemQty: number;
+  expressOrder?: boolean;
+  pickupChargeOverride?: number;
+  deliveryChargeOverride?: number;
+  advancePaid?: number;
 }): PartnerCheckoutTotals {
+  const manualDiscount =
+    input.discountValue != null && input.discountValue > 0
+      ? input.discountType === 'percent'
+        ? Math.min(
+            input.subtotal,
+            Math.round((input.subtotal * Math.min(100, Number(input.discountValue || 0))) / 100),
+          )
+        : Math.min(input.subtotal, Math.round(Number(input.discountValue || 0)))
+      : 0;
   const discount = input.couponApplied
     ? input.couponDiscountInr != null
-      ? Math.min(input.subtotal, Math.round(input.couponDiscountInr))
+      ? Math.min(
+          input.subtotal,
+          input.couponDiscountType === 'percent'
+            ? Math.round((input.subtotal * input.couponDiscountInr) / 100)
+            : Math.round(input.couponDiscountInr),
+        )
       : Math.min(100, Math.round(input.subtotal * 0.07))
-    : 0;
+    : manualDiscount;
   const packingCharge = input.lineCount > 0 ? 10 : 0;
-  const pickupCharge = input.deliveryType === 'Delivery' ? 0 : input.lineCount > 0 ? 30 : 0;
-  const deliveryCharge = input.deliveryType === 'Pickup' ? 0 : input.lineCount > 0 ? 30 : 0;
-  const taxable = Math.max(
+  const pickupCharge =
+    input.pickupChargeOverride ??
+    (input.deliveryType === 'Delivery' || input.deliveryType === 'Walk-in'
+      ? 0
+      : input.lineCount > 0
+        ? 30
+        : 0);
+  const deliveryCharge =
+    input.deliveryChargeOverride ??
+    (input.deliveryType === 'Pickup' || input.deliveryType === 'Walk-in'
+      ? 0
+      : input.lineCount > 0
+        ? 30
+        : 0);
+  const expressCharge = input.expressOrder ? 100 : 0;
+  const subtotalWithExtras = Math.max(
     0,
-    input.subtotal - discount + pickupCharge + deliveryCharge + packingCharge,
+    input.subtotal - discount + pickupCharge + deliveryCharge + packingCharge + expressCharge,
   );
-  const sgst = Math.round(taxable * 0.025 * 100) / 100;
-  const cgst = sgst;
-  const grandTotal = taxable + sgst + cgst;
+  const advancePaid = Math.max(0, input.advancePaid ?? 0);
+  const grandTotal = subtotalWithExtras;
+  const balanceDue = Math.max(0, grandTotal - advancePaid);
 
   return {
     subtotal: input.subtotal,
@@ -57,8 +91,9 @@ export function computePartnerCheckoutTotals(input: {
     pickupCharge,
     deliveryCharge,
     packingCharge,
-    sgst,
-    cgst,
+    expressCharge,
+    advancePaid,
+    balanceDue,
     grandTotal,
     serviceCount: input.lineCount,
     itemCount: input.itemQty,
@@ -74,6 +109,10 @@ type Props = {
   onApplyCoupon?: () => void;
   applyCouponPending?: boolean;
   couponError?: string | null;
+  discountType: 'percent' | 'flat';
+  onDiscountTypeChange: (value: 'percent' | 'flat') => void;
+  discountValue: number;
+  onDiscountValueChange: (value: number) => void;
   deliveryType: PartnerDeliveryType;
   onDeliveryTypeChange: (value: PartnerDeliveryType) => void;
   deliveryDate: string;
@@ -82,6 +121,14 @@ type Props = {
   onPaymentMethodChange: (value: string) => void;
   notes: string;
   onNotesChange: (value: string) => void;
+  pickupCharge: number;
+  onPickupChargeChange: (value: number) => void;
+  deliveryCharge: number;
+  onDeliveryChargeChange: (value: number) => void;
+  advancePaid: number;
+  onAdvancePaidChange: (value: number) => void;
+  expressOrder: boolean;
+  onExpressOrderChange: (value: boolean) => void;
   submitPending?: boolean;
   submitDisabled?: boolean;
   submitLabel?: string;
@@ -99,6 +146,10 @@ export function PartnerOrderCheckoutAside({
   onApplyCoupon,
   applyCouponPending,
   couponError,
+  discountType,
+  onDiscountTypeChange,
+  discountValue,
+  onDiscountValueChange,
   deliveryType,
   onDeliveryTypeChange,
   deliveryDate,
@@ -107,6 +158,14 @@ export function PartnerOrderCheckoutAside({
   onPaymentMethodChange,
   notes,
   onNotesChange,
+  pickupCharge,
+  onPickupChargeChange,
+  deliveryCharge,
+  onDeliveryChargeChange,
+  advancePaid,
+  onAdvancePaidChange,
+  expressOrder,
+  onExpressOrderChange,
   submitPending,
   submitDisabled,
   submitLabel = 'Create order & generate tags',
@@ -120,8 +179,9 @@ export function PartnerOrderCheckoutAside({
     { label: 'Pickup charge', value: formatInr(totals.pickupCharge) },
     { label: 'Delivery charge', value: formatInr(totals.deliveryCharge) },
     { label: 'Packing charge', value: formatInr(totals.packingCharge) },
-    { label: 'SGST 2.5%', value: formatInr(totals.sgst) },
-    { label: 'CGST 2.5%', value: formatInr(totals.cgst) },
+    { label: 'Express service', value: formatInr(totals.expressCharge) },
+    { label: 'Advance paid', value: `- ${formatInr(totals.advancePaid)}` },
+    { label: 'Balance due', value: formatInr(totals.balanceDue) },
   ];
 
   return (
@@ -195,21 +255,50 @@ export function PartnerOrderCheckoutAside({
                   )}
                 </Button>
               </div>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="po-discount-type">Discount type</Label>
+                  <Select
+                    id="po-discount-type"
+                    value={discountType}
+                    onChange={(e) => onDiscountTypeChange(e.target.value as 'percent' | 'flat')}
+                    className="mt-1 min-h-9"
+                  >
+                    <option value="percent">By %</option>
+                    <option value="flat">Flat amount</option>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="po-discount-value">
+                    {discountType === 'percent' ? 'Percent' : 'Amount'}
+                  </Label>
+                  <Input
+                    id="po-discount-value"
+                    type="number"
+                    min="0"
+                    step={discountType === 'percent' ? '1' : '10'}
+                    max={discountType === 'percent' ? '100' : undefined}
+                    value={discountValue}
+                    onChange={(e) => onDiscountValueChange(Number(e.target.value || 0))}
+                    className="mt-1 min-h-9"
+                  />
+                </div>
+              </div>
               {couponError ? (
                 <p className="mt-1 text-[11px] text-danger" role="alert">
                   {couponError}
                 </p>
               ) : (
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Shop coupons from the sidebar — discount applies on save.
+                  Use a % discount or a flat amount directly in the order summary.
                 </p>
               )}
             </div>
 
             <div>
               <Label>Pickup / Delivery</Label>
-              <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                {(['Pickup', 'Delivery', 'Both'] as const).map((type) => (
+              <div className="mt-2 grid gap-2 sm:grid-cols-4">
+                {(['Pickup', 'Delivery', 'Both', 'Walk-in'] as const).map((type) => (
                   <Button
                     key={type}
                     type="button"
@@ -223,9 +312,59 @@ export function PartnerOrderCheckoutAside({
                 ))}
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                Pick-up charged when not Delivery only; delivery charged when not Pickup only.
+                Use Walk-in for in-store service; pick-up and delivery are editable below.
               </p>
             </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="po-pickup-charge">Pickup charge</Label>
+                <Input
+                  id="po-pickup-charge"
+                  type="number"
+                  min="0"
+                  step="10"
+                  value={pickupCharge}
+                  onChange={(e) => onPickupChargeChange(Number(e.target.value || 0))}
+                  className="mt-2 min-h-9"
+                />
+              </div>
+              <div>
+                <Label htmlFor="po-delivery-charge">Delivery charge</Label>
+                <Input
+                  id="po-delivery-charge"
+                  type="number"
+                  min="0"
+                  step="10"
+                  value={deliveryCharge}
+                  onChange={(e) => onDeliveryChargeChange(Number(e.target.value || 0))}
+                  className="mt-2 min-h-9"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="po-advance-paid">Advance payment</Label>
+              <Input
+                id="po-advance-paid"
+                type="number"
+                min="0"
+                step="10"
+                value={advancePaid}
+                onChange={(e) => onAdvancePaidChange(Number(e.target.value || 0))}
+                className="mt-2 min-h-9"
+              />
+            </div>
+
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-border"
+                checked={expressOrder}
+                onChange={(e) => onExpressOrderChange(e.target.checked)}
+              />
+              Express service (+₹100)
+            </label>
 
             <div>
               <Label htmlFor="po-delivery-date">Preferred delivery date</Label>

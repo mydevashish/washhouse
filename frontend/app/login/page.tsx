@@ -193,7 +193,7 @@ export default function LoginPage() {
           </div>
         ) : (
           <p className="mb-6 rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">
-            Use your work email and password. Phone OTP is for customer bookings only.
+            Use your work email and password.
           </p>
         )}
 
@@ -214,10 +214,10 @@ export default function LoginPage() {
               <div className="flex items-center justify-between gap-3">
                 <Label htmlFor="login-password">Password</Label>
                 <Link
-                  href={
-                    audience !== 'customer'
-                      ? `/forgot-password?audience=${audience}`
-                      : '/forgot-password'
+                  href={`/forgot-password?audience=${audience}`
+                    // audience !== 'customer'
+                    //   ? 
+                    //   : '/forgot-password'
                   }
                   className="inline-flex min-h-[44px] items-center text-sm font-semibold text-primary hover:underline"
                 >

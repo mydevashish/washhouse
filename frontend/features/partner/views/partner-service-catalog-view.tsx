@@ -1,24 +1,22 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { PartnerHubServicesWorkspaceBody, usePartnerHubServices } from '@/features/partner/orders-hub/workspace/partner-hub-services-workspace';
 
-/** Legacy `/partner/services` route — opens hub services workspace (Prompt 6). */
 export function PartnerServiceCatalogView() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace('/partner/orders?workspace=services');
-  }, [router]);
+  const servicesQ = usePartnerHubServices();
 
   return (
-    <div
-      className="flex min-h-[12rem] items-center justify-center text-sm text-muted-foreground"
-      data-testid="partner-services-redirect"
-    >
-      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-      Opening services…
+    <div className="space-y-4" data-testid="partner-services-page">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Service catalog</h1>
+          <p className="text-sm text-muted-foreground">
+            Add, update, and manage your service list for walk-in and customer bookings.
+          </p>
+        </div>
+      </div>
+
+      <PartnerHubServicesWorkspaceBody servicesQ={servicesQ} />
     </div>
   );
 }

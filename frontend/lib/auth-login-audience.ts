@@ -1,4 +1,4 @@
-export type LoginAudience = 'customer' | 'partner' | 'admin';
+export type LoginAudience = 'partner' | 'admin';
 
 export type LoginAudienceCopy = {
   /** Auth card heading. */
@@ -16,16 +16,16 @@ export type LoginAudienceCopy = {
 };
 
 const AUDIENCE_COPY: Record<LoginAudience, LoginAudienceCopy> = {
-  customer: {
-    title: 'Sign in',
-    description: 'Book doorstep laundry or manage your orders.',
-    backHref: '/discover',
-    backLabel: 'Browse laundries',
-    showOtpTab: true,
-    footerPrompt: 'New here?',
-    footerHref: '/register',
-    footerLinkText: 'Create account',
-  },
+  // customer: {
+  //   title: 'Sign in',
+  //   description: 'Book doorstep laundry or manage your orders.',
+  //   backHref: '/discover',
+  //   backLabel: 'Browse laundries',
+  //   showOtpTab: true,
+  //   footerPrompt: 'New here?',
+  //   footerHref: '/register',
+  //   footerLinkText: 'Create account',
+  // },
   partner: {
     title: 'Laundry partner sign in',
     navbarTitle: 'Laundry login',
@@ -52,7 +52,7 @@ const AUDIENCE_COPY: Record<LoginAudience, LoginAudienceCopy> = {
 
 export function parseLoginAudience(value: string | null): LoginAudience {
   if (value === 'partner' || value === 'admin') return value;
-  return 'customer';
+  return 'partner'; // Default to partner if no valid audience is found
 }
 
 export function getLoginAudienceCopy(audience: LoginAudience): LoginAudienceCopy {

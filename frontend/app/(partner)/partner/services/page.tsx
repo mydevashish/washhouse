@@ -1,10 +1,13 @@
-import { permanentRedirect } from 'next/navigation';
+import { RoleGuard } from '@/components/auth/role-guard';
+import { PARTNER_PORTAL_ROLES } from '@/lib/partner-roles';
+import { PartnerServiceCatalogView } from '@/features/partner/views/partner-service-catalog-view';
 
-import { PARTNER_ORDERS_HUB_WORKSPACE_SERVICES_HREF } from '@/features/partner/lib/partner-nav';
+export const metadata = { title: 'Partner · Service Catalog' };
 
-export const metadata = { title: 'Service Catalog' };
-
-/** Legacy route → Orders Hub services workspace modal (Your shop catalog bookmark). */
-export default function PartnerServicesRedirectPage() {
-  permanentRedirect(PARTNER_ORDERS_HUB_WORKSPACE_SERVICES_HREF);
+export default function PartnerServicesPage() {
+  return (
+    <RoleGuard roles={PARTNER_PORTAL_ROLES}>
+      <PartnerServiceCatalogView />
+    </RoleGuard>
+  );
 }
