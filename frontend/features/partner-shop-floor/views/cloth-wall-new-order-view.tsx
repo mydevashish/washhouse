@@ -31,8 +31,7 @@ import { PhoneNumericKeypad } from '@/features/partner-shop-floor/components/pho
 import { WalkInSuccessPanel } from '@/features/partner-shop-floor/components/walk-in-success-panel';
 import { recordCoachOrderCreated } from '@/features/partner-shop-floor/lib/floor-coach';
 import {
-  buildCatalogClothWallTiles,
-  buildServiceClothWallTiles,
+  resolveClothWallTiles,
   filterTilesByCategory,
   type ClothWallCategoryChip,
   type ClothWallTile,
@@ -43,11 +42,13 @@ import {
   clothWallPieceCount,
   clothWallSubtotalInr,
   decrementClothWallQty,
+  garmentLineKey,
   incrementClothWallQty,
   serviceLineKey,
   type ClothWallLine,
   type ClothWallProcess,
 } from '@/features/partner-shop-floor/lib/cloth-wall-qty';
+import { useVisibleGarmentCatalogItems } from '@/features/partner/garment-catalog/hooks/use-visible-garment-catalog-items';
 import { queryKeys } from '@/lib/query-keys';
 import { cn } from '@/lib/utils';
 import { listPartnerServices } from '@/services/partner-service-catalog';
@@ -107,18 +108,19 @@ export function ClothWallNewOrderView({
     enabled,
   });
 
-  const catalogTiles = useMemo(
-    () => buildCatalogClothWallTiles(priceListQ.data?.items ?? []),
-    [priceListQ.data?.items],
+  const garmentCatalogQ = useVisibleGarmentCatalogItems();
+
+  const clothWallResolved = useMemo(
+    () =>
+      resolveClothWallTiles({
+        garmentItems: garmentCatalogQ.data ?? [],
+        priceListItems: priceListQ.data?.items ?? [],
+        services: servicesQ.data ?? [],
+      }),
+    [garmentCatalogQ.data, priceListQ.data?.items, servicesQ.data],
   );
 
-  const serviceTiles = useMemo(
-    () => buildServiceClothWallTiles(servicesQ.data ?? []),
-    [servicesQ.data],
-  );
-
-  const usingCatalog = catalogTiles.length > 0;
-  const tiles = usingCatalog ? catalogTiles : serviceTiles;
+  const tiles = clothWallResolved.tiles;
   const visibleTiles = filterTilesByCategory(tiles, category);
 
   const pieceCount = clothWallPieceCount(lines);
@@ -154,21 +156,25 @@ export function ClothWallNewOrderView({
     return tileProcess[tile.id] ?? tile.defaultProcess;
   }
 
+  function lineKeyForTile(tile: ClothWallTile, process: ClothWallProcess): string {
+    if (tile.source === 'garment' && tile.garmentItemId) {
+      return garmentLineKey(tile.garmentItemId, process);
+    }
+    if (tile.source === 'catalog' && tile.catalogItemId) {
+      return catalogLineKey(tile.catalogItemId, process);
+    }
+    return serviceLineKey(tile.serviceId ?? tile.id);
+  }
+
   function qtyForTile(tile: ClothWallTile): number {
     const process = processForTile(tile);
-    const key =
-      tile.source === 'catalog' && tile.catalogItemId
-        ? catalogLineKey(tile.catalogItemId, process)
-        : serviceLineKey(tile.serviceId ?? tile.id);
+    const key = lineKeyForTile(tile, process);
     return lines.find((l) => l.key === key)?.quantity ?? 0;
   }
 
   function bumpTile(tile: ClothWallTile, delta: 1 | -1) {
     const process = processForTile(tile);
-    const key =
-      tile.source === 'catalog' && tile.catalogItemId
-        ? catalogLineKey(tile.catalogItemId, process)
-        : serviceLineKey(tile.serviceId ?? tile.id);
+    const key = lineKeyForTile(tile, process);
     if (delta < 0) {
       setLines((prev) => decrementClothWallQty(prev, key));
       return;
@@ -180,8 +186,10 @@ export function ClothWallNewOrderView({
         unitPriceInr: price,
         label: tile.hinglish,
         catalogItemId: tile.catalogItemId,
+        garmentItemId: tile.garmentItemId,
         serviceId: tile.serviceId,
-        process: tile.source === 'catalog' ? process : undefined,
+        process:
+          tile.source === 'catalog' || tile.source === 'garment' ? process : undefined,
       }),
     );
   }
@@ -189,11 +197,12 @@ export function ClothWallNewOrderView({
   function changeProcess(tile: ClothWallTile, process: ClothWallProcess) {
     const prevProcess = processForTile(tile);
     setTileProcess((p) => ({ ...p, [tile.id]: process }));
-    if (!tile.catalogItemId || prevProcess === process) return;
-    const oldKey = catalogLineKey(tile.catalogItemId, prevProcess);
+    const catalogOrGarmentId = tile.catalogItemId ?? tile.garmentItemId;
+    if (!catalogOrGarmentId || prevProcess === process) return;
+    const oldKey = lineKeyForTile(tile, prevProcess);
     const qty = lines.find((l) => l.key === oldKey)?.quantity ?? 0;
     if (qty < 1) return;
-    const newKey = catalogLineKey(tile.catalogItemId, process);
+    const newKey = lineKeyForTile(tile, process);
     const price = unitPriceForTile(tile, process);
     setLines((prev) => {
       const without = prev.filter((l) => l.key !== oldKey && l.key !== newKey);
@@ -205,6 +214,7 @@ export function ClothWallNewOrderView({
           unitPriceInr: price,
           label: tile.hinglish,
           catalogItemId: tile.catalogItemId,
+          garmentItemId: tile.garmentItemId,
           process,
         },
       ];
@@ -238,7 +248,7 @@ export function ClothWallNewOrderView({
     }
 
     const items: WalkInOrderLineItem[] = lines.map((line) => {
-      if (line.catalogItemId) {
+      if (line.catalogItemId && line.process) {
         return {
           catalog_item_id: line.catalogItemId,
           process: line.process,
@@ -260,7 +270,8 @@ export function ClothWallNewOrderView({
     });
   }
 
-  const loadingWall = priceListQ.isLoading || servicesQ.isLoading;
+  const loadingWall = garmentCatalogQ.isLoading || priceListQ.isLoading || servicesQ.isLoading;
+  const usingServiceFallback = clothWallResolved.source === 'service';
 
   return (
     <PartnerContent className="space-y-4 pb-28">
@@ -387,14 +398,14 @@ export function ClothWallNewOrderView({
 
           {pickerMode === 'wall' ? (
             <>
-              {!usingCatalog && !loadingWall ? (
+              {usingServiceFallback && !loadingWall ? (
                 <p className="rounded-xl bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-                  Garment price list empty — showing Service catalog.{' '}
+                  Garment rate card empty — showing Service catalog.{' '}
                   <Link
-                    href="/partner/pricing"
+                    href="/partner/services"
                     className="font-medium text-primary underline-offset-2 hover:underline"
                   >
-                    Set garment prices
+                    Upload rate card
                   </Link>
                 </p>
               ) : null}

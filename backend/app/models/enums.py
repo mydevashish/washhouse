@@ -432,6 +432,33 @@ class CatalogUnit(str, enum.Enum):
     pair = "pair"
 
 
+class GarmentCategory(str, enum.Enum):
+    """Partner ops garment catalog groupings (Default.xls Category column)."""
+
+    men = "men"
+    women = "women"
+    kids = "kids"
+    household = "household"
+    institutional = "institutional"
+    others = "others"
+
+
+class GarmentServiceType(str, enum.Enum):
+    """Service-type price columns on partner garment rate card."""
+
+    commercial_service = "commercial_service"
+    dry_cleaning = "dry_cleaning"
+    express_service = "express_service"
+    on_hanger = "on_hanger"
+    lint_remover = "lint_remover"
+    premium_laundry = "premium_laundry"
+    shoe_cleaning = "shoe_cleaning"
+    steam_press = "steam_press"
+    starch = "starch"
+    wash_and_fold = "wash_and_fold"
+    wash_n_iron = "wash_n_iron"
+
+
 class BookingRequestStatus(str, enum.Enum):
     new = "new"
     reviewing = "reviewing"

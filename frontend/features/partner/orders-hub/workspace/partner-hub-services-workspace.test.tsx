@@ -5,10 +5,12 @@ import type { ReactNode } from 'react';
 
 import {
   PartnerHubServicesAddForm,
+  PartnerHubServicesModalContent,
   PartnerHubServicesWorkspaceBody,
   usePartnerHubServices,
 } from '@/features/partner/orders-hub/workspace/partner-hub-services-workspace';
 import { listServiceCategories } from '@/services/customer-experience';
+import { getPartnerGarmentCatalogSummary } from '@/services/partner-garment-catalog';
 import {
   createPartnerService,
   listPartnerServices,
@@ -34,6 +36,25 @@ jest.mock('@/services/partner-service-catalog', () => ({
   createPartnerService: jest.fn(),
   updatePartnerService: jest.fn(),
   deletePartnerService: jest.fn(),
+}));
+
+jest.mock('@/services/partner-garment-catalog', () => ({
+  getPartnerGarmentCatalogSummary: jest.fn(),
+}));
+
+jest.mock('@/features/partner/orders-hub/workspace/partner-hub-workspace-modal', () => ({
+  PartnerHubWorkspaceModalGate: ({
+    children,
+    toolbar,
+  }: {
+    children: React.ReactNode;
+    toolbar?: React.ReactNode;
+  }) => (
+    <div>
+      {toolbar}
+      {children}
+    </div>
+  ),
 }));
 
 const sampleService = {
@@ -121,6 +142,25 @@ describe('PartnerHubServicesWorkspace (Prompt 6)', () => {
         is_active: false,
       });
     });
+  });
+
+  it('modal summary links to full garment catalog page', async () => {
+    jest.mocked(getPartnerGarmentCatalogSummary).mockResolvedValue({
+      total: 42,
+      visible: 30,
+      categories: 5,
+    });
+
+    render(wrap(<PartnerHubServicesModalContent />));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('hub-services-summary')).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('hub-services-open-full-catalog')).toHaveAttribute(
+      'href',
+      '/partner/services',
+    );
   });
 });
 

@@ -40,4 +40,8 @@ sentry-sdk[fastapi]>=2.15,<3
 # Email (SMTP). Resend remains optional in prod.txt for future provider swap.
 aiosmtplib>=3.0,<4
 
+# Partner garment catalog bulk import (.xls / .xlsx)
+openpyxl>=3.1,<4
+xlrd>=2.0,<3
+
 # SMS (lazy imported; Twilio pinned in prod.txt / dev.txt)

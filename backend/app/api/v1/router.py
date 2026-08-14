@@ -26,6 +26,7 @@ from app.api.v1.endpoints import (
     customer_desk,
     customer_experience,
     partner_service_catalog,
+    partner_garment_catalog,
     partner_price_list,
     partner_coupons,
     platform_config,
@@ -93,6 +94,7 @@ api_router.include_router(admin_profit_sharing.router)
 api_router.include_router(admin_customer_experience.router)
 api_router.include_router(customer_experience.router)
 api_router.include_router(partner_service_catalog.router)
+api_router.include_router(partner_garment_catalog.router)
 api_router.include_router(partner_price_list.router)
 api_router.include_router(partner_coupons.router)
 api_router.include_router(announcements.router)

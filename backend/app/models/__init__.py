@@ -29,6 +29,7 @@ from app.models.inventory_verification import (
     OrderInventoryVerification,
 )
 from app.models.catalog import LaundryItemPrice, PlatformCatalogItem
+from app.models.garment_catalog import LaundryGarmentItem, LaundryGarmentServiceRate
 from app.models.laundry import Laundry, LaundryService
 from app.models.laundry_customer_registration import LaundryCustomerRegistration
 from app.models.storefront import LaundryStorefront
@@ -79,6 +80,8 @@ __all__ = [
     "Coupon",
     "Laundry",
     "LaundryCustomerRegistration",
+    "LaundryGarmentItem",
+    "LaundryGarmentServiceRate",
     "LaundryItemPrice",
     "LaundryService",
     "PlatformCatalogItem",

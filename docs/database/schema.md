@@ -12,6 +12,8 @@
 | `laundry_services`    | Coarse services offered (wash, dry-clean, …) | `laundries`             |
 | `platform_catalog_items` | Platform master garment/kg catalog (WashHouse suggested defaults) | `laundries` / admin |
 | `laundry_item_prices` | Per-laundry prices + `is_offered` for catalog items | `laundries`      |
+| `laundry_garment_items` | Partner ops garment rate card (Default.xls import) | `laundries` |
+| `laundry_garment_service_rates` | Per-garment service-type prices (dry clean, press, …) | `laundry_garment_items` |
 | `laundry_pricing`     | *(superseded)* use `laundry_item_prices` — see [partner-price-list.md](../features/partner-price-list.md) | `laundries` |
 | `orders`              | Customer orders (+ Customer Desk assisted columns — § Customer Desk) | `orders` |
 | `order_items`         | Line items per order                         | `orders`                |
@@ -78,6 +80,9 @@ See [`erd.md`](erd.md).
 | `platform_catalog_items` | `ix_platform_catalog_items_category_sort` (partial, active) | category tables      |
 | `laundry_item_prices` | `uq_laundry_item_prices_laundry_catalog_active` (partial unique) | one override per item |
 | `laundry_item_prices` | `ix_laundry_item_prices_laundry_id` / `ix_laundry_item_prices_catalog_item_id` | FK lookups |
+| `laundry_garment_items` | `uq_laundry_garment_items_laundry_code_active` (partial unique on `lower(garment_code)`) | one code per laundry |
+| `laundry_garment_items` | `ix_laundry_garment_items_laundry_category` / `ix_laundry_garment_items_laundry_visible` (partial active) | list filters |
+| `laundry_garment_service_rates` | `uq_laundry_garment_rates_item_type_active` (partial unique) | one rate per service type |
 | `marketing_contact_submissions` | `ix_marketing_contact_submissions_phone_created_at` | contact rate limiting   |
 | `marketing_franchise_inquiries` | `ix_marketing_franchise_inquiries_client_ip_created_at` | franchise rate limiting |
 | `marketing_testimonials` | `ix_marketing_testimonials_featured_active_sort` | featured homepage list |
@@ -221,6 +226,22 @@ Seed: `python scripts/seed_washhouse_catalog.py` (idempotent by `slug`).
 
 Until Slice E ships, regression: walk-in + `/partner/services` paths must stay green.
 
+### Partner garment service catalog (2026-08-14)
+
+> Spec: [partner-garment-service-catalog.md](../features/partner-garment-service-catalog.md) · Migration: `20260814_0044`
+
+Partner ops rate card imported from **Default.xls** (garment × service-type matrix). Separate from `platform_catalog_items` / `laundry_item_prices` (marketplace compare list).
+
+**Enums:** `garment_category` (`men` \| `women` \| `kids` \| `household` \| `institutional` \| `others`); `garment_service_type` (11 Excel price columns as snake_case slugs).
+
+**`laundry_garment_items`:** `laundry_id`, `category`, `name`, `garment_code`, `image_url`, optional `platform_catalog_item_id`, `is_visible`, `sort_order`, soft delete.
+
+**`laundry_garment_service_rates`:** `garment_item_id`, `service_type`, `price_inr` (NULL = not offered), soft delete.
+
+Unique active `(laundry_id, lower(garment_code))` and `(garment_item_id, service_type)`.
+
+**Cloth Wall bridge (planned Prompt 8):** read garment catalog when non-empty; fallback to price list → `laundry_services`.
+
 **Cloth Wall bridge (2026-08-08):** `POST /partner/walk-in-orders` accepts optional `catalog_item_id` + `process` (`dry_clean`\|`press`\|`single`) instead of `service_id`. Service find-or-creates a `laundry_services` row keyed by `description=catalog:{uuid}:{process}` and locks `order_items` unit price from `laundry_item_prices`. Full `catalog_item_id` on order lines remains Slice E.
 
 ## Shop Floor color tokens
@@ -259,6 +280,7 @@ GST amounts (`gst_rate`, `cgst_inr`, `sgst_inr`, `subtotal_inr`, `total_inr`) re
 - All schema changes via Alembic
 - Reversible by default
 - Latest catalog migration: `20260717_0034_platform_catalog_and_laundry_item_prices`
+- Partner garment catalog: `20260814_0044_laundry_garment_catalog`
 - Booking requests: `20260803_0038_booking_requests`
 - Customer Desk: migration `20260804_0039` — extend `order_source` + `orders.created_by_user_id` + guest address snapshot columns + desk indexes; lookup/history APIs shipped (Slice 1)
 - Shop Floor tokens: `20260808_0040_order_color_token`

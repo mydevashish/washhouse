@@ -7,8 +7,7 @@ import { toast } from 'sonner';
 
 import { getPartnerPriceList } from '@/features/partner-price-list/api/partner-price-list';
 import {
-  buildCatalogClothWallTiles,
-  buildServiceClothWallTiles,
+  resolveClothWallTiles,
   filterTilesByCategory,
   type ClothWallCategoryChip,
   type ClothWallTile,
@@ -19,6 +18,7 @@ import {
   clothWallPieceCount,
   clothWallSubtotalInr,
   decrementClothWallQty,
+  garmentLineKey,
   incrementClothWallQty,
   serviceLineKey,
   type ClothWallLine,
@@ -43,6 +43,7 @@ import { guestDeskProfile } from '@/features/partner/customer-desk/types';
 import type { PartnerCustomerGender } from '@/features/partner/components/partner-customer-gender-field';
 import { usePartnerAnalytics, usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { queryKeys } from '@/lib/query-keys';
+import { useVisibleGarmentCatalogItems } from '@/features/partner/garment-catalog/hooks/use-visible-garment-catalog-items';
 import { listPartnerServices } from '@/services/partner-service-catalog';
 import { validatePartnerCoupon } from '@/services/partner-coupons';
 import {
@@ -171,6 +172,8 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     enabled,
   });
 
+  const garmentCatalogQ = useVisibleGarmentCatalogItems();
+
   const services = useMemo(
     () =>
       (servicesQ.data ?? []).filter(
@@ -179,16 +182,16 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     [servicesQ.data],
   );
 
-  const catalogTiles = useMemo(
-    () => buildCatalogClothWallTiles(priceListQ.data?.items ?? []),
-    [priceListQ.data?.items],
+  const clothWallResolved = useMemo(
+    () =>
+      resolveClothWallTiles({
+        garmentItems: garmentCatalogQ.data ?? [],
+        priceListItems: priceListQ.data?.items ?? [],
+        services: servicesQ.data ?? [],
+      }),
+    [garmentCatalogQ.data, priceListQ.data?.items, servicesQ.data],
   );
-  const serviceTiles = useMemo(
-    () => buildServiceClothWallTiles(servicesQ.data ?? []),
-    [servicesQ.data],
-  );
-  const usingCatalog = catalogTiles.length > 0;
-  const garmentTiles = usingCatalog ? catalogTiles : serviceTiles;
+  const garmentTiles = clothWallResolved.tiles;
   const visibleGarmentTiles = filterTilesByCategory(garmentTiles, category);
 
   const walkInLookupPhone = useMemo(() => {
@@ -341,21 +344,25 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     return tileProcess[tile.id] ?? tile.defaultProcess;
   }
 
+  function lineKeyForTile(tile: ClothWallTile, process: ClothWallProcess): string {
+    if (tile.source === 'garment' && tile.garmentItemId) {
+      return garmentLineKey(tile.garmentItemId, process);
+    }
+    if (tile.source === 'catalog' && tile.catalogItemId) {
+      return catalogLineKey(tile.catalogItemId, process);
+    }
+    return serviceLineKey(tile.serviceId ?? tile.id);
+  }
+
   function qtyForTile(tile: ClothWallTile): number {
     const process = processForTile(tile);
-    const key =
-      tile.source === 'catalog' && tile.catalogItemId
-        ? catalogLineKey(tile.catalogItemId, process)
-        : serviceLineKey(tile.serviceId ?? tile.id);
+    const key = lineKeyForTile(tile, process);
     return garmentLines.find((l) => l.key === key)?.quantity ?? 0;
   }
 
   function bumpTile(tile: ClothWallTile, delta: 1 | -1) {
     const process = processForTile(tile);
-    const key =
-      tile.source === 'catalog' && tile.catalogItemId
-        ? catalogLineKey(tile.catalogItemId, process)
-        : serviceLineKey(tile.serviceId ?? tile.id);
+    const key = lineKeyForTile(tile, process);
     if (delta < 0) {
       setGarmentLines((prev) => decrementClothWallQty(prev, key));
       return;
@@ -367,8 +374,10 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
         unitPriceInr: price,
         label: tile.hinglish,
         catalogItemId: tile.catalogItemId,
+        garmentItemId: tile.garmentItemId,
         serviceId: tile.serviceId,
-        process: tile.source === 'catalog' ? process : undefined,
+        process:
+          tile.source === 'catalog' || tile.source === 'garment' ? process : undefined,
       }),
     );
   }
@@ -376,11 +385,12 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   function changeProcess(tile: ClothWallTile, process: ClothWallProcess) {
     const prevProcess = processForTile(tile);
     setTileProcess((p) => ({ ...p, [tile.id]: process }));
-    if (!tile.catalogItemId || prevProcess === process) return;
-    const oldKey = catalogLineKey(tile.catalogItemId, prevProcess);
+    const catalogOrGarmentId = tile.catalogItemId ?? tile.garmentItemId;
+    if (!catalogOrGarmentId || prevProcess === process) return;
+    const oldKey = lineKeyForTile(tile, prevProcess);
     const qty = garmentLines.find((l) => l.key === oldKey)?.quantity ?? 0;
     if (qty < 1) return;
-    const newKey = catalogLineKey(tile.catalogItemId, process);
+    const newKey = lineKeyForTile(tile, process);
     const price = unitPriceForTile(tile, process);
     setGarmentLines((prev) => {
       const without = prev.filter((l) => l.key !== oldKey && l.key !== newKey);
@@ -392,6 +402,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
           unitPriceInr: price,
           label: tile.hinglish,
           catalogItemId: tile.catalogItemId,
+          garmentItemId: tile.garmentItemId,
           process,
         },
       ];
@@ -568,7 +579,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       }));
     }
     return garmentLines.map((line) => {
-      if (line.catalogItemId) {
+      if (line.catalogItemId && line.process) {
         return {
           catalog_item_id: line.catalogItemId,
           process: line.process,
@@ -823,7 +834,8 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     priceListQ,
     garmentTiles,
     visibleGarmentTiles,
-    loadingGarments: priceListQ.isLoading || servicesQ.isLoading,
+    loadingGarments: garmentCatalogQ.isLoading || priceListQ.isLoading || servicesQ.isLoading,
+    clothWallSource: clothWallResolved.source,
     walkInLookupQ,
     walkInLookupPhone,
     walkInProfile,

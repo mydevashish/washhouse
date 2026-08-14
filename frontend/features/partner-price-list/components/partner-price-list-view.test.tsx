@@ -127,6 +127,14 @@ describe('PartnerPriceListView', () => {
     });
   });
 
+  it('links to counter service catalog', async () => {
+    renderView();
+    await screen.findByText('Garment price list');
+    const link = screen.getByTestId('price-list-service-catalog-link').querySelector('a');
+    expect(link).toHaveAttribute('href', '/partner/services');
+    expect(screen.getByText(/Counter rate card/i)).toBeInTheDocument();
+  });
+
   it('shows success toast after saving dirty prices', async () => {
     const user = userEvent.setup();
     renderView();

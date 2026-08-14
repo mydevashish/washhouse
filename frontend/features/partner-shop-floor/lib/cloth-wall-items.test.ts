@@ -1,8 +1,11 @@
 import {
   buildCatalogClothWallTiles,
+  buildGarmentClothWallTiles,
   buildServiceClothWallTiles,
   filterTilesByCategory,
+  resolveClothWallTiles,
 } from '@/features/partner-shop-floor/lib/cloth-wall-items';
+import type { GarmentCatalogItem } from '@/services/partner-garment-catalog';
 import type { PartnerPriceListItem } from '@/features/partner-price-list/types';
 import type { ServiceCatalogItem } from '@/services/customer-experience';
 
@@ -64,5 +67,70 @@ describe('cloth-wall-items', () => {
     const tiles = buildCatalogClothWallTiles([shirt]);
     expect(filterTilesByCategory(tiles, 'men')).toHaveLength(1);
     expect(filterTilesByCategory(tiles, 'women')).toHaveLength(0);
+  });
+
+  it('builds garment catalog tiles with dry clean and press prices', () => {
+    const garment: GarmentCatalogItem = {
+      id: 'g1',
+      laundry_id: 'l1',
+      category: 'men',
+      name: 'T Shirt',
+      garment_code: 'TF',
+      image_url: null,
+      resolved_image_url: null,
+      platform_catalog_item_id: null,
+      is_visible: true,
+      sort_order: 0,
+      rates: {
+        dry_cleaning: { price_inr: '59.00', price_paise: 5900 },
+        steam_press: { price_inr: '15.00', price_paise: 1500 },
+      },
+    };
+    const tiles = buildGarmentClothWallTiles([garment]);
+    expect(tiles).toHaveLength(1);
+    expect(tiles[0]?.source).toBe('garment');
+    expect(tiles[0]?.dryCleanInr).toBe(59);
+    expect(tiles[0]?.pressInr).toBe(15);
+    expect(tiles[0]?.photo.src).toContain('/catalog/');
+  });
+
+  it('prefers garment catalog over price list in resolveClothWallTiles', () => {
+    const garment: GarmentCatalogItem = {
+      id: 'g2',
+      laundry_id: 'l1',
+      category: 'men',
+      name: 'Jeans',
+      garment_code: 'JE',
+      image_url: null,
+      resolved_image_url: null,
+      platform_catalog_item_id: null,
+      is_visible: true,
+      sort_order: 0,
+      rates: { dry_cleaning: { price_inr: '79.00', price_paise: 7900 } },
+    };
+    const resolved = resolveClothWallTiles({
+      garmentItems: [garment],
+      priceListItems: [shirt],
+      services: [],
+    });
+    expect(resolved.source).toBe('garment');
+    expect(resolved.tiles[0]?.name).toBe('Jeans');
+  });
+
+  it('skips hidden garment rows for cloth wall', () => {
+    const hidden: GarmentCatalogItem = {
+      id: 'g3',
+      laundry_id: 'l1',
+      category: 'men',
+      name: 'Hidden',
+      garment_code: 'HD',
+      image_url: null,
+      resolved_image_url: null,
+      platform_catalog_item_id: null,
+      is_visible: false,
+      sort_order: 0,
+      rates: { dry_cleaning: { price_inr: '10.00', price_paise: 1000 } },
+    };
+    expect(buildGarmentClothWallTiles([hidden])).toHaveLength(0);
   });
 });

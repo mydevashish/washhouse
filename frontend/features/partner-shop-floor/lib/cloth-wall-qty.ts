@@ -9,12 +9,17 @@ export type ClothWallLine = {
   unitPriceInr: number;
   label: string;
   catalogItemId?: string;
+  garmentItemId?: string;
   serviceId?: string;
   process?: ClothWallProcess;
 };
 
 export function catalogLineKey(catalogItemId: string, process: ClothWallProcess): string {
   return `catalog:${catalogItemId}:${process}`;
+}
+
+export function garmentLineKey(garmentItemId: string, process: ClothWallProcess): string {
+  return `garment:${garmentItemId}:${process}`;
 }
 
 export function serviceLineKey(serviceId: string): string {

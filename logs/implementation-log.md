@@ -4,6 +4,88 @@
 
 ---
 
+## 2026-08-14 — Prompt 9: polish, QA matrix, docs
+
+- **Phase:** Partner MVP / ops
+- **Scope:** partner-garment-service-catalog
+- **Files:** garment-catalog card/table/upload (lazy mount, scope, live region, dark tokens), `partner-price-list-view.tsx` cross-link, `partner-garment-catalog.spec.ts`, QA matrix, logs
+- **Summary:** LazyMount on card thumbnails; table header scope; import result live region; dark mode on import status tints; pricing page link to service catalog; consolidated Playwright spec (template, upload, edit, bulk delete, axe); QA matrix doc.
+- **Next:** Manual QA @ 375/1280 light/dark; merge when green.
+- **Refs:** `docs/features/partner-garment-service-catalog.md`, `docs/qa/partner-garment-service-catalog-matrix.md`
+
+## 2026-08-14 — Prompt 8: bulk delete + Cloth Wall bridge
+
+- **Type:** feat + test + docs
+- **Scope:** partner-garment-service-catalog
+- **Files:** `garment-bulk-delete-dialog.tsx`, garment table selection, `cloth-wall-items.ts`, walk-in composer + cloth wall view, `use-visible-garment-catalog-items.ts`, docs
+- **Summary:** Bulk delete (selected / by category / entire catalog with DELETE confirm); table checkbox column; Cloth Wall prefers visible garment catalog tiles (dry clean / press / shoe prices + photo resolver) with price-list and laundry_services fallback; hub pillar already on garment KPIs.
+- **Next:** Prompt 9 — polish, a11y, QA matrix, E2E.
+- **Refs:** `docs/features/partner-garment-service-catalog.md`
+
+## 2026-08-14 — Prompt 7: bulk upload wizard
+
+- **Type:** feat + test
+- **Scope:** partner-garment-service-catalog
+- **Files:** `garment-bulk-upload-dialog.tsx`, `lib/garment-import-export.ts`, mutations hook, `garment-catalog-page.tsx`, Jest + Playwright smoke
+- **Summary:** 3-step dialog (upload → preview with valid/error rows + import mode + skip-invalid toggle → result with error CSV download); framer-motion step transitions with reduced-motion fallback; wired to `previewGarmentImport` / `confirmGarmentImport`.
+- **Next:** Prompt 8 — bulk delete dialog + Cloth Wall bridge.
+- **Refs:** `docs/features/partner-garment-service-catalog.md`
+
+## 2026-08-14 — Prompt 6: garment catalog CRUD UI
+
+- **Type:** feat + test
+- **Scope:** partner-garment-service-catalog
+- **Files:** `frontend/features/partner/garment-catalog/components/*` (grid, table, form sheet, delete dialog, list), `lib/garment-catalog-display.ts`, `hooks/use-partner-garment-catalog-mutations.ts`, tests
+- **Summary:** Mobile card grid + desktop sortable table; add/edit dialog with image dropzone (storefront upload on create, garment image API on edit), 11 service price inputs with collapsible “More services”, visibility toggle, single-item delete confirm; query invalidation wired.
+- **Next:** Prompt 7 — bulk upload wizard (3-step).
+- **Refs:** `docs/features/partner-garment-service-catalog.md`
+
+## 2026-08-14 — Prompt 5: garment catalog page shell + hub link
+
+- **Type:** feat + test
+- **Scope:** partner-garment-service-catalog
+- **Files:** `frontend/features/partner/garment-catalog/**`, `frontend/features/partner/views/partner-service-catalog-view.tsx`, `frontend/features/partner/orders-hub/workspace/partner-hub-services-workspace.tsx`, `frontend/features/partner/garment-catalog/components/garment-catalog-page.test.tsx`, `frontend/features/partner/orders-hub/workspace/partner-hub-services-workspace.test.tsx`
+- **Summary:** `/partner/services` shell — header, KPI strip, toolbar (bulk upload/delete/add stubs + working template download), category tabs, debounced search, paginated list preview, empty/loading/error states, pricing footer link. Orders hub Services pillar + modal now use garment catalog summary and link to full catalog instead of legacy inline CRUD.
+- **Next:** Prompt 6 — card grid, table, add/edit sheet, image upload UI.
+- **Refs:** `docs/features/partner-garment-service-catalog.md`
+
+## 2026-08-14 — Prompt 4: garment catalog FE API client
+
+- **Type:** feat + test
+- **Scope:** partner-garment-service-catalog
+- **Files:** `frontend/services/partner-garment-catalog.ts`, `frontend/services/partner-garment-catalog.test.ts`, `frontend/lib/query-keys.ts`
+- **Summary:** Types + API functions for list/summary/template/import/CRUD/bulk-delete/image upload; query keys; helper labels and primary price resolver.
+- **Next:** Prompt 5 — `/partner/services` page shell + toolbar.
+- **Refs:** `docs/api/endpoints/partner-garment-catalog.md`
+
+## 2026-08-14 — Prompt 3: garment catalog API endpoints
+
+- **Type:** feat + test + docs
+- **Scope:** partner-garment-service-catalog
+- **Files:** `backend/app/api/v1/endpoints/partner_garment_catalog.py`, `backend/app/schemas/garment_catalog.py`, `backend/app/api/v1/router.py`, `backend/tests/api/test_partner_garment_catalog.py`, `docs/api/endpoints/partner-garment-catalog.md`, `backend/app/services/partner_garment_catalog_service.py` (image upload)
+- **Summary:** Full REST surface under `/api/v1/partner/garment-catalog` — list, summary, template, import preview/confirm, bulk delete, CRUD, image upload. Legacy `/partner/services` kept with deprecation note.
+- **Next:** Prompt 4 — frontend API client + types.
+- **Refs:** `docs/api/endpoints/partner-garment-catalog.md`
+
+## 2026-08-14 — Prompt 2: garment catalog repository + import service
+
+- **Type:** feat + test
+- **Scope:** partner-garment-service-catalog
+- **Files:** `backend/app/repositories/partner_garment_catalog.py`, `backend/app/services/partner_garment_catalog_service.py`, `backend/app/services/garment_catalog_import.py`, `backend/tests/unit/test_garment_catalog_import.py`, `backend/tests/fixtures/default_garment_catalog.xls`, `backend/requirements/base.txt` (openpyxl, xlrd)
+- **Summary:** Repository (paginated list, summary, CRUD, bulk delete, rate upsert). Import parser for `.xls/.xlsx/.csv` matching Default.xls (313 rows verified). Preview store + confirm import (`upsert`, `replace_categories_in_file`, `replace_all`). Template xlsx generator.
+- **Next:** Prompt 3 — API endpoints + authz tests.
+- **Refs:** `docs/features/partner-garment-service-catalog.md`
+
+## 2026-08-14 — Prompt 1: partner garment catalog schema
+
+- **Type:** feat + test + docs
+- **Scope:** partner-garment-service-catalog
+- **Migration:** `20260814_0044_laundry_garment_catalog`
+- **Files:** `backend/alembic/versions/20260814_0044_laundry_garment_catalog.py`, `backend/app/models/garment_catalog.py`, `backend/app/models/enums.py`, `backend/app/models/laundry.py`, `backend/app/models/__init__.py`, `backend/tests/unit/test_garment_catalog_models.py`, `docs/database/schema.md`
+- **Summary:** Added `garment_category` + `garment_service_type` enums; tables `laundry_garment_items` and `laundry_garment_service_rates` with partial unique indexes (case-insensitive garment code per laundry; one rate per service type). ORM models + unit tests for uniqueness, soft-delete reuse, negative price CHECK.
+- **Next:** Prompt 2 — repository + import parser service.
+- **Refs:** `docs/features/partner-garment-service-catalog.md`
+
 ## 2026-08-14 — Prompt 8: polish, a11y, tests, docs
 
 - **Type:** feat + test + docs

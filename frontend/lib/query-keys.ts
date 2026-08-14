@@ -1,5 +1,12 @@
 /** Shared TanStack Query keys — keeps cache hits across routes. */
 
+export type GarmentCatalogListQueryKeyParams = {
+  category?: string;
+  search?: string;
+  page?: number;
+  page_size?: number;
+};
+
 export const queryKeys = {
   laundries: (city?: string) => ['laundries', city ?? 'all'] as const,
   laundrySearch: (params: {
@@ -87,6 +94,11 @@ export const queryKeys = {
   partnerOperationsDrivers: () => ['partner-operations-drivers'] as const,
   partnerStorefront: () => ['partner-storefront'] as const,
   partnerServiceCatalog: () => ['partner-service-catalog'] as const,
+  partnerGarmentCatalog: (params?: GarmentCatalogListQueryKeyParams) =>
+    ['partner-garment-catalog', params ?? {}] as const,
+  partnerGarmentCatalogSummary: () => ['partner-garment-catalog-summary'] as const,
+  partnerGarmentCatalogClothWall: () => ['partner-garment-catalog-cloth-wall'] as const,
+  partnerGarmentCatalogItem: (id: string) => ['partner-garment-catalog-item', id] as const,
   partnerCoupons: () => ['partner-coupons'] as const,
   partnerPriceList: () => ['partner-price-list'] as const,
   partnerStorefrontTemplates: () => ['partner-storefront-templates'] as const,

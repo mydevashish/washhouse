@@ -24,6 +24,8 @@ import {
 import { PartnerHubPillarCard } from '@/features/partner/orders-hub/workspace/partner-hub-pillar-card';
 import { PartnerHubWorkspaceModalGate } from '@/features/partner/orders-hub/workspace/partner-hub-workspace-modal';
 import { usePartnerHubWorkspaceUrl } from '@/features/partner/orders-hub/workspace/use-partner-hub-workspace-url';
+import { GarmentCatalogKpiStrip } from '@/features/partner/garment-catalog/components/garment-catalog-kpi-strip';
+import { usePartnerGarmentCatalogKpis } from '@/features/partner/garment-catalog/hooks/use-partner-garment-catalog-summary';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
@@ -535,10 +537,10 @@ function PartnerHubServicesPricingFooter() {
 
 export function PartnerHubServicesPillarCard() {
   const { setWorkspace } = usePartnerHubWorkspaceUrl();
-  const { count, minPrice, isLoading, isError } = usePartnerHubServicesKpis();
+  const { total, visible, isLoading, isError } = usePartnerGarmentCatalogKpis();
 
   const secondary =
-    isError ? 'Tap to retry' : minPrice != null ? `from ₹${minPrice}` : 'Set up catalog';
+    isError ? 'Tap to retry' : total > 0 ? `${visible} visible` : 'Upload rate card';
 
   return (
     <PartnerHubPillarCard
@@ -546,7 +548,7 @@ export function PartnerHubServicesPillarCard() {
       title="Services"
       icon={Sparkles}
       loading={isLoading}
-      primaryMetric={isError ? '—' : `${count} services`}
+      primaryMetric={isError ? '—' : `${total} garments`}
       secondaryMetric={secondary}
       onOpen={() => setWorkspace('services')}
     />
@@ -554,25 +556,39 @@ export function PartnerHubServicesPillarCard() {
 }
 
 export function PartnerHubServicesModalContent() {
-  const servicesQ = usePartnerHubServices();
+  const kpis = usePartnerGarmentCatalogKpis();
 
   return (
     <PartnerHubWorkspaceModalGate
       workspaceId="services"
       title="Services"
-      description="Add, edit, pause, or remove services — used in walk-in orders and customer booking."
+      description="Your garment rate card — bulk upload, prices, and photos."
       toolbar={
-        <PartnerHubServicesWorkspaceToolbar
-          onScrollToAdd={() => {
-            document
-              .querySelector('[data-testid="hub-services-add-form"]')
-              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }}
-        />
+        <Button type="button" className="h-9 shrink-0 gap-1.5" asChild>
+          <Link href="/partner/services" data-testid="hub-services-open-full-catalog">
+            Open full catalog
+          </Link>
+        </Button>
       }
       footer={<PartnerHubServicesPricingFooter />}
     >
-      <PartnerHubServicesWorkspaceBody servicesQ={servicesQ} />
+      <div className="space-y-4" data-testid="hub-services-summary">
+        <GarmentCatalogKpiStrip
+          total={kpis.total}
+          visible={kpis.visible}
+          categories={kpis.categories}
+          loading={kpis.isLoading}
+        />
+        <p className="text-sm text-muted-foreground">
+          Bulk upload, single-item edit, and garment images are on the full catalog page.
+        </p>
+        <Link
+          href="/partner/services"
+          className="inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          Go to Service catalog →
+        </Link>
+      </div>
     </PartnerHubWorkspaceModalGate>
   );
 }

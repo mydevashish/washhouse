@@ -56,6 +56,9 @@ class Laundry(Base, TimestampMixin, SoftDeleteMixin):
     )
 
     services: Mapped[list[LaundryService]] = relationship(back_populates="laundry")  # noqa: F821
+    garment_items: Mapped[list["LaundryGarmentItem"]] = relationship(  # noqa: F821
+        back_populates="laundry",
+    )
 
 
 class LaundryService(Base, TimestampMixin, SoftDeleteMixin):

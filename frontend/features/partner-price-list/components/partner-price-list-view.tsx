@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { IndianRupee, ListChecks } from 'lucide-react';
+import { ArrowRight, IndianRupee, ListChecks } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -150,6 +151,24 @@ export function PartnerPriceListView() {
         Your prices are what customers see. Lower rates can attract more bookings; higher rates can
         signal premium care.
       </InfoBanner>
+
+      <div
+        className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3"
+        data-testid="price-list-service-catalog-link"
+      >
+        <Link
+          href="/partner/services"
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          Counter rate card
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          Service catalog
+        </Link>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Garment list and multi-service prices for counter staff — separate from marketplace
+          compare prices above.
+        </p>
+      </div>
 
       {listQ.isLoading && (
         <div className="space-y-3" aria-busy="true" aria-label="Loading price list">

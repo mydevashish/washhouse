@@ -175,6 +175,14 @@
 - Done: Prompts 0–6 — BE search confirm; shared `usePartnerTagsOrderSearch`; dashboard Tags UI + verify panel; wired on `/partner`; RTL + Playwright placement smoke
 - Next: Manual QA matrix (375/1280, light/dark, live API search)
 
+## Partner garment service catalog (bulk Excel + multi-service rates)
+- Status: **review** (Prompt 9 polish 2026-08-14)
+- Spec: `docs/features/partner-garment-service-catalog.md`
+- Pack: `.cursor/prompts/partner-garment-service-catalog-bulk.md`
+- Matrix: `docs/qa/partner-garment-service-catalog-matrix.md`
+- Done: Prompts 0–9 — DB/models, import service, API, FE catalog UI, bulk upload/delete, Cloth Wall bridge, lazy thumbnails, a11y, Playwright + Jest, pricing cross-link
+- Next: Manual QA matrix (375/1280, light/dark); merge when green
+
 ## UI fix + backend pagination
 - Status: **done** (Prompt 8 QA lock 2026-08-08)
 - Spec/pack: `PAGINATION_STANDARD.md`, `.cursor/prompts/ui-fix-and-backend-pagination.md`, `docs/qa/ui-and-pagination-inventory.md`, `docs/qa/partner-admin-pagination-matrix.md`

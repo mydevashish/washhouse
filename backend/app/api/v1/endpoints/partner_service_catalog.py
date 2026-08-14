@@ -1,4 +1,7 @@
-"""Partner service catalog API."""
+"""Partner service catalog API (legacy flat laundry_services CRUD).
+
+Deprecated: prefer /partner/garment-catalog for garment rate card + bulk import.
+"""
 
 from __future__ import annotations
 

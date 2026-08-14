@@ -30,6 +30,7 @@
 - **Partner laundry dashboard redesign** (2026-08-10): **review** — Prompt pack **0–8** on `/partner` (period overview, chart, recent 10, create modal, success print, WhatsApp, invoice gating, polish). Spec: [partner-laundry-dashboard-redesign.md](../../docs/features/partner-laundry-dashboard-redesign.md).
 - **Partner laundry dashboard live data** (2026-08-14): **review** — Prompt 8 done (dark tokens, a11y, Jest view + Playwright smoke). Spec: [partner-laundry-dashboard-live-data.md](../../docs/features/partner-laundry-dashboard-live-data.md). Pack: [partner-laundry-dashboard-live-data.md](../prompts/partner-laundry-dashboard-live-data.md).
 - **Partner Customers & Orders — four pillars workspace** (2026-08-10): **review** — Prompt pack **0–8** (Customers · Orders · Coupons · Services tiles + modals on `/partner/orders`; nav redirects; `POST /partner/customers`). Spec: [partner-customers-orders-four-pillars-workspace.md](../../docs/features/partner-customers-orders-four-pillars-workspace.md). Matrix: [partner-four-pillars-workspace-matrix.md](../../docs/qa/partner-four-pillars-workspace-matrix.md).
+- **Partner garment service catalog** (2026-08-14): **review** — Prompt **9** done (dark tokens, lazy thumbnails, a11y, full Playwright spec, QA matrix, pricing cross-link). Spec: [partner-garment-service-catalog.md](../../docs/features/partner-garment-service-catalog.md). Matrix: [partner-garment-service-catalog-matrix.md](../../docs/qa/partner-garment-service-catalog-matrix.md).
 
 ## Blocked / Waiting
 

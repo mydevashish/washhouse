@@ -1,3 +1,4 @@
+import { resolveGarmentCatalogPhoto } from '@/features/partner/garment-catalog/lib/garment-catalog-display';
 import type { PartnerPriceListItem } from '@/features/partner-price-list/types';
 import { resolvePriceListItemPhoto } from '@/features/laundry-price-list/lib/resolve-item-photo';
 import type { WashhouseCatalogPhoto } from '@/features/marketing/catalog/washhouse-catalog-photos';
@@ -7,6 +8,7 @@ import {
 } from '@/features/marketing/catalog/washhouse-catalog-photos';
 import { garmentDisplayLabel } from '@/features/partner-shop-floor/lib/garment-labels';
 import type { ClothWallProcess } from '@/features/partner-shop-floor/lib/cloth-wall-qty';
+import type { GarmentCatalogItem, GarmentCategory } from '@/services/partner-garment-catalog';
 import type { ServiceCatalogItem } from '@/services/customer-experience';
 
 export type ClothWallCategoryChip =
@@ -28,12 +30,13 @@ export const CLOTH_WALL_CATEGORY_CHIPS: {
   { id: 'household', label: 'Household', english: 'Household' },
 ];
 
-export type ClothWallTileSource = 'catalog' | 'service';
+export type ClothWallTileSource = 'catalog' | 'service' | 'garment';
 
 export type ClothWallTile = {
   id: string;
   source: ClothWallTileSource;
   catalogItemId?: string;
+  garmentItemId?: string;
   serviceId?: string;
   slug: string;
   name: string;
@@ -110,6 +113,85 @@ export function buildCatalogClothWallTiles(
       };
     })
     .sort((a, b) => a.hinglish.localeCompare(b.hinglish));
+}
+
+function mapGarmentCategory(category: GarmentCategory): ClothWallCategoryChip | 'other' {
+  if (
+    category === 'men' ||
+    category === 'women' ||
+    category === 'kids' ||
+    category === 'household'
+  ) {
+    return category;
+  }
+  return 'other';
+}
+
+function defaultProcessForGarment(
+  dryCleanInr: number | null,
+  pressInr: number | null,
+  priceInr: number | null,
+): ClothWallProcess {
+  if (priceInr != null && dryCleanInr == null && pressInr == null) return 'single';
+  if (dryCleanInr != null) return 'dry_clean';
+  if (pressInr != null) return 'press';
+  if (priceInr != null) return 'single';
+  return 'single';
+}
+
+/** Ops garment rate card → Cloth Wall tiles (visible rows only). */
+export function buildGarmentClothWallTiles(items: GarmentCatalogItem[]): ClothWallTile[] {
+  return items
+    .filter((item) => item.is_visible)
+    .map((item) => {
+      const dryCleanInr = parseInr(item.rates.dry_cleaning?.price_inr);
+      const pressInr = parseInr(item.rates.steam_press?.price_inr);
+      const shoeInr = parseInr(item.rates.shoe_cleaning?.price_inr);
+      const labels = garmentDisplayLabel(item.garment_code, item.name);
+      const photo = resolveGarmentCatalogPhoto(item);
+      const hasDual = dryCleanInr != null || pressInr != null;
+      const priceInr = shoeInr ?? parseInr(item.rates.commercial_service?.price_inr);
+      let priceMode: ClothWallTile['priceMode'] = 'deferred';
+      if (hasDual) priceMode = 'dual';
+      else if (priceInr != null) priceMode = 'single';
+
+      return {
+        id: `garment:${item.id}`,
+        source: 'garment' as const,
+        garmentItemId: item.id,
+        catalogItemId: item.platform_catalog_item_id ?? undefined,
+        slug: item.garment_code,
+        name: item.name,
+        hinglish: labels.hinglish,
+        english: labels.english,
+        category: mapGarmentCategory(item.category),
+        photo,
+        priceMode,
+        allowsPress: pressInr != null,
+        dryCleanInr,
+        pressInr,
+        priceInr: hasDual ? null : priceInr,
+        defaultProcess: defaultProcessForGarment(dryCleanInr, pressInr, priceInr),
+      };
+    })
+    .filter((tile) => tile.priceMode !== 'deferred')
+    .sort((a, b) => a.hinglish.localeCompare(b.hinglish));
+}
+
+export function resolveClothWallTiles(options: {
+  garmentItems: GarmentCatalogItem[];
+  priceListItems: PartnerPriceListItem[];
+  services: ServiceCatalogItem[];
+}): { tiles: ClothWallTile[]; source: ClothWallTileSource } {
+  const garmentTiles = buildGarmentClothWallTiles(options.garmentItems);
+  if (garmentTiles.length > 0) {
+    return { tiles: garmentTiles, source: 'garment' };
+  }
+  const catalogTiles = buildCatalogClothWallTiles(options.priceListItems);
+  if (catalogTiles.length > 0) {
+    return { tiles: catalogTiles, source: 'catalog' };
+  }
+  return { tiles: buildServiceClothWallTiles(options.services), source: 'service' };
 }
 
 function guessServiceCategory(name: string, category: string): ClothWallCategoryChip | 'other' {
