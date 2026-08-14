@@ -8,7 +8,7 @@ email-validator>=2.2,<3
 
 # Database
 SQLAlchemy>=2.0,<3
-asyncpg>=0.30,<0.31
+asyncpg>=0.31.0,<0.32
 alembic>=1.13,<2
 psycopg2-binary>=2.9,<3   # for Alembic offline mode
 
