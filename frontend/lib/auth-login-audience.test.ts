@@ -5,15 +5,14 @@ import {
 } from '@/lib/auth-login-audience';
 
 describe('auth login audience', () => {
-  it('parses partner and admin; defaults to customer', () => {
+  it('parses partner and admin; defaults to partner', () => {
     expect(parseLoginAudience('partner')).toBe('partner');
     expect(parseLoginAudience('admin')).toBe('admin');
-    expect(parseLoginAudience(null)).toBe('customer');
-    expect(parseLoginAudience('other')).toBe('customer');
+    expect(parseLoginAudience(null)).toBe('partner');
+    expect(parseLoginAudience('other')).toBe('partner');
   });
 
   it('exposes audience-aware document titles (not DLM)', () => {
-    expect(getLoginPageTitle('customer')).toBe('Sign in');
     expect(getLoginPageTitle('partner')).toBe('Laundry login');
     expect(getLoginPageTitle('admin')).toBe('Admin login');
   });

@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 
 import { formatOrderItemsSummary } from '@/features/partner/lib/format-order-items-summary';
 

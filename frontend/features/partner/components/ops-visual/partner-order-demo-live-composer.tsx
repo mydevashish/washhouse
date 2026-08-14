@@ -477,10 +477,17 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
             couponCode={composer.couponCode}
             onCouponCodeChange={composer.setCouponCode}
             couponApplied={composer.couponApplied}
-            onToggleCoupon={composer.toggleCouponApplied}
+            onToggleCoupon={() => {
+              composer.setCouponApplied(false);
+              composer.setCouponDiscountInr(0);
+            }}
             onApplyCoupon={composer.applyCoupon}
             applyCouponPending={composer.applyCouponPending}
             couponError={composer.couponError}
+            discountType={composer.discountType}
+            onDiscountTypeChange={composer.setDiscountType}
+            discountValue={composer.discountValue}
+            onDiscountValueChange={composer.handleDiscountValueChange}
             deliveryType={composer.deliveryType}
             onDeliveryTypeChange={composer.setDeliveryType}
             deliveryDate={composer.preferredDeliveryDate}
@@ -489,6 +496,14 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
             onPaymentMethodChange={composer.setPaymentMethod}
             notes={composer.notes}
             onNotesChange={composer.setNotes}
+            pickupCharge={composer.pickupChargeOverride}
+            onPickupChargeChange={composer.setPickupChargeOverride}
+            deliveryCharge={composer.deliveryChargeOverride}
+            onDeliveryChargeChange={composer.setDeliveryChargeOverride}
+            advancePaid={composer.advancePaid}
+            onAdvancePaidChange={composer.setAdvancePaid}
+            expressOrder={composer.expressOrder}
+            onExpressOrderChange={composer.setExpressOrder}
             submitPending={composer.createMutation.isPending}
             submitDisabled={submitDisabled}
             submitLabel="Create Order & Generate Tags"
