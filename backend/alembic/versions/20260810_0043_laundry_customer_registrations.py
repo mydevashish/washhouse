@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy import inspect, text
 from sqlalchemy.dialects import postgresql
 
 revision = "20260810_0043"
@@ -16,7 +17,17 @@ branch_labels = None
 depends_on = None
 
 
+def _has_table(name: str) -> bool:
+    bind = op.get_bind()
+    return name in inspect(bind).get_table_names()
+
+
 def upgrade() -> None:
+    if _has_table("laundry_customer_registrations"):
+        return
+
+    op.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
+
     op.create_table(
         "laundry_customer_registrations",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),

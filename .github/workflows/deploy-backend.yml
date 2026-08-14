@@ -1,4 +1,4 @@
-name: Deploy Backend (Railway)
+name: Deploy Backend
 
 on:
   push:
@@ -19,9 +19,66 @@ concurrency:
   group: deploy-backend-${{ github.event.inputs.environment || 'production' }}
   cancel-in-progress: false
 
+env:
+  # Interim production API — must match frontend NEXT_PUBLIC_API_URL (Vercel / deploy-frontend.yml).
+  PRODUCTION_API_BASE: https://washhouse.onrender.com/api/v1
+
 jobs:
-  deploy:
-    name: Deploy → Railway (${{ github.event.inputs.environment || 'production' }})
+  deploy-render:
+    name: Deploy → Render (production API)
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK_URL secret is not set."
+            echo "Create a deploy hook in Render (dlm-backend → Settings → Deploy Hook) and add it to GitHub repo secrets."
+            exit 1
+          fi
+          curl -fsSL -X POST "$RENDER_DEPLOY_HOOK_URL"
+          echo "Render deploy triggered."
+
+      - name: Smoke test (health + partner routes)
+        run: |
+          set -euo pipefail
+          API="${PRODUCTION_API_BASE}"
+          echo "Waiting for Render deploy at ${API} …"
+          for i in $(seq 1 24); do
+            sleep 15
+            health_code=$(curl -s -o /dev/null -w "%{http_code}" "${API}/health" || true)
+            dashboard_code=$(curl -s -o /dev/null -w "%{http_code}" "${API}/partner/analytics/dashboard" || true)
+            garment_code=$(curl -s -o /dev/null -w "%{http_code}" "${API}/partner/garment-catalog" || true)
+            echo "attempt ${i}: health=${health_code} dashboard=${dashboard_code} garment=${garment_code}"
+            if [ "$health_code" = "200" ] && [ "$dashboard_code" = "401" ] && [ "$garment_code" = "401" ]; then
+              echo "Smoke test passed (401 = route exists, auth required)."
+              exit 0
+            fi
+          done
+          echo "::error::Smoke test failed — partner routes still missing (404) or API unhealthy."
+          echo "If Render auto-deploy is disabled, open Render dashboard → dlm-backend → Manual Deploy."
+          exit 1
+
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Render backend deploy ${{ job.status }} · ${{ github.sha }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEPLOYS_WEBHOOK }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  deploy-railway:
+    name: Deploy → Railway (target stack)
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.event.inputs.environment || 'production' }}
@@ -36,30 +93,28 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "RAILWAY_TOKEN not set — skipping Railway deploy."
+            exit 0
+          fi
           railway up --service dlm-backend --detach
           railway up --service dlm-worker --detach
           railway up --service dlm-beat --detach
 
-      - name: Smoke test
+      - name: Smoke test (Railway health)
+        env:
+          BACKEND_HEALTHCHECK_URL: ${{ secrets.BACKEND_HEALTHCHECK_URL }}
         run: |
+          if [ -z "$BACKEND_HEALTHCHECK_URL" ]; then
+            echo "BACKEND_HEALTHCHECK_URL not set — skipping Railway smoke test."
+            exit 0
+          fi
           for i in 1 2 3 4 5; do
             sleep 10
-            if curl -fsSL "${{ secrets.BACKEND_HEALTHCHECK_URL }}" ; then
-              echo "OK"
+            if curl -fsSL "$BACKEND_HEALTHCHECK_URL"; then
+              echo "Railway health OK"
               exit 0
             fi
           done
-          echo "Smoke test failed"
+          echo "Railway smoke test failed"
           exit 1
-
-      - name: Notify Slack
-        if: always()
-        uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "text": "Backend deploy ${{ job.status }} → ${{ github.event.inputs.environment || 'production' }} · ${{ github.sha }}"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEPLOYS_WEBHOOK }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

@@ -9,12 +9,18 @@ from __future__ import annotations
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy import inspect, text
 from sqlalchemy.dialects import postgresql
 
 revision = "20260814_0044"
 down_revision = "20260810_0043"
 branch_labels = None
 depends_on = None
+
+
+def _has_table(name: str) -> bool:
+    bind = op.get_bind()
+    return name in inspect(bind).get_table_names()
 
 
 def _create_enum_if_not_exists(name: str, values_sql: str) -> None:
@@ -68,6 +74,11 @@ def upgrade() -> None:
         "'lint_remover', 'premium_laundry', 'shoe_cleaning', 'steam_press', "
         "'starch', 'wash_and_fold', 'wash_n_iron'",
     )
+
+    if _has_table("laundry_garment_items"):
+        return
+
+    op.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
 
     op.create_table(
         "laundry_garment_items",
