@@ -12,30 +12,31 @@ from app.api.partner_orders_list_params import PartnerOrdersListParamsDep
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_partner, get_current_user_payload
 from app.core.pagination import build_paginated_response
+from app.repositories.laundry import LaundryRepository
+from app.repositories.order import OrderRepository
 from app.schemas.common import PaginatedListResponse
 from app.schemas.laundry import LaundryDetailResponse, PartnerLaundryRegisterRequest
 from app.schemas.order import OrderItemResponse, OrderResponse, OrderStatusUpdateRequest
+from app.schemas.order_invoice import InvoicePrintVariant
 from app.schemas.partner import (
     InventoryResponse,
     InventoryUpdateRequest,
-    PartnerAnalyticsResponse,
+    PartnerAnalyticsDashboardResponse,
     PartnerAnalyticsOverviewResponse,
+    PartnerAnalyticsResponse,
     PartnerCustomerSummary,
     PartnerOrderResponse,
     StaffCreateRequest,
     StaffResponse,
     StaffUpdateRequest,
 )
-from app.services.laundry_trust_score_service import LaundryTrustScoreService
+from app.schemas.walk_in_order import WalkInOrderWhatsAppRetryResponse
 from app.services.laundry_service import LaundryService
-from app.services.order_service import OrderService
-from app.schemas.order_invoice import InvoicePrintVariant
+from app.services.laundry_trust_score_service import LaundryTrustScoreService
 from app.services.order_invoice_service import OrderInvoiceService
+from app.services.order_service import OrderService
 from app.services.order_tags_service import OrderTagsService
 from app.services.partner_service import PartnerService
-from app.repositories.laundry import LaundryRepository
-from app.repositories.order import OrderRepository
-from app.schemas.walk_in_order import WalkInOrderWhatsAppRetryResponse
 from app.tasks.order_notifications import deliver_order_received_whatsapp
 
 router = APIRouter(prefix="/partner", tags=["partner"])
@@ -334,6 +335,38 @@ async def partner_analytics_overview(
     except NotFoundError:
         data = await PartnerService(session).empty_analytics_overview(partner_id, period)
     return success_envelope(PartnerAnalyticsOverviewResponse.model_validate(data), request)
+
+
+@router.get(
+    "/analytics/dashboard",
+    summary="Partner laundry dashboard (live home)",
+    description=(
+        "IST calendar KPIs (today/week/month vs previous), global status snapshot, "
+        "chart series with previous-period overlay, period-scoped status donut, "
+        "top services, payment mix, and bottom stats. "
+        "`period` drives chart / donut / services / payments only (default week). "
+        "Wallet is never tracked (`wallet_tracked` is always false)."
+    ),
+    responses={
+        401: {"description": "Missing or invalid bearer token"},
+        403: {"description": "Not a partner"},
+        422: {"description": "Invalid period"},
+    },
+)
+async def partner_analytics_dashboard(
+    request: Request,
+    session: SessionDep,
+    payload: Annotated[dict, Depends(get_current_partner)],
+    period: Annotated[str, Query(description="today | week | month | year")] = "week",
+) -> dict:
+    from app.core.exceptions import NotFoundError
+
+    partner_id = UUID(payload["sub"])
+    try:
+        data = await PartnerService(session).analytics_dashboard(partner_id, period)
+    except NotFoundError:
+        data = await PartnerService(session).empty_analytics_dashboard(partner_id, period)
+    return success_envelope(PartnerAnalyticsDashboardResponse.model_validate(data), request)
 
 
 @router.get("/trust-score")

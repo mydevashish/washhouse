@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from datetime import UTC, datetime, timedelta
-from decimal import Decimal
-
-from sqlalchemy import and_, func, select
+from sqlalchemy import String, and_, case, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.exceptions import NotFoundError
-from app.models.enums import OrderSource, OrderStatus
-from app.models.order import Order, OrderInventory
+from app.models.enums import OrderSource, OrderStatus, PaymentMethod, PaymentStatus
+from app.models.order import Order, OrderInventory, OrderItem
 from app.models.partner_staff import PartnerStaff
 from app.models.user import User
 from app.repositories.inventory import InventoryRepository
@@ -36,6 +35,11 @@ if TYPE_CHECKING:
 
 def _commission_expr():
     return Order.total_inr * Order.commission_rate / Decimal("100")
+
+
+_DASHBOARD_IN_PROCESS = (OrderStatus.picked_up, OrderStatus.washing, OrderStatus.ironing)
+_DASHBOARD_READY = (OrderStatus.ready, OrderStatus.out_for_delivery)
+_REPEAT_MIN_ORDERS = 2
 
 
 class PartnerService:
@@ -644,6 +648,400 @@ class PartnerService:
             "chart_series": chart_series,
         }
 
+    def _empty_dashboard_kpis(self) -> dict:
+        zero = money_str(0)
+        return {
+            "orders_today": 0,
+            "orders_yesterday": 0,
+            "orders_week": 0,
+            "orders_prev_week": 0,
+            "orders_month": 0,
+            "orders_prev_month": 0,
+            "revenue_today_inr": zero,
+            "revenue_yesterday_inr": zero,
+            "revenue_week_inr": zero,
+            "revenue_prev_week_inr": zero,
+            "revenue_month_inr": zero,
+            "revenue_prev_month_inr": zero,
+        }
+
+    async def empty_analytics_dashboard(self, partner_user_id: UUID, period_key: str) -> dict:
+        from app.repositories.user import UserRepository
+        from app.services.partner_analytics_period import (
+            parse_partner_dashboard_period,
+            resolve_partner_dashboard_period,
+        )
+
+        user = await UserRepository(self._session).get_by_id(partner_user_id)
+        name = user.full_name if user else "Your laundry"
+        period = parse_partner_dashboard_period(period_key)
+        bounds = resolve_partner_dashboard_period(period)
+        zero = money_str(0)
+        return {
+            "laundry_id": None,
+            "laundry_name": name,
+            "kpis": self._empty_dashboard_kpis(),
+            "status_snapshot": {"in_process": 0, "ready_for_delivery": 0, "completed": 0},
+            "period": period.value,
+            "period_label_ist": bounds.period_label_ist,
+            "chart_series": [
+                {
+                    "bucket_label": b.bucket_label,
+                    "current_revenue_inr": zero,
+                    "previous_revenue_inr": zero,
+                }
+                for b in bounds.chart_buckets
+            ],
+            "status_donut": {"in_process": 0, "ready": 0, "completed": 0},
+            "top_services": [],
+            "payment_summary": {
+                "cash_paid_inr": zero,
+                "upi_paid_inr": zero,
+                "wallet_tracked": False,
+                "pending_inr": zero,
+            },
+            "bottom": {
+                "customers_total": 0,
+                "customers_new_week": 0,
+                "customers_repeat": 0,
+                "avg_order_value_inr": zero,
+                "avg_delivery_minutes": None,
+                "avg_rating": "0.00",
+                "review_count": 0,
+            },
+        }
+
+    async def _count_orders_created(
+        self,
+        laundry_id: UUID,
+        start: datetime,
+        end: datetime,
+    ) -> int:
+        return int(
+            await self._session.scalar(
+                select(func.count())
+                .select_from(Order)
+                .where(
+                    Order.laundry_id == laundry_id,
+                    Order.deleted_at.is_(None),
+                    Order.created_at >= start,
+                    Order.created_at < end,
+                ),
+            )
+            or 0,
+        )
+
+    async def _count_status(self, laundry_id: UUID, statuses: tuple[OrderStatus, ...]) -> int:
+        return int(
+            await self._session.scalar(
+                select(func.count())
+                .select_from(Order)
+                .where(
+                    Order.laundry_id == laundry_id,
+                    Order.deleted_at.is_(None),
+                    Order.status.in_(statuses),
+                ),
+            )
+            or 0,
+        )
+
+    async def _revenue_by_bucket_index(
+        self,
+        laundry_id: UUID,
+        buckets: tuple,
+        *,
+        time_col,
+    ) -> dict[int, Decimal]:
+        """One grouped query: delivered gross per chart bucket index. Empty-width buckets stay 0."""
+        whens: list[tuple] = []
+        live = []
+        for i, bucket in enumerate(buckets):
+            if bucket.bucket_start_utc >= bucket.bucket_end_utc:
+                continue
+            live.append(bucket)
+            whens.append(
+                (
+                    and_(time_col >= bucket.bucket_start_utc, time_col < bucket.bucket_end_utc),
+                    i,
+                ),
+            )
+        zeros = {i: Decimal("0") for i in range(len(buckets))}
+        if not whens:
+            return zeros
+        idx_expr = case(*whens)
+        window_start = min(b.bucket_start_utc for b in live)
+        window_end = max(b.bucket_end_utc for b in live)
+        rows = await self._session.execute(
+            select(idx_expr.label("idx"), func.coalesce(func.sum(Order.total_inr), 0))
+            .where(
+                Order.laundry_id == laundry_id,
+                Order.deleted_at.is_(None),
+                Order.status == OrderStatus.delivered,
+                time_col >= window_start,
+                time_col < window_end,
+                idx_expr.isnot(None),
+            )
+            .group_by(idx_expr),
+        )
+        for idx, amount in rows.all():
+            if idx is None:
+                continue
+            zeros[int(idx)] = Decimal(str(amount or 0))
+        return zeros
+
+    async def analytics_dashboard(self, partner_user_id: UUID, period_key: str) -> dict:
+        from app.services.partner_analytics_period import (
+            parse_partner_dashboard_period,
+            resolve_dashboard_kpi_windows,
+            resolve_partner_dashboard_period,
+        )
+
+        laundry = await self._laundry_for_partner(partner_user_id)
+        period = parse_partner_dashboard_period(period_key)
+        bounds = resolve_partner_dashboard_period(period)
+        windows = resolve_dashboard_kpi_windows()
+        base = and_(Order.laundry_id == laundry.id, Order.deleted_at.is_(None))
+        customer_key = func.coalesce(cast(Order.user_id, String), Order.customer_phone)
+
+        async def created_count(key: str) -> int:
+            start, end = windows[key]
+            return await self._count_orders_created(laundry.id, start, end)
+
+        async def delivered_gross(key: str) -> Decimal:
+            start, end = windows[key]
+            gross, _ = await self._delivered_gross_commission(
+                laundry.id,
+                time_col=Order.updated_at,
+                start=start,
+                end=end,
+            )
+            return gross
+
+        kpis = {
+            "orders_today": await created_count("today"),
+            "orders_yesterday": await created_count("yesterday"),
+            "orders_week": await created_count("week"),
+            "orders_prev_week": await created_count("prev_week"),
+            "orders_month": await created_count("month"),
+            "orders_prev_month": await created_count("prev_month"),
+            "revenue_today_inr": money_str(await delivered_gross("today")),
+            "revenue_yesterday_inr": money_str(await delivered_gross("yesterday")),
+            "revenue_week_inr": money_str(await delivered_gross("week")),
+            "revenue_prev_week_inr": money_str(await delivered_gross("prev_week")),
+            "revenue_month_inr": money_str(await delivered_gross("month")),
+            "revenue_prev_month_inr": money_str(await delivered_gross("prev_month")),
+        }
+
+        status_snapshot = {
+            "in_process": await self._count_status(laundry.id, _DASHBOARD_IN_PROCESS),
+            "ready_for_delivery": await self._count_status(laundry.id, _DASHBOARD_READY),
+            "completed": await self._count_status(laundry.id, (OrderStatus.delivered,)),
+        }
+
+        current_rev = await self._revenue_by_bucket_index(
+            laundry.id,
+            bounds.chart_buckets,
+            time_col=Order.updated_at,
+        )
+        previous_rev = await self._revenue_by_bucket_index(
+            laundry.id,
+            bounds.previous_chart_buckets,
+            time_col=Order.updated_at,
+        )
+        chart_series = [
+            {
+                "bucket_label": bucket.bucket_label,
+                "current_revenue_inr": money_str(current_rev.get(i, Decimal("0"))),
+                "previous_revenue_inr": money_str(previous_rev.get(i, Decimal("0"))),
+            }
+            for i, bucket in enumerate(bounds.chart_buckets)
+        ]
+
+        period_start = bounds.period_start_utc
+        period_end = bounds.period_end_utc
+        donut_rows = await self._session.execute(
+            select(Order.status, func.count())
+            .where(
+                base,
+                Order.created_at >= period_start,
+                Order.created_at < period_end,
+                Order.status.in_((*_DASHBOARD_IN_PROCESS, *_DASHBOARD_READY, OrderStatus.delivered)),
+            )
+            .group_by(Order.status),
+        )
+        donut_counts = {row[0]: int(row[1]) for row in donut_rows.all()}
+        status_donut = {
+            "in_process": sum(donut_counts.get(s, 0) for s in _DASHBOARD_IN_PROCESS),
+            "ready": sum(donut_counts.get(s, 0) for s in _DASHBOARD_READY),
+            "completed": donut_counts.get(OrderStatus.delivered, 0),
+        }
+
+        total_lines = int(
+            await self._session.scalar(
+                select(func.coalesce(func.sum(OrderItem.quantity), 0))
+                .select_from(OrderItem)
+                .join(Order, OrderItem.order_id == Order.id)
+                .where(
+                    base,
+                    Order.created_at >= period_start,
+                    Order.created_at < period_end,
+                ),
+            )
+            or 0,
+        )
+        top_rows = await self._session.execute(
+            select(
+                OrderItem.service_name,
+                func.coalesce(func.sum(OrderItem.quantity), 0).label("qty"),
+            )
+            .select_from(OrderItem)
+            .join(Order, OrderItem.order_id == Order.id)
+            .where(
+                base,
+                Order.created_at >= period_start,
+                Order.created_at < period_end,
+            )
+            .group_by(OrderItem.service_name)
+            .order_by(func.coalesce(func.sum(OrderItem.quantity), 0).desc())
+            .limit(4),
+        )
+        top_services = []
+        for name, qty in top_rows.all():
+            lines = int(qty or 0)
+            share = (Decimal(lines) / Decimal(total_lines) * Decimal("100")) if total_lines else Decimal("0")
+            top_services.append(
+                {
+                    "name": name,
+                    "order_lines": lines,
+                    "share_pct": str(share.quantize(Decimal("0.1"))),
+                },
+            )
+
+        async def sum_paid(method: PaymentMethod) -> Decimal:
+            value = await self._session.scalar(
+                select(func.coalesce(func.sum(Order.total_inr), 0)).where(
+                    base,
+                    Order.created_at >= period_start,
+                    Order.created_at < period_end,
+                    Order.payment_method == method,
+                    Order.payment_status == PaymentStatus.paid,
+                ),
+            )
+            return Decimal(str(value or 0))
+
+        pending_inr = Decimal(
+            str(
+                await self._session.scalar(
+                    select(func.coalesce(func.sum(Order.total_inr), 0)).where(
+                        base,
+                        Order.created_at >= period_start,
+                        Order.created_at < period_end,
+                        Order.payment_status.in_((PaymentStatus.pending, PaymentStatus.pending_cod)),
+                    ),
+                )
+                or 0,
+            ),
+        )
+        payment_summary = {
+            "cash_paid_inr": money_str(await sum_paid(PaymentMethod.cod)),
+            "upi_paid_inr": money_str(await sum_paid(PaymentMethod.razorpay)),
+            "wallet_tracked": False,
+            "pending_inr": money_str(pending_inr),
+        }
+
+        customers_total = int(
+            await self._session.scalar(
+                select(func.count(func.distinct(customer_key))).where(
+                    base,
+                    or_(Order.user_id.isnot(None), Order.customer_phone.isnot(None)),
+                ),
+            )
+            or 0,
+        )
+        first_order = (
+            select(
+                customer_key.label("ckey"),
+                func.min(Order.created_at).label("first_at"),
+            )
+            .where(
+                base,
+                or_(Order.user_id.isnot(None), Order.customer_phone.isnot(None)),
+            )
+            .group_by(customer_key)
+            .subquery()
+        )
+        week_start, week_end = windows["week"]
+        customers_new_week = int(
+            await self._session.scalar(
+                select(func.count())
+                .select_from(first_order)
+                .where(first_order.c.first_at >= week_start, first_order.c.first_at < week_end),
+            )
+            or 0,
+        )
+        repeat_sub = (
+            select(customer_key)
+            .where(
+                base,
+                or_(Order.user_id.isnot(None), Order.customer_phone.isnot(None)),
+            )
+            .group_by(customer_key)
+            .having(func.count() >= _REPEAT_MIN_ORDERS)
+            .subquery()
+        )
+        customers_repeat = int(
+            await self._session.scalar(select(func.count()).select_from(repeat_sub)) or 0,
+        )
+        totals_row = (
+            await self._session.execute(
+                select(
+                    func.coalesce(func.sum(Order.total_inr), 0),
+                    func.count(),
+                ).where(base),
+            )
+        ).one()
+        order_sum = Decimal(str(totals_row[0] or 0))
+        order_count = int(totals_row[1] or 0)
+        avg_order = (order_sum / order_count) if order_count else Decimal("0")
+        duration_minutes = (
+            func.extract(
+                "epoch",
+                func.coalesce(Order.delivered_at, Order.updated_at) - Order.pickup_at,
+            )
+            / 60.0
+        )
+        avg_delivery = await self._session.scalar(
+            select(func.avg(duration_minutes)).where(
+                base,
+                Order.status == OrderStatus.delivered,
+                Order.pickup_at.isnot(None),
+                duration_minutes >= 0,
+            ),
+        )
+        avg_delivery_minutes = round(float(avg_delivery), 1) if avg_delivery is not None else None
+
+        return {
+            "laundry_id": laundry.id,
+            "laundry_name": laundry.name,
+            "kpis": kpis,
+            "status_snapshot": status_snapshot,
+            "period": period.value,
+            "period_label_ist": bounds.period_label_ist,
+            "chart_series": chart_series,
+            "status_donut": status_donut,
+            "top_services": top_services,
+            "payment_summary": payment_summary,
+            "bottom": {
+                "customers_total": customers_total,
+                "customers_new_week": customers_new_week,
+                "customers_repeat": customers_repeat,
+                "avg_order_value_inr": money_str(avg_order),
+                "avg_delivery_minutes": avg_delivery_minutes,
+                "avg_rating": str(laundry.avg_rating.quantize(Decimal("0.01"))),
+                "review_count": laundry.review_count,
+            },
+        }
+
     async def list_customers(self, partner_user_id: UUID) -> list[dict]:
         laundry_ids = await self._laundry_ids_for_partner(partner_user_id)
         result = await self._session.execute(
@@ -768,7 +1166,7 @@ class PartnerService:
             from datetime import datetime
             from zoneinfo import ZoneInfo
 
-            from sqlalchemy import cast, Date
+            from sqlalchemy import Date, cast
 
             today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
             stmt = stmt.where(cast(Order.created_at, Date) == today)

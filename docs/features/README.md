@@ -15,6 +15,7 @@ Per-feature specs. Template: `.cursor/templates/feature-spec.md`.
 | Reviews | shipped | [reviews.md](reviews.md) | 2 |
 | Partner onboarding | shipped | [partner-onboarding.md](partner-onboarding.md) | 3 |
 | Partner dashboard | shipped | [partner-dashboard.md](partner-dashboard.md) | 3 |
+| Partner `/partner` live data on current visual | **review** (Prompt 8) | [partner-laundry-dashboard-live-data.md](partner-laundry-dashboard-live-data.md) | Keep franchise layout; backend-driven KPIs + working links · [prompts](../../.cursor/prompts/partner-laundry-dashboard-live-data.md) · [QA](../qa/partner-laundry-dashboard-live-data-matrix.md) |
 | Partner Customers & Orders Hub | **review** (P1–P8) | [partner-customers-orders-hub.md](partner-customers-orders-hub.md) | Unify customers + orders + intake + print; Shop Floor mode retired · [QA matrix](../qa/partner-customers-orders-hub-matrix.md) |
 | Customers & Orders — Visual polish | **in-progress** | [partner-customers-orders-hub-ui-polish.md](partner-customers-orders-hub-ui-polish.md) | Density, filters, declutter, pillars contrast, badges · [prompts](../../.cursor/prompts/partner-customers-orders-hub-ui-polish.md) |
 | Partner Owner Command Center | in-progress (P4) | [partner-owner-command-center.md](partner-owner-command-center.md) | Advanced Mode ops (after Shop Floor) |

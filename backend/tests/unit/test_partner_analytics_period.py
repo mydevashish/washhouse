@@ -54,6 +54,65 @@ def test_month_bounds_first_day_ist() -> None:
     assert len(bounds.chart_buckets) == 31
 
 
+def test_dashboard_year_has_twelve_monthly_buckets() -> None:
+    from app.services.partner_analytics_period import (
+        PartnerDashboardPeriod,
+        resolve_partner_dashboard_period,
+    )
+
+    now = datetime(2026, 8, 13, 12, 0, tzinfo=IST)
+    bounds = resolve_partner_dashboard_period(PartnerDashboardPeriod.year, now=now)
+    assert len(bounds.chart_buckets) == 12
+    assert len(bounds.previous_chart_buckets) == 12
+    assert bounds.chart_buckets[0].bucket_label == "Jan"
+    assert bounds.chart_buckets[11].bucket_label == "Dec"
+    assert bounds.period_start_utc == datetime(2025, 12, 31, 18, 30, tzinfo=UTC)
+    assert bounds.previous_start_utc == datetime(2024, 12, 31, 18, 30, tzinfo=UTC)
+
+
+def test_dashboard_month_uses_five_week_buckets() -> None:
+    from app.services.partner_analytics_period import (
+        PartnerDashboardPeriod,
+        resolve_partner_dashboard_period,
+    )
+
+    now = datetime(2026, 8, 15, 12, 0, tzinfo=IST)
+    bounds = resolve_partner_dashboard_period(PartnerDashboardPeriod.month, now=now)
+    assert len(bounds.chart_buckets) == 5
+    assert [b.bucket_label for b in bounds.chart_buckets] == ["W1", "W2", "W3", "W4", "W5"]
+    assert len(bounds.previous_chart_buckets) == 5
+
+
+def test_dashboard_today_ist_2330_vs_0030_different_days() -> None:
+    from app.services.partner_analytics_period import (
+        PartnerDashboardPeriod,
+        resolve_partner_dashboard_period,
+    )
+
+    late_night = datetime(2026, 8, 9, 23, 30, tzinfo=IST)
+    early_morning = datetime(2026, 8, 10, 0, 30, tzinfo=IST)
+    day_a = resolve_partner_dashboard_period(PartnerDashboardPeriod.today, now=late_night)
+    day_b = resolve_partner_dashboard_period(PartnerDashboardPeriod.today, now=early_morning)
+    assert day_a.period_start_utc != day_b.period_start_utc
+    assert len(day_a.chart_buckets) == 24
+    assert len(day_a.previous_chart_buckets) == 24
+
+
+def test_parse_dashboard_period_rejects_quarter() -> None:
+    from app.core.exceptions import ValidationError
+    from app.services.partner_analytics_period import parse_partner_dashboard_period
+
+    with pytest.raises(ValidationError):
+        parse_partner_dashboard_period("quarter")
+
+
+def test_parse_overview_period_still_rejects_year() -> None:
+    from app.core.exceptions import ValidationError
+
+    with pytest.raises(ValidationError):
+        parse_partner_overview_period("year")
+
+
 def test_ist_sql_bucket_key_matches_bucket_def_for_day() -> None:
     from app.services.partner_analytics_period import (
         ChartBucketDef,

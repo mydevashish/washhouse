@@ -76,9 +76,8 @@ export async function loginAsPartner(
   await expectLoginCard(page, /laundry partner sign in/i);
   await fillEmailLogin(page, creds);
   await page.waitForURL(/\/partner(\/|$)/, { timeout: 60_000 });
-  // Prefer main heading — "Partner console" sidebar label is often hidden on mobile.
   await expect(
-    page.locator('#main-content').getByRole('heading', { name: /today at a glance/i }),
+    page.locator('#main-content').getByRole('heading', { name: /welcome,|today at a glance/i }),
   ).toBeVisible({ timeout: 60_000 });
 }
 

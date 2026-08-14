@@ -4,6 +4,108 @@
 
 ---
 
+## 2026-08-14 — Prompt 8: polish, a11y, tests, docs
+
+- **Type:** feat + test + docs
+- **Scope:** partner-laundry-dashboard-live-data
+- **Files:** `frontend/features/partner/views/partner-laundry-dashboard-view.tsx`, `frontend/features/partner/views/partner-laundry-dashboard-view.test.tsx`, `frontend/features/partner/views/partner-laundry-dashboard-view.test-fixtures.ts`, `frontend/features/partner/components/partner-laundry-dashboard-lists.tsx`, `frontend/tests/e2e/partner-laundry-dashboard.spec.ts`, `frontend/tests/e2e/helpers/auth.ts`, `docs/qa/partner-laundry-dashboard-live-data-matrix.md`
+- **Summary:** Page shell uses `bg-muted/30 dark:bg-background` (no `#f3f6fb`). Period chips `aria-pressed`; View all links get discernible names. Jest view tests (happy/empty/error). Playwright smoke: welcome from API, Recent + Ready View all, Create order dialog. QA matrix automation columns filled.
+- **QA checklist (Prompt 8 pack):** Automated — D1–D2/D7/D13 (PW), D3–D21 partial (Jest/pytest per matrix). Manual remaining — light/dark @ 375/1280 spot-check, live API spot-check, walk-in create E2E against real backend.
+- **Next:** Manual QA matrix; merge when CI green.
+- **Refs:** `docs/features/partner-laundry-dashboard-live-data.md`
+
+## 2026-08-14 — Prompt 7: bottom stats + Create order
+
+- **Type:** feat
+- **Scope:** partner-laundry-dashboard-live-data
+- **Files:** `frontend/features/partner/lib/partner-dashboard-bottom.ts`, `frontend/features/partner/lib/partner-dashboard-bottom.test.ts`, `frontend/features/partner/views/partner-laundry-dashboard-view.tsx`
+- **Summary:** Wired six bottom tiles from `dashboard.bottom` (no fake growth %). Rating shows review count subtitle; delivery minutes → hours. Header **Create order** opens `PartnerCreateOrderDialog` and invalidates dashboard + orders + insights on success. Removed mock `bottomStats`, dead `idxLabel`, and unused lucide imports.
+- **Risks:** Prompt 8 still needed for dark tokens, a11y pass, Playwright smoke, full-page Jest.
+- **Next:** Prompt 8 — polish, a11y, Playwright, mark spec checkboxes.
+- **Refs:** `docs/features/partner-laundry-dashboard-live-data.md`
+
+## 2026-08-14 — Prompt 6: recent orders + top customers
+
+- **Type:** feat
+- **Scope:** partner-laundry-dashboard-live-data
+- **Files:** `frontend/features/partner/lib/partner-dashboard-lists.ts`, `frontend/features/partner/lib/partner-dashboard-lists.test.ts`, `frontend/features/partner/components/partner-laundry-dashboard-lists.tsx`, `frontend/features/partner/components/partner-laundry-dashboard-lists.test.tsx`, `frontend/features/partner/hooks/use-partner-operations.ts`, `frontend/features/partner/views/partner-laundry-dashboard-view.tsx`
+- **Summary:** Wired Recent Orders (5 rows from `listPartnerOrders`) and Top Customers (5 rows from `listPartnerCustomerInsights`) with mappers, status pills, keyboard-accessible row links, View all hrefs, empty states, and loading skeletons. Customer rows link to `/partner/customers` (no phone desk deep-link).
+- **Risks:** `page_size=5` is below pagination standard (10) — client slices to 5 rows; backend normalizes to 10. Bottom stats still mock until Prompt 7.
+- **Next:** Prompt 7 — bottom six tiles from `dashboard.bottom`, header Create order dialog, remove leftover mocks.
+- **Refs:** `docs/features/partner-laundry-dashboard-live-data.md`
+
+## 2026-08-13 — Prompt 5: top services + payment summary
+
+- **Type:** feat
+- **Scope:** partner-laundry-dashboard-live-data
+- **Files:** `frontend/features/partner/lib/partner-dashboard-mix.ts`, `frontend/features/partner/views/partner-laundry-dashboard-view.tsx`
+- **Summary:** Wired Top Services and Payment Summary to the dashboard payload for the selected chart period. Wallet shows “—” + Not tracked when `wallet_tracked` is false. Empty services link to `/partner/services`; payments View all → `/partner/revenue`.
+- **Risks:** Recent orders / customers still mock until Prompt 6.
+- **Next:** Prompt 6 — recent 5 orders + top customers, clickable rows.
+- **Refs:** `docs/features/partner-laundry-dashboard-live-data.md`
+
+## 2026-08-13 — Prompt 4: live revenue chart
+
+- **Type:** feat
+- **Scope:** partner-laundry-dashboard-live-data
+- **Files:** `frontend/features/partner/lib/partner-dashboard-chart.ts`, `frontend/features/partner/views/partner-laundry-dashboard-view.tsx`, `frontend/features/partner/dashboard/partner-dashboard-period.tsx`, `frontend/features/partner/hooks/use-partner-operations.ts`
+- **Summary:** Replaced mock chart series with `chart_series` from `GET /partner/analytics/dashboard`. Period chips refetch (default week; year = 12). Previous overlay + totals come from summed series. Dead one-option Revenue toggle is a static label. Provider now defaults to week and includes `year`.
+- **Risks:** Overview API still rejects `year` — hook disables that period. Top services / payments still mock until Prompt 5.
+- **Next:** Prompt 5 — top services + payment summary (Wallet not tracked).
+- **Refs:** `docs/features/partner-laundry-dashboard-live-data.md`
+
+## 2026-08-13 — Prompt 3: status cards + donut + View all hrefs
+
+- **Type:** feat
+- **Scope:** partner-laundry-dashboard-live-data
+- **Files:** `frontend/features/partner/lib/partner-dashboard-status.ts`, `frontend/features/partner/views/partner-laundry-dashboard-view.tsx`
+- **Summary:** Wired status snapshot cards and the period donut to `GET /partner/analytics/dashboard`. View all uses locked hrefs (`/partner/orders`, `?status=ready`, `?status=delivered`). Empty donut shows “No orders in this period”; badge is `period_label_ist`.
+- **Risks:** Chart series still mock until Prompt 4; Recent / Customers / Payments View all still dead until Prompts 6–7.
+- **Next:** Prompt 4 — live revenue chart + Year buckets.
+- **Refs:** `docs/features/partner-laundry-dashboard-live-data.md`
+
+## 2026-08-13 — Prompt 2: Welcome + 6 KPI cards live
+
+- **Type:** feat
+- **Scope:** partner-laundry-dashboard-live-data
+- **Files:** `frontend/services/partner.ts`, `frontend/features/partner/hooks/use-partner-operations.ts`, `frontend/features/partner/lib/partner-dashboard-kpi-cards.ts`, `frontend/features/partner/views/partner-laundry-dashboard-view.tsx`, `frontend/lib/query-keys.ts`
+- **Summary:** Wired `/partner` welcome and the six KPI cards to `GET /partner/analytics/dashboard` (default week). Previous-period zero shows "—" instead of fake growth. Card chrome unchanged.
+- **Risks:** Chart, status, tables still mock until Prompts 3–7.
+- **Next:** Prompt 3 — status cards + donut + View all hrefs.
+- **Refs:** `docs/features/partner-laundry-dashboard-live-data.md`
+
+## 2026-08-13 — Prompt 1: GET /partner/analytics/dashboard
+
+- **Type:** feat
+- **Scope:** partner-laundry-dashboard-live-data
+- **Files:** `backend/app/services/partner_analytics_period.py`, `backend/app/schemas/partner.py`, `backend/app/services/partner_service.py`, `backend/app/api/v1/endpoints/partner.py`, `backend/tests/unit/test_partner_analytics_period.py`, `backend/tests/api/test_partner.py`
+- **Summary:** Added laundry-scoped `GET /api/v1/partner/analytics/dashboard` with IST today/week/month/year, W1–W5 month buckets, previous-period overlay, and honest payment mix (`wallet_tracked=false`). Empty laundry returns zeros; `summary`/`overview` unchanged.
+- **Risks:** Status snapshot buckets differ from `analytics_summary.orders_in_progress` (ready is not in_process).
+- **Next:** Prompt 2 — Welcome + 6 KPI cards on `/partner`.
+- **Refs:** `docs/features/partner-laundry-dashboard-live-data.md`
+
+## 2026-08-13 — Prompt 0: lock laundry dashboard live-data spec
+
+- **Type:** docs
+- **Scope:** partner-laundry-dashboard-live-data
+- **Files:** `docs/features/partner-laundry-dashboard-live-data.md`, `docs/qa/partner-laundry-dashboard-live-data-matrix.md`, `logs/feature-progress.md`, `.cursor/context/current-status.md`, `docs/features/README.md`
+- **Summary:** Compared the current `/partner` TSX to the spec. Locked layout, labels, Week default, W1–W5 month chart, and exact View all hrefs. No dashboard restyle. Feature status is in-progress; next is Prompt 1.
+- **Risks:** In Process View all cannot filter hub (no chip). Ready href is `status=ready` only while the card count also includes `out_for_delivery`.
+- **Mitigation:** Documented in spec open questions; Prompt 3 must use the canonical href table, not invent hub chips.
+- **Next:** Prompt 1 — `GET /api/v1/partner/analytics/dashboard`.
+- **Refs:** —
+
+## 2026-08-13 — Partner dashboard live-data spec + Cursor prompt pack
+
+- **Type:** docs
+- **Scope:** partner-laundry-dashboard-live-data
+- **Files:** `docs/features/partner-laundry-dashboard-live-data.md`, `.cursor/prompts/partner-laundry-dashboard-live-data.md`, `docs/qa/partner-laundry-dashboard-live-data-matrix.md`, `docs/product/traceability.md`, `docs/features/README.md`, `.cursor/prompts/README.md`, `.cursor/context/current-status.md`, `logs/feature-progress.md`
+- **Summary:** Locked the current `/partner` visual as source of truth and wrote sequenced prompts (0–8) to add `GET /partner/analytics/dashboard`, wire live KPIs/chart/tables, and fix dead View all / row / Create order controls without fake Wallet ₹.
+- **Risks:** Payment mix is COD vs Razorpay only; status buckets differ from `analytics_summary.orders_in_progress`.
+- **Mitigation:** Spec maps Cash/UPI/Pending honestly; Wallet = Not tracked; snapshot buckets listed explicitly.
+- **Next:** Run Prompt 0 then Prompt 1 in separate Agent chats.
+- **Refs:** —
+
 ## 2026-08-10 — Four pillars workspace Prompt 3 (Customers pillar + modal)
 
 - **Type:** feat

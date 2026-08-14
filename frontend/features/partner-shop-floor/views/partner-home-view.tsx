@@ -6,7 +6,7 @@ import { PartnerLaundryDashboardView } from '@/features/partner/views/partner-la
 /** `/partner` — WashHouse ops dashboard (demo layout, live APIs). */
 export function PartnerHomeView() {
   return (
-    <PartnerDashboardPeriodProvider>
+    <PartnerDashboardPeriodProvider defaultPeriod="week">
       <PartnerLaundryDashboardView />
     </PartnerDashboardPeriodProvider>
   );

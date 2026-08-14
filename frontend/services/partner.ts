@@ -193,6 +193,89 @@ export async function getPartnerAnalyticsOverview(
   }
 }
 
+/** Chart / donut / payments period for `GET /partner/analytics/dashboard`. KPIs stay today/week/month. */
+export type PartnerAnalyticsDashboardPeriod = 'today' | 'week' | 'month' | 'year';
+
+export interface PartnerAnalyticsDashboardKpis {
+  orders_today: number;
+  orders_yesterday: number;
+  orders_week: number;
+  orders_prev_week: number;
+  orders_month: number;
+  orders_prev_month: number;
+  revenue_today_inr: string;
+  revenue_yesterday_inr: string;
+  revenue_week_inr: string;
+  revenue_prev_week_inr: string;
+  revenue_month_inr: string;
+  revenue_prev_month_inr: string;
+}
+
+export interface PartnerAnalyticsDashboardStatusSnapshot {
+  in_process: number;
+  ready_for_delivery: number;
+  completed: number;
+}
+
+export interface PartnerAnalyticsDashboardChartPoint {
+  bucket_label: string;
+  current_revenue_inr: string;
+  previous_revenue_inr: string;
+}
+
+export interface PartnerAnalyticsDashboardStatusDonut {
+  in_process: number;
+  ready: number;
+  completed: number;
+}
+
+export interface PartnerAnalyticsDashboardTopService {
+  name: string;
+  order_lines: number;
+  share_pct: string;
+}
+
+export interface PartnerAnalyticsDashboardPaymentSummary {
+  cash_paid_inr: string;
+  upi_paid_inr: string;
+  wallet_tracked: boolean;
+  pending_inr: string;
+}
+
+export interface PartnerAnalyticsDashboardBottom {
+  customers_total: number;
+  customers_new_week: number;
+  customers_repeat: number;
+  avg_order_value_inr: string;
+  avg_delivery_minutes: number | null;
+  avg_rating: string;
+  review_count: number;
+}
+
+export interface PartnerAnalyticsDashboard {
+  laundry_id: string | null;
+  laundry_name: string;
+  kpis: PartnerAnalyticsDashboardKpis;
+  status_snapshot: PartnerAnalyticsDashboardStatusSnapshot;
+  period: PartnerAnalyticsDashboardPeriod;
+  period_label_ist: string;
+  chart_series: PartnerAnalyticsDashboardChartPoint[];
+  status_donut: PartnerAnalyticsDashboardStatusDonut;
+  top_services: PartnerAnalyticsDashboardTopService[];
+  payment_summary: PartnerAnalyticsDashboardPaymentSummary;
+  bottom: PartnerAnalyticsDashboardBottom;
+}
+
+export async function getPartnerAnalyticsDashboard(
+  period: PartnerAnalyticsDashboardPeriod = 'week',
+): Promise<PartnerAnalyticsDashboard> {
+  const { data } = await api.get<ApiEnvelope<PartnerAnalyticsDashboard>>(
+    '/partner/analytics/dashboard',
+    { params: { period } },
+  );
+  return data.data;
+}
+
 export async function listPartnerCustomers(): Promise<PartnerCustomer[]> {
   const { data } = await api.get<ApiEnvelope<PartnerCustomer[]>>('/partner/customers');
   return data.data;

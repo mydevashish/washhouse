@@ -35,6 +35,7 @@ Reusable kick-off prompts you can paste into Cursor (or any AI) to start a task 
 | [`api-integration-test-matrix.md`](api-integration-test-matrix.md) | Backfill pytest + Playwright for fixed APIs |
 | **Partner Owner UX** | |
 | [`partner-owner-command-center.md`](partner-owner-command-center.md) | Sequenced prompts: Advanced Mode → Owner Command Center (staff, logistics, commission %, growth, image-led) |
+| [`partner-laundry-dashboard-live-data.md`](partner-laundry-dashboard-live-data.md) | Sequenced prompts: keep current `/partner` visual; wire live APIs; fix dead View all / rows / Create order |
 | [`partner-customers-orders-hub.md`](partner-customers-orders-hub.md) | Sequenced prompts: unify Customers + Orders + intake + print lifecycle; retire Shop Floor display mode; English-first |
 | [`partner-customers-orders-hub-ui-polish.md`](partner-customers-orders-hub-ui-polish.md) | Sequenced prompts: polish hub density (chips/filters/buttons), declutter Orders viewport, fix **Your pillars** contrast, status badges |
 | **UI fix + performance** | |

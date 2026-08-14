@@ -9,10 +9,11 @@ import {
   type ReactNode,
 } from 'react';
 
-export type PartnerDashboardPeriod = 'today' | 'week' | 'month';
+export type PartnerDashboardPeriod = 'today' | 'week' | 'month' | 'year';
 
+/** Overview API still today/week/month only — Year is franchise-dashboard live. */
 export const PARTNER_DASHBOARD_PERIOD_OPTIONS: ReadonlyArray<{
-  value: PartnerDashboardPeriod;
+  value: Exclude<PartnerDashboardPeriod, 'year'>;
   label: string;
 }> = [
   { value: 'today', label: 'Today' },
@@ -31,7 +32,7 @@ const PartnerDashboardPeriodContext = createContext<PartnerDashboardPeriodContex
 
 export function PartnerDashboardPeriodProvider({
   children,
-  defaultPeriod = 'today',
+  defaultPeriod = 'week',
 }: {
   children: ReactNode;
   defaultPeriod?: PartnerDashboardPeriod;

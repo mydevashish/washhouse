@@ -160,6 +160,15 @@
 - Next: **Prompt 7** — Aesthetic polish, a11y, Playwright, docs ship (Operations already = Customers & Orders from hub P1)
 - Non-goals: dual Shop Floor shell; Admin rebuild; fake metrics; map SDK; LLM chatbot
 
+## Partner Laundry Dashboard — live data on current visual
+- Status: **review** (Prompt 8 polish/tests 2026-08-14)
+- Spec: `docs/features/partner-laundry-dashboard-live-data.md`
+- Pack: `.cursor/prompts/partner-laundry-dashboard-live-data.md`
+- Matrix: `docs/qa/partner-laundry-dashboard-live-data-matrix.md`
+- Why: Keep franchise `/partner` layout; replace mock KPIs; fix dead View all / rows
+- Done: Prompt 0–8 — full live dashboard; a11y + dark page shell; Jest + Playwright smoke
+- Next: Manual QA light/dark @ 375/1280; merge when green
+
 ## Partner Dashboard — Tags section (find · verify · reprint)
 - Status: **review** (Prompt 6 tests 2026-08-10)
 - Spec: `docs/features/partner-dashboard-tags-section.md`

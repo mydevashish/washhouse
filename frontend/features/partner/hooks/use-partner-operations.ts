@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { getPartnerNextStatus } from '@/features/partner/lib/partner-status';
@@ -12,12 +12,15 @@ import type { PartnerDashboardPeriod } from '@/features/partner/dashboard/partne
 import {
   acceptOrder,
   getPartnerAnalytics,
+  getPartnerAnalyticsDashboard,
   getPartnerAnalyticsOverview,
   listPartnerOrders,
   rejectOrder,
   updateOrderStatus,
+  type PartnerAnalyticsDashboardPeriod,
   type PartnerOrdersListParams,
 } from '@/services/partner';
+import { listPartnerCustomerInsights } from '@/services/customer-insights';
 import { useAuthStore } from '@/store/auth.store';
 
 /** Partner APIs require a bearer token — skip fetches during SSR / before auth. */
@@ -38,12 +41,25 @@ export function usePartnerAnalytics() {
 }
 
 export function usePartnerAnalyticsOverview(period: PartnerDashboardPeriod) {
-  const enabled = usePartnerQueriesEnabled();
+  const enabled = usePartnerQueriesEnabled() && period !== 'year';
+  const overviewPeriod = period === 'year' ? 'week' : period;
   return useQuery({
-    queryKey: queryKeys.partnerAnalyticsOverview(period),
-    queryFn: () => getPartnerAnalyticsOverview(period),
+    queryKey: queryKeys.partnerAnalyticsOverview(overviewPeriod),
+    queryFn: () => getPartnerAnalyticsOverview(overviewPeriod),
     staleTime: STALE.partnerAnalytics,
     enabled,
+  });
+}
+
+/** Live `/partner` franchise dashboard. Default period is week (chart chips). KPIs are always today/week/month. */
+export function usePartnerAnalyticsDashboard(period: PartnerAnalyticsDashboardPeriod = 'week') {
+  const enabled = usePartnerQueriesEnabled();
+  return useQuery({
+    queryKey: queryKeys.partnerAnalyticsDashboard(period),
+    queryFn: () => getPartnerAnalyticsDashboard(period),
+    staleTime: STALE.partnerAnalytics,
+    enabled,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -73,6 +89,16 @@ export function usePartnerOrders(params: PartnerOrdersListParams = {}) {
     refetchInterval:
       enabled && request.bucket === 'action' && (request.page_size ?? 10) <= 10 ? 45_000 : false,
     refetchIntervalInBackground: false,
+  });
+}
+
+export function usePartnerTopCustomers() {
+  const enabled = usePartnerQueriesEnabled();
+  return useQuery({
+    queryKey: [...queryKeys.partnerCustomerInsights('top'), { page: 1, page_size: 5 }],
+    queryFn: () => listPartnerCustomerInsights({ list_type: 'top', page: 1, page_size: 5 }),
+    staleTime: STALE.partnerAnalytics,
+    enabled,
   });
 }
 

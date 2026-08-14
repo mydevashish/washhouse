@@ -16,6 +16,7 @@ Maps historical product docs → roadmap phase → feature spec.
 | Partner registration, KYC | 3 | [partner-onboarding.md](../features/partner-onboarding.md) |
 | Partner order management | 3 | [partner-dashboard.md](../features/partner-dashboard.md), [partner-washhouse-ops-visual.md](../features/partner-washhouse-ops-visual.md) |
 | Partner `/partner` command desk (period overview, chart, recent 10, create modal) | 3 / Phase 2+ ops | [partner-laundry-dashboard-redesign.md](../features/partner-laundry-dashboard-redesign.md) |
+| Partner `/partner` franchise visual + live APIs (dead buttons, mock KPIs) | 3 / Phase 2+ ops | [partner-laundry-dashboard-live-data.md](../features/partner-laundry-dashboard-live-data.md) |
 | Partner dashboard Tags (find · verify · reprint below Recent orders) | 3 / Phase 2+ ops | [partner-dashboard-tags-section.md](../features/partner-dashboard-tags-section.md) |
 | Partner owner command center (Advanced: money %, growth, people, logistics) | 3 / Phase 2+ ops | [partner-owner-command-center.md](../features/partner-owner-command-center.md) |
 | Partner shop floor (low-literacy counter, color tokens, print) | 3 / Phase 2+ ops | [partner-shop-floor.md](../features/partner-shop-floor.md) |

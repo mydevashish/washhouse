@@ -152,6 +152,87 @@ class PartnerAnalyticsOverviewResponse(BaseModel):
     chart_series: list[PartnerAnalyticsOverviewChartPoint]
 
 
+class PartnerDashboardKpis(BaseModel):
+    """Always today / week / month IST — independent of the chart period chip."""
+
+    orders_today: int
+    orders_yesterday: int
+    orders_week: int
+    orders_prev_week: int
+    orders_month: int
+    orders_prev_month: int
+    revenue_today_inr: str
+    revenue_yesterday_inr: str
+    revenue_week_inr: str
+    revenue_prev_week_inr: str
+    revenue_month_inr: str
+    revenue_prev_month_inr: str
+
+
+class PartnerDashboardStatusSnapshot(BaseModel):
+    """Global open-queue counts (not period-scoped)."""
+
+    in_process: int = Field(description="picked_up + washing + ironing")
+    ready_for_delivery: int = Field(description="ready + out_for_delivery")
+    completed: int = Field(description="delivered all-time")
+
+
+class PartnerDashboardChartPoint(BaseModel):
+    bucket_label: str
+    current_revenue_inr: str = Field(description="Delivered gross in this bucket (updated_at IST)")
+    previous_revenue_inr: str = Field(description="Aligned previous-period bucket delivered gross")
+
+
+class PartnerDashboardStatusDonut(BaseModel):
+    """Period-scoped current-status counts (cancelled excluded)."""
+
+    in_process: int
+    ready: int
+    completed: int
+
+
+class PartnerDashboardTopService(BaseModel):
+    name: str
+    order_lines: int = Field(description="Sum of order_items.quantity in the chart period")
+    share_pct: str = Field(description="Percent of all line quantities in the period, 1 decimal")
+
+
+class PartnerDashboardPaymentSummary(BaseModel):
+    cash_paid_inr: str = Field(description="COD + paid, chart period, created_at")
+    upi_paid_inr: str = Field(description="Razorpay + paid, chart period, created_at")
+    wallet_tracked: bool = Field(description="Always false — no wallet payment_method")
+    pending_inr: str = Field(description="pending + pending_cod, chart period, created_at")
+
+
+class PartnerDashboardBottomStats(BaseModel):
+    customers_total: int
+    customers_new_week: int
+    customers_repeat: int
+    avg_order_value_inr: str
+    avg_delivery_minutes: float | None = Field(
+        default=None,
+        description="Mean pickup_at → delivered_at/updated_at minutes; null if none",
+    )
+    avg_rating: str
+    review_count: int
+
+
+class PartnerAnalyticsDashboardResponse(BaseModel):
+    """Live `/partner` franchise dashboard payload (IST windows)."""
+
+    laundry_id: UUID | None = None
+    laundry_name: str
+    kpis: PartnerDashboardKpis
+    status_snapshot: PartnerDashboardStatusSnapshot
+    period: str = Field(description="today | week | month | year")
+    period_label_ist: str
+    chart_series: list[PartnerDashboardChartPoint]
+    status_donut: PartnerDashboardStatusDonut
+    top_services: list[PartnerDashboardTopService]
+    payment_summary: PartnerDashboardPaymentSummary
+    bottom: PartnerDashboardBottomStats
+
+
 class PartnerCustomerSummary(BaseModel):
     user_id: UUID
     name: str

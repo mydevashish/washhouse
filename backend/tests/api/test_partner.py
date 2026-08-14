@@ -17,6 +17,7 @@ from app.models.enums import (
     OrderSource,
     OrderStatus,
     PartnerStaffRole,
+    PaymentMethod,
     PaymentStatus,
     UserRole,
 )
@@ -424,6 +425,166 @@ async def test_analytics_overview_invalid_period(
         headers=_headers(token),
     )
     assert response.status_code == 422
+
+
+async def test_analytics_dashboard_requires_auth(client: AsyncClient) -> None:
+    assert (await client.get("/api/v1/partner/analytics/dashboard")).status_code == 401
+
+
+async def test_analytics_dashboard_customer_forbidden(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    customer = User(
+        email=f"cust.dashforbid.{uuid4().hex[:8]}@test.dlm",
+        password_hash=hash_password("Customer@1234"),
+        full_name="Customer",
+        role=UserRole.customer,
+        is_email_verified=True,
+    )
+    db_session.add(customer)
+    await db_session.flush()
+    token = create_access_token(subject=str(customer.id), role=UserRole.customer.value)
+    response = await client.get(
+        "/api/v1/partner/analytics/dashboard",
+        headers=_headers(token),
+    )
+    assert response.status_code == 403
+
+
+async def test_analytics_dashboard_empty_laundry_zeros(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    partner = User(
+        email=f"nodash.{uuid4().hex[:8]}@test.dlm",
+        password_hash=hash_password("Partner@1234"),
+        full_name="No Laundry Partner",
+        role=UserRole.partner,
+        is_email_verified=True,
+    )
+    db_session.add(partner)
+    await db_session.flush()
+    token = create_access_token(subject=str(partner.id), role=UserRole.partner.value)
+
+    response = await client.get(
+        "/api/v1/partner/analytics/dashboard?period=year",
+        headers=_headers(token),
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["laundry_id"] is None
+    assert data["laundry_name"] == "No Laundry Partner"
+    assert data["period"] == "year"
+    assert data["kpis"]["orders_today"] == 0
+    assert data["kpis"]["revenue_today_inr"] == "0.00"
+    assert data["status_snapshot"]["in_process"] == 0
+    assert data["status_donut"]["completed"] == 0
+    assert data["payment_summary"]["wallet_tracked"] is False
+    assert data["payment_summary"]["cash_paid_inr"] == "0.00"
+    assert len(data["chart_series"]) == 12
+    assert data["top_services"] == []
+    assert data["bottom"]["customers_total"] == 0
+    assert data["bottom"]["avg_delivery_minutes"] is None
+
+
+async def test_analytics_dashboard_invalid_period(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    _partner, _laundry, token = await _seed_partner(db_session, email_prefix="dashbad")
+    response = await client.get(
+        "/api/v1/partner/analytics/dashboard?period=quarter",
+        headers=_headers(token),
+    )
+    assert response.status_code == 422
+
+
+async def test_analytics_dashboard_in_process_excludes_ready(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    _partner, laundry, token = await _seed_partner(db_session, email_prefix="dashstatus")
+    now = datetime.now(UTC)
+    for status, tracking in (
+        (OrderStatus.washing, "WASH"),
+        (OrderStatus.ready, "READY"),
+        (OrderStatus.delivered, "DONE"),
+    ):
+        db_session.add(
+            Order(
+                laundry_id=laundry.id,
+                order_source=OrderSource.walk_in,
+                status=status,
+                tracking_code=f"DLM{tracking}{uuid4().hex[:6].upper()}",
+                pickup_at=now - timedelta(hours=4),
+                delivery_at=now,
+                delivered_at=now if status == OrderStatus.delivered else None,
+                subtotal_inr=Decimal("100.00"),
+                delivery_fee_inr=Decimal("0.00"),
+                cgst_inr=Decimal("0.00"),
+                sgst_inr=Decimal("0.00"),
+                total_inr=Decimal("100.00"),
+                payment_status=PaymentStatus.paid,
+                payment_method=PaymentMethod.cod,
+                customer_name="Counter Guest",
+                customer_phone="9876543210",
+            ),
+        )
+    await db_session.flush()
+
+    response = await client.get(
+        "/api/v1/partner/analytics/dashboard?period=week",
+        headers=_headers(token),
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["status_snapshot"]["in_process"] == 1
+    assert data["status_snapshot"]["ready_for_delivery"] == 1
+    assert data["status_snapshot"]["completed"] == 1
+    assert data["payment_summary"]["wallet_tracked"] is False
+    assert Decimal(data["payment_summary"]["cash_paid_inr"]) == Decimal("300.00")
+    assert data["kpis"]["orders_week"] == 3
+    assert len(data["chart_series"]) == 7
+
+
+async def test_analytics_dashboard_hides_other_laundry_orders(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    _partner_a, _laundry_a, token_a = await _seed_partner(db_session, email_prefix="dashida")
+    _partner_b, laundry_b, _token_b = await _seed_partner(db_session, email_prefix="dashidb")
+    now = datetime.now(UTC)
+    db_session.add(
+        Order(
+            laundry_id=laundry_b.id,
+            order_source=OrderSource.online,
+            status=OrderStatus.delivered,
+            tracking_code=f"DLMIDOR{uuid4().hex[:6].upper()}",
+            pickup_at=now - timedelta(hours=2),
+            delivery_at=now,
+            delivered_at=now,
+            subtotal_inr=Decimal("500.00"),
+            delivery_fee_inr=Decimal("0.00"),
+            cgst_inr=Decimal("0.00"),
+            sgst_inr=Decimal("0.00"),
+            total_inr=Decimal("500.00"),
+            payment_status=PaymentStatus.paid,
+            payment_method=PaymentMethod.razorpay,
+        ),
+    )
+    await db_session.flush()
+
+    response = await client.get(
+        "/api/v1/partner/analytics/dashboard",
+        headers=_headers(token_a),
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["status_snapshot"]["completed"] == 0
+    assert data["kpis"]["revenue_today_inr"] == "0.00"
+    assert data["kpis"]["orders_today"] == 0
+    assert Decimal(data["payment_summary"]["upi_paid_inr"]) == Decimal("0.00")
 
 
 async def test_analytics_money_intelligence_uses_order_commission_snapshot(

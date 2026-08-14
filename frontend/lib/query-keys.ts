@@ -66,6 +66,7 @@ export const queryKeys = {
   addresses: () => ['addresses'] as const,
   partnerAnalytics: () => ['partner-analytics'] as const,
   partnerAnalyticsOverview: (period: string) => ['partner-analytics-overview', period] as const,
+  partnerAnalyticsDashboard: (period: string) => ['partner-analytics-dashboard', period] as const,
   partnerOrders: (params?: object) =>
     ['partner-orders', params ?? {}] as const,
   partnerOrder: (id: string) => ['partner-order', id] as const,
