@@ -134,3 +134,66 @@ export async function seedPartnerIncomingOrder(
   };
   return { orderId: orderJson.data.id, trackingCode: orderJson.data.tracking_code };
 }
+
+/**
+ * Accept order and prepare pickup_assigned with evidence + inventory for picked_up.
+ */
+export async function seedPartnerPickupReadyOrder(
+  request: APIRequestContext | Page['request'],
+): Promise<{ orderId: string; trackingCode: string }> {
+  const { orderId, trackingCode } = await seedPartnerIncomingOrder(request);
+  const partnerToken = await loginToken(
+    request,
+    E2E_ACCOUNTS.partner.email,
+    E2E_ACCOUNTS.partner.password,
+  );
+  const headers = { Authorization: `Bearer ${partnerToken}` };
+
+  const accept = await request.post(`${API_BASE}/partner/orders/${orderId}/accept`, { headers });
+  if (!accept.ok()) {
+    throw new Error(`Accept failed: ${accept.status()} ${await accept.text()}`);
+  }
+
+  const jpeg = Buffer.from(
+    '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A/9k=',
+    'base64',
+  );
+  const evidence = await request.post(`${API_BASE}/partner/orders/${orderId}/pickup-evidence`, {
+    headers,
+    multipart: {
+      files: {
+        name: 'pickup.jpg',
+        mimeType: 'image/jpeg',
+        buffer: jpeg,
+      },
+    },
+  });
+  if (!evidence.ok()) {
+    throw new Error(`Pickup evidence failed: ${evidence.status()} ${await evidence.text()}`);
+  }
+
+  const inventory = await request.put(
+    `${API_BASE}/partner/orders/${orderId}/inventory-verification`,
+    {
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      data: {
+        items: {
+          shirts: 2,
+          trousers: 0,
+          sarees: 0,
+          jackets: 0,
+          bedsheets: 0,
+          blankets: 0,
+          curtains: 0,
+          other: 0,
+        },
+      },
+    },
+  );
+  if (!inventory.ok()) {
+    throw new Error(`Inventory failed: ${inventory.status()} ${await inventory.text()}`);
+  }
+
+  return { orderId, trackingCode };
+}
+

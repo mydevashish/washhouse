@@ -116,6 +116,36 @@ export function resolveStorefrontImage(url: string | null | undefined): string {
   return mediaUrl(url);
 }
 
+/** Fields the partner API rejects or overwrites — never send on save. */
+const STOREFRONT_READ_ONLY_KEYS = ['laundry_id', 'completeness_score', 'approval_status'] as const;
+
+type StorefrontSaveKey = Exclude<
+  keyof StorefrontData,
+  (typeof STOREFRONT_READ_ONLY_KEYS)[number]
+>;
+
+function storefrontValuesEqual(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+}
+
+/** Build a partial save body: strip read-only keys and only include changed fields. */
+export function buildStorefrontSavePayload(
+  draft: StorefrontData,
+  baseline: StorefrontData | null | undefined,
+): Partial<StorefrontData> {
+  const payload: Partial<StorefrontData> = {};
+  const keys = Object.keys(draft) as StorefrontSaveKey[];
+
+  for (const key of keys) {
+    if ((STOREFRONT_READ_ONLY_KEYS as readonly string[]).includes(key)) continue;
+    const next = draft[key];
+    if (!baseline || !storefrontValuesEqual(next, baseline[key])) {
+      (payload as Record<string, unknown>)[key] = next;
+    }
+  }
+  return payload;
+}
+
 export async function getPartnerStorefront(): Promise<StorefrontData> {
   const { data } = await api.get<ApiEnvelope<StorefrontData>>('/partner/storefront');
   return data.data;

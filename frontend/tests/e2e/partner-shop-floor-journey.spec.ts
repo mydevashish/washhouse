@@ -136,6 +136,29 @@ async function mockJourneyApis(page: Page) {
     });
   });
 
+  await page.route('**/api/v1/partner/garment-catalog**', async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: {
+          items: [],
+          page: 1,
+          page_size: 100,
+          total_records: 0,
+          total_pages: 0,
+          has_next: false,
+          has_previous: false,
+        },
+        meta: {},
+      }),
+    });
+  });
+
   await page.route('**/api/v1/partner/walk-in-orders', async (route) => {
     if (route.request().method() !== 'POST') {
       await route.continue();
@@ -158,6 +181,34 @@ async function mockJourneyApis(page: Page) {
       status: 201,
       contentType: 'application/json',
       body: JSON.stringify({ data: orderPayload('confirmed'), meta: {} }),
+    });
+  });
+
+  await page.route('**/api/v1/partner/orders**', async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    const path = new URL(route.request().url()).pathname;
+    if (!/\/partner\/orders\/?$/.test(path)) {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: {
+          items: [orderPayload(status)],
+          page: 1,
+          page_size: 10,
+          total_records: 1,
+          total_pages: 1,
+          has_next: false,
+          has_previous: false,
+        },
+        meta: {},
+      }),
     });
   });
 
@@ -270,18 +321,6 @@ async function mockJourneyApis(page: Page) {
     });
   });
 
-  await page.route('**/api/v1/partner/orders', async (route) => {
-    if (route.request().method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ data: [orderPayload(status)], meta: {} }),
-    });
-  });
-
   return { getStatus: () => status, getPatches: () => patches };
 }
 
@@ -310,38 +349,42 @@ describeJourney('Partner Shop Floor usability journey', () => {
     await expect(page.getByTestId('practice-mode-banner')).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId('shop-floor-home-tiles')).toHaveCount(0);
 
-    // Task 1 — Cloth Wall: 3 shirts + 1 saree (pictures)
-    await page.goto('/partner/floor/new');
-    await expect(page.getByRole('heading', { name: /new order/i })).toBeVisible({
+    // Task 1 — Cloth Wall on full new-order page (same composer as hub create dialog)
+    await page.goto('/partner/new-order?mode=walk_in');
+    await expect(page.getByTestId('partner-walk-in-workspace')).toBeVisible({
       timeout: 30_000,
     });
-    await page.getByTestId('cloth-wall-phone').fill(PHONE);
-    await page.getByTestId('cloth-wall-name').fill('Journey Partner');
-    await page.getByTestId('cloth-wall-customer-next').click();
-    await expect(page.getByTestId('cloth-wall-step')).toBeVisible();
+    await page.getByTestId('create-order-phone').fill(PHONE);
+    await page.getByTestId('create-order-name').fill('Journey Partner');
+    await page.getByTestId('create-order-customer-next').click();
+    await expect(page.getByText(/step 2 — add items/i)).toBeVisible({ timeout: 15_000 });
+    await page.getByRole('tab', { name: 'Dryclean and Steam Press (per piece)' }).click();
+    await expect(page.getByText(/loading garment prices/i)).toBeHidden({ timeout: 15_000 });
 
     const shirt = page.getByTestId(`cloth-wall-tile-catalog:${SHIRT_ID}`);
     await expect(shirt).toBeVisible();
     await shirt.getByRole('button', { name: /add shirt/i }).click();
     await shirt.getByRole('button', { name: /add shirt/i }).click();
     await shirt.getByRole('button', { name: /add shirt/i }).click();
-    await expect(shirt.getByText('3')).toBeVisible();
+    await expect(shirt.locator('span.absolute.rounded-full')).toHaveText('3');
 
     await page.getByRole('tab', { name: /^women$/i }).click();
     const saree = page.getByTestId(`cloth-wall-tile-catalog:${SAREE_ID}`);
     await expect(saree).toBeVisible();
     await saree.getByRole('button', { name: /add saree/i }).click();
-    await expect(saree.getByText('1')).toBeVisible();
+    await expect(saree.locator('span.absolute.rounded-full')).toHaveText('1');
 
-    await page.getByTestId('cloth-wall-sticky-bar').getByRole('button', { name: /confirm/i }).click();
-    await page.getByTestId('cloth-wall-submit').click();
+    await page.getByTestId('create-order-intake-next').click();
+    await page.getByTestId('partner-create-order-submit').click();
 
-    await expect(page.getByTestId('walk-in-success-panel')).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText(/DLMJOURNEY1/i)).toBeVisible();
+    await expect(page.getByTestId('walk-in-success-panel')).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId('walk-in-success-panel').getByText(/DLMJOURNEY1/i)).toBeVisible();
     await expect(page.getByTestId('color-token-chip')).toContainText('R-42');
 
     // Task 2 — Print tags + color token
-    await page.getByTestId('print-tags-link').click();
+    await page.getByTestId('walk-in-success-print-tags').click();
     await expect(page).toHaveURL(new RegExp(`/partner/floor/print/${ORDER_ID}/tags`));
     await expect(page.getByTestId('print-order-tags')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('tag-token-code').first()).toHaveText('R-42');
@@ -352,7 +395,7 @@ describeJourney('Partner Shop Floor usability journey', () => {
     await expect(page.getByTestId('print-order-bill')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('bill-total')).toContainText('408.28');
     await expect(page.getByTestId('bill-cgst')).toContainText('CGST');
-    await expect(page.getByRole('button', { name: /^print$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /print bill/i })).toBeVisible();
 
     // Task 4 — Legacy Today board → hub Today chip (boards folded in P7)
     await page.goto('/partner/floor/today');

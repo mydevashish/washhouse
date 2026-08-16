@@ -49,6 +49,62 @@ class LaundryCustomerRegistrationRepository:
         assert existing is not None
         return existing
 
+    async def get_for_laundry_user(
+        self,
+        laundry_id: UUID,
+        user_id: UUID,
+    ) -> LaundryCustomerRegistration | None:
+        return await self._session.scalar(
+            select(LaundryCustomerRegistration).where(
+                LaundryCustomerRegistration.laundry_id == laundry_id,
+                LaundryCustomerRegistration.user_id == user_id,
+            ),
+        )
+
+    async def upsert_crm(
+        self,
+        *,
+        laundry_id: UUID,
+        user_id: UUID,
+        registered_by_user_id: UUID,
+        gender: str | None = None,
+        crm_notes: str | None = None,
+    ) -> LaundryCustomerRegistration:
+        existing = await self.get_for_laundry_user(laundry_id, user_id)
+        if existing is None:
+            row = LaundryCustomerRegistration(
+                laundry_id=laundry_id,
+                user_id=user_id,
+                registered_by_user_id=registered_by_user_id,
+                gender=gender,
+                crm_notes=crm_notes,
+            )
+            self._session.add(row)
+            await self._session.flush()
+            return row
+        if gender is not None:
+            existing.gender = gender
+        if crm_notes is not None:
+            existing.crm_notes = crm_notes.strip() if crm_notes.strip() else None
+        await self._session.flush()
+        return existing
+
+    async def has_laundry_relationship(self, laundry_id: UUID, user_id: UUID) -> bool:
+        registered = await self.get_for_laundry_user(laundry_id, user_id)
+        if registered is not None:
+            return True
+        order_exists = await self._session.scalar(
+            select(Order.id)
+            .where(
+                Order.laundry_id == laundry_id,
+                Order.user_id == user_id,
+                Order.deleted_at.is_(None),
+                Order.status != OrderStatus.cancelled,
+            )
+            .limit(1),
+        )
+        return order_exists is not None
+
     async def registration_only_rows(
         self,
         laundry_id: UUID,

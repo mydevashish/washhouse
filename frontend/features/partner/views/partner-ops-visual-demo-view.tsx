@@ -36,7 +36,7 @@ const WEEK_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 /** Static composition preview for Prompt 1 primitives (no API). */
 export function PartnerOpsVisualDemoView() {
   return (
-    <PartnerContent className="space-y-6 pb-10">
+    <PartnerContent className="space-y-4 pb-10">
       <PartnerPageHeader
         title="Ops visual primitives"
         description="WashHouse ops chrome — presentational building blocks for /partner dashboard (demo data only)."
@@ -55,7 +55,7 @@ export function PartnerOpsVisualDemoView() {
           imageSrc="/marketing/heroes/services.webp"
           imageAlt="Laundry services"
         />
-        <div className="mt-6 space-y-6">
+        <div className="mt-6 space-y-4">
           <PartnerOpsKpiGrid items={DEMO_KPIS} />
           <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
             <div className="space-y-3">

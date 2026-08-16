@@ -5,7 +5,7 @@ from __future__ import annotations
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.laundry import LaundryDetailResponse, LaundryServiceResponse
 
@@ -125,6 +125,15 @@ class StorefrontUpdateRequest(BaseModel):
     team: list[StorefrontTeamMember] | None = None
     certifications: list[StorefrontCertification] | None = None
     videos: list[StorefrontVideo] | None = None
+
+    @field_validator("pickup_radius_km", "delivery_radius_km", mode="before")
+    @classmethod
+    def _coerce_radius(cls, value: object) -> Decimal | None:
+        if value is None or value == "":
+            return None
+        if isinstance(value, Decimal):
+            return value
+        return Decimal(str(value).strip())
 
 
 class ApplyTemplateRequest(BaseModel):

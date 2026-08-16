@@ -177,7 +177,7 @@ export function PartnerCustomerDeskDrawer({
                 role="group"
                 aria-label={`Primary actions for ${doorstepLabel}`}
               >
-                <Button asChild size="sm" className="min-h-[44px] gap-1.5">
+                <Button asChild size="sm" className="h-9 min-h-9 gap-1.5">
                   <Link
                     href={walkInHref}
                     aria-label={`New walk-in order for ${doorstepLabel}`}
@@ -190,7 +190,7 @@ export function PartnerCustomerDeskDrawer({
                   type="button"
                   size="sm"
                   variant="secondary"
-                  className="min-h-[44px] gap-1.5"
+                  className="h-9 min-h-9 gap-1.5"
                   onClick={() => goCreateOrder('doorstep')}
                   aria-label={`New doorstep order for ${doorstepLabel}`}
                 >
@@ -198,7 +198,7 @@ export function PartnerCustomerDeskDrawer({
                   New doorstep
                 </Button>
                 {profile.phone ? (
-                  <Button asChild size="sm" variant="outline" className="min-h-[44px] gap-1.5">
+                  <Button asChild size="sm" variant="outline" className="h-9 min-h-9 gap-1.5">
                     <a href={buildTelHref(profile.phone)} aria-label={`Call ${profile.phone}`}>
                       <Phone className="h-3.5 w-3.5" aria-hidden />
                       Call
@@ -206,7 +206,7 @@ export function PartnerCustomerDeskDrawer({
                   </Button>
                 ) : null}
                 {whatsappUrl && profile.phone ? (
-                  <Button asChild size="sm" variant="outline" className="min-h-[44px] gap-1.5">
+                  <Button asChild size="sm" variant="outline" className="h-9 min-h-9 gap-1.5">
                     <a
                       href={whatsappUrl}
                       target="_blank"
@@ -221,7 +221,7 @@ export function PartnerCustomerDeskDrawer({
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <Button asChild size="sm" variant="ghost" className="min-h-[44px] gap-1.5">
+                <Button asChild size="sm" variant="ghost" className="h-9 min-h-9 gap-1.5">
                   <Link
                     href={viewAllOrdersHref}
                     aria-label={`View all orders for ${doorstepLabel}`}
@@ -235,7 +235,7 @@ export function PartnerCustomerDeskDrawer({
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="min-h-[44px] gap-1.5"
+                  className="h-9 min-h-9 gap-1.5"
                   disabled={!canRepeatLast}
                   title={
                     canRepeatLast

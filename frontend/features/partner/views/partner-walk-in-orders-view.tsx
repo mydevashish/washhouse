@@ -28,7 +28,7 @@ import { getApiErrorMessage } from '@/lib/api-error-message';
 import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
-import { listPartnerServices } from '@/services/partner-service-catalog';
+import { listAllPartnerServices } from '@/services/partner-service-catalog';
 import {
   advanceWalkInOrderStatus,
   createWalkInOrder,
@@ -68,7 +68,7 @@ export function PartnerWalkInOrdersView() {
 
   const servicesQ = useQuery({
     queryKey: queryKeys.partnerServiceCatalog(),
-    queryFn: listPartnerServices,
+    queryFn: listAllPartnerServices,
     enabled,
   });
 
@@ -123,22 +123,22 @@ export function PartnerWalkInOrdersView() {
   const orders = list.rows;
 
   return (
-    <PartnerContent className="space-y-5">
+    <PartnerContent className="space-y-4">
       <PartnerPageHeader
         title="Walk-in orders"
         description="Record in-shop customers. No online payment — track status and notify customers on WhatsApp."
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
+            <Button asChild variant="outline" size="sm" className="h-9 min-h-9 gap-1.5">
               <Link href={buildOrdersHubPath('/partner/orders', 'desk')}>
                 <Headset className="h-3.5 w-3.5" aria-hidden />
                 Find customer
               </Link>
             </Button>
-            <Button asChild size="sm" className="min-h-[44px]">
+            <Button asChild size="sm" className="h-9 min-h-9">
               <Link href={buildPartnerCreateOrderHref()}>New Order</Link>
             </Button>
-            <Button type="button" variant="outline" className="min-h-[44px]" onClick={() => setShowForm((v) => !v)}>
+            <Button type="button" variant="outline" className="h-9 min-h-9" onClick={() => setShowForm((v) => !v)}>
               {showForm ? 'Hide quick form' : 'Quick form'}
             </Button>
           </div>
@@ -174,7 +174,7 @@ export function PartnerWalkInOrdersView() {
         onChange={(e) => list.setSearch(e.target.value)}
         placeholder="Search name, phone, or tracking code"
         aria-label="Search walk-in orders"
-        className="min-h-[44px]"
+        className="h-9 min-h-9"
       />
 
       {list.isLoading && <Skeleton className="h-64 w-full rounded-2xl" />}

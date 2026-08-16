@@ -1,4 +1,4 @@
-export { PartnerHubPillarsRow } from './partner-hub-customers-pillar';
+export { PartnerHubPillarsRow, PartnerHubWorkspaceModals } from './partner-hub-customers-pillar';
 export {
   PartnerHubCustomersWorkspaceBody,
   PartnerHubCustomersWorkspaceToolbar,
@@ -26,7 +26,7 @@ export {
   PartnerHubServicesPillarCard,
   PartnerHubServicesWorkspaceBody,
   PartnerHubServicesWorkspaceToolbar,
-  usePartnerHubServices,
+  usePartnerHubServicesList,
   usePartnerHubServicesKpis,
 } from './partner-hub-services-workspace';
 export { partnerHubCustomersListSearch } from './partner-hub-customers-search';

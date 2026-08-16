@@ -1,5 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const e2eApiUrl = process.env.E2E_API_URL ?? 'http://localhost:8000/api/v1';
+const e2eDevEnv = {
+  ...process.env,
+  NEXT_PUBLIC_API_URL: e2eApiUrl,
+};
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
@@ -7,6 +13,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 2 : undefined,
   reporter: process.env.CI ? [['html', { open: 'never' }]] : 'list',
+  timeout: 120_000,
+  expect: { timeout: 20_000 },
   use: {
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3000',
     trace: 'on-first-retry',
@@ -57,18 +65,19 @@ export default defineConfig({
         {
           command: 'npm run dev',
           url: 'http://localhost:3000',
-          reuseExistingServer: true,
+          reuseExistingServer: process.env.E2E_REUSE_DEV_SERVER === '1',
           timeout: 120_000,
+          env: e2eDevEnv,
         },
         {
           // Never reuse :3001 — an online-mode leftover flips sticky to Book nearest
           // and breaks offline Book Pickup sticky coverage.
           command: 'npm run dev -- --port 3001',
           url: 'http://localhost:3001',
-          reuseExistingServer: false,
+          reuseExistingServer: true,
           timeout: 120_000,
           env: {
-            ...process.env,
+            ...e2eDevEnv,
             NEXT_PUBLIC_FEATURE_ONLINE_BOOKING: 'false',
           },
         },

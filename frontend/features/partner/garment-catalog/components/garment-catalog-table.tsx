@@ -97,19 +97,24 @@ export function GarmentCatalogTable({
   return (
     <div className="hidden overflow-x-auto sm:block" data-testid="garment-catalog-table">
       <table className="w-full min-w-[40rem] text-sm">
-        <thead className="border-b border-border/60 bg-muted/30 text-left text-xs text-muted-foreground">
+        <thead className="border-b border-border bg-muted/30 text-left text-xs text-muted-foreground">
           <tr>
             <th scope="col" className="w-10 px-2 py-2">
-              <input
-                type="checkbox"
-                aria-label="Select all on page"
-                data-testid="garment-catalog-select-all"
-                checked={allSelected}
-                ref={(el) => {
-                  if (el) el.indeterminate = !allSelected && someSelected;
-                }}
-                onChange={(e) => onToggleSelectAll(e.target.checked)}
-              />
+              <label className="flex cursor-pointer flex-col items-center gap-0.5">
+                <input
+                  type="checkbox"
+                  aria-label="Select all on this page"
+                  data-testid="garment-catalog-select-all"
+                  checked={allSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = !allSelected && someSelected;
+                  }}
+                  onChange={(e) => onToggleSelectAll(e.target.checked)}
+                />
+                <span className="sr-only sm:not-sr-only sm:max-w-[4.5rem] sm:text-center sm:text-[10px] sm:font-normal sm:leading-tight sm:text-muted-foreground">
+                  Select all on this page
+                </span>
+              </label>
             </th>
             <th scope="col" className="px-3 py-2">
               <SortButton

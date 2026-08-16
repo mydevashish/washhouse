@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from enum import StrEnum
 from zoneinfo import ZoneInfo
 
@@ -358,3 +358,202 @@ def ist_sql_bucket_key(raw: datetime, *, granularity: str) -> datetime:
     if granularity == "hour":
         return local.replace(minute=0, second=0, microsecond=0)
     return local.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+class PartnerSummaryPeriod(StrEnum):
+    """Money / revenue period for GET /partner/analytics/summary?period=…"""
+
+    today = "today"
+    week = "week"
+    month = "month"
+    year = "year"
+    custom = "custom"
+
+
+@dataclass(frozen=True, slots=True)
+class PartnerSummaryPeriodBounds:
+    period: PartnerSummaryPeriod
+    period_label_ist: str
+    prior_period_label: str
+    period_start_utc: datetime
+    period_end_utc: datetime
+    previous_start_utc: datetime
+    previous_end_utc: datetime
+    chart_buckets: tuple[ChartBucketDef, ...]
+    date_from: date | None = None
+    date_to: date | None = None
+
+
+def parse_partner_summary_period(raw: str) -> PartnerSummaryPeriod:
+    try:
+        return PartnerSummaryPeriod(raw.strip().lower())
+    except ValueError as exc:
+        from app.core.exceptions import ValidationError
+
+        raise ValidationError("period must be one of: today, week, month, year, custom") from exc
+
+
+def _format_summary_period_label(
+    period: PartnerSummaryPeriod,
+    start_ist: datetime,
+    end_ist: datetime,
+    *,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> str:
+    if period == PartnerSummaryPeriod.custom and date_from and date_to:
+        return f"{date_from.strftime('%d %b %Y')}–{date_to.strftime('%d %b %Y')} (IST)"
+    if period == PartnerSummaryPeriod.year:
+        return f"This year ({start_ist.year}, IST)"
+    if period == PartnerSummaryPeriod.today:
+        return _format_period_label(PartnerOverviewPeriod.today, start_ist, end_ist)
+    if period == PartnerSummaryPeriod.week:
+        return _format_period_label(PartnerOverviewPeriod.week, start_ist, end_ist)
+    return _format_period_label(PartnerOverviewPeriod.month, start_ist, end_ist)
+
+
+def _summary_prior_label(period: PartnerSummaryPeriod) -> str:
+    if period == PartnerSummaryPeriod.today:
+        return "yesterday"
+    if period == PartnerSummaryPeriod.week:
+        return "last week"
+    if period == PartnerSummaryPeriod.month:
+        return "last month"
+    if period == PartnerSummaryPeriod.year:
+        return "last year"
+    return "prior range"
+
+
+def _ist_day_bounds(date_from: date, date_to: date) -> tuple[datetime, datetime]:
+    start_ist = datetime.combine(date_from, time.min, tzinfo=IST)
+    end_ist = datetime.combine(date_to, time.min, tzinfo=IST) + timedelta(days=1)
+    return start_ist, end_ist
+
+
+def _summary_current_window(
+    period: PartnerSummaryPeriod,
+    now_ist: datetime,
+    *,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> tuple[datetime, datetime]:
+    today = now_ist.date()
+    if period == PartnerSummaryPeriod.custom:
+        if date_from is None or date_to is None:
+            from app.core.exceptions import ValidationError
+
+            raise ValidationError("date_from and date_to are required when period=custom")
+        if date_from > date_to:
+            from app.core.exceptions import ValidationError
+
+            raise ValidationError("date_from must be on or before date_to")
+        return _ist_day_bounds(date_from, date_to)
+    if period == PartnerSummaryPeriod.today:
+        start_ist = datetime.combine(today, time.min, tzinfo=IST)
+        return start_ist, start_ist + timedelta(days=1)
+    if period == PartnerSummaryPeriod.week:
+        monday = today - timedelta(days=today.weekday())
+        start_ist = datetime.combine(monday, time.min, tzinfo=IST)
+        return start_ist, start_ist + timedelta(days=7)
+    if period == PartnerSummaryPeriod.month:
+        start_ist = datetime.combine(today.replace(day=1), time.min, tzinfo=IST)
+        return start_ist, _month_end_ist(today.year, today.month)
+    # year: Jan 1 IST through end of today (inclusive)
+    start_ist = datetime(today.year, 1, 1, tzinfo=IST)
+    end_ist = datetime.combine(today, time.min, tzinfo=IST) + timedelta(days=1)
+    return start_ist, end_ist
+
+
+def _summary_previous_window(
+    period: PartnerSummaryPeriod,
+    start_ist: datetime,
+    end_ist: datetime,
+) -> tuple[datetime, datetime]:
+    if period == PartnerSummaryPeriod.today:
+        prev_start = start_ist - timedelta(days=1)
+        return prev_start, start_ist
+    if period == PartnerSummaryPeriod.week:
+        prev_start = start_ist - timedelta(days=7)
+        return prev_start, start_ist
+    if period == PartnerSummaryPeriod.month:
+        if start_ist.month == 1:
+            prev_start = datetime(start_ist.year - 1, 12, 1, tzinfo=IST)
+        else:
+            prev_start = datetime(start_ist.year, start_ist.month - 1, 1, tzinfo=IST)
+        return prev_start, start_ist
+    if period == PartnerSummaryPeriod.year:
+        duration = end_ist - start_ist
+        prev_end = start_ist
+        prev_start = prev_end - duration
+        return prev_start, prev_end
+    # custom: equal-length window immediately before date_from
+    duration = end_ist - start_ist
+    prev_end = start_ist
+    prev_start = prev_end - duration
+    return prev_start, prev_end
+
+
+def _summary_chart_buckets(
+    period: PartnerSummaryPeriod,
+    start_ist: datetime,
+    end_ist: datetime,
+) -> tuple[ChartBucketDef, ...]:
+    if period == PartnerSummaryPeriod.today:
+        return _build_chart_buckets(PartnerOverviewPeriod.today, start_ist, end_ist)
+    if period == PartnerSummaryPeriod.week:
+        return _build_chart_buckets(PartnerOverviewPeriod.week, start_ist, end_ist)
+    if period == PartnerSummaryPeriod.month:
+        return _build_chart_buckets(PartnerOverviewPeriod.month, start_ist, end_ist)
+    if period == PartnerSummaryPeriod.year:
+        buckets: list[ChartBucketDef] = []
+        year = start_ist.year
+        end_month = min(end_ist.astimezone(IST).month, 12)
+        for month in range(1, end_month + 1):
+            month_start = datetime(year, month, 1, tzinfo=IST)
+            month_end = min(_month_end_ist(year, month), end_ist)
+            buckets.append(
+                ChartBucketDef(
+                    bucket_label=month_start.strftime("%b"),
+                    bucket_start_utc=month_start.astimezone(UTC),
+                    bucket_end_utc=month_end.astimezone(UTC),
+                ),
+            )
+        return tuple(buckets)
+    return _build_chart_buckets(PartnerOverviewPeriod.week, start_ist, end_ist)
+
+
+def resolve_partner_summary_period(
+    period: PartnerSummaryPeriod,
+    *,
+    now: datetime | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> PartnerSummaryPeriodBounds:
+    """IST bounds + chart buckets for revenue / money period filters."""
+    now_ist = _as_ist(now or datetime.now(IST))
+    start_ist, end_ist = _summary_current_window(
+        period,
+        now_ist,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    prev_start_ist, prev_end_ist = _summary_previous_window(period, start_ist, end_ist)
+    label = _format_summary_period_label(
+        period,
+        start_ist,
+        end_ist,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    return PartnerSummaryPeriodBounds(
+        period=period,
+        period_label_ist=label,
+        prior_period_label=_summary_prior_label(period),
+        period_start_utc=start_ist.astimezone(UTC),
+        period_end_utc=end_ist.astimezone(UTC),
+        previous_start_utc=prev_start_ist.astimezone(UTC),
+        previous_end_utc=prev_end_ist.astimezone(UTC),
+        chart_buckets=_summary_chart_buckets(period, start_ist, end_ist),
+        date_from=date_from,
+        date_to=date_to,
+    )

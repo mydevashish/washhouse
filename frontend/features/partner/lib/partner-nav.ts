@@ -77,7 +77,6 @@ export const PARTNER_ORDERS_HUB_WORKSPACE_SERVICES_HREF = `${PARTNER_ORDERS_HREF
 export const PARTNER_ORDERS_HUB_ALIASES = [
   '/partner/customer-desk',
   '/partner/booking-requests',
-  '/partner/customers',
   '/partner/walk-in-orders',
   '/partner/new-order',
   '/partner/floor/new',

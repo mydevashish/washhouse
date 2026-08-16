@@ -227,10 +227,29 @@ async def test_walk_in_status_update_schedules_whatsapp(
     assert create.status_code == 201
     order_id = create.json()["data"]["id"]
     mock_whatsapp_task.delay.reset_mock()
+    headers = _partner_headers(token)
+
+    inventory = await client.put(
+        f"/api/v1/partner/orders/{order_id}/inventory-verification",
+        headers=headers,
+        json={
+            "items": {
+                "shirts": 1,
+                "trousers": 0,
+                "sarees": 0,
+                "jackets": 0,
+                "bedsheets": 0,
+                "blankets": 0,
+                "curtains": 0,
+                "other": 0,
+            },
+        },
+    )
+    assert inventory.status_code == 200
 
     response = await client.patch(
         f"/api/v1/partner/orders/{order_id}/status",
-        headers=_partner_headers(token),
+        headers=headers,
         json={"status": OrderStatus.washing.value},
     )
 
@@ -248,10 +267,11 @@ async def test_walk_in_full_status_progression_schedules_whatsapp(
     """Walk-in: confirmed → washing → ready → delivered; WhatsApp at each notify status."""
     mock_whatsapp_task.delay = MagicMock()
     _partner, _laundry, service, token = await _seed_partner_laundry(db_session)
+    headers = _partner_headers(token)
 
     create = await client.post(
         "/api/v1/partner/walk-in-orders",
-        headers=_partner_headers(token),
+        headers=headers,
         json={
             "customer_name": "Full Flow Customer",
             "customer_phone": "+919876543210",
@@ -261,6 +281,24 @@ async def test_walk_in_full_status_progression_schedules_whatsapp(
     assert create.status_code == 201
     order_id = create.json()["data"]["id"]
     mock_whatsapp_task.delay.assert_called_once_with(order_id, OrderStatus.confirmed.value)
+
+    inventory = await client.put(
+        f"/api/v1/partner/orders/{order_id}/inventory-verification",
+        headers=headers,
+        json={
+            "items": {
+                "shirts": 1,
+                "trousers": 0,
+                "sarees": 0,
+                "jackets": 0,
+                "bedsheets": 0,
+                "blankets": 0,
+                "curtains": 0,
+                "other": 0,
+            },
+        },
+    )
+    assert inventory.status_code == 200
 
     for status in (OrderStatus.washing, OrderStatus.ready, OrderStatus.delivered):
         mock_whatsapp_task.delay.reset_mock()
@@ -282,18 +320,19 @@ async def test_walk_in_full_status_progression_schedules_whatsapp(
 
 
 @patch("app.tasks.order_notifications.send_order_status_whatsapp")
-async def test_walk_in_skips_pickup_inventory_requirements(
+async def test_walk_in_requires_inventory_not_pickup_photos(
     mock_whatsapp_task: MagicMock,
     client: AsyncClient,
     db_session: AsyncSession,
 ) -> None:
-    """Walk-in orders never enter picked_up; pickup evidence and inventory are not required."""
+    """Walk-in skips pickup photos but must record inventory before starting washing."""
     mock_whatsapp_task.delay = MagicMock()
     _partner, _laundry, service, token = await _seed_partner_laundry(db_session)
+    headers = _partner_headers(token)
 
     create = await client.post(
         "/api/v1/partner/walk-in-orders",
-        headers=_partner_headers(token),
+        headers=headers,
         json={
             "customer_name": "No Pickup Customer",
             "customer_phone": "+919876543210",
@@ -303,10 +342,36 @@ async def test_walk_in_skips_pickup_inventory_requirements(
     assert create.status_code == 201
     order_id = create.json()["data"]["id"]
 
+    blocked = await client.patch(
+        f"/api/v1/partner/orders/{order_id}/status",
+        headers=headers,
+        json={"status": OrderStatus.washing.value},
+    )
+    assert blocked.status_code == 422
+    assert "inventory" in blocked.json()["error"]["message"].lower()
+
+    inventory = await client.put(
+        f"/api/v1/partner/orders/{order_id}/inventory-verification",
+        headers=headers,
+        json={
+            "items": {
+                "shirts": 1,
+                "trousers": 0,
+                "sarees": 0,
+                "jackets": 0,
+                "bedsheets": 0,
+                "blankets": 0,
+                "curtains": 0,
+                "other": 0,
+            },
+        },
+    )
+    assert inventory.status_code == 200
+
     for status in (OrderStatus.washing, OrderStatus.ready, OrderStatus.delivered):
         response = await client.patch(
             f"/api/v1/partner/orders/{order_id}/status",
-            headers=_partner_headers(token),
+            headers=headers,
             json={"status": status.value},
         )
         assert response.status_code == 200
@@ -420,6 +485,121 @@ async def test_create_walk_in_order_from_catalog_item(
     assert body["items"][0]["quantity"] == 2
     assert "Shirt" in body["items"][0]["service_name"]
     assert Decimal(body["subtotal_inr"]) == Decimal("138.00")
+
+
+@patch("app.tasks.order_notifications.send_order_status_whatsapp")
+async def test_create_walk_in_order_from_garment_item(
+    mock_whatsapp_task: MagicMock,
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """Cloth Wall path: garment_item_id + process → order lines via service bridge."""
+    from app.models.enums import GarmentCategory, GarmentServiceType
+    from app.models.garment_catalog import LaundryGarmentItem, LaundryGarmentServiceRate
+
+    mock_whatsapp_task.delay = MagicMock()
+    _partner, laundry, _service, token = await _seed_partner_laundry(db_session)
+
+    shirt = LaundryGarmentItem(
+        laundry_id=laundry.id,
+        category=GarmentCategory.men,
+        name="T Shirt",
+        garment_code="TF",
+        is_visible=True,
+    )
+    db_session.add(shirt)
+    await db_session.flush()
+    db_session.add(
+        LaundryGarmentServiceRate(
+            garment_item_id=shirt.id,
+            service_type=GarmentServiceType.dry_cleaning,
+            price_inr=Decimal("59.00"),
+        ),
+    )
+    db_session.add(
+        LaundryGarmentServiceRate(
+            garment_item_id=shirt.id,
+            service_type=GarmentServiceType.steam_press,
+            price_inr=Decimal("15.00"),
+        ),
+    )
+    await db_session.flush()
+
+    response = await client.post(
+        "/api/v1/partner/walk-in-orders",
+        headers=_partner_headers(token),
+        json={
+            "customer_name": "Garment Wall Customer",
+            "customer_phone": "+919811122244",
+            "items": [
+                {
+                    "garment_item_id": str(shirt.id),
+                    "process": "dry_clean",
+                    "quantity": 2,
+                },
+            ],
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()["data"]
+    assert body["customer_name"] == "Garment Wall Customer"
+    assert len(body["items"]) == 1
+    assert body["items"][0]["quantity"] == 2
+    assert "T Shirt" in body["items"][0]["service_name"]
+    assert Decimal(body["subtotal_inr"]) == Decimal("118.00")
+
+
+@patch("app.tasks.order_notifications.send_order_status_whatsapp")
+async def test_create_walk_in_order_allows_small_counter_total_below_online_min(
+    mock_whatsapp_task: MagicMock,
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """Walk-in counter orders are not blocked by the online ₹99 minimum."""
+    from app.models.enums import GarmentCategory, GarmentServiceType
+    from app.models.garment_catalog import LaundryGarmentItem, LaundryGarmentServiceRate
+
+    mock_whatsapp_task.delay = MagicMock()
+    _partner, laundry, _service, token = await _seed_partner_laundry(db_session)
+
+    shirt = LaundryGarmentItem(
+        laundry_id=laundry.id,
+        category=GarmentCategory.men,
+        name="T Shirt",
+        garment_code="TS",
+        is_visible=True,
+    )
+    db_session.add(shirt)
+    await db_session.flush()
+    db_session.add(
+        LaundryGarmentServiceRate(
+            garment_item_id=shirt.id,
+            service_type=GarmentServiceType.steam_press,
+            price_inr=Decimal("15.00"),
+        ),
+    )
+    await db_session.flush()
+
+    response = await client.post(
+        "/api/v1/partner/walk-in-orders",
+        headers=_partner_headers(token),
+        json={
+            "customer_name": "Small Walk-in",
+            "customer_phone": "+919811122255",
+            "items": [
+                {
+                    "garment_item_id": str(shirt.id),
+                    "process": "press",
+                    "quantity": 1,
+                },
+            ],
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()["data"]
+    assert Decimal(body["total_inr"]) < Decimal("99.00")
 
 
 @patch("app.tasks.order_notifications.send_order_status_whatsapp")

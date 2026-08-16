@@ -36,7 +36,7 @@ export function PartnerAuditView() {
   const orders = list.rows;
 
   return (
-    <PartnerContent className="space-y-5">
+    <PartnerContent className="space-y-4">
       <PartnerPageHeader
         title="Activity log"
         description="Recent order activity at your laundry. Full audit trail coming soon."

@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ClientDate } from '@/components/ui/client-date';
 import { PartnerStatusBadge } from '@/features/partner/components/partner-status-badge';
@@ -20,11 +21,23 @@ import {
 } from '@/features/inventory-verification';
 import { formatInr } from '@/features/discover/detail/order-pricing';
 import {
+  partnerOrderHasUnpaidBalance,
+  partnerOrderPaidInr,
+  partnerOrderPendingInr,
+} from '@/features/partner/lib/partner-order-payment';
+import {
   getPartnerAdvanceLabel,
   getPartnerNextStatus,
   isOrderActive,
   isOrderNeedsAction,
 } from '@/features/partner/lib/partner-status';
+import {
+  canAdvancePastPickupGates,
+  getPickupAdvanceBlockers,
+  getPickupAdvanceDisabledReason,
+  needsPickupEvidence,
+  needsPickupInventory,
+} from '@/features/partner/lib/partner-pickup-gates';
 import { queryKeys } from '@/lib/query-keys';
 import { listPartnerPickupEvidence } from '@/services/pickup-evidence';
 import { getPartnerInventoryVerification } from '@/services/inventory-verification';
@@ -67,20 +80,19 @@ export function PartnerOrderCard({
   const nextLabel = getPartnerAdvanceLabel(order.status, order.order_source);
   const nextStatus = getPartnerNextStatus(order.status, order.order_source);
   const busy = isAccepting || isRejecting || isAdvancing;
-  const needsPickupEvidence = !walkIn && order.status === 'pickup_assigned';
-
-  const needsInventory = !walkIn && order.status === 'pickup_assigned';
+  const needsPickupEvidenceGate = needsPickupEvidence(order);
+  const needsInventoryGate = needsPickupInventory(order);
 
   const evidenceQ = useQuery({
     queryKey: queryKeys.pickupEvidence(order.id, 'partner'),
     queryFn: () => listPartnerPickupEvidence(order.id),
-    enabled: needsPickupEvidence || order.status === 'picked_up',
+    enabled: needsPickupEvidenceGate || order.status === 'picked_up',
   });
 
   const inventoryQ = useQuery({
     queryKey: queryKeys.inventoryVerification(order.id, 'partner'),
     queryFn: () => getPartnerInventoryVerification(order.id),
-    enabled: needsInventory || order.status === 'picked_up',
+    enabled: needsInventoryGate || order.status === 'picked_up',
   });
 
   const needsDeliveryOtp = !walkIn && order.status === 'out_for_delivery';
@@ -99,7 +111,9 @@ export function PartnerOrderCard({
   const hasEvidence = (evidenceQ.data?.length ?? 0) > 0;
   const hasInventory = (inventoryQ.data?.total_quantity ?? 0) > 0;
   const hasDeliveryProof = Boolean(deliveryProofQ.data);
-  const canMarkPickedUp = (!needsPickupEvidence || hasEvidence) && (!needsInventory || hasInventory);
+  const pickupBlockers = getPickupAdvanceBlockers(order, { hasEvidence, hasInventory });
+  const pickupDisabledReason = getPickupAdvanceDisabledReason(pickupBlockers);
+  const canMarkPickedUp = canAdvancePastPickupGates(order, { hasEvidence, hasInventory });
   const printEmphasis = getPrintLifecycleEmphasis(order.status);
 
   return (
@@ -137,10 +151,25 @@ export function PartnerOrderCard({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-          <span>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span className="tabular-nums">
             <strong className="text-foreground">{formatInr(Number(order.total_inr))}</strong> total
           </span>
+          <span className="tabular-nums">
+            Paid <strong className="text-foreground">{formatInr(partnerOrderPaidInr(order))}</strong>
+          </span>
+          <span className="tabular-nums">
+            Pending{' '}
+            <strong className="text-foreground">{formatInr(partnerOrderPendingInr(order))}</strong>
+          </span>
+          {partnerOrderHasUnpaidBalance(order) ? (
+            <Badge
+              variant="outline"
+              className="border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-normal"
+            >
+              Unpaid
+            </Badge>
+          ) : null}
           <span>
             Pickup <ClientDate iso={order.pickup_at} mode="datetime" />
           </span>
@@ -196,7 +225,7 @@ export function PartnerOrderCard({
           </div>
         )}
 
-        {needsPickupEvidence && !hasEvidence && (
+        {needsPickupEvidenceGate && !hasEvidence && (
           <PickupEvidenceUpload
             orderId={order.id}
             onUploaded={() => {
@@ -207,7 +236,7 @@ export function PartnerOrderCard({
           />
         )}
 
-        {needsInventory && (
+        {needsInventoryGate && (
           <InventoryVerificationForm
             orderId={order.id}
             verification={inventoryQ.data ?? null}
@@ -218,7 +247,7 @@ export function PartnerOrderCard({
           />
         )}
 
-        {!needsInventory && inventoryQ.data && inventoryQ.data.total_quantity > 0 && (
+        {!needsInventoryGate && inventoryQ.data && inventoryQ.data.total_quantity > 0 && (
           <InventoryVerificationDisplay
             verification={inventoryQ.data}
             className="shadow-none ring-0"
@@ -239,9 +268,17 @@ export function PartnerOrderCard({
           <Button
             type="button"
             className="h-9 w-full"
-            disabled={busy || (needsPickupEvidence && !hasEvidence) || (needsInventory && !hasInventory)}
+            disabled={busy || !canMarkPickedUp}
+            title={pickupDisabledReason ?? undefined}
             aria-busy={isAdvancing}
-            aria-label={isAdvancing ? `Updating status to ${nextLabel}` : nextLabel}
+            aria-label={
+              isAdvancing
+                ? `Updating status to ${nextLabel}`
+                : pickupDisabledReason
+                  ? `${nextLabel} — ${pickupDisabledReason}`
+                  : nextLabel
+            }
+            data-testid="partner-order-advance"
             onClick={onAdvance}
           >
             {isAdvancing ? (
@@ -293,13 +330,14 @@ export function PartnerOrderCard({
           </p>
         )}
 
-        {(needsPickupEvidence || needsInventory) && !canMarkPickedUp && (
-          <p className="text-center text-xs text-muted-foreground">
-            {needsPickupEvidence && !hasEvidence && 'Upload pickup photos. '}
-            {needsInventory && !hasInventory && 'Record item inventory '}
-            before marking picked up.
+        {pickupDisabledReason ? (
+          <p
+            className="text-center text-xs text-muted-foreground"
+            data-testid="partner-pickup-blocker"
+          >
+            {pickupDisabledReason}.
           </p>
-        )}
+        ) : null}
 
         {order.status === 'delivered' && (
           <p className="text-center text-sm font-medium text-success">Completed</p>

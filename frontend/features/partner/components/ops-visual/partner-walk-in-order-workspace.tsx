@@ -43,6 +43,14 @@ import {
   isValidIndianMobileE164,
   normalizeIndianPhoneInput,
 } from '@/features/partner/customer-desk/phone';
+import {
+  formatPhoneInputDisplay,
+  getPartnerPhoneFieldError,
+  isPartnerPhoneReady,
+  PARTNER_PHONE_INLINE_ERROR,
+  partnerPhoneDisplayValue,
+  partnerPhoneToE164,
+} from '@/features/partner/lib/partner-phone-schema';
 import { searchPartnerCustomers } from '@/features/partner/customer-desk/api';
 import type { CustomerDeskProfile } from '@/features/partner/customer-desk/types';
 import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
@@ -250,6 +258,14 @@ function PartnerWalkInOrderWorkspaceContent({
   const searchRequestRef = useRef(0);
   const qc = useQueryClient();
 
+  const customerPhoneDisplay = partnerPhoneDisplayValue(c.customerPhone);
+  const customerPhoneError = getPartnerPhoneFieldError(customerPhoneDisplay);
+  const canContinueCustomer =
+    Boolean(c.customerName.trim()) && isPartnerPhoneReady(c.customerPhone);
+  const newCustomerPhoneError = getPartnerPhoneFieldError(newCustomerForm.phone);
+  const canSubmitNewCustomer =
+    Boolean(newCustomerForm.name.trim()) && isPartnerPhoneReady(newCustomerForm.phone);
+
   const applySuggestedM = useMutation({
     mutationFn: applySuggestedPartnerPrices,
     onSuccess: async (result) => {
@@ -301,9 +317,7 @@ function PartnerWalkInOrderWorkspaceContent({
   }
 
   function selectCustomerSearchResult(profile: CustomerDeskProfile) {
-    c.setCustomerName(profile.name?.trim() || 'Customer');
-    c.setCustomerPhone(normalizeIndianPhoneInput(profile.phone));
-    c.setLookupSuppressed(true);
+    c.applyCustomerFromSearch(profile);
     setCustomerSearchQuery(profile.name?.trim() || profile.phone);
     setCustomerSearchResults([]);
     setCustomerSelectionLocked(true);
@@ -324,14 +338,14 @@ function PartnerWalkInOrderWorkspaceContent({
     setNewCustomerForm((prev) => ({
       ...prev,
       name: c.customerName.trim(),
-      phone: c.customerPhone,
+      phone: customerPhoneDisplay,
     }));
     setNewCustomerOpen(true);
   }
 
   function submitNewCustomer() {
     const name = newCustomerForm.name.trim();
-    const phone = normalizeIndianPhoneInput(newCustomerForm.phone);
+    const phone = partnerPhoneToE164(newCustomerForm.phone);
 
     if (!name) {
       toast.error('Enter customer name');
@@ -339,13 +353,19 @@ function PartnerWalkInOrderWorkspaceContent({
     }
 
     if (!isValidIndianMobileE164(phone)) {
-      toast.error('Enter a valid Indian mobile number');
+      toast.error(PARTNER_PHONE_INLINE_ERROR);
       return;
     }
 
-    c.setCustomerName(`${newCustomerForm.title} ${name}`.trim());
-    c.setCustomerPhone(phone);
-    c.setLookupSuppressed(true);
+    c.applyCustomerFromSearch({
+      name: `${newCustomerForm.title} ${name}`.trim(),
+      phone,
+      email: '',
+      registered: false,
+      user_id: null,
+      order_count: 0,
+      last_order_at: null,
+    });
     c.setAddressLine1(newCustomerForm.addressLine1.trim());
     c.setAddressCity(newCustomerForm.city.trim());
     c.setAddressPincode(newCustomerForm.pincode.trim());
@@ -367,18 +387,16 @@ function PartnerWalkInOrderWorkspaceContent({
     toast.success('New customer added to the order');
   }
 
-  const walkInSnapshotProfile =
-    c.customerName.trim() && c.walkInSnapshotProfile
-      ? {
-          ...c.walkInSnapshotProfile,
-          name: c.customerName.trim() || c.walkInSnapshotProfile.name,
-        }
-      : null;
-  const profileForSnapshot = selectedCustomerProfile ?? walkInSnapshotProfile;
+  const profileForSnapshot = c.walkInSnapshotProfile
+    ? {
+        ...c.walkInSnapshotProfile,
+        name: c.customerName.trim() || c.walkInSnapshotProfile.name || 'Customer',
+      }
+    : null;
 
   if (c.createdDoorstepOrder && !(suppressSuccessScreen && isDialog)) {
     return (
-      <div className="space-y-5" id="partner-walk-in-workspace" data-testid="partner-walk-in-workspace">
+      <div className="space-y-4" id="partner-walk-in-workspace" data-testid="partner-walk-in-workspace">
         <OrderCreateSuccessPanel
           order={{
             id: c.createdDoorstepOrder.id,
@@ -404,7 +422,7 @@ function PartnerWalkInOrderWorkspaceContent({
 
   if (c.createdOrder && !(suppressSuccessScreen && isDialog)) {
     return (
-      <div className="space-y-5" id="partner-walk-in-workspace" data-testid="partner-walk-in-workspace">
+      <div className="space-y-4" id="partner-walk-in-workspace" data-testid="partner-walk-in-workspace">
         <WalkInSuccessPanel
           order={c.createdOrder}
           onStartWash={() => c.startWashMutation.mutate(c.createdOrder!.id)}
@@ -434,7 +452,7 @@ function PartnerWalkInOrderWorkspaceContent({
   }
 
   return (
-    <div className="space-y-5" id="partner-walk-in-workspace" data-testid="partner-walk-in-workspace">
+    <div className="space-y-4" id="partner-walk-in-workspace" data-testid="partner-walk-in-workspace">
       {!hideTopChrome || isDialog ? (
         <PartnerOpsSurface className="space-y-4">
           {!hideTopChrome && !isDialog ? (
@@ -496,7 +514,7 @@ function PartnerWalkInOrderWorkspaceContent({
       />
 
       {c.step === 'customer' ? (
-        <PartnerOpsSurface className="space-y-5">
+        <PartnerOpsSurface className="space-y-4">
           <PartnerOpsSectionLabel>Step 1 — Customer</PartnerOpsSectionLabel>
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
@@ -543,14 +561,26 @@ function PartnerWalkInOrderWorkspaceContent({
                   id="ws-phone"
                   type="tel"
                   inputMode="tel"
-                  value={c.customerPhone}
-                  onChange={(e) => c.setCustomerPhone(normalizeIndianPhoneInput(e.target.value))}
+                  value={customerPhoneDisplay}
+                  onChange={(e) => c.setCustomerPhone(formatPhoneInputDisplay(e.target.value))}
                   required
                   readOnly={customerSelectionLocked}
                   className={cn('min-h-9', customerSelectionLocked && 'bg-muted/60')}
                   data-testid="create-order-phone"
-                  aria-describedby={isDialog ? 'ws-phone-lookup-hint' : undefined}
+                  aria-invalid={Boolean(customerPhoneError)}
+                  aria-describedby={
+                    customerPhoneError
+                      ? 'ws-phone-error'
+                      : isDialog && c.walkInLookupPhone
+                        ? 'ws-phone-lookup-hint'
+                        : undefined
+                  }
                 />
+                {customerPhoneError ? (
+                  <p id="ws-phone-error" className="text-xs text-danger" role="alert">
+                    {customerPhoneError}
+                  </p>
+                ) : null}
                 {isDialog && c.walkInLookupPhone ? (
                   <p id="ws-phone-lookup-hint" className="text-xs text-muted-foreground">
                     {c.walkInLookupQ.isFetching ? (
@@ -668,8 +698,9 @@ function PartnerWalkInOrderWorkspaceContent({
 
           <Button
             type="button"
-            className="min-h-10 w-full sm:w-auto"
+            className="h-9 min-h-9 w-full sm:w-auto"
             onClick={c.goFromCustomer}
+            disabled={!canContinueCustomer}
             data-testid="create-order-customer-next"
           >
             Continue to items
@@ -679,7 +710,7 @@ function PartnerWalkInOrderWorkspaceContent({
       ) : null}
 
       {c.step === 'intake' ? (
-        <PartnerOpsSurface className="space-y-5">
+        <PartnerOpsSurface className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <PartnerOpsSectionLabel>Step 2 — Add items</PartnerOpsSectionLabel>
             <div
@@ -751,7 +782,7 @@ function PartnerWalkInOrderWorkspaceContent({
                       return (
                         <div
                           key={card.id}
-                          className="overflow-hidden rounded-3xl border border-border bg-background shadow-sm"
+                          className="overflow-hidden rounded-xl border border-border bg-background shadow-sm"
                         >
                           <div className="relative h-32 w-full overflow-hidden bg-muted">
                             <img
@@ -793,11 +824,12 @@ function PartnerWalkInOrderWorkspaceContent({
                               </Button>
                               <Input
                                 type="number"
-                                min="0"
-                                step="0.1"
+                                min={0.01}
+                                step="0.01"
                                 inputMode="decimal"
                                 value={displayQty}
                                 placeholder="0.0"
+                                data-testid={`create-order-weight-qty-${card.id}`}
                                 onChange={(e) => {
                                   const raw = e.target.value;
                                   if (raw.trim() === '') {
@@ -805,11 +837,11 @@ function PartnerWalkInOrderWorkspaceContent({
                                     return;
                                   }
                                   const value = Number(raw);
-                                  if (!Number.isFinite(value) || value < 0) {
+                                  if (!Number.isFinite(value) || value < 0.01) {
                                     c.removeServiceLine(card.serviceId);
                                     return;
                                   }
-                                  c.setServiceQty(card.serviceId, Number(value.toFixed(2)));
+                                  c.setServiceQty(card.serviceId, value);
                                 }}
                                 className="h-9 flex-1 text-center"
                               />
@@ -921,8 +953,8 @@ function PartnerWalkInOrderWorkspaceContent({
       ) : null}
 
       {c.step === 'review' ? (
-        <div className="grid gap-5 lg:grid-cols-[1.55fr_0.95fr]">
-          <PartnerOpsSurface className="space-y-5">
+        <div className="grid gap-3 lg:grid-cols-[1.55fr_0.95fr]">
+          <PartnerOpsSurface className="space-y-4">
             <PartnerOpsSectionLabel>Step 3 — Review &amp; save</PartnerOpsSectionLabel>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -943,7 +975,7 @@ function PartnerWalkInOrderWorkspaceContent({
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-3xl border border-border">
+            <div className="overflow-hidden rounded-xl border border-border">
               <PartnerNewOrderLineItemsTable
                 rows={c.lineRows}
                 onSetQty={c.setLineQty}
@@ -1102,9 +1134,21 @@ function PartnerWalkInOrderWorkspaceContent({
                 type="tel"
                 inputMode="tel"
                 value={newCustomerForm.phone}
-                onChange={(e) => setNewCustomerForm((prev) => ({ ...prev, phone: e.target.value }))}
-                placeholder="e.g. +91 9876543210"
+                onChange={(e) =>
+                  setNewCustomerForm((prev) => ({
+                    ...prev,
+                    phone: formatPhoneInputDisplay(e.target.value),
+                  }))
+                }
+                placeholder="e.g. 9876543210"
+                aria-invalid={Boolean(newCustomerPhoneError)}
+                aria-describedby={newCustomerPhoneError ? 'new-customer-phone-error' : undefined}
               />
+              {newCustomerPhoneError ? (
+                <p id="new-customer-phone-error" className="text-xs text-danger" role="alert">
+                  {newCustomerPhoneError}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="new-customer-address">Address line 1</Label>
@@ -1156,7 +1200,7 @@ function PartnerWalkInOrderWorkspaceContent({
             <Button type="button" variant="outline" onClick={() => setNewCustomerOpen(false)}>
               Cancel
             </Button>
-            <Button type="button" onClick={submitNewCustomer}>
+            <Button type="button" onClick={submitNewCustomer} disabled={!canSubmitNewCustomer}>
               Add customer
             </Button>
           </DialogFooter>

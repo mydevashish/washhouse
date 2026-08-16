@@ -26,6 +26,7 @@ Maps historical product docs → roadmap phase → feature spec.
 | Orders Hub — hard-merge Desk / BR / Directory into Orders tabs | launch / ops | [orders-hub.md](../features/orders-hub.md) |
 | Partner Customers & Orders — four pillars workspace (Customers · Orders · Coupons · Services tiles + modals on `/partner/orders`) | launch / ops | [partner-customers-orders-four-pillars-workspace.md](../features/partner-customers-orders-four-pillars-workspace.md) |
 | Partner garment service catalog — bulk Excel upload, multi-service rates, images, CRUD at `/partner/services` | launch / ops | [partner-garment-service-catalog.md](../features/partner-garment-service-catalog.md) · QA [partner-garment-service-catalog-matrix.md](../qa/partner-garment-service-catalog-matrix.md) |
+| Partner ops fixes + compact UI — stakeholder bug pass (session, phone, create order, customers, catalog, storefront, reports/revenue filters, paid/pending) + partner-wide density (`h-9`, `rounded-xl`) | launch / ops | [partner-ops-fixes-compact-ui.md](../features/partner-ops-fixes-compact-ui.md) · QA [partner-ops-fixes-compact-ui-matrix.md](../qa/partner-ops-fixes-compact-ui-matrix.md) |
 | Inventory (cloth count, missing) | 3 | [partner-inventory.md](../features/partner-inventory.md) |
 | QR / barcode tracking | 3 | [partner-qr-tracking.md](../features/partner-qr-tracking.md) |
 | Staff roles | 3 | [partner-staff.md](../features/partner-staff.md) |

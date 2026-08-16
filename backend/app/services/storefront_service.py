@@ -200,6 +200,36 @@ def _default_gallery(cover: str | None, extra: list[str]) -> list[dict]:
     return items
 
 
+def _sanitize_storefront_patch(patch: dict[str, Any]) -> dict[str, Any]:
+    """Drop incomplete nested rows and coerce radius strings before persistence."""
+    out = dict(patch)
+    if "highlights" in out and out["highlights"] is not None:
+        out["highlights"] = [
+            h for h in out["highlights"]
+            if isinstance(h, dict) and (h.get("title") or "").strip()
+        ]
+    if "machines" in out and out["machines"] is not None:
+        out["machines"] = [
+            m for m in out["machines"]
+            if isinstance(m, dict) and (m.get("name") or "").strip()
+        ]
+    if "team" in out and out["team"] is not None:
+        out["team"] = [
+            t for t in out["team"]
+            if isinstance(t, dict) and (t.get("name") or "").strip()
+        ]
+    if "certifications" in out and out["certifications"] is not None:
+        out["certifications"] = [
+            c for c in out["certifications"]
+            if isinstance(c, dict) and (c.get("title") or "").strip()
+        ]
+    for key in ("pickup_radius_km", "delivery_radius_km"):
+        if key in out and out[key] is not None and not isinstance(out[key], Decimal):
+            raw = str(out[key]).strip()
+            out[key] = Decimal(raw) if raw else None
+    return out
+
+
 class StorefrontService:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -270,7 +300,7 @@ class StorefrontService:
         if not row:
             row = await self._create_default(laundry)
 
-        patch = body.model_dump(exclude_unset=True)
+        patch = _sanitize_storefront_patch(body.model_dump(exclude_unset=True))
         for key, value in patch.items():
             if key in ("highlights", "gallery", "machines", "team", "certifications", "videos"):
                 setattr(row, key, [v.model_dump() if hasattr(v, "model_dump") else v for v in value])

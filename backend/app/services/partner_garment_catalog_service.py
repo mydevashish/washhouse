@@ -125,7 +125,7 @@ class PartnerGarmentCatalogService:
         category: GarmentCategory | None = None,
         search: str | None = None,
         page: int = 1,
-        page_size: int = 20,
+        page_size: int = 10,
     ) -> dict[str, Any]:
         laundry = await self._laundry_for_partner(partner_user_id)
         rows, total = await self._repo.list_for_laundry_paginated(
@@ -266,6 +266,19 @@ class PartnerGarmentCatalogService:
             assert ids is not None
             deleted = await self._repo.soft_delete_by_ids(laundry.id, ids)
         return {"deleted_count": deleted}
+
+    async def bulk_set_visible(
+        self,
+        partner_user_id: UUID,
+        *,
+        ids: list[UUID],
+        is_visible: bool = True,
+    ) -> dict[str, int]:
+        laundry = await self._laundry_for_partner(partner_user_id)
+        if not ids:
+            raise ValidationError("At least one garment id is required")
+        updated = await self._repo.set_visible_by_ids(laundry.id, ids, is_visible=is_visible)
+        return {"updated_count": updated}
 
     async def import_preview(
         self,

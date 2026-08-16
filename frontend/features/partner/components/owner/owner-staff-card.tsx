@@ -98,11 +98,11 @@ export function OwnerStaffCard({
         <p className="text-[11px] text-muted-foreground">{formatWorkSchedule(member.work_schedule)}</p>
 
         <div className="mt-auto flex flex-wrap gap-2" role="group" aria-label={`Actions for ${member.name}`}>
-          <Button type="button" variant="outline" size="sm" className="min-h-[44px] gap-1.5" onClick={onEdit} disabled={busy}>
+          <Button type="button" variant="outline" size="sm" className="h-9 min-h-9 gap-1.5" onClick={onEdit} disabled={busy}>
             <Pencil className="h-3.5 w-3.5" aria-hidden />
             Edit
           </Button>
-          <Button type="button" variant="outline" size="sm" className="min-h-[44px] gap-1.5" onClick={onActivity} disabled={busy}>
+          <Button type="button" variant="outline" size="sm" className="h-9 min-h-9 gap-1.5" onClick={onActivity} disabled={busy}>
             <Activity className="h-3.5 w-3.5" aria-hidden />
             Activity
           </Button>
@@ -110,7 +110,7 @@ export function OwnerStaffCard({
             type="button"
             variant="outline"
             size="sm"
-            className="min-h-[44px] gap-1.5"
+            className="h-9 min-h-9 gap-1.5"
             onClick={onResetPassword}
             disabled={busy}
           >
@@ -118,7 +118,7 @@ export function OwnerStaffCard({
             Reset pwd
           </Button>
           {member.is_suspended ? (
-            <Button type="button" variant="secondary" size="sm" className="min-h-[44px]" onClick={onUnsuspend} disabled={busy}>
+            <Button type="button" variant="secondary" size="sm" className="h-9 min-h-9" onClick={onUnsuspend} disabled={busy}>
               Unsuspend
             </Button>
           ) : member.is_active ? (
@@ -126,7 +126,7 @@ export function OwnerStaffCard({
               type="button"
               variant="outline"
               size="sm"
-              className="min-h-[44px] gap-1.5"
+              className="h-9 min-h-9 gap-1.5"
               onClick={onSuspend}
               disabled={busy}
             >
@@ -138,7 +138,7 @@ export function OwnerStaffCard({
               type="button"
               variant="secondary"
               size="sm"
-              className="min-h-[44px] gap-1.5"
+              className="h-9 min-h-9 gap-1.5"
               onClick={onActivate}
               disabled={busy}
             >
@@ -147,7 +147,7 @@ export function OwnerStaffCard({
             </Button>
           )}
           {member.is_active && !member.is_suspended ? (
-            <Button type="button" variant="ghost" size="sm" className="min-h-[44px]" onClick={onDeactivate} disabled={busy}>
+            <Button type="button" variant="ghost" size="sm" className="h-9 min-h-9" onClick={onDeactivate} disabled={busy}>
               Deactivate
             </Button>
           ) : null}

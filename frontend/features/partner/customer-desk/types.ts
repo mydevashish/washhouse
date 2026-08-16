@@ -5,9 +5,28 @@ export type CustomerDeskProfile = {
   name: string | null;
   phone: string;
   email: string | null;
+  gender?: string | null;
+  notes?: string | null;
   registered: boolean;
   order_count: number;
   last_order_at: string | null;
+};
+
+export type PartnerCustomerUpdatePayload = {
+  name: string;
+  email?: string | null;
+  gender?: 'male' | 'female' | null;
+  notes?: string | null;
+};
+
+export type PartnerCustomerUpdateResult = {
+  user_id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  gender: string | null;
+  notes: string | null;
+  registered: boolean;
 };
 
 export type CustomerDeskOrderSource =

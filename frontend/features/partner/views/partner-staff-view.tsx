@@ -219,13 +219,13 @@ function PartnerStaffViewBody() {
   };
 
   return (
-    <PartnerContent className="space-y-5">
-      <div data-testid="partner-staff-view" className="space-y-5">
+    <PartnerContent className="space-y-4">
+      <div data-testid="partner-staff-view" className="space-y-4">
       <PartnerPageHeader
         title="Staff"
         description="Roster, today’s pickup/delivery coverage, and calm add/edit — assign still happens on Logistics runs."
         actions={
-          <Button type="button" className="min-h-[44px] gap-1.5" onClick={() => openCreate()}>
+          <Button type="button" className="h-9 min-h-9 gap-1.5" onClick={() => openCreate()}>
             <UserPlus className="h-3.5 w-3.5" aria-hidden />
             Add helper
           </Button>
@@ -273,7 +273,7 @@ function PartnerStaffViewBody() {
             : `${filtered.length} of ${staff.length} matching filter`
         }
         action={
-          <Button type="button" variant="outline" size="sm" className="min-h-[44px]" onClick={() => openCreate()}>
+          <Button type="button" variant="outline" size="sm" className="h-9 min-h-9" onClick={() => openCreate()}>
             Add
           </Button>
         }

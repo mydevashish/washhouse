@@ -8,10 +8,12 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.utils import success_envelope
 from app.api.v1.deps import SessionDep, get_current_partner
+from app.core.pagination import DEFAULT_PAGE_SIZE
+from app.schemas.common import PaginatedListResponse
 from app.schemas.customer_experience import ServiceCatalogCreate, ServiceCatalogItem, ServiceCatalogUpdate
 from app.services.partner_service_catalog_service import PartnerServiceCatalogService
 
@@ -23,9 +25,23 @@ async def list_partner_services(
     request: Request,
     session: SessionDep,
     payload: Annotated[dict, Depends(get_current_partner)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = DEFAULT_PAGE_SIZE,
+    search: Annotated[str | None, Query(max_length=120)] = None,
 ) -> dict:
-    data = await PartnerServiceCatalogService(session).list_services(UUID(payload["sub"]))
-    return success_envelope([ServiceCatalogItem.model_validate(r) for r in data], request)
+    data = await PartnerServiceCatalogService(session).list_services(
+        UUID(payload["sub"]),
+        page=page,
+        page_size=page_size,
+        search=search,
+    )
+    body = PaginatedListResponse[ServiceCatalogItem].model_validate(
+        {
+            **data,
+            "items": [ServiceCatalogItem.model_validate(r) for r in data["items"]],
+        },
+    )
+    return success_envelope(body, request)
 
 
 @router.post("")

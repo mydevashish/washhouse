@@ -67,7 +67,7 @@ export function WalkInOrderCard({ order, onAdvance, isAdvancing }: WalkInOrderCa
         {active && nextStatus && nextLabel && (
           <Button
             type="button"
-            className="min-h-[44px] w-full"
+            className="h-9 min-h-9 w-full"
             disabled={isAdvancing}
             onClick={onAdvance}
           >

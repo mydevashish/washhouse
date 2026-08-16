@@ -66,10 +66,12 @@ function PartnerAdvancedSidebar({
                 const { href, label, icon: Icon } = item;
                 const active = isPartnerNavActive(pathname, href, navActiveOpts);
                 const badge = partnerNavBadgeKeys(item).reduce((sum, key) => sum + (badges[key] ?? 0), 0);
+                const navTestId = `partner-nav-${stripNavQuery(href).replace(/^\/partner\/?/, '').replace(/\//g, '-') || 'dashboard'}`;
                 return (
                   <li key={`${stripNavQuery(href)}:${label}`}>
                     <Link
                       href={href}
+                      data-testid={navTestId}
                       onClick={onNavigate}
                       className={cn(
                         'flex items-center gap-2.5 rounded-2xl px-3 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',

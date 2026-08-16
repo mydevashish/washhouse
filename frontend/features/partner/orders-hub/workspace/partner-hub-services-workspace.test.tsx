@@ -7,10 +7,9 @@ import {
   PartnerHubServicesAddForm,
   PartnerHubServicesModalContent,
   PartnerHubServicesWorkspaceBody,
-  usePartnerHubServices,
+  usePartnerHubServicesList,
 } from '@/features/partner/orders-hub/workspace/partner-hub-services-workspace';
 import { listServiceCategories } from '@/services/customer-experience';
-import { getPartnerGarmentCatalogSummary } from '@/services/partner-garment-catalog';
 import {
   createPartnerService,
   listPartnerServices,
@@ -38,21 +37,20 @@ jest.mock('@/services/partner-service-catalog', () => ({
   deletePartnerService: jest.fn(),
 }));
 
-jest.mock('@/services/partner-garment-catalog', () => ({
-  getPartnerGarmentCatalogSummary: jest.fn(),
-}));
-
 jest.mock('@/features/partner/orders-hub/workspace/partner-hub-workspace-modal', () => ({
   PartnerHubWorkspaceModalGate: ({
     children,
     toolbar,
+    footer,
   }: {
     children: React.ReactNode;
     toolbar?: React.ReactNode;
+    footer?: React.ReactNode;
   }) => (
     <div>
       {toolbar}
       {children}
+      {footer}
     </div>
   ),
 }));
@@ -67,9 +65,19 @@ const sampleService = {
   description: null,
 };
 
+const paginated = (items: typeof sampleService[], total = items.length, page = 1) => ({
+  items,
+  page,
+  page_size: 10,
+  total_records: total,
+  total_pages: Math.max(1, Math.ceil(total / 10)),
+  has_next: page < Math.max(1, Math.ceil(total / 10)),
+  has_previous: page > 1,
+});
+
 function ServicesBodyProbe() {
-  const servicesQ = usePartnerHubServices();
-  return <PartnerHubServicesWorkspaceBody servicesQ={servicesQ} />;
+  const list = usePartnerHubServicesList();
+  return <PartnerHubServicesWorkspaceBody list={list} />;
 }
 
 function wrap(children: ReactNode) {
@@ -79,9 +87,9 @@ function wrap(children: ReactNode) {
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
-describe('PartnerHubServicesWorkspace (Prompt 6)', () => {
+describe('PartnerHubServicesWorkspace (Prompt 7)', () => {
   beforeEach(() => {
-    jest.mocked(listPartnerServices).mockResolvedValue([sampleService]);
+    jest.mocked(listPartnerServices).mockResolvedValue(paginated([sampleService], 1));
     jest.mocked(listServiceCategories).mockResolvedValue([
       {
         id: 'c1',
@@ -98,7 +106,7 @@ describe('PartnerHubServicesWorkspace (Prompt 6)', () => {
   });
 
   it('creates a service via add form submit', async () => {
-    jest.mocked(listPartnerServices).mockResolvedValue([]);
+    jest.mocked(listPartnerServices).mockResolvedValue(paginated([], 0));
     const user = userEvent.setup();
     render(
       wrap(
@@ -144,23 +152,40 @@ describe('PartnerHubServicesWorkspace (Prompt 6)', () => {
     });
   });
 
-  it('modal summary links to full garment catalog page', async () => {
-    jest.mocked(getPartnerGarmentCatalogSummary).mockResolvedValue({
-      total: 42,
-      visible: 30,
-      categories: 5,
-    });
-
+  it('filters services via debounced server search', async () => {
+    jest.useFakeTimers();
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     render(wrap(<PartnerHubServicesModalContent />));
 
     await waitFor(() => {
-      expect(screen.getByTestId('hub-services-summary')).toBeInTheDocument();
+      expect(screen.getByTestId('hub-services-search')).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId('hub-services-open-full-catalog')).toHaveAttribute(
-      'href',
-      '/partner/services',
-    );
+    await user.type(screen.getByTestId('hub-services-search'), 'Dry Clean');
+    jest.advanceTimersByTime(300);
+
+    await waitFor(() => {
+      expect(listPartnerServices).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'Dry Clean', page_size: 10 }),
+      );
+    });
+
+    jest.useRealTimers();
+  });
+
+  it('changes page via pagination controls', async () => {
+    jest.mocked(listPartnerServices).mockResolvedValue(paginated([sampleService], 15, 1));
+    const user = userEvent.setup();
+    render(wrap(<PartnerHubServicesModalContent />));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('hub-workspace-pagination')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByLabelText('Next page'));
+
+    await waitFor(() => {
+      expect(listPartnerServices).toHaveBeenCalledWith(expect.objectContaining({ page: 2 }));
+    });
   });
 });
-

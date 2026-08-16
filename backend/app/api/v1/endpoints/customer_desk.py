@@ -22,7 +22,11 @@ from app.schemas.customer_desk import (
     CustomerDeskOrderRow,
     CustomerDeskProfile,
 )
-from app.schemas.partner import PartnerCustomerCreateRequest
+from app.schemas.partner import (
+    PartnerCustomerCreateRequest,
+    PartnerCustomerUpdateRequest,
+    PartnerCustomerUpdateResponse,
+)
 from app.services.customer_desk_service import CustomerDeskService
 from app.services.partner_customer_service import PartnerCustomerService
 
@@ -181,6 +185,62 @@ async def partner_customer_create(
         phone=body.phone,
     )
     return success_envelope(CustomerDeskProfile.model_validate(data), request)
+
+
+@partner_router.patch(
+    "/by-phone",
+    summary="Update customer profile by phone (partner laundry scope)",
+    description=(
+        "Updates name, email, gender, and CRM notes for a registered customer at this laundry. "
+        "Phone is immutable — pass it as a query parameter."
+    ),
+    responses={403: {"description": "Customer not at this laundry"}, 404: {"description": "Not found"}},
+)
+async def partner_customer_update_by_phone(
+    request: Request,
+    session: SessionDep,
+    body: PartnerCustomerUpdateRequest,
+    payload: Annotated[dict, Depends(get_insights_actor)],
+    phone: str = Query(..., max_length=20),
+) -> dict:
+    data = await PartnerCustomerService(session).update_profile(
+        actor_user_id=UUID(payload["sub"]),
+        actor_role=payload["role"],
+        phone=phone,
+        name=body.name,
+        email=body.email,
+        gender=body.gender,
+        notes=body.notes,
+    )
+    return success_envelope(PartnerCustomerUpdateResponse.model_validate(data), request)
+
+
+@partner_router.patch(
+    "/{user_id}",
+    summary="Update customer profile (partner laundry scope)",
+    description=(
+        "Updates name, email, gender, and CRM notes for a customer linked to this laundry. "
+        "Phone is immutable."
+    ),
+    responses={403: {"description": "Customer not at this laundry"}, 404: {"description": "Not found"}},
+)
+async def partner_customer_update(
+    user_id: UUID,
+    request: Request,
+    session: SessionDep,
+    body: PartnerCustomerUpdateRequest,
+    payload: Annotated[dict, Depends(get_insights_actor)],
+) -> dict:
+    data = await PartnerCustomerService(session).update_profile(
+        actor_user_id=UUID(payload["sub"]),
+        actor_role=payload["role"],
+        user_id=user_id,
+        name=body.name,
+        email=body.email,
+        gender=body.gender,
+        notes=body.notes,
+    )
+    return success_envelope(PartnerCustomerUpdateResponse.model_validate(data), request)
 
 
 @partner_router.get(

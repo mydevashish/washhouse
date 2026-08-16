@@ -2172,6 +2172,15 @@ Full matrix published in chat for this audit (Feature | Role | Spec | Routes | A
 
 ---
 
+## 2026-08-15 — Partner Ops Fixes + Compact UI (Prompt 0 spec)
+
+- **Type:** docs
+- **Scope:** partner ops / stakeholder bug pass
+- **Files:** `docs/features/partner-ops-fixes-compact-ui.md`, `docs/qa/partner-ops-fixes-compact-ui-matrix.md`, `docs/product/traceability.md`, `logs/feature-progress.md`, `.cursor/context/current-status.md`
+- **Summary:** Locked 15 stakeholder fixes (session 60m, 10-digit phone, create-order spend/qty, customers, picked up, garment catalog, storefront, reports/revenue, orders paid/pending) and partner-wide compact UI density spec with concrete Tailwind classes. QA matrix: 30 rows with 375px + dark checks.
+- **Risks:** Density pass may conflict with ops-visual 32px hero — spec limits re-radius to lists/cards.
+- **Next:** Prompt 1 — session timeout + `partner-phone-schema.ts`.
+
 ## 2026-05-25 — Workspace bootstrap
 
 - **Type:** infra · docs

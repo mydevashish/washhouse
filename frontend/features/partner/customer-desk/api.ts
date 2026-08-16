@@ -8,6 +8,8 @@ import type {
   CustomerDeskOrdersFilters,
   CustomerDeskOrdersPage,
   CustomerDeskProfile,
+  PartnerCustomerUpdatePayload,
+  PartnerCustomerUpdateResult,
 } from '@/features/partner/customer-desk/types';
 
 function buildOrderParams(filters: CustomerDeskOrdersFilters = {}): Record<string, string | number> {
@@ -24,6 +26,31 @@ export async function createPartnerCustomer(payload: {
   phone: string;
 }): Promise<CustomerDeskProfile> {
   const { data } = await api.post<ApiEnvelope<CustomerDeskProfile>>('/partner/customers', payload);
+  return data.data;
+}
+
+/** Update partner-scoped customer profile (phone immutable). */
+export async function updatePartnerCustomer(
+  userId: string,
+  payload: PartnerCustomerUpdatePayload,
+): Promise<PartnerCustomerUpdateResult> {
+  const { data } = await api.patch<ApiEnvelope<PartnerCustomerUpdateResult>>(
+    `/partner/customers/${userId}`,
+    payload,
+  );
+  return data.data;
+}
+
+/** Update by phone for registered customers without a stable user id in UI. */
+export async function updatePartnerCustomerByPhone(
+  phone: string,
+  payload: PartnerCustomerUpdatePayload,
+): Promise<PartnerCustomerUpdateResult> {
+  const { data } = await api.patch<ApiEnvelope<PartnerCustomerUpdateResult>>(
+    '/partner/customers/by-phone',
+    payload,
+    { params: { phone } },
+  );
   return data.data;
 }
 

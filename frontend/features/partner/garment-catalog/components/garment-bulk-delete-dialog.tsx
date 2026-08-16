@@ -30,12 +30,14 @@ export function GarmentBulkDeleteDialog({
   selectedIds,
   selectedCategory,
   totalCount,
+  onSuccess,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedIds: string[];
   selectedCategory?: GarmentCategory;
   totalCount: number;
+  onSuccess?: () => void;
 }) {
   const { bulkDeleteM } = usePartnerGarmentCatalogMutations();
   const [mode, setMode] = useState<GarmentBulkDeleteMode>('selected');
@@ -74,6 +76,7 @@ export function GarmentBulkDeleteDialog({
     }
     await bulkDeleteM.mutateAsync(payload);
     onOpenChange(false);
+    onSuccess?.();
   }
 
   return (

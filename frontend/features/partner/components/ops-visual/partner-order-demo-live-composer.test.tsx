@@ -138,6 +138,7 @@ function buildComposerStub(): PartnerWalkInOrderComposer {
     setPaymentMethod: jest.fn(),
     lookupSuppressed: false,
     setLookupSuppressed: jest.fn(),
+    clothWallSource: 'catalog',
   };
 }
 

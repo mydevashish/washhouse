@@ -78,9 +78,9 @@ export function PartnerRevenuePanel({ stats, isLoading, isError }: PartnerRevenu
 
 
 
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-background">
+      <Card className="border-border">
 
-        <CardContent className="p-6">
+        <CardContent className="p-3 sm:p-4">
 
           <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-primary">
 
@@ -90,7 +90,7 @@ export function PartnerRevenuePanel({ stats, isLoading, isError }: PartnerRevenu
 
           </p>
 
-          <p className="mt-2 text-4xl font-bold tabular-nums text-foreground">
+          <p className="mt-2 text-lg font-semibold tabular-nums text-foreground">
 
             {formatInr(Number(stats.revenue_inr))}
 
@@ -106,11 +106,11 @@ export function PartnerRevenuePanel({ stats, isLoading, isError }: PartnerRevenu
 
       <Card>
 
-        <CardContent className="flex items-center gap-4 p-6">
+        <CardContent className="flex items-center gap-4 p-3 sm:p-4">
 
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
 
-            <TrendingUp className="h-6 w-6" aria-hidden />
+            <TrendingUp className="h-5 w-5" aria-hidden />
 
           </div>
 
@@ -118,7 +118,7 @@ export function PartnerRevenuePanel({ stats, isLoading, isError }: PartnerRevenu
 
             <p className="text-sm text-muted-foreground">This month</p>
 
-            <p className="text-2xl font-bold tabular-nums text-foreground">
+            <p className="text-lg font-bold tabular-nums text-foreground">
 
               {formatInr(Number(stats.revenue_this_month_inr))}
 
@@ -146,7 +146,7 @@ export function PartnerRevenuePanel({ stats, isLoading, isError }: PartnerRevenu
 
             <CardContent className="p-4 text-center">
 
-              <p className="text-2xl font-bold text-foreground">{value}</p>
+              <p className="text-lg font-bold text-foreground">{value}</p>
 
               <p className="mt-1 text-xs text-muted-foreground">{label}</p>
 

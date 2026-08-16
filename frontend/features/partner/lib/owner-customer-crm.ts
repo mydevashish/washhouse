@@ -20,19 +20,19 @@ const SOFT_TAG_META: Record<CustomerSoftTag, CustomerSoftTagMeta> = {
     id: 'new',
     label: 'New',
     description: 'New customer',
-    className: 'bg-info-muted text-info ring-1 ring-info/30',
+    className: 'bg-info-muted text-info ring-1 ring-info/30 dark:ring-info/50',
   },
   regular: {
     id: 'regular',
     label: 'Regular',
     description: 'Regular customer',
-    className: 'bg-success-muted text-success ring-1 ring-success/30',
+    className: 'bg-success-muted text-success ring-1 ring-success/30 dark:ring-success/50',
   },
   at_risk: {
     id: 'at_risk',
     label: 'At risk',
     description: 'At-risk customer',
-    className: 'bg-warning-muted text-warning ring-1 ring-warning/30',
+    className: 'bg-warning-muted text-warning ring-1 ring-warning/30 dark:ring-warning/50',
   },
 };
 

@@ -17,7 +17,7 @@ export function PartnerSettingsView() {
   const stats = analyticsQ.data;
 
   return (
-    <PartnerContent className="space-y-5">
+    <PartnerContent className="space-y-4">
       <PartnerPageHeader title="Settings" description="Shop profile and operational preferences." />
 
       <PartnerPanel title="Shop profile" bodyClassName="px-4 py-4">

@@ -233,7 +233,7 @@ export function PartnerCustomerDeskView({ embedded = false }: PartnerCustomerDes
   const body = (
     <>
       <PartnerOpsSurface variant="default" className="mx-auto w-full max-w-3xl space-y-4">
-        <div className="grid gap-4 rounded-3xl border border-border bg-muted/40 p-4">
+        <div className="grid gap-4 rounded-xl border border-border bg-muted/40 p-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold">Search customer</p>
@@ -256,7 +256,7 @@ export function PartnerCustomerDeskView({ embedded = false }: PartnerCustomerDes
         />
 
         {lookup && previewQ.isFetching && !previewQ.data ? (
-          <Skeleton className="h-40 w-full rounded-3xl" data-testid="partner-desk-snapshot-loading" />
+          <Skeleton className="h-40 w-full rounded-xl" data-testid="partner-desk-snapshot-loading" />
         ) : null}
 
         {lookup && profile ? (
@@ -273,14 +273,14 @@ export function PartnerCustomerDeskView({ embedded = false }: PartnerCustomerDes
               }
             />
             <div className="flex flex-wrap gap-2" role="group" aria-label="Customer actions">
-              <Button asChild size="sm" className="min-h-[44px] gap-1.5">
+              <Button asChild size="sm" className="h-9 min-h-9 gap-1.5">
                 <Link href={newOrderHref}>
                   <Plus className="h-3.5 w-3.5" aria-hidden />
                   New order
                 </Link>
               </Button>
               {ordersHref ? (
-                <Button asChild variant="secondary" size="sm" className="min-h-[44px] gap-1.5">
+                <Button asChild variant="secondary" size="sm" className="h-9 min-h-9 gap-1.5">
                   <Link href={ordersHref}>
                     <ListOrdered className="h-3.5 w-3.5" aria-hidden />
                     View orders
@@ -351,11 +351,11 @@ export function PartnerCustomerDeskView({ embedded = false }: PartnerCustomerDes
   );
 
   if (embedded) {
-    return <div className="space-y-5">{body}</div>;
+    return <div className="space-y-4">{body}</div>;
   }
 
   return (
-    <PartnerContent className="space-y-5">
+    <PartnerContent className="space-y-4">
       <PartnerPageHeader
         title="Customer Desk"
         description="Search by name or phone — see only your laundry’s past orders, place doorstep or walk-in."

@@ -8,7 +8,19 @@ import {
 
 jest.mock('next/link', () => ({
   __esModule: true,
-  default: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
+  default: ({
+    children,
+    href,
+    className,
+  }: {
+    children: React.ReactNode;
+    href: string;
+    className?: string;
+  }) => (
+    <a href={href} className={className}>
+      {children}
+    </a>
+  ),
 }));
 
 describe('Partner ops-visual primitives', () => {
@@ -26,6 +38,9 @@ describe('Partner ops-visual primitives', () => {
       'href',
       '/partner/orders?chip=unpaid',
     );
+    const link = screen.getByRole('link', { name: /Unpaid orders/i });
+    expect(link).toHaveClass('rounded-xl', 'p-3', 'sm:p-4');
+    expect(screen.getByText('4')).toHaveClass('text-lg');
   });
 
   it('shows trend empty state when all values are zero', () => {

@@ -57,6 +57,29 @@ class StaffResponse(BaseModel):
     role: PartnerStaffRole
 
 
+class PartnerAnalyticsPeriodChartPoint(BaseModel):
+    bucket_label: str
+    revenue_gross_inr: str = Field(description="Delivered gross in bucket")
+    partner_net_inr: str = Field(description="Gross minus snapshotted commission in bucket")
+
+
+class PartnerAnalyticsPeriodScope(BaseModel):
+    """Period-scoped money block for Revenue view (?period= query param)."""
+
+    period: str = Field(description="today | week | month | year | custom")
+    period_label_ist: str
+    date_from: str | None = Field(default=None, description="YYYY-MM-DD when period=custom")
+    date_to: str | None = Field(default=None, description="YYYY-MM-DD when period=custom")
+    revenue_gross_inr: str
+    commission_inr: str
+    partner_net_inr: str
+    revenue_walk_in_inr: str
+    revenue_doorstep_inr: str
+    growth_pct: str | None = Field(description="vs prior period; null when prior gross was zero")
+    prior_period_label: str
+    chart_series: list[PartnerAnalyticsPeriodChartPoint]
+
+
 class PartnerAnalyticsResponse(BaseModel):
     """Partner dashboard KPIs + money intelligence (Owner Command Center P3).
 
@@ -112,6 +135,10 @@ class PartnerAnalyticsResponse(BaseModel):
     revenue_doorstep_week_inr: str = Field(default="0.00")
     revenue_walk_in_month_inr: str = Field(default="0.00")
     revenue_doorstep_month_inr: str = Field(default="0.00")
+    period_scope: PartnerAnalyticsPeriodScope | None = Field(
+        default=None,
+        description="Present when ?period= is passed — gross/net/walk-in split for that IST window",
+    )
 
 
 class PartnerAnalyticsOverviewChartPoint(BaseModel):
@@ -253,6 +280,45 @@ class PartnerCustomerCreateRequest(BaseModel):
         return validate_strict_indian_mobile(value)
 
 
+class PartnerCustomerUpdateRequest(BaseModel):
+    """Partner-scoped customer profile edit — phone is immutable (not in body)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=200)
+    email: str | None = Field(default=None, max_length=320)
+    gender: str | None = Field(default=None, max_length=10)
+    notes: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("gender")
+    @classmethod
+    def validate_gender(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        normalized = value.strip().lower()
+        if normalized not in ("male", "female"):
+            raise ValueError("gender must be male or female")
+        return normalized
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        trimmed = value.strip()
+        return trimmed.lower() if trimmed else None
+
+
+class PartnerCustomerUpdateResponse(BaseModel):
+    user_id: UUID
+    name: str
+    phone: str | None
+    email: str | None = None
+    gender: str | None = None
+    notes: str | None = None
+    registered: bool = True
+
+
 class PartnerOrderResponse(BaseModel):
     """Order row for partner dashboard (includes customer name)."""
 
@@ -277,6 +343,8 @@ class PartnerOrderResponse(BaseModel):
     cgst_inr: Decimal
     sgst_inr: Decimal
     total_inr: Decimal
+    paid_inr: str = Field(description="Captured payments + COD advance (decimal string)")
+    pending_inr: str = Field(description="max(0, total_inr - paid_inr) (decimal string)")
     payment_status: str
     customer_name: str
     customer_phone: str | None = None

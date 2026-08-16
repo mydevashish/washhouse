@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { formatInr } from '@/features/discover/detail/order-pricing';
+import { PARTNER_CHECKOUT_CTA } from '@/features/partner/lib/partner-compact';
 import { cn } from '@/lib/utils';
 
 export type PartnerDeliveryType = 'Pickup' | 'Delivery' | 'Both' | 'Walk-in';
@@ -199,7 +200,7 @@ export function PartnerOrderCheckoutAside({
               <Button
                 type={onSubmit ? 'button' : 'submit'}
                 size="lg"
-                className="min-h-12 w-full text-base"
+                className={cn(PARTNER_CHECKOUT_CTA, 'w-full text-base')}
                 disabled={submitDisabled || submitPending}
                 aria-busy={submitPending}
                 data-testid="partner-create-order-submit"
@@ -220,7 +221,7 @@ export function PartnerOrderCheckoutAside({
           ) : null}
         </CardHeader>
         <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto">
-          <div className="space-y-3 rounded-3xl bg-muted/40 p-4">
+          <div className="space-y-3 rounded-xl bg-muted/40 p-4">
             <div>
               <Label htmlFor="po-coupon">Coupon discount</Label>
               <div className="mt-2 flex gap-2">
@@ -402,7 +403,7 @@ export function PartnerOrderCheckoutAside({
             </div>
           </div>
 
-          <div className="space-y-3 rounded-3xl bg-muted/10 p-4">
+          <div className="space-y-3 rounded-xl bg-muted/10 p-4">
             <div className="flex flex-wrap gap-3 text-sm">
               <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
                 {totals.serviceCount} service{totals.serviceCount === 1 ? '' : 's'}
@@ -420,7 +421,7 @@ export function PartnerOrderCheckoutAside({
           </div>
         </CardContent>
         <CardFooter className="shrink-0 flex-col gap-3 border-t border-border bg-card">
-          <div className="flex w-full items-center justify-between rounded-3xl bg-muted p-4 text-base font-semibold">
+          <div className="flex w-full items-center justify-between rounded-xl bg-muted p-4 text-base font-semibold">
             <span>Grand total</span>
             <span className="tabular-nums">{formatInr(totals.grandTotal)}</span>
           </div>

@@ -1,23 +1,44 @@
 'use client';
 
-import { Loader2, Shirt } from 'lucide-react';
+import { Loader2, Search, Shirt } from 'lucide-react';
+import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { GarmentCatalogGrid } from '@/features/partner/garment-catalog/components/garment-catalog-grid';
 import { GarmentCatalogTable } from '@/features/partner/garment-catalog/components/garment-catalog-table';
+import type { GarmentCatalogCategoryFilter } from '@/features/partner/garment-catalog/hooks/use-partner-garment-catalog-list';
 import { PartnerOpsSurface } from '@/features/partner/components/ops-visual';
 import { PartnerHubWorkspacePagination } from '@/features/partner/orders-hub/workspace/partner-hub-workspace-pagination';
 import { partnerHubPaginationFromList } from '@/features/partner/orders-hub/workspace/partner-hub-workspace-pagination';
+import { GARMENT_CATEGORIES } from '@/services/partner-garment-catalog';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import type { GarmentCatalogItem, PaginatedGarmentCatalog } from '@/services/partner-garment-catalog';
+
+function filteredEmptyCopy(category: GarmentCatalogCategoryFilter, search: string) {
+  const trimmed = search.trim();
+  if (trimmed) {
+    return {
+      title: 'No matches',
+      description: `No garments match “${trimmed}”. Try another search or clear filters.`,
+    };
+  }
+  const label = GARMENT_CATEGORIES.find((c) => c.id === category)?.label ?? category;
+  return {
+    title: `No garments in ${label}`,
+    description: 'Try another category or upload garments for this category.',
+  };
+}
 
 export function GarmentCatalogList({
   data,
   isLoading,
+  isPending,
   isError,
   error,
+  category,
+  search,
   togglingId,
   onRetry,
   onUpload,
@@ -31,8 +52,11 @@ export function GarmentCatalogList({
 }: {
   data?: PaginatedGarmentCatalog;
   isLoading: boolean;
+  isPending?: boolean;
   isError: boolean;
   error: unknown;
+  category: GarmentCatalogCategoryFilter;
+  search: string;
   togglingId?: string | null;
   onRetry: () => void;
   onUpload: () => void;
@@ -44,6 +68,19 @@ export function GarmentCatalogList({
   onToggleSelect: (id: string) => void;
   onToggleSelectAll: (checked: boolean, pageIds: string[]) => void;
 }) {
+  const items = data?.items ?? [];
+  const totalRecords = data?.total_records ?? 0;
+  const showInitialLoading = (isPending || isLoading) && !data;
+  const hasActiveFilter = category !== 'all' || search.trim().length > 0;
+  const isFilteredEmpty = !showInitialLoading && items.length === 0 && hasActiveFilter;
+  const isStalePageEmpty = !showInitialLoading && items.length === 0 && totalRecords > 0 && !hasActiveFilter;
+
+  useEffect(() => {
+    if (isStalePageEmpty && data && data.page > 1) {
+      onPageChange(1);
+    }
+  }, [isStalePageEmpty, data, onPageChange]);
+
   if (isError) {
     return (
       <QueryErrorState
@@ -54,7 +91,7 @@ export function GarmentCatalogList({
     );
   }
 
-  if (isLoading && !data) {
+  if (showInitialLoading) {
     return (
       <PartnerOpsSurface className="flex min-h-[12rem] items-center justify-center" variant="flush">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-label="Loading catalog" />
@@ -62,9 +99,24 @@ export function GarmentCatalogList({
     );
   }
 
-  const items = data?.items ?? [];
+  if (isFilteredEmpty) {
+    const copy = filteredEmptyCopy(category, search);
+    return (
+      <div className="space-y-3" data-testid="garment-catalog-filtered-empty">
+        <EmptyState icon={Search} title={copy.title} description={copy.description} />
+      </div>
+    );
+  }
 
-  if (!isLoading && items.length === 0) {
+  if (isStalePageEmpty) {
+    return (
+      <PartnerOpsSurface className="flex min-h-[12rem] items-center justify-center" variant="flush">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-label="Loading catalog" />
+      </PartnerOpsSurface>
+    );
+  }
+
+  if (items.length === 0) {
     return (
       <div className="space-y-3" data-testid="garment-catalog-empty">
         <EmptyState
@@ -74,7 +126,7 @@ export function GarmentCatalogList({
           secondaryAction={{ label: 'Upload rate card', onClick: onUpload }}
         />
         <div className="flex justify-center">
-          <Button type="button" variant="outline" onClick={onDownloadTemplate}>
+          <Button type="button" variant="outline" className="h-9" onClick={onDownloadTemplate}>
             Download template
           </Button>
         </div>

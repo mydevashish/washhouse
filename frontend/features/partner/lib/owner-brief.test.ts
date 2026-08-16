@@ -12,6 +12,8 @@ function order(partial: Partial<PartnerOrder> & Pick<PartnerOrder, 'id' | 'statu
     cgst_inr: '0',
     sgst_inr: '0',
     total_inr: '100',
+    paid_inr: '100',
+    pending_inr: '0',
     payment_status: 'paid',
     customer_name: 'Riya',
     items: [],

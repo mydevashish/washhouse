@@ -15,6 +15,8 @@ import {
   telHref,
   whatsappHref,
 } from '@/features/partner/lib/owner-customer-crm';
+import { PARTNER_BTN, PARTNER_CARD, PARTNER_SURFACE_GAP } from '@/features/partner/lib/partner-compact';
+import { PartnerCustomerEditTrigger } from '@/features/partner/components/owner/partner-customer-edit-sheet';
 import { rememberRecentCustomer } from '@/features/partner/lib/partner-recent-customers';
 import { cn } from '@/lib/utils';
 import type { CustomerInsightRow } from '@/services/customer-insights';
@@ -35,12 +37,12 @@ export function OwnerCustomerCard({ customer }: { customer: CustomerInsightRow }
 
   return (
     <article
-      className="flex flex-col gap-3 rounded-3xl border border-border/70 bg-card p-4 shadow-sm"
+      className={cn('flex flex-col shadow-sm', PARTNER_CARD, PARTNER_SURFACE_GAP)}
       data-testid="owner-customer-card"
     >
-      <div className="flex items-start gap-3">
+      <div className={cn('flex items-start', PARTNER_SURFACE_GAP)}>
         <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold tracking-wide text-foreground ring-1 ring-border/60"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold tracking-wide text-foreground ring-1 ring-border/60"
           aria-hidden
         >
           {customerInitials(customer.name)}
@@ -92,39 +94,39 @@ export function OwnerCustomerCard({ customer }: { customer: CustomerInsightRow }
 
       <div className="flex flex-wrap gap-2" role="group" aria-label={`Actions for ${customer.name}`}>
         {call ? (
-          <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
+          <Button asChild variant="outline" size="sm" className={cn(PARTNER_BTN, 'gap-1.5')}>
             <a href={call}>
               <Phone className="h-3.5 w-3.5" aria-hidden />
               Call
             </a>
           </Button>
         ) : (
-          <Button type="button" variant="outline" size="sm" className="min-h-[44px] gap-1.5" disabled>
+          <Button type="button" variant="outline" size="sm" className={cn(PARTNER_BTN, 'gap-1.5')} disabled>
             <Phone className="h-3.5 w-3.5" aria-hidden />
             Call
           </Button>
         )}
         {wa ? (
-          <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
+          <Button asChild variant="outline" size="sm" className={cn(PARTNER_BTN, 'gap-1.5')}>
             <a href={wa} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="h-3.5 w-3.5" aria-hidden />
               WhatsApp
             </a>
           </Button>
         ) : (
-          <Button type="button" variant="outline" size="sm" className="min-h-[44px] gap-1.5" disabled>
+          <Button type="button" variant="outline" size="sm" className={cn(PARTNER_BTN, 'gap-1.5')} disabled>
             <MessageCircle className="h-3.5 w-3.5" aria-hidden />
             WhatsApp
           </Button>
         )}
-        <Button asChild variant="default" size="sm" className="min-h-[44px] gap-1.5">
+        <Button asChild variant="default" size="sm" className={cn(PARTNER_BTN, 'gap-1.5')}>
           <Link href={newOrderHref} onClick={remember} aria-label={`New order for ${customer.name}`}>
             <Plus className="h-3.5 w-3.5" aria-hidden />
             New order
           </Link>
         </Button>
         {ordersHref ? (
-          <Button asChild variant="secondary" size="sm" className="min-h-[44px] gap-1.5">
+          <Button asChild variant="secondary" size="sm" className={cn(PARTNER_BTN, 'gap-1.5')}>
             <Link
               href={ordersHref}
               onClick={remember}
@@ -135,12 +137,13 @@ export function OwnerCustomerCard({ customer }: { customer: CustomerInsightRow }
             </Link>
           </Button>
         ) : null}
-        <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
+        <Button asChild variant="outline" size="sm" className={cn(PARTNER_BTN, 'gap-1.5')}>
           <Link href={deskHref} onClick={remember} aria-label={`Open desk for ${customer.name}`}>
             <Headset className="h-3.5 w-3.5" aria-hidden />
             Desk
           </Link>
         </Button>
+        <PartnerCustomerEditTrigger customer={customer} />
       </div>
     </article>
   );

@@ -55,7 +55,7 @@ export const PartnerDashboardCreateSuccessPanel = forwardRef<
     <section
       ref={ref}
       className={cn(
-        'rounded-3xl border border-success/30 bg-success-muted/30 p-5 shadow-sm sm:p-6',
+        'rounded-xl border border-success/30 bg-success-muted/30 p-5 shadow-sm sm:p-4',
         !reduceMotion && 'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500',
         className,
       )}
@@ -63,7 +63,7 @@ export const PartnerDashboardCreateSuccessPanel = forwardRef<
       data-testid="partner-dashboard-create-success"
     >
       <div
-        className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between"
+        className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"
         role="status"
         aria-live="polite"
         aria-atomic="true"

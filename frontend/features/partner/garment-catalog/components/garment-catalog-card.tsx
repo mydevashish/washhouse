@@ -28,7 +28,7 @@ export function GarmentCatalogCard({
 
   return (
     <article
-      className="flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-background shadow-sm"
+      className="flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-sm"
       data-testid={`garment-catalog-card-${item.garment_code}`}
     >
       <LazyMount

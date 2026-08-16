@@ -61,7 +61,7 @@ export function PartnerDashboardOwnerBriefStrip() {
   );
 
   if (loading) {
-    return <Skeleton className="h-16 w-full rounded-3xl" aria-hidden />;
+    return <Skeleton className="h-16 w-full rounded-xl" aria-hidden />;
   }
 
   if (items.length === 0) {

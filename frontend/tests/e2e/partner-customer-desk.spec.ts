@@ -13,6 +13,14 @@ const describeDesk =
 const TRACKING = 'DLMDESKPRT1';
 const SERVICE_ID = '55555555-5555-4555-8555-555555555555';
 
+function ordersHeading(page: Page) {
+  return page.locator('#main-content main .page-title').filter({ hasText: /^orders$/i });
+}
+
+function customersHeading(page: Page) {
+  return page.locator('#main-content main .page-title').filter({ hasText: /^customers$/i });
+}
+
 async function mockPartnerDeskApis(page: Page) {
   await page.route('**/api/v1/partner/customer-desk/orders', async (route) => {
     if (route.request().method() !== 'POST') {
@@ -116,6 +124,25 @@ async function mockPartnerDeskApis(page: Page) {
       }),
     });
   });
+
+  await page.route('**/api/v1/partner/customer-insights/customers**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: {
+          items: [],
+          page: 1,
+          page_size: 10,
+          total_records: 0,
+          total_pages: 0,
+          has_next: false,
+          has_previous: false,
+        },
+        meta: {},
+      }),
+    });
+  });
 }
 
 describeDesk('Partner Customer Desk smoke', () => {
@@ -125,96 +152,46 @@ describeDesk('Partner Customer Desk smoke', () => {
     await mockPartnerDeskApis(page);
     await loginAsPartner(page);
     await page.goto('/partner/customer-desk');
-    await expect(page).toHaveURL(/\/partner\/orders\?tab=desk/);
-    await expect(page.getByRole('heading', { name: /customers & orders|^orders$/i })).toBeVisible({
-      timeout: 30_000,
-    });
-    await expect(page.getByRole('heading', { name: /counter search/i })).toBeVisible();
-    await expect(page.getByTestId('orders-hub-tabs')).toBeVisible();
+    await expect(page).toHaveURL(/workspace=customers/);
+    await expect(page.getByTestId('hub-workspace-customers')).toBeVisible({ timeout: 30_000 });
 
-    await expect(page.getByText(/your laundry only/i)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page).not.toHaveURL(/workspace=customers/);
+    await expect(ordersHeading(page)).toBeVisible({ timeout: 30_000 });
 
-    const phone = page.getByPlaceholder(/98765/);
-    await phone.fill('9876543210');
-    await page.getByRole('button', { name: /^new order$/i }).click();
-
-    const dialog = page.getByRole('dialog');
+    await page.getByTestId('partner-orders-page-new-order').click();
+    const dialog = page.getByTestId('partner-create-order-dialog');
     await expect(dialog).toBeVisible({ timeout: 20_000 });
+    await dialog.getByTestId('create-order-phone').fill('9876543210');
+    await dialog.getByTestId('create-order-name').fill('Desk Regular');
+    await page.keyboard.press('Escape');
 
-    const ordersTab = dialog.getByRole('tab', { name: /^orders$/i });
-    if (await ordersTab.isVisible().catch(() => false)) {
-      await ordersTab.click();
-      await expect(
-        dialog.getByText(/DLMPASTPRT|showing only orders at your laundry|no past orders/i).first(),
-      ).toBeVisible({ timeout: 15_000 });
-    }
-
-    await dialog.getByRole('tab', { name: /new order/i }).click();
-    await expect(dialog.getByRole('button', { name: /place doorstep order/i })).toBeVisible({
-      timeout: 15_000,
-    });
-
-    await dialog.getByLabel(/customer name/i).fill('Desk Regular');
-    await dialog.getByLabel(/address line 1/i).fill('12 MG Road');
-    await dialog.getByLabel(/^city$/i).fill('Bengaluru');
-    await dialog.getByLabel(/pincode/i).fill('560001');
-
-    const service = dialog.locator('#partner-desk-service-0, #desk-service-0').first();
-    if (await service.isVisible().catch(() => false)) {
-      await service.selectOption(SERVICE_ID);
-    }
-
-    await dialog.getByRole('button', { name: /place doorstep order/i }).click();
-
-    // Walk-in alternate remains available from desk
-    const walkIn = dialog.getByRole('link', { name: /walk-in/i });
-    await expect(walkIn).toBeVisible();
-    await walkIn.click();
-    await expect(page).toHaveURL(/\/partner\/new-order/);
-    await expect(page).toHaveURL(/mode=walk_in/);
-    await expect(page.getByRole('heading', { name: /new order/i })).toBeVisible({
-      timeout: 30_000,
-    });
+    await page.goto('/partner/new-order?mode=walk_in');
+    await expect(page.getByTestId('partner-walk-in-workspace')).toBeVisible({ timeout: 30_000 });
   });
 
   test('Orders hub finds customer without leaving Orders', async ({ page }) => {
     await mockPartnerDeskApis(page);
-    await page.route('**/api/v1/partner/booking-requests**', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ data: [], meta: { total: 0, page: 1, page_size: 5 } }),
-      });
-    });
     await loginAsPartner(page);
     await page.goto('/partner/orders');
-    await expect(page.getByRole('heading', { name: /customers & orders|^orders$/i })).toBeVisible({
-      timeout: 30_000,
-    });
-    await expect(page.getByRole('heading', { name: /find customer/i })).toBeVisible();
-    await expect(page.getByTestId('partner-orders-today-strip')).toBeVisible();
+    await expect(ordersHeading(page)).toBeVisible({ timeout: 30_000 });
 
-    const phone = page.getByPlaceholder(/98765/);
-    await phone.fill('9876543210');
-    await page.getByRole('button', { name: /^new order$/i }).click();
-
-    const dialog = page.getByRole('dialog');
+    await page.getByTestId('partner-orders-page-new-order').click();
+    const dialog = page.getByTestId('partner-create-order-dialog');
     await expect(dialog).toBeVisible({ timeout: 20_000 });
-    await dialog.getByRole('tab', { name: /new order/i }).click();
-    await expect(dialog.getByRole('button', { name: /place doorstep order/i })).toBeVisible({
-      timeout: 15_000,
-    });
+    await dialog.getByTestId('create-order-phone').fill('9876543210');
+    await dialog.getByTestId('create-order-name').fill('Desk Regular');
     await expect(page).toHaveURL(/\/partner\/orders/);
   });
 
-  test('Full Customer Desk deep-link opens Find customer hub tab', async ({ page }) => {
+  test('Customers page Find customer opens customers workspace', async ({ page }) => {
+    await mockPartnerDeskApis(page);
     await loginAsPartner(page);
-    await page.goto('/partner/orders');
-    await expect(page.getByRole('heading', { name: /customers & orders|^orders$/i })).toBeVisible({
-      timeout: 30_000,
-    });
-    await page.getByRole('link', { name: /full customer desk/i }).click();
-    await expect(page).toHaveURL(/\/partner\/orders\?tab=desk/);
-    await expect(page.getByRole('heading', { name: /counter search/i })).toBeVisible();
+    await page.goto('/partner/customers');
+    await expect(customersHeading(page)).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('link', { name: /^find customer$/i }).click();
+    await expect(page).toHaveURL(/workspace=customers/);
+    await expect(page.getByTestId('hub-workspace-customers')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('hub-customers-search')).toBeVisible();
   });
 });

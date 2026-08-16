@@ -7,9 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  formatPhoneInputDisplay,
+  getPartnerCustomerSearchError,
   isValidIndianMobileE164,
   normalizeIndianPhoneInput,
-} from '@/features/partner/customer-desk/phone';
+  PARTNER_PHONE_INLINE_ERROR,
+} from '@/features/partner/lib/partner-phone-schema';
 import { PhoneNumericKeypad } from '@/features/partner-shop-floor/components/phone-numeric-keypad';
 
 const UUID_RE =
@@ -35,18 +38,26 @@ function classifyQuery(
   raw: string,
 ): PartnerDeskSearchSubmit | { kind: 'error'; message: string } {
   const trimmed = raw.trim();
-  if (trimmed.length < 2) {
+  if (!trimmed) {
     return { kind: 'error', message: 'Enter at least 2 characters (name or phone)' };
   }
   if (UUID_RE.test(trimmed)) {
     return { kind: 'user_id', user_id: trimmed };
   }
+
   const digits = trimmed.replace(/\D/g, '');
-  const maybePhone = normalizeIndianPhoneInput(trimmed);
-  const fromDigits = normalizeIndianPhoneInput(digits);
-  if (isValidIndianMobileE164(maybePhone) || isValidIndianMobileE164(fromDigits)) {
-    const phone = isValidIndianMobileE164(maybePhone) ? maybePhone : fromDigits;
-    return { kind: 'phone', phone };
+  const looksLikePhone = digits.length > 0 && /^[\d\s+\-()+ ]+$/.test(trimmed);
+
+  if (looksLikePhone) {
+    const normalized = normalizeIndianPhoneInput(trimmed);
+    if (isValidIndianMobileE164(normalized)) {
+      return { kind: 'phone', phone: normalized };
+    }
+    return { kind: 'error', message: PARTNER_PHONE_INLINE_ERROR };
+  }
+
+  if (trimmed.length < 2) {
+    return { kind: 'error', message: 'Enter at least 2 characters (name or phone)' };
   }
   return { kind: 'query', q: trimmed };
 }
@@ -66,6 +77,8 @@ export function PartnerCustomerDeskSearch({
   useEffect(() => {
     if (initialQuery) setRaw(initialQuery);
   }, [initialQuery]);
+
+  const inlineError = error ?? getPartnerCustomerSearchError(raw);
 
   function parse(): PartnerDeskSearchSubmit | null {
     const classified = classifyQuery(raw);
@@ -87,6 +100,11 @@ export function PartnerCustomerDeskSearch({
     const value = parse();
     if (value) onOpenDesk?.(value);
   }
+
+  const digitsOnly = /^[\d\s+\-()+ ]+$/.test(raw.trim());
+  const displayValue = digitsOnly && raw.replace(/\D/g, '').length > 0
+    ? formatPhoneInputDisplay(raw)
+    : raw;
 
   return (
     <form
@@ -123,14 +141,17 @@ export function PartnerCustomerDeskSearch({
           autoComplete="off"
           autoFocus={!compact}
           placeholder="Priya or 98765 43210"
-          value={raw}
+          value={displayValue}
           onChange={(ev) => {
-            setRaw(ev.target.value);
+            const next = ev.target.value;
+            const nextDigits = next.replace(/\D/g, '');
+            const looksPhone = nextDigits.length > 0 && /^[\d\s+\-()+ ]+$/.test(next);
+            setRaw(looksPhone ? formatPhoneInputDisplay(next) : next);
             if (error) setError(null);
           }}
-          aria-invalid={Boolean(error)}
+          aria-invalid={Boolean(inlineError)}
           aria-describedby={
-            error
+            inlineError
               ? 'partner-customer-desk-search-error'
               : 'partner-customer-desk-search-hint'
           }
@@ -145,14 +166,14 @@ export function PartnerCustomerDeskSearch({
             ? 'Name or Indian mobile — exact phone opens history.'
             : 'Search by name or Indian mobile. Exact phone opens the desk immediately.'}
         </p>
-        {error ? (
+        {inlineError ? (
           <p
             id="partner-customer-desk-search-error"
             className="text-sm text-danger"
             role="alert"
             aria-live="polite"
           >
-            {error}
+            {inlineError}
           </p>
         ) : null}
       </div>
@@ -160,9 +181,9 @@ export function PartnerCustomerDeskSearch({
       {keypadOpen ? (
         <div id="partner-desk-phone-keypad">
           <PhoneNumericKeypad
-            value={raw}
+            value={displayValue}
             onChange={(next) => {
-              setRaw(next);
+              setRaw(formatPhoneInputDisplay(next));
               if (error) setError(null);
             }}
           />

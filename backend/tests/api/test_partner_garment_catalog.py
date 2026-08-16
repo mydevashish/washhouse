@@ -312,4 +312,38 @@ async def test_download_template(
     resp = await client.get("/api/v1/partner/garment-catalog/template", headers=headers)
     assert resp.status_code == 200
     assert "spreadsheetml" in resp.headers.get("content-type", "")
+    disposition = resp.headers.get("content-disposition", "")
+    assert "attachment" in disposition.lower()
+    assert "garment-catalog-template.xlsx" in disposition
     assert len(resp.content) > 100
+
+
+async def test_bulk_set_visible(
+    garment_catalog_client: tuple[AsyncClient, AsyncSession],
+) -> None:
+    client, session = garment_catalog_client
+    _, laundry, token = await _seed_partner(session)
+    item_visible = await _seed_garment(session, laundry, code="TF")
+    hidden = LaundryGarmentItem(
+        laundry_id=laundry.id,
+        category=GarmentCategory.men,
+        name="Jeans",
+        garment_code="Je",
+        is_visible=False,
+    )
+    session.add(hidden)
+    await session.flush()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = await client.post(
+        "/api/v1/partner/garment-catalog/bulk-visible",
+        headers=headers,
+        json={"ids": [str(item_visible.id), str(hidden.id)]},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["data"]["updated_count"] == 1
+
+    listing = await client.get("/api/v1/partner/garment-catalog", headers=headers)
+    items = {row["garment_code"]: row["is_visible"] for row in listing.json()["data"]["items"]}
+    assert items["TF"] is True
+    assert items["Je"] is True

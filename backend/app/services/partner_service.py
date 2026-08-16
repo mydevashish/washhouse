@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+import re
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -62,14 +63,21 @@ class PartnerService:
             raise NotFoundError("Partner laundry not found")
         return [laundry.id for laundry in laundries]
 
-    async def empty_analytics_summary(self, partner_user_id: UUID) -> dict:
+    async def empty_analytics_summary(
+        self,
+        partner_user_id: UUID,
+        *,
+        period_key: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> dict:
         """Dashboard-safe zeros when partner has no laundry yet (e.g. pending onboarding)."""
         from app.repositories.user import UserRepository
 
         user = await UserRepository(self._session).get_by_id(partner_user_id)
         name = user.full_name if user else "Your laundry"
         money = empty_money_fields()
-        return {
+        payload = {
             "laundry_id": None,
             "laundry_name": name,
             "avg_rating": "0.00",
@@ -87,6 +95,50 @@ class PartnerService:
             "revenue_this_month_inr": money_str(0),
             "revenue_week_inr": money_str(0),
             **money,
+        }
+        if period_key is not None:
+            payload["period_scope"] = self._empty_period_scope(period_key, date_from=date_from, date_to=date_to)
+        return payload
+
+    def _empty_period_scope(
+        self,
+        period_key: str,
+        *,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> dict:
+        from app.services.partner_analytics_period import (
+            parse_partner_summary_period,
+            resolve_partner_summary_period,
+        )
+
+        period = parse_partner_summary_period(period_key)
+        bounds = resolve_partner_summary_period(
+            period,
+            date_from=date_from,
+            date_to=date_to,
+        )
+        zero = money_str(0)
+        return {
+            "period": period.value,
+            "period_label_ist": bounds.period_label_ist,
+            "date_from": date_from.isoformat() if date_from else None,
+            "date_to": date_to.isoformat() if date_to else None,
+            "revenue_gross_inr": zero,
+            "commission_inr": zero,
+            "partner_net_inr": zero,
+            "revenue_walk_in_inr": zero,
+            "revenue_doorstep_inr": zero,
+            "growth_pct": None,
+            "prior_period_label": bounds.prior_period_label,
+            "chart_series": [
+                {
+                    "bucket_label": b.bucket_label,
+                    "revenue_gross_inr": zero,
+                    "partner_net_inr": zero,
+                }
+                for b in bounds.chart_buckets
+            ],
         }
 
     async def _require_owned_order(self, partner_user_id: UUID, order_id: UUID) -> Order:
@@ -206,7 +258,138 @@ class PartnerService:
         row = result.one()
         return Decimal(str(row[0] or 0)), Decimal(str(row[1] or 0))
 
-    async def analytics_summary(self, partner_user_id: UUID) -> dict:
+    async def _gross_commission_by_bucket_index(
+        self,
+        laundry_id: UUID,
+        buckets: tuple,
+        *,
+        time_col,
+    ) -> dict[int, tuple[Decimal, Decimal]]:
+        """Delivered gross + commission per chart bucket index."""
+        whens: list[tuple] = []
+        live = []
+        for i, bucket in enumerate(buckets):
+            if bucket.bucket_start_utc >= bucket.bucket_end_utc:
+                continue
+            live.append(bucket)
+            whens.append(
+                (
+                    and_(time_col >= bucket.bucket_start_utc, time_col < bucket.bucket_end_utc),
+                    i,
+                ),
+            )
+        zeros = {i: (Decimal("0"), Decimal("0")) for i in range(len(buckets))}
+        if not whens:
+            return zeros
+        idx_expr = case(*whens)
+        window_start = min(b.bucket_start_utc for b in live)
+        window_end = max(b.bucket_end_utc for b in live)
+        rows = await self._session.execute(
+            select(
+                idx_expr.label("idx"),
+                func.coalesce(func.sum(Order.total_inr), 0),
+                func.coalesce(func.sum(_commission_expr()), 0),
+            )
+            .where(
+                Order.laundry_id == laundry_id,
+                Order.deleted_at.is_(None),
+                Order.status == OrderStatus.delivered,
+                time_col >= window_start,
+                time_col < window_end,
+                idx_expr.isnot(None),
+            )
+            .group_by(idx_expr),
+        )
+        for idx, gross, commission in rows.all():
+            if idx is None:
+                continue
+            zeros[int(idx)] = (Decimal(str(gross or 0)), Decimal(str(commission or 0)))
+        return zeros
+
+    async def _build_period_scope(
+        self,
+        laundry_id: UUID,
+        period_key: str,
+        *,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> dict:
+        from app.services.partner_analytics_period import (
+            parse_partner_summary_period,
+            resolve_partner_summary_period,
+        )
+
+        period = parse_partner_summary_period(period_key)
+        bounds = resolve_partner_summary_period(
+            period,
+            date_from=date_from,
+            date_to=date_to,
+        )
+        start = bounds.period_start_utc
+        end = bounds.period_end_utc
+        prev_start = bounds.previous_start_utc
+        prev_end = bounds.previous_end_utc
+        time_col = Order.updated_at
+
+        revenue_gross, commission = await self._delivered_gross_commission(
+            laundry_id, time_col=time_col, start=start, end=end,
+        )
+        prev_gross, _ = await self._delivered_gross_commission(
+            laundry_id, time_col=time_col, start=prev_start, end=prev_end,
+        )
+        walk_in, _ = await self._delivered_gross_commission(
+            laundry_id,
+            time_col=time_col,
+            start=start,
+            end=end,
+            order_source=OrderSource.walk_in,
+        )
+        doorstep, _ = await self._delivered_gross_commission(
+            laundry_id,
+            time_col=time_col,
+            start=start,
+            end=end,
+            exclude_walk_in=True,
+        )
+        bucket_money = await self._gross_commission_by_bucket_index(
+            laundry_id,
+            bounds.chart_buckets,
+            time_col=time_col,
+        )
+        chart_series = []
+        for i, bucket in enumerate(bounds.chart_buckets):
+            gross, comm = bucket_money.get(i, (Decimal("0"), Decimal("0")))
+            chart_series.append(
+                {
+                    "bucket_label": bucket.bucket_label,
+                    "revenue_gross_inr": money_str(gross),
+                    "partner_net_inr": money_str(partner_net(gross, comm)),
+                },
+            )
+
+        return {
+            "period": period.value,
+            "period_label_ist": bounds.period_label_ist,
+            "date_from": date_from.isoformat() if date_from else None,
+            "date_to": date_to.isoformat() if date_to else None,
+            "revenue_gross_inr": money_str(revenue_gross),
+            "commission_inr": money_str(commission),
+            "partner_net_inr": money_str(partner_net(revenue_gross, commission)),
+            "revenue_walk_in_inr": money_str(walk_in),
+            "revenue_doorstep_inr": money_str(doorstep),
+            "growth_pct": growth_pct_str(revenue_gross, prev_gross),
+            "prior_period_label": bounds.prior_period_label,
+            "chart_series": chart_series,
+        }
+
+    async def analytics_summary(
+        self,
+        partner_user_id: UUID,
+        *,
+        period_key: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> dict:
         laundry = await self._laundry_for_partner(partner_user_id)
         pending_statuses = (OrderStatus.confirmed, OrderStatus.pickup_assigned)
         in_progress = (
@@ -328,7 +511,7 @@ class PartnerService:
 
         effective_rate = await PlatformConfigService(self._session).resolve_commission_rate(laundry)
 
-        return {
+        payload = {
             "laundry_id": laundry.id,
             "laundry_name": laundry.name,
             "avg_rating": str(laundry.avg_rating.quantize(Decimal("0.01"))),
@@ -365,6 +548,14 @@ class PartnerService:
             "revenue_walk_in_month_inr": money_str(walk_month),
             "revenue_doorstep_month_inr": money_str(door_month),
         }
+        if period_key is not None:
+            payload["period_scope"] = await self._build_period_scope(
+                laundry.id,
+                period_key,
+                date_from=date_from,
+                date_to=date_to,
+            )
+        return payload
 
     async def empty_analytics_overview(self, partner_user_id: UUID, period_key: str) -> dict:
         """Zeros when partner has no laundry yet (matches empty_analytics_summary pattern)."""
@@ -1171,17 +1362,43 @@ class PartnerService:
             today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
             stmt = stmt.where(cast(Order.created_at, Date) == today)
 
+        if params.date_from is not None or params.date_to is not None:
+            from app.services.partner_order_date_filter import resolve_ist_created_at_bounds
+
+            if params.date_from is not None and params.date_to is not None:
+                if params.date_from > params.date_to:
+                    from app.core.exceptions import ValidationError
+
+                    raise ValidationError("date_from must be on or before date_to")
+
+            start_utc, end_utc = resolve_ist_created_at_bounds(params.date_from, params.date_to)
+            if start_utc is not None:
+                stmt = stmt.where(Order.created_at >= start_utc)
+            if end_utc is not None:
+                stmt = stmt.where(Order.created_at < end_utc)
+
         if params.search:
-            term = f"%{params.search}%"
-            stmt = stmt.where(
-                or_(
-                    Order.tracking_code.ilike(term),
-                    Order.customer_name.ilike(term),
-                    Order.customer_phone.ilike(term),
-                    User.full_name.ilike(term),
-                    Order.token_code.ilike(term),
-                ),
-            )
+            raw = params.search.strip()
+            term = f"%{raw}%"
+            search_clauses = [
+                Order.tracking_code.ilike(term),
+                Order.customer_name.ilike(term),
+                Order.customer_phone.ilike(term),
+                User.full_name.ilike(term),
+                Order.token_code.ilike(term),
+            ]
+            search_digits = re.sub(r"\D", "", raw)
+            if len(search_digits) >= 4:
+                digit_term = f"%{search_digits}%"
+                order_phone_digits = func.regexp_replace(Order.customer_phone, r"[^0-9]", "", "g")
+                user_phone_digits = func.regexp_replace(User.phone, r"[^0-9]", "", "g")
+                search_clauses.extend(
+                    [
+                        order_phone_digits.ilike(digit_term),
+                        user_phone_digits.ilike(digit_term),
+                    ],
+                )
+            stmt = stmt.where(or_(*search_clauses))
 
         sort_map = {
             "created_at": Order.created_at,

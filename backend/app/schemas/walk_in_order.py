@@ -29,23 +29,31 @@ class WalkInCustomerGender(str, Enum):
 
 
 class WalkInOrderLineItemRequest(BaseModel):
-    """Exactly one of ``service_id`` (legacy list) or ``catalog_item_id`` (Cloth Wall)."""
+    """Exactly one of ``service_id``, ``catalog_item_id``, or ``garment_item_id``."""
 
     model_config = ConfigDict(extra="forbid")
 
     service_id: UUID | None = None
     catalog_item_id: UUID | None = None
+    garment_item_id: UUID | None = None
     process: WalkInCatalogProcess | None = None
     quantity: int = Field(ge=1, le=500)
 
     @model_validator(mode="after")
     def require_exactly_one_source(self) -> WalkInOrderLineItemRequest:
-        has_service = self.service_id is not None
-        has_catalog = self.catalog_item_id is not None
-        if has_service == has_catalog:
-            raise ValueError("Provide exactly one of service_id or catalog_item_id")
-        if has_service and self.process is not None:
-            raise ValueError("process is only valid with catalog_item_id")
+        sources = (
+            self.service_id is not None,
+            self.catalog_item_id is not None,
+            self.garment_item_id is not None,
+        )
+        if sum(sources) != 1:
+            raise ValueError("Provide exactly one of service_id, catalog_item_id, or garment_item_id")
+        if self.service_id is not None and self.process is not None:
+            raise ValueError("process is only valid with catalog_item_id or garment_item_id")
+        if self.catalog_item_id is not None and self.process is None:
+            raise ValueError("process is required with catalog_item_id")
+        if self.garment_item_id is not None and self.process is None:
+            raise ValueError("process is required with garment_item_id")
         return self
 
 

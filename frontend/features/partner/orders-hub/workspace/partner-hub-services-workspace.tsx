@@ -1,9 +1,9 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Pencil, Plus, Sparkles, X } from 'lucide-react';
+import { Loader2, Pencil, Plus, Search, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { normalizeServiceCategory, serviceCategoryLabel } from '@/features/disco
 import { PartnerServiceCategoryField } from '@/features/partner/components/partner-service-category-field';
 import { PartnerOpsSurface } from '@/features/partner/components/ops-visual';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
+import { PARTNER_BTN, PARTNER_INPUT } from '@/features/partner/lib/partner-compact';
 import {
   buildPartnerServiceCategoryOptions,
   resolvePartnerServiceCategorySlug,
@@ -23,10 +24,13 @@ import {
 } from '@/features/partner/lib/partner-service-category-options';
 import { PartnerHubPillarCard } from '@/features/partner/orders-hub/workspace/partner-hub-pillar-card';
 import { PartnerHubWorkspaceModalGate } from '@/features/partner/orders-hub/workspace/partner-hub-workspace-modal';
+import {
+  PartnerHubWorkspacePagination,
+  partnerHubPaginationFromList,
+} from '@/features/partner/orders-hub/workspace/partner-hub-workspace-pagination';
 import { usePartnerHubWorkspaceUrl } from '@/features/partner/orders-hub/workspace/use-partner-hub-workspace-url';
-import { GarmentCatalogKpiStrip } from '@/features/partner/garment-catalog/components/garment-catalog-kpi-strip';
-import { usePartnerGarmentCatalogKpis } from '@/features/partner/garment-catalog/hooks/use-partner-garment-catalog-summary';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
 import { listServiceCategories } from '@/services/customer-experience';
@@ -45,27 +49,38 @@ type ServiceEditDraft = {
   description: string;
 };
 
-export function usePartnerHubServices() {
+export function usePartnerHubServicesList() {
   const enabled = usePartnerQueriesEnabled();
-  return useQuery({
+  return useServerList<ServiceCatalogItem>({
     queryKey: queryKeys.partnerServiceCatalog(),
-    queryFn: listPartnerServices,
+    fetcher: (params) =>
+      listPartnerServices({
+        page: params.page,
+        page_size: 10,
+        search: params.search,
+      }),
+    defaultPageSize: 10,
     enabled,
-    staleTime: STALE.partnerAnalytics,
   });
 }
 
 export function usePartnerHubServicesKpis() {
-  const q = usePartnerHubServices();
-  const rows = q.data ?? [];
-  const active = useMemo(() => rows.filter((s) => s.is_active !== false), [rows]);
+  const enabled = usePartnerQueriesEnabled();
+  const q = useQuery({
+    queryKey: [...queryKeys.partnerServiceCatalog(), 'kpis'],
+    queryFn: () => listPartnerServices({ page: 1, page_size: 1 }),
+    enabled,
+    staleTime: STALE.partnerAnalytics,
+  });
+  const rows = q.data?.items ?? [];
+  const activeCount = q.data?.total_records ?? 0;
   const minPrice = useMemo(() => {
-    if (active.length === 0) return null;
-    return Math.min(...active.map((s) => Number(s.price_inr)));
-  }, [active]);
+    if (rows.length === 0) return null;
+    return Math.min(...rows.filter((s) => s.is_active !== false).map((s) => Number(s.price_inr)));
+  }, [rows]);
 
   return {
-    count: rows.length,
+    count: activeCount,
     minPrice,
     isLoading: q.isLoading,
     isError: q.isError,
@@ -159,13 +174,13 @@ function PartnerHubServiceRow({
   if (editing) {
     return (
       <tr data-testid={`hub-service-edit-${service.id}`}>
-        <td className="px-3 py-3" colSpan={5}>
+        <td className="px-3 py-2.5" colSpan={5}>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-1 sm:col-span-2">
               <Label htmlFor={`hub-edit-name-${service.id}`}>Name</Label>
               <Input
                 id={`hub-edit-name-${service.id}`}
-                className="min-h-9"
+                className={PARTNER_INPUT}
                 value={draft.name}
                 onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
               />
@@ -183,7 +198,7 @@ function PartnerHubServiceRow({
               <Label htmlFor={`hub-edit-price-${service.id}`}>Price (INR)</Label>
               <Input
                 id={`hub-edit-price-${service.id}`}
-                className="min-h-9"
+                className={PARTNER_INPUT}
                 type="number"
                 min={1}
                 value={draft.price_inr}
@@ -201,14 +216,14 @@ function PartnerHubServiceRow({
             </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button type="button" size="sm" className="h-9" disabled={saving} onClick={() => void saveEdit()}>
+            <Button type="button" size="sm" className={PARTNER_BTN} disabled={saving} onClick={() => void saveEdit()}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : 'Save'}
             </Button>
             <Button
               type="button"
               size="sm"
               variant="ghost"
-              className="h-9"
+              className={PARTNER_BTN}
               disabled={saving}
               onClick={() => setEditing(false)}
             >
@@ -234,7 +249,7 @@ function PartnerHubServiceRow({
       <td className="px-3 py-2.5">{service.catalog_status ?? (service.is_active ? 'active' : 'paused')}</td>
       <td className="px-3 py-2.5 text-right">
         <div className="flex flex-wrap justify-end gap-1">
-          <Button type="button" size="sm" variant="ghost" className="h-9" onClick={startEdit}>
+          <Button type="button" size="sm" variant="ghost" className={PARTNER_BTN} onClick={startEdit}>
             <Pencil className="mr-1 h-3.5 w-3.5" aria-hidden />
             Edit
           </Button>
@@ -242,7 +257,7 @@ function PartnerHubServiceRow({
             type="button"
             size="sm"
             variant="ghost"
-            className="h-9"
+            className={PARTNER_BTN}
             data-testid={`hub-service-toggle-${service.id}`}
             onClick={async () => {
               try {
@@ -262,7 +277,7 @@ function PartnerHubServiceRow({
             type="button"
             size="sm"
             variant="ghost"
-            className="h-9 text-destructive"
+            className={`${PARTNER_BTN} text-destructive`}
             data-testid={`hub-service-delete-${service.id}`}
             onClick={async () => {
               if (!window.confirm(`Remove ${service.name}?`)) return;
@@ -348,7 +363,7 @@ export function PartnerHubServicesAddForm({
           <Label htmlFor="hub-add-service-name">Service name</Label>
           <Input
             id="hub-add-service-name"
-            className="min-h-9"
+            className={PARTNER_INPUT}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Men's Shirt Wash + Iron"
@@ -368,7 +383,7 @@ export function PartnerHubServicesAddForm({
           <Label htmlFor="hub-add-service-price">Price (INR)</Label>
           <Input
             id="hub-add-service-price"
-            className="min-h-9"
+            className={PARTNER_INPUT}
             type="number"
             min={1}
             value={price}
@@ -379,7 +394,7 @@ export function PartnerHubServicesAddForm({
           <Label htmlFor="hub-add-service-duration">Est. duration (min)</Label>
           <Input
             id="hub-add-service-duration"
-            className="min-h-9"
+            className={PARTNER_INPUT}
             type="number"
             min={5}
             value={duration}
@@ -404,7 +419,7 @@ export function PartnerHubServicesAddForm({
         </div>
       </div>
       <Button
-        className="mt-3 h-9"
+        className={`mt-3 ${PARTNER_BTN}`}
         disabled={!name.trim() || !price || createM.isPending}
         data-testid="hub-services-add-submit"
         onClick={() => createM.mutate()}
@@ -415,56 +430,79 @@ export function PartnerHubServicesAddForm({
   );
 }
 
-export function PartnerHubServicesWorkspaceToolbar({ onScrollToAdd }: { onScrollToAdd: () => void }) {
+export function PartnerHubServicesWorkspaceToolbar({
+  searchInput,
+  onSearchChange,
+  onScrollToAdd,
+}: {
+  searchInput: string;
+  onSearchChange: (value: string) => void;
+  onScrollToAdd: () => void;
+}) {
   return (
-    <Button
-      type="button"
-      className="h-9 shrink-0 gap-1.5"
-      data-testid="hub-services-new"
-      onClick={onScrollToAdd}
-    >
-      <Plus className="h-4 w-4" aria-hidden />
-      Add service
-    </Button>
+    <>
+      <div className="relative min-w-0 flex-1 sm:max-w-sm">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={searchInput}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Search name or category…"
+          className={`${PARTNER_INPUT} pl-9`}
+          aria-label="Search services"
+          data-testid="hub-services-search"
+        />
+      </div>
+      <Button
+        type="button"
+        className={`${PARTNER_BTN} shrink-0 gap-1.5`}
+        data-testid="hub-services-new"
+        onClick={onScrollToAdd}
+      >
+        <Plus className="h-4 w-4" aria-hidden />
+        Add service
+      </Button>
+    </>
   );
 }
 
 export function PartnerHubServicesWorkspaceBody({
-  servicesQ,
+  list,
+  addFormRef,
 }: {
-  servicesQ: ReturnType<typeof usePartnerHubServices>;
+  list: ReturnType<typeof usePartnerHubServicesList>;
+  addFormRef?: React.Ref<HTMLDivElement>;
 }) {
   const queryClient = useQueryClient();
   const [emptyPrefill, setEmptyPrefill] = useState<string | undefined>();
 
-  const { categoryOptions, categoriesQ, handleCreateCategory } = usePartnerHubServiceCategoryOptions(
-    servicesQ.data,
-  );
+  const { categoryOptions, categoriesQ, handleCreateCategory } = usePartnerHubServiceCategoryOptions(list.rows);
 
   const invalidate = () => void queryClient.invalidateQueries({ queryKey: queryKeys.partnerServiceCatalog() });
 
-  const rows = servicesQ.data ?? [];
+  const rows = list.rows;
 
-  if (servicesQ.isError) {
+  if (list.isError) {
     return (
       <QueryErrorState
         title="Could not load services"
-        message={getApiErrorMessage(servicesQ.error)}
-        onRetry={() => void servicesQ.refetch()}
-        isRetrying={servicesQ.isFetching}
+        message={getApiErrorMessage(list.error)}
+        onRetry={() => void list.refetch()}
+        isRetrying={list.isFetching}
       />
     );
   }
 
   return (
     <div className="space-y-4" data-testid="hub-services-body">
-      <PartnerHubServicesAddForm
-        categoryOptions={categoryOptions}
-        categoriesLoading={categoriesQ.isLoading}
-        onCreateCategory={handleCreateCategory}
-        defaultName={emptyPrefill}
-        onCreated={() => setEmptyPrefill(undefined)}
-      />
+      <div ref={addFormRef}>
+        <PartnerHubServicesAddForm
+          categoryOptions={categoryOptions}
+          categoriesLoading={categoriesQ.isLoading}
+          onCreateCategory={handleCreateCategory}
+          defaultName={emptyPrefill}
+          onCreated={() => setEmptyPrefill(undefined)}
+        />
+      </div>
 
       <PartnerOpsSurface className="overflow-x-auto !p-0">
         <table className="w-full min-w-[36rem] text-sm">
@@ -478,7 +516,7 @@ export function PartnerHubServicesWorkspaceBody({
             </tr>
           </thead>
           <tbody>
-            {servicesQ.isLoading ? (
+            {list.isLoading ? (
               <tr>
                 <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
                   Loading…
@@ -489,12 +527,20 @@ export function PartnerHubServicesWorkspaceBody({
                 <td colSpan={5} className="px-3 py-4">
                   <EmptyState
                     icon={Sparkles}
-                    title="No services yet"
-                    description="Add Wash & Fold or your first offering above — used in walk-in orders and booking."
-                    secondaryAction={{
-                      label: 'Add Wash & Fold',
-                      onClick: () => setEmptyPrefill('Wash & Fold'),
-                    }}
+                    title={list.search ? 'No matching services' : 'No services yet'}
+                    description={
+                      list.search
+                        ? 'Try a different search term or add a new service above.'
+                        : 'Add Wash & Fold or your first offering above — used in walk-in orders and booking.'
+                    }
+                    secondaryAction={
+                      list.search
+                        ? undefined
+                        : {
+                            label: 'Add Wash & Fold',
+                            onClick: () => setEmptyPrefill('Wash & Fold'),
+                          }
+                    }
                   />
                 </td>
               </tr>
@@ -537,10 +583,10 @@ function PartnerHubServicesPricingFooter() {
 
 export function PartnerHubServicesPillarCard() {
   const { setWorkspace } = usePartnerHubWorkspaceUrl();
-  const { total, visible, isLoading, isError } = usePartnerGarmentCatalogKpis();
+  const { count, minPrice, isLoading, isError } = usePartnerHubServicesKpis();
 
   const secondary =
-    isError ? 'Tap to retry' : total > 0 ? `${visible} visible` : 'Upload rate card';
+    isError ? 'Tap to retry' : count > 0 && minPrice != null ? `from ₹${minPrice}` : 'Add your first service';
 
   return (
     <PartnerHubPillarCard
@@ -548,7 +594,7 @@ export function PartnerHubServicesPillarCard() {
       title="Services"
       icon={Sparkles}
       loading={isLoading}
-      primaryMetric={isError ? '—' : `${total} garments`}
+      primaryMetric={isError ? '—' : `${count} services`}
       secondaryMetric={secondary}
       onOpen={() => setWorkspace('services')}
     />
@@ -556,39 +602,35 @@ export function PartnerHubServicesPillarCard() {
 }
 
 export function PartnerHubServicesModalContent() {
-  const kpis = usePartnerGarmentCatalogKpis();
+  const list = usePartnerHubServicesList();
+  const addFormRef = useRef<HTMLDivElement>(null);
+  const paginationProps = list.data ? partnerHubPaginationFromList(list.data) : null;
+
+  const scrollToAdd = useCallback(() => {
+    addFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
   return (
     <PartnerHubWorkspaceModalGate
       workspaceId="services"
       title="Services"
-      description="Your garment rate card — bulk upload, prices, and photos."
+      description="Legacy service catalog — used in walk-in orders and booking."
       toolbar={
-        <Button type="button" className="h-9 shrink-0 gap-1.5" asChild>
-          <Link href="/partner/services" data-testid="hub-services-open-full-catalog">
-            Open full catalog
-          </Link>
-        </Button>
-      }
-      footer={<PartnerHubServicesPricingFooter />}
-    >
-      <div className="space-y-4" data-testid="hub-services-summary">
-        <GarmentCatalogKpiStrip
-          total={kpis.total}
-          visible={kpis.visible}
-          categories={kpis.categories}
-          loading={kpis.isLoading}
+        <PartnerHubServicesWorkspaceToolbar
+          searchInput={list.search}
+          onSearchChange={(v) => list.setSearch(v)}
+          onScrollToAdd={scrollToAdd}
         />
-        <p className="text-sm text-muted-foreground">
-          Bulk upload, single-item edit, and garment images are on the full catalog page.
-        </p>
-        <Link
-          href="/partner/services"
-          className="inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline"
-        >
-          Go to Service catalog →
-        </Link>
-      </div>
+      }
+      footer={
+        paginationProps ? (
+          <PartnerHubWorkspacePagination {...paginationProps} onPageChange={list.setPage} />
+        ) : (
+          <PartnerHubServicesPricingFooter />
+        )
+      }
+    >
+      <PartnerHubServicesWorkspaceBody list={list} addFormRef={addFormRef} />
     </PartnerHubWorkspaceModalGate>
   );
 }

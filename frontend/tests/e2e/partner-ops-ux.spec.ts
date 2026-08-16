@@ -10,6 +10,59 @@ const describeOps =
   process.env.E2E_SKIP_AUTH === '1' ? test.describe.skip : test.describe;
 
 async function mockPartnerOpsApis(page: Page) {
+  await page.route('**/api/v1/partner/analytics/dashboard**', async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: {
+          laundry_id: '00000000-0000-4000-8000-000000000001',
+          laundry_name: 'Demo Laundry',
+          period: 'week',
+          period_label_ist: 'This week (IST)',
+          kpis: {
+            orders_today: 3,
+            orders_yesterday: 2,
+            orders_week: 12,
+            orders_prev_week: 10,
+            orders_month: 40,
+            orders_prev_month: 35,
+            revenue_today_inr: '1200.00',
+            revenue_yesterday_inr: '1000.00',
+            revenue_week_inr: '3500.00',
+            revenue_prev_week_inr: '3000.00',
+            revenue_month_inr: '8000.00',
+            revenue_prev_month_inr: '7000.00',
+          },
+          status_snapshot: { in_process: 2, ready_for_delivery: 1, completed: 30 },
+          chart_series: [],
+          status_donut: { in_process: 2, ready: 1, completed: 30 },
+          top_services: [],
+          payment_summary: {
+            cash_paid_inr: '500.00',
+            upi_paid_inr: '700.00',
+            wallet_tracked: false,
+            pending_inr: '0.00',
+          },
+          bottom: {
+            customers_total: 18,
+            customers_new_week: 2,
+            customers_repeat: 10,
+            avg_order_value_inr: '416.67',
+            avg_delivery_minutes: 120,
+            avg_rating: '4.50',
+            review_count: 12,
+          },
+        },
+        meta: {},
+      }),
+    });
+  });
+
   await page.route('**/api/v1/partner/analytics/summary**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -94,7 +147,7 @@ async function mockPartnerOpsApis(page: Page) {
     items: [{ service_name: 'Wash & Fold', quantity: 2, line_total_inr: '200' }],
   };
 
-  await page.route('**/api/v1/partner/orders/**', async (route) => {
+  await page.route('**/api/v1/partner/orders**', async (route) => {
     const url = route.request().url();
     if (route.request().method() !== 'GET') {
       await route.continue();
@@ -108,18 +161,40 @@ async function mockPartnerOpsApis(page: Page) {
       });
       return;
     }
-    await route.continue();
-  });
-
-  await page.route('**/api/v1/partner/orders', async (route) => {
-    if (route.request().method() !== 'GET') {
-      await route.continue();
-      return;
-    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ data: [sampleOrder], meta: {} }),
+      body: JSON.stringify({
+        data: {
+          items: [sampleOrder],
+          page: 1,
+          page_size: 5,
+          total_records: 1,
+          total_pages: 1,
+          has_next: false,
+          has_previous: false,
+        },
+        meta: {},
+      }),
+    });
+  });
+
+  await page.route('**/api/v1/partner/customer-insights/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: {
+          items: [],
+          page: 1,
+          page_size: 5,
+          total_records: 0,
+          total_pages: 0,
+          has_next: false,
+          has_previous: false,
+        },
+        meta: {},
+      }),
     });
   });
 
@@ -175,12 +250,11 @@ describeOps('Partner Ops UX Phase 1', () => {
     });
     await loginAsPartner(page);
     await page.goto('/partner');
-    await expect(page.getByRole('heading', { name: /command desk/i })).toBeVisible({
+    await expect(page.getByTestId('partner-dashboard-create-order')).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByRole('region', { name: /quick overview/i })).toBeVisible();
-    await expect(page.getByTestId('partner-dashboard-recent-orders')).toBeVisible();
-    await expect(page.getByTestId('partner-dashboard-create-order')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /recent orders/i })).toBeVisible();
+    await expect(page.getByText(/today's orders|today's sales/i).first()).toBeVisible();
   });
 
   test('B: new order workspace loads walk-in mode', async ({ page }) => {
@@ -197,12 +271,11 @@ describeOps('Partner Ops UX Phase 1', () => {
     });
     await loginAsPartner(page);
     await page.goto('/partner/new-order');
-    await expect(page.getByRole('heading', { name: /^new order$/i })).toBeVisible({
+    await expect(page.getByTestId('partner-walk-in-workspace')).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByTestId('cloth-wall-phone')).toBeVisible();
-    await expect(page.getByTestId('list-mode-toggle')).toBeVisible();
-    await expect(page.getByTestId('cloth-wall-customer-next')).toBeVisible();
+    await expect(page.getByTestId('create-order-phone')).toBeVisible();
+    await expect(page.getByTestId('create-order-customer-next')).toBeVisible();
   });
 
   test('C: order detail shows status stepper', async ({ page }) => {

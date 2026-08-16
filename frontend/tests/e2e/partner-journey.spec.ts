@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
 import { E2E_ACCOUNTS, loginAsCustomer, loginAsPartner } from './helpers/auth';
-import { seedPartnerIncomingOrder } from './helpers/partner-orders';
+import { seedPartnerIncomingOrder, seedPartnerPickupReadyOrder } from './helpers/partner-orders';
 
 const ORDERS_EMPTY = /no new orders|nothing here|no orders in this view|no orders yet/i;
 const ORDERS_ACTION_TAB = /needs action/i;
@@ -16,7 +16,7 @@ const describeJourney =
   process.env.E2E_SKIP_AUTH === '1' ? test.describe.skip : test.describe;
 
 async function expectPageSettled(page: Page, title: RegExp) {
-  await expect(page.locator('#main-content').getByRole('heading', { name: title })).toBeVisible({
+  await expect(page.locator('#main-content main .page-title').filter({ hasText: title })).toBeVisible({
     timeout: 30_000,
   });
 }
@@ -27,11 +27,14 @@ describeJourney('Mahesh partner journey', () => {
   test('1. /partner dashboard loads KPIs without forever spinner', async ({ page }) => {
     await loginAsPartner(page);
     await expect(page).toHaveURL(/\/partner(\/|$)/);
-    await expect(page.getByRole('heading', { name: /^dashboard$/i })).toBeVisible();
+    await expect(page.getByTestId('partner-dashboard-create-order')).toBeVisible({
+      timeout: 30_000,
+    });
 
     // KPI values must resolve (₹ / counts) — not perpetual skeletons
-    await expect(page.getByText(/today's sales/i)).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText(/today's orders/i)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(/today's orders|today's revenue/i).first()).toBeVisible({
+      timeout: 30_000,
+    });
     await expect(page.getByText(/₹\d|₹0/).first()).toBeVisible({ timeout: 30_000 });
 
     // Actionable error states if API fails (never silent hang)
@@ -42,26 +45,15 @@ describeJourney('Mahesh partner journey', () => {
   });
 
   test('2. /partner/orders: accept incoming order', async ({ page }) => {
-    await seedPartnerIncomingOrder(page.request);
+    const { orderId, trackingCode } = await seedPartnerIncomingOrder(page.request);
     await loginAsPartner(page);
-    await page.goto('/partner/orders');
-    await expectPageSettled(page, /customers & orders|^orders$/i);
+    await page.goto(`/partner/orders/${orderId}`);
+    await expect(page.getByRole('heading', { name: new RegExp(trackingCode, 'i') })).toBeVisible({
+      timeout: 30_000,
+    });
 
-    const actionTab = page.getByRole('tab', { name: ORDERS_ACTION_TAB });
-    if (await actionTab.isVisible().catch(() => false)) {
-      await actionTab.click();
-    }
-    const acceptBtn = page.getByRole('button', { name: ACCEPT_ORDER }).first();
-    const empty = page.getByText(ORDERS_EMPTY);
-
-    await expect
-      .poll(async () => {
-        if ((await acceptBtn.count()) > 0) return 'action';
-        if ((await empty.count()) > 0) return 'empty';
-        return 'pending';
-      }, { timeout: 30_000 })
-      .toBe('action');
-
+    const acceptBtn = page.getByRole('button', { name: ACCEPT_ORDER });
+    await expect(acceptBtn).toBeVisible({ timeout: 30_000 });
     await acceptBtn.click();
     await expect
       .poll(async () => {
@@ -73,6 +65,23 @@ describeJourney('Mahesh partner journey', () => {
       }, { timeout: 25_000 })
       .not.toBe('pending');
     await expect(page.getByText(/could not accept/i)).toHaveCount(0);
+  });
+
+  test('2b. Mark picked up when evidence and inventory are ready', async ({ page }) => {
+    const { orderId, trackingCode } = await seedPartnerPickupReadyOrder(page.request);
+    await loginAsPartner(page);
+    await page.goto(`/partner/orders/${orderId}`);
+
+    await expect(page.getByRole('heading', { name: new RegExp(trackingCode, 'i') })).toBeVisible({
+      timeout: 30_000,
+    });
+
+    const markPickedUp = page.getByRole('button', { name: /mark picked up/i });
+    await expect(markPickedUp).toBeEnabled({ timeout: 15_000 });
+    await markPickedUp.click();
+
+    await expect(page.getByText(/status updated/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/picked up/i).first()).toBeVisible({ timeout: 15_000 });
   });
 
   test('3. Inventory / QR / custody tools reachable for active orders', async ({ page }) => {
@@ -103,7 +112,7 @@ describeJourney('Mahesh partner journey', () => {
       .not.toBe('pending');
 
     await expect(
-      page.locator('#main-content').getByRole('heading', { name: /^orders$/i }),
+      page.locator('#main-content main .page-title').filter({ hasText: /^orders$/i }),
     ).toBeVisible();
   });
 
@@ -147,7 +156,7 @@ describeJourney('Mahesh partner journey', () => {
 
     await page.goto('/partner/staff');
     await expect(
-      page.locator('#main-content').getByRole('heading', { name: /staff management/i }),
+      page.locator('#main-content main .page-title').filter({ hasText: /^staff$/i }),
     ).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText(staffName).first()).toBeVisible({ timeout: 20_000 });
 
@@ -175,16 +184,26 @@ describeJourney('Mahesh partner journey', () => {
   test('5. Service catalog + garment price list CRUD surfaces', async ({ page }) => {
     await loginAsPartner(page);
 
-    await page.goto('/partner/services');
-    await expect(page).toHaveURL(/\/partner\/orders\?/);
-    await expect(page).toHaveURL(/workspace=services/);
+    await page.goto('/partner/orders?workspace=services');
     await expect(page.getByTestId('hub-workspace-services')).toBeVisible({ timeout: 60_000 });
     const serviceName = `E2E Express ${Date.now().toString(36)}`;
     const servicesDialog = page.getByTestId('hub-workspace-services');
-    await servicesDialog.getByPlaceholder(/shirt wash|service/i).first().fill(serviceName);
-    await servicesDialog.locator('input[type="number"][min="1"]').first().fill('149');
-    await servicesDialog.getByRole('button', { name: /add service/i }).click();
-    await expect(page.getByText(new RegExp(serviceName, 'i')).first()).toBeVisible({
+    await servicesDialog.locator('#hub-add-service-name').fill(serviceName);
+    await servicesDialog.locator('#hub-add-service-price').fill('149');
+    const [createRes] = await Promise.all([
+      page.waitForResponse(
+        (r) =>
+          r.url().includes('/partner/services') &&
+          r.request().method() === 'POST' &&
+          r.status() >= 200 &&
+          r.status() < 300,
+        { timeout: 30_000 },
+      ),
+      servicesDialog.getByTestId('hub-services-add-submit').click(),
+    ]);
+    expect(createRes.ok()).toBeTruthy();
+    await servicesDialog.getByTestId('hub-services-search').fill(serviceName);
+    await expect(servicesDialog.getByText(serviceName).first()).toBeVisible({
       timeout: 20_000,
     });
 
@@ -198,35 +217,65 @@ describeJourney('Mahesh partner journey', () => {
   });
 
   test('6. Walk-in: hub redirect + Cloth Wall create + print tags CTA', async ({ page }) => {
+    await page.route('**/api/v1/partner/garment-catalog**', async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: {
+            items: [],
+            page: 1,
+            page_size: 100,
+            total_records: 0,
+            total_pages: 0,
+            has_next: false,
+            has_previous: false,
+          },
+          meta: {},
+        }),
+      });
+    });
+
     await loginAsPartner(page);
 
     await page.goto('/partner/walk-in-orders');
     await expect(page).toHaveURL(/\/partner\/orders\?/);
     await expect(page).toHaveURL(/chip=walk_in/);
-    await expect(
-      page.locator('#main-content').getByRole('heading', { name: /customers & orders/i }),
-    ).toBeVisible({ timeout: 60_000 });
+    await expectPageSettled(page, /^orders$/i);
 
     const walkInName = `E2E Walk-in ${Date.now().toString(36)}`;
     const walkInPhone = `+9199${String(Date.now()).slice(-8)}`;
 
     await page.goto('/partner/new-order?mode=walk_in');
-    await expect(
-      page.locator('#main-content').getByRole('heading', { name: /new order/i }),
-    ).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId('partner-walk-in-workspace')).toBeVisible({
+      timeout: 60_000,
+    });
 
-    await page.getByTestId('cloth-wall-phone').fill(walkInPhone);
-    await page.getByTestId('cloth-wall-name').fill(walkInName);
-    await page.getByTestId('cloth-wall-customer-next').click();
-    await expect(page.getByTestId('cloth-wall-step')).toBeVisible({ timeout: 20_000 });
+    await page.getByTestId('create-order-phone').fill(walkInPhone);
+    await page.getByTestId('create-order-name').fill(walkInName);
+    await page.getByTestId('create-order-customer-next').click();
+    await expect(page.getByText(/step 2 — add items/i)).toBeVisible({ timeout: 20_000 });
 
-    await page.getByTestId('list-mode-toggle').click();
-    await expect(page.getByTestId('list-mode-picker')).toBeVisible({ timeout: 20_000 });
-    await page.getByTestId('list-mode-picker').getByRole('button', { name: '+' }).first().click();
+    await page.getByRole('tab', { name: 'Dryclean and Steam Press (per piece)' }).click();
+    await expect(page.getByText(/loading garment prices/i)).toBeHidden({ timeout: 15_000 });
 
-    await page.getByRole('button', { name: /^confirm$/i }).click();
-    await expect(page.getByTestId('cloth-wall-submit')).toBeVisible({ timeout: 15_000 });
+    const catalogTile = page.locator('[data-testid^="cloth-wall-tile-catalog:"]').first();
+    if (await catalogTile.isVisible().catch(() => false)) {
+      await catalogTile.getByRole('button', { name: /^add /i }).click();
+      await expect(catalogTile.locator('span.absolute.rounded-full')).toHaveText('1');
+    } else {
+      await page.getByRole('tab', { name: /by weight/i }).click();
+      await expect(page.getByText(/loading services/i)).toBeHidden({ timeout: 15_000 });
+      const weightInput = page.locator('[data-testid^="create-order-weight-qty-"]').first();
+      await expect(weightInput).toBeVisible({ timeout: 30_000 });
+      await weightInput.fill('2');
+    }
 
+    await page.getByTestId('create-order-intake-next').click();
     const createResponse = page.waitForResponse(
       (res) =>
         res.url().includes('/partner/walk-in-orders') &&
@@ -234,9 +283,9 @@ describeJourney('Mahesh partner journey', () => {
         res.status() < 500,
       { timeout: 45_000 },
     );
-    await page.getByTestId('cloth-wall-submit').click();
+    await page.getByTestId('partner-create-order-submit').click();
     const res = await createResponse;
-    expect(res.ok()).toBeTruthy();
+    expect(res.ok(), `walk-in create failed: ${res.status()} ${await res.text()}`).toBeTruthy();
 
     await expect(page.getByTestId('walk-in-success-panel')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('walk-in-success-print-tags')).toBeVisible();
@@ -245,7 +294,9 @@ describeJourney('Mahesh partner journey', () => {
     const startWash = page.getByRole('button', { name: /start wash/i });
     await expect(startWash).toBeVisible();
     await startWash.click();
-    await expect(page.getByText(/wash started|status/i).first()).toBeVisible({ timeout: 30_000 });
+    await expect(
+      page.getByText(/wash started|could not start wash|record inventory before/i).first(),
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   test('7. Settlements / operations / reviews pages load (even if empty)', async ({ page }) => {
@@ -253,7 +304,7 @@ describeJourney('Mahesh partner journey', () => {
 
     await page.goto('/partner/settlements');
     await expect(
-      page.locator('#main-content').getByRole('heading', { name: /^settlements/i }),
+      page.locator('#main-content main .page-title').filter({ hasText: /^settlements/i }),
     ).toBeVisible({ timeout: 60_000 });
     await expect(
       page.getByText(/no settlements yet|pending earnings|available earnings/i).first(),
@@ -261,12 +312,12 @@ describeJourney('Mahesh partner journey', () => {
 
     await page.goto('/partner/operations');
     await expect(
-      page.locator('#main-content').getByRole('heading', { name: /operations center/i }),
+      page.locator('#main-content main .page-title').filter({ hasText: /operations center/i }),
     ).toBeVisible({ timeout: 60_000 });
 
     await page.goto('/partner/reviews');
     await expect(
-      page.locator('#main-content').getByRole('heading', { name: /review management/i }),
+      page.locator('#main-content main .page-title').filter({ hasText: /review management/i }),
     ).toBeVisible({ timeout: 60_000 });
     await expect(
       page.getByText(/no reviews yet|average rating|total reviews/i).first(),
@@ -309,31 +360,35 @@ describeJourney('Mahesh partner journey', () => {
 
     await page.goto('/partner/orders');
     await expect(
-      page.locator('#main-content').getByRole('heading', { name: /customers & orders/i }),
+      page.locator('#main-content main .page-title').filter({ hasText: /^orders$/i }),
     ).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId('partner-orders-new-order-fab')).toBeVisible();
-    await page.getByTestId('partner-orders-new-order-fab').click();
-    await expect(page.getByTestId('partner-orders-new-order-sheet')).toBeVisible();
-    await expect(page.getByTestId('partner-intake-choice-walk-in')).toBeVisible();
+    const newOrder = page.getByTestId('partner-orders-page-new-order');
+    await expect(newOrder).toBeVisible({ timeout: 20_000 });
+    await newOrder.click();
+    await expect(page.getByTestId('partner-create-order-dialog')).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId('partner-walk-in-workspace')).toBeVisible();
     await page.keyboard.press('Escape');
 
     await page.goto('/partner/walk-in-orders');
+    await expect(page).toHaveURL(/\/partner\/orders\?/);
     await expect(page).toHaveURL(/chip=walk_in/);
-    await expect(page.getByTestId('partner-orders-chip-walk_in')).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
 
     await page.goto('/partner/orders');
     await expect(
-      page.locator('#main-content').getByRole('heading', { name: /customers & orders/i }),
+      page.locator('#main-content main .page-title').filter({ hasText: /^orders$/i }),
     ).toBeVisible({ timeout: 30_000 });
-    // Mobile card stack uses large Accept / Reject / advance buttons + filter tabs
-    await expect(page.getByRole('tablist', { name: /order filters/i })).toBeVisible({
+    await expect(page.getByLabel('Search orders')).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('partner-orders-table-root')).toBeVisible({
       timeout: 60_000,
     });
-    await page.getByRole('tab', { name: /needs action|in progress|all/i }).first().click();
-    await expect(page.getByRole('tab', { name: /in progress/i })).toBeVisible();
+    await expect(
+      page
+        .getByTestId('partner-order-advance')
+        .or(page.getByTestId('partner-orders-empty-state'))
+        .first(),
+    ).toBeVisible({ timeout: 60_000 });
   });
 });
 

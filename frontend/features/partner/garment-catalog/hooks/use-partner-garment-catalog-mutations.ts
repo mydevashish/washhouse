@@ -13,10 +13,12 @@ import {
   previewGarmentImport,
   confirmGarmentImport,
   bulkDeletePartnerGarments,
+  bulkSetGarmentsVisible,
   type GarmentCatalogCreateInput,
   type GarmentCatalogUpdateInput,
   type GarmentImportConfirmInput,
   type GarmentBulkDeleteInput,
+  type GarmentBulkVisibleInput,
 } from '@/services/partner-garment-catalog';
 
 export function usePartnerGarmentCatalogMutations() {
@@ -86,6 +88,17 @@ export function usePartnerGarmentCatalogMutations() {
     onError: (e) => toast.error(getApiErrorMessage(e, 'Bulk delete failed')),
   });
 
+  const bulkVisibleM = useMutation({
+    mutationFn: (input: GarmentBulkVisibleInput) => bulkSetGarmentsVisible(input),
+    onSuccess: (data) => {
+      toast.success(
+        `Made ${data.updated_count} garment${data.updated_count === 1 ? '' : 's'} visible on this page`,
+      );
+      invalidateCatalog();
+    },
+    onError: (e) => toast.error(getApiErrorMessage(e, 'Could not update visibility')),
+  });
+
   return {
     createM,
     updateM,
@@ -94,6 +107,7 @@ export function usePartnerGarmentCatalogMutations() {
     previewImportM,
     confirmImportM,
     bulkDeleteM,
+    bulkVisibleM,
     invalidateCatalog,
   };
 }

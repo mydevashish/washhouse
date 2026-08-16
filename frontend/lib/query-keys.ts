@@ -71,7 +71,8 @@ export const queryKeys = {
   custodyTimeline: (orderId: string, scope: 'customer' | 'partner' | 'admin') =>
     ['custody-timeline', scope, orderId] as const,
   addresses: () => ['addresses'] as const,
-  partnerAnalytics: () => ['partner-analytics'] as const,
+  partnerAnalytics: (params?: { period?: string; date_from?: string; date_to?: string }) =>
+    ['partner-analytics', params ?? {}] as const,
   partnerAnalyticsOverview: (period: string) => ['partner-analytics-overview', period] as const,
   partnerAnalyticsDashboard: (period: string) => ['partner-analytics-dashboard', period] as const,
   partnerOrders: (params?: object) =>

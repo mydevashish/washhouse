@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerOrderCard } from '@/features/partner/partner-order-card';
 import { usePartnerOrders } from '@/features/partner/hooks/use-partner-operations';
 import { getPartnerNextStatus } from '@/features/partner/lib/partner-status';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 import {
   acceptOrder,
   listPartnerOrders,
@@ -47,8 +48,26 @@ export function PartnerOrdersPanel() {
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
+    void queryClient.invalidateQueries({ queryKey: ['partner-order'] });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerAnalytics() });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerCustomers() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsDashboard() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsPickups() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsDeliveries() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsDoneToday() });
+  };
+
+  const patchOrderInList = (updated: PartnerOrder) => {
+    queryClient.setQueriesData<{ items?: PartnerOrder[] }>(
+      { queryKey: ['partner-orders'] },
+      (old) => {
+        if (!old?.items?.length) return old;
+        return {
+          ...old,
+          items: old.items.map((row) => (row.id === updated.id ? { ...row, ...updated } : row)),
+        };
+      },
+    );
   };
 
   const acceptMutation = useMutation({
@@ -57,11 +76,13 @@ export function PartnerOrdersPanel() {
       setBusyId(id);
       setBusyAction('accept');
     },
-    onSuccess: () => {
+    onSuccess: (updated) => {
       toast.success('Order accepted');
+      queryClient.setQueryData(queryKeys.partnerOrder(updated.id), updated);
+      patchOrderInList(updated);
       invalidate();
     },
-    onError: () => toast.error('Could not accept — try again'),
+    onError: (e) => toast.error(getApiErrorMessage(e, 'Could not accept — try again')),
     onSettled: () => {
       setBusyId(null);
       setBusyAction(null);
@@ -74,11 +95,13 @@ export function PartnerOrdersPanel() {
       setBusyId(id);
       setBusyAction('reject');
     },
-    onSuccess: () => {
+    onSuccess: (updated) => {
       toast.success('Order rejected');
+      queryClient.setQueryData(queryKeys.partnerOrder(updated.id), updated);
+      patchOrderInList(updated);
       invalidate();
     },
-    onError: () => toast.error('Could not reject — try again'),
+    onError: (e) => toast.error(getApiErrorMessage(e, 'Could not reject — try again')),
     onSettled: () => {
       setBusyId(null);
       setBusyAction(null);
@@ -91,11 +114,13 @@ export function PartnerOrdersPanel() {
       setBusyId(id);
       setBusyAction('advance');
     },
-    onSuccess: () => {
+    onSuccess: (updated, { id }) => {
       toast.success('Status updated');
+      queryClient.setQueryData(queryKeys.partnerOrder(id), updated);
+      patchOrderInList(updated);
       invalidate();
     },
-    onError: () => toast.error('Update failed — try again'),
+    onError: (e) => toast.error(getApiErrorMessage(e, 'Update failed — try again')),
     onSettled: () => {
       setBusyId(null);
       setBusyAction(null);

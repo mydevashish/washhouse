@@ -54,9 +54,8 @@ export function PartnerOpsHero({
           {eyebrow && !isCompact ? <PartnerOpsSectionLabel>{eyebrow}</PartnerOpsSectionLabel> : null}
           <TitleTag
             className={cn(
-              'font-semibold tracking-tight text-foreground',
-              TitleTag === 'h1' ? 'page-title' : '',
-              isCompact ? 'text-lg' : TitleTag === 'h1' ? 'text-2xl sm:text-3xl' : 'text-2xl',
+              TitleTag === 'h1' ? 'page-title' : 'text-base font-semibold tracking-tight text-foreground',
+              isCompact && TitleTag !== 'h1' && 'text-sm',
             )}
           >
             {title}
@@ -69,7 +68,7 @@ export function PartnerOpsHero({
         </div>
       </div>
       {imageSrc && !isCompact ? (
-        <div className="relative min-h-[12rem] overflow-hidden rounded-3xl bg-muted/30">
+        <div className="relative min-h-[12rem] overflow-hidden rounded-xl bg-muted/30">
           <Image
             src={imageSrc}
             alt={imageAlt}

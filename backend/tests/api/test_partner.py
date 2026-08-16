@@ -23,6 +23,7 @@ from app.models.enums import (
 )
 from app.models.laundry import Laundry
 from app.models.order import Order
+from app.models.payment import Payment
 from app.models.user import User
 
 pytestmark = pytest.mark.asyncio
@@ -649,6 +650,136 @@ async def test_analytics_money_intelligence_uses_order_commission_snapshot(
     assert Decimal(other.json()["data"]["revenue_today_inr"]) == Decimal("0.00")
 
 
+async def _seed_delivered_order(
+    session: AsyncSession,
+    *,
+    laundry_id,
+    total_inr: Decimal,
+    updated_at: datetime,
+    order_source: OrderSource = OrderSource.walk_in,
+    commission_rate: Decimal | None = Decimal("10.00"),
+) -> Order:
+    now = datetime.now(UTC)
+    order = Order(
+        laundry_id=laundry_id,
+        order_source=order_source,
+        status=OrderStatus.delivered,
+        tracking_code=f"DLM{uuid4().hex[:8].upper()}",
+        pickup_at=now - timedelta(hours=4),
+        delivery_at=now,
+        delivered_at=updated_at,
+        subtotal_inr=total_inr,
+        delivery_fee_inr=Decimal("0.00"),
+        cgst_inr=Decimal("0.00"),
+        sgst_inr=Decimal("0.00"),
+        total_inr=total_inr,
+        payment_status=PaymentStatus.paid,
+        payment_method=PaymentMethod.cod,
+        customer_name="Counter Guest",
+        customer_phone="9876543210",
+        commission_rate=commission_rate,
+    )
+    session.add(order)
+    await session.flush()
+    order.updated_at = updated_at
+    await session.flush()
+    return order
+
+
+async def test_analytics_summary_custom_range_filters_delivered(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    _partner, laundry, token = await _seed_partner(db_session, email_prefix="summarycustom")
+    in_range = datetime(2026, 8, 10, 6, 30, tzinfo=UTC)  # 10 Aug 2026 12:00 IST
+    out_of_range = datetime(2026, 7, 15, 6, 30, tzinfo=UTC)
+    await _seed_delivered_order(
+        db_session,
+        laundry_id=laundry.id,
+        total_inr=Decimal("300.00"),
+        updated_at=in_range,
+    )
+    await _seed_delivered_order(
+        db_session,
+        laundry_id=laundry.id,
+        total_inr=Decimal("100.00"),
+        updated_at=out_of_range,
+    )
+
+    response = await client.get(
+        "/api/v1/partner/analytics/summary"
+        "?period=custom&date_from=2026-08-01&date_to=2026-08-31",
+        headers=_headers(token),
+    )
+    assert response.status_code == 200
+    scope = response.json()["data"]["period_scope"]
+    assert scope is not None
+    assert scope["period"] == "custom"
+    assert Decimal(scope["revenue_gross_inr"]) == Decimal("300.00")
+    assert Decimal(scope["partner_net_inr"]) == Decimal("270.00")
+    assert Decimal(scope["commission_inr"]) == Decimal("30.00")
+    assert Decimal(scope["revenue_walk_in_inr"]) == Decimal("300.00")
+    assert len(scope["chart_series"]) == 31
+
+
+async def test_analytics_summary_year_jan_to_today(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    _partner, laundry, token = await _seed_partner(db_session, email_prefix="summaryyear")
+    now = datetime.now(UTC)
+    this_year = datetime(now.year, 1, 15, 6, 30, tzinfo=UTC)
+    last_year = datetime(now.year - 1, 6, 15, 6, 30, tzinfo=UTC)
+    await _seed_delivered_order(
+        db_session,
+        laundry_id=laundry.id,
+        total_inr=Decimal("500.00"),
+        updated_at=this_year,
+    )
+    await _seed_delivered_order(
+        db_session,
+        laundry_id=laundry.id,
+        total_inr=Decimal("200.00"),
+        updated_at=last_year,
+    )
+
+    response = await client.get(
+        "/api/v1/partner/analytics/summary?period=year",
+        headers=_headers(token),
+    )
+    assert response.status_code == 200
+    scope = response.json()["data"]["period_scope"]
+    assert scope is not None
+    assert scope["period"] == "year"
+    assert str(now.year) in scope["period_label_ist"]
+    assert Decimal(scope["revenue_gross_inr"]) == Decimal("500.00")
+    assert Decimal(scope["partner_net_inr"]) == Decimal("450.00")
+
+
+async def test_analytics_summary_custom_requires_dates(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    _partner, _laundry, token = await _seed_partner(db_session, email_prefix="summarycustombad")
+    response = await client.get(
+        "/api/v1/partner/analytics/summary?period=custom",
+        headers=_headers(token),
+    )
+    assert response.status_code == 422
+
+
+async def test_analytics_summary_period_invalid(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    _partner, _laundry, token = await _seed_partner(db_session, email_prefix="summaryperiodbad")
+    response = await client.get(
+        "/api/v1/partner/analytics/summary?period=quarter",
+        headers=_headers(token),
+    )
+    assert response.status_code == 422
+
+
 @patch("app.tasks.order_notifications.send_order_status_whatsapp")
 async def test_inventory_get_put_for_owned_order(
     mock_whatsapp: MagicMock,
@@ -731,6 +862,58 @@ async def test_partner_headers_fixture_smoke(
     assert "laundry_name" in r.json()["data"]
 
 
+async def test_partner_orders_paid_pending_partial_advance(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """List/detail expose paid_inr + pending_inr from captured COD advance."""
+    _partner, laundry, token = await _seed_partner(db_session, email_prefix="pay.partial")
+    order = await _seed_confirmed_order(db_session, laundry_id=laundry.id)
+    order.order_source = OrderSource.walk_in
+    order.payment_status = PaymentStatus.pending_cod
+    order.payment_method = PaymentMethod.cod
+    order.total_inr = Decimal("500.00")
+    db_session.add(
+        Payment(
+            order_id=order.id,
+            amount_inr=Decimal("200.00"),
+            status=PaymentStatus.paid,
+            method=PaymentMethod.cod,
+            metadata_json='{"advance_inr":"200.00"}',
+        ),
+    )
+    await db_session.flush()
+
+    listed = await client.get("/api/v1/partner/orders", headers=_headers(token))
+    assert listed.status_code == 200, listed.text
+    row = next(item for item in listed.json()["data"]["items"] if item["id"] == str(order.id))
+    assert Decimal(row["paid_inr"]) == Decimal("200.00")
+    assert Decimal(row["pending_inr"]) == Decimal("300.00")
+    assert Decimal(row["paid_inr"]) + Decimal(row["pending_inr"]) == Decimal(row["total_inr"])
+
+    detail = await client.get(f"/api/v1/partner/orders/{order.id}", headers=_headers(token))
+    assert detail.status_code == 200
+    data = detail.json()["data"]
+    assert Decimal(data["paid_inr"]) == Decimal("200.00")
+    assert Decimal(data["pending_inr"]) == Decimal("300.00")
+
+
+async def test_partner_orders_paid_pending_fully_paid(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    _partner, laundry, token = await _seed_partner(db_session, email_prefix="pay.full")
+    order = await _seed_confirmed_order(db_session, laundry_id=laundry.id)
+    order.payment_status = PaymentStatus.paid
+    order.payment_method = PaymentMethod.razorpay
+    await db_session.flush()
+
+    listed = await client.get("/api/v1/partner/orders", headers=_headers(token))
+    row = next(item for item in listed.json()["data"]["items"] if item["id"] == str(order.id))
+    assert Decimal(row["paid_inr"]) == Decimal(row["total_inr"])
+    assert Decimal(row["pending_inr"]) == Decimal("0.00")
+
+
 async def test_partner_orders_paginated_default_page_size(
     client: AsyncClient,
     db_session: AsyncSession,
@@ -773,6 +956,54 @@ async def test_partner_orders_paginated_default_page_size(
     )
     assert bad_size.status_code == 200
     assert bad_size.json()["data"]["page_size"] == 10
+
+
+async def test_partner_orders_date_filter_ist_crosses_month_boundary(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """created_at filtered by IST calendar days — July 31 late night vs Aug 1 early morning."""
+    from zoneinfo import ZoneInfo
+
+    _partner, laundry, token = await _seed_partner(db_session, email_prefix="date.filter")
+    ist = ZoneInfo("Asia/Kolkata")
+
+    july_late = await _seed_confirmed_order(db_session, laundry_id=laundry.id)
+    july_late.tracking_code = f"JUL{uuid4().hex[:8].upper()}"
+    july_late.created_at = datetime(2026, 7, 31, 23, 30, tzinfo=ist)
+
+    aug_early = await _seed_confirmed_order(db_session, laundry_id=laundry.id)
+    aug_early.tracking_code = f"AUG{uuid4().hex[:8].upper()}"
+    aug_early.created_at = datetime(2026, 8, 1, 0, 30, tzinfo=ist)
+
+    await db_session.flush()
+
+    headers = _headers(token)
+    filtered = await client.get(
+        "/api/v1/partner/orders"
+        "?bucket=all&page_size=5000&date_from=2026-08-01&date_to=2026-08-31",
+        headers=headers,
+    )
+    assert filtered.status_code == 200, filtered.text
+    ids = {row["tracking_code"] for row in filtered.json()["data"]["items"]}
+    assert aug_early.tracking_code in ids
+    assert july_late.tracking_code not in ids
+
+    july_only = await client.get(
+        "/api/v1/partner/orders"
+        "?bucket=all&page_size=5000&date_from=2026-07-31&date_to=2026-07-31",
+        headers=headers,
+    )
+    assert july_only.status_code == 200, july_only.text
+    july_ids = {row["tracking_code"] for row in july_only.json()["data"]["items"]}
+    assert july_late.tracking_code in july_ids
+    assert aug_early.tracking_code not in july_ids
+
+    bad_range = await client.get(
+        "/api/v1/partner/orders?date_from=2026-08-15&date_to=2026-08-01",
+        headers=headers,
+    )
+    assert bad_range.status_code == 422
 
 
 async def test_partner_orders_list_search_tracking_phone_token_name(

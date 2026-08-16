@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 
 import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ClientDate } from '@/components/ui/client-date';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerContent } from '@/features/partner/components/partner-content';
@@ -29,6 +30,11 @@ import {
   usePartnerQueriesEnabled,
 } from '@/features/partner/hooks/use-partner-operations';
 import { formatInr } from '@/features/discover/detail/order-pricing';
+import {
+  partnerOrderHasUnpaidBalance,
+  partnerOrderPaidInr,
+  partnerOrderPendingInr,
+} from '@/features/partner/lib/partner-order-payment';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
@@ -78,12 +84,14 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
   }
 
   const tax = Number(order.cgst_inr) + Number(order.sgst_inr);
+  const paidInr = partnerOrderPaidInr(order);
+  const pendingInr = partnerOrderPendingInr(order);
   const printEmphasis = getPrintLifecycleEmphasis(order.status);
   const printHint = getPrintLifecycleHint(order.status);
   const walkIn = isWalkInOrder(order);
 
   return (
-    <PartnerContent className="space-y-5">
+    <PartnerContent className="space-y-4">
       <PartnerOpsSurface variant="muted" className="!p-4 sm:!p-5">
         <header className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
@@ -131,6 +139,14 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
             <p className="text-muted-foreground">
               Payment:{' '}
               <span className="font-medium capitalize text-foreground">{order.payment_status}</span>
+              {partnerOrderHasUnpaidBalance(order) ? (
+                <Badge
+                  variant="outline"
+                  className="ml-2 border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-normal"
+                >
+                  Unpaid
+                </Badge>
+              ) : null}
             </p>
           </div>
         </PartnerOpsSurface>
@@ -161,7 +177,7 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
           {order.items.length === 0 ? (
             <p className="mt-4 text-center text-sm text-muted-foreground">No line items.</p>
           ) : (
-            <div className="mt-3 overflow-hidden rounded-3xl border border-border">
+            <div className="mt-3 overflow-hidden rounded-xl border border-border">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="border-b border-border/60 bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
@@ -217,6 +233,16 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
                   <ClientDate iso={order.delivery_at} mode="datetime" />
                 </span>
               </p>
+            </div>
+            <div className="space-y-1.5 border-t border-border/60 pt-3 text-sm" data-testid="partner-order-payment-summary">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Paid</span>
+                <span className="text-xs tabular-nums">{formatInr(paidInr)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Pending</span>
+                <span className="text-xs tabular-nums font-medium">{formatInr(pendingInr)}</span>
+              </div>
             </div>
             <div className="space-y-2 border-t border-border/60 pt-3 text-sm">
               <div className="flex justify-between">

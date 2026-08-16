@@ -1,44 +1,91 @@
+import { AxiosError } from 'axios';
+
+import { api } from '@/lib/api';
 import {
   GARMENT_CATALOG_DEFAULT_PAGE_SIZE,
-  GARMENT_SERVICE_TYPES,
-  garmentPrimaryPriceInr,
-  garmentServiceTypeLabel,
-  type GarmentCatalogItem,
+  downloadGarmentTemplate,
 } from '@/services/partner-garment-catalog';
 
+jest.mock('@/lib/api', () => ({
+  api: {
+    get: jest.fn(),
+  },
+}));
+
+const mockedGet = api.get as jest.Mock;
+
+function mockJsonBlob(payload: object): Blob {
+  const json = JSON.stringify(payload);
+  return {
+    type: 'application/json',
+    arrayBuffer: () => Promise.resolve(new TextEncoder().encode(json).buffer),
+    text: () => Promise.resolve(json),
+  } as unknown as Blob;
+}
+
 describe('partner-garment-catalog helpers', () => {
-  it('exposes 11 service types matching backend enum', () => {
-    expect(GARMENT_SERVICE_TYPES).toHaveLength(11);
-    expect(GARMENT_SERVICE_TYPES).toContain('dry_cleaning');
-    expect(GARMENT_SERVICE_TYPES).toContain('wash_n_iron');
+  beforeEach(() => {
+    mockedGet.mockReset();
+    URL.createObjectURL = jest.fn(() => 'blob:mock');
+    URL.revokeObjectURL = jest.fn();
   });
 
-  it('garmentPrimaryPriceInr prefers dry clean then press', () => {
-    const item: GarmentCatalogItem = {
-      id: '1',
-      laundry_id: '2',
-      category: 'men',
-      name: 'T Shirt',
-      garment_code: 'TF',
-      image_url: null,
-      resolved_image_url: null,
-      platform_catalog_item_id: null,
-      is_visible: true,
-      sort_order: 0,
-      rates: {
-        dry_cleaning: { price_inr: '59.00', price_paise: 5900 },
-        steam_press: { price_inr: '15.00', price_paise: 1500 },
+  it('downloadGarmentTemplate saves xlsx blob with content-disposition filename', async () => {
+    let capturedAnchor: HTMLAnchorElement | null = null;
+    const originalCreateElement = document.createElement.bind(document);
+    jest.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
+      const el = originalCreateElement(tagName);
+      if (tagName === 'a') capturedAnchor = el as HTMLAnchorElement;
+      return el;
+    });
+
+    const blob = new Blob(['xlsx-bytes'], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    mockedGet.mockResolvedValue({
+      data: blob,
+      headers: {
+        'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'content-disposition': 'attachment; filename="garment-catalog-template.xlsx"',
       },
-    };
-    expect(garmentPrimaryPriceInr(item)).toBe('59.00');
+    });
+
+    await downloadGarmentTemplate();
+
+    expect(mockedGet).toHaveBeenCalledWith('/partner/garment-catalog/template', {
+      responseType: 'blob',
+    });
+    const anchor = capturedAnchor as HTMLAnchorElement | null;
+    expect(anchor?.download).toBe('garment-catalog-template.xlsx');
+    expect(anchor?.href).toBe('blob:mock');
   });
 
-  it('garmentServiceTypeLabel returns readable copy', () => {
-    expect(garmentServiceTypeLabel('dry_cleaning')).toBe('Dry clean');
-    expect(garmentServiceTypeLabel('steam_press')).toBe('Steam press');
+  it('uses pagination standard default page size 10', () => {
+    expect(GARMENT_CATALOG_DEFAULT_PAGE_SIZE).toBe(10);
   });
 
-  it('uses spec default page size 20', () => {
-    expect(GARMENT_CATALOG_DEFAULT_PAGE_SIZE).toBe(20);
+  it('downloadGarmentTemplate throws parsed JSON error from blob response', async () => {
+    const blob = mockJsonBlob({ error: { message: 'Partner laundry not found' } });
+    mockedGet.mockResolvedValue({
+      data: blob,
+      headers: { 'content-type': 'application/json' },
+    });
+
+    await expect(downloadGarmentTemplate()).rejects.toThrow('Partner laundry not found');
+  });
+
+  it('downloadGarmentTemplate throws parsed JSON error from axios blob rejection', async () => {
+    const blob = mockJsonBlob({ error: { message: 'Unauthorized' } });
+    mockedGet.mockRejectedValue(
+      new AxiosError('Request failed', 'ERR_BAD_REQUEST', undefined, undefined, {
+        data: blob,
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: {},
+        config: {} as never,
+      }),
+    );
+
+    await expect(downloadGarmentTemplate()).rejects.toThrow('Unauthorized');
   });
 });

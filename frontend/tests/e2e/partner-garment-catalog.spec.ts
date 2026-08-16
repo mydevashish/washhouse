@@ -74,7 +74,7 @@ async function mockGarmentCatalogApis(page: Page, options?: { listEmpty?: boolea
         data: {
           items: listEmpty ? [] : [SAMPLE_ITEM],
           page: 1,
-          page_size: 20,
+          page_size: 10,
           total_records: listEmpty ? 0 : 1,
           total_pages: 1,
           has_next: false,
@@ -109,6 +109,21 @@ async function mockGarmentCatalogApis(page: Page, options?: { listEmpty?: boolea
       return;
     }
     await route.continue();
+  });
+
+  await page.route('**/api/v1/partner/garment-catalog/bulk-visible**', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: { updated_count: 1 },
+        meta: {},
+      }),
+    });
   });
 
   await page.route('**/api/v1/partner/garment-catalog/bulk-delete**', async (route) => {

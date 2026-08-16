@@ -338,8 +338,20 @@ class OrderService:
         if not is_walk_in and status == OrderStatus.picked_up:
             if not await PickupEvidenceService(self._session).has_evidence(order.id):
                 raise ValidationError("Upload pickup evidence before marking the order as picked up")
-            if not await InventoryVerificationService(self._session).has_recorded_inventory(order.id):
-                raise ValidationError("Record inventory before marking the order as picked up")
+            await self._require_recorded_inventory(
+                order.id,
+                action_phrase="marking the order as picked up",
+            )
+
+        if (
+            is_walk_in
+            and status == OrderStatus.washing
+            and order.status == OrderStatus.confirmed
+        ):
+            await self._require_recorded_inventory(
+                order.id,
+                action_phrase="starting washing",
+            )
 
         order.status = status
         event = OrderStatusEvent(
@@ -402,6 +414,10 @@ class OrderService:
         if not order or order.laundry_id not in laundry_ids:
             raise NotFoundError("Order not found")
         return order
+
+    async def _require_recorded_inventory(self, order_id: UUID, *, action_phrase: str) -> None:
+        if not await InventoryVerificationService(self._session).has_recorded_inventory(order_id):
+            raise ValidationError(f"Record inventory before {action_phrase}")
 
     def _validate_partner_transition(self, order: Order, target: OrderStatus) -> None:
         current = order.status

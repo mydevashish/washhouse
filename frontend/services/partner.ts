@@ -5,6 +5,8 @@ import type { OrderItem } from '@/services/orders';
 import { isAxiosError } from 'axios';
 import { partnerAnalyticsOverviewFromSummary } from '@/features/partner/lib/partner-analytics-overview-fallback';
 
+export type PartnerRevenuePeriod = 'today' | 'week' | 'month' | 'year' | 'custom';
+
 export interface PartnerAnalytics {
   laundry_id: string | null;
   laundry_name: string;
@@ -42,7 +44,35 @@ export interface PartnerAnalytics {
   revenue_doorstep_week_inr: string;
   revenue_walk_in_month_inr: string;
   revenue_doorstep_month_inr: string;
+  period_scope?: PartnerAnalyticsPeriodScope | null;
 }
+
+export interface PartnerAnalyticsPeriodChartPoint {
+  bucket_label: string;
+  revenue_gross_inr: string;
+  partner_net_inr: string;
+}
+
+export interface PartnerAnalyticsPeriodScope {
+  period: PartnerRevenuePeriod;
+  period_label_ist: string;
+  date_from: string | null;
+  date_to: string | null;
+  revenue_gross_inr: string;
+  commission_inr: string;
+  partner_net_inr: string;
+  revenue_walk_in_inr: string;
+  revenue_doorstep_inr: string;
+  growth_pct: string | null;
+  prior_period_label: string;
+  chart_series: PartnerAnalyticsPeriodChartPoint[];
+}
+
+export type PartnerAnalyticsParams = {
+  period: PartnerRevenuePeriod;
+  date_from?: string;
+  date_to?: string;
+};
 
 export interface PartnerStaff {
   id: string;
@@ -79,6 +109,8 @@ export interface PartnerOrder {
   cgst_inr: string;
   sgst_inr: string;
   total_inr: string;
+  paid_inr: string;
+  pending_inr: string;
   payment_status: string;
   customer_name: string;
   customer_phone?: string | null;
@@ -94,6 +126,8 @@ export type PartnerOrdersListParams = ListQueryState & {
   order_source?: 'online' | 'walk_in' | 'doorstep' | string;
   payment_status?: string;
   created_today?: boolean;
+  date_from?: string;
+  date_to?: string;
 };
 
 export async function listPartnerOrders(
@@ -111,6 +145,8 @@ export async function listPartnerOrders(
       order_source: params.order_source,
       payment_status: params.payment_status,
       created_today: params.created_today ? true : undefined,
+      date_from: params.date_from,
+      date_to: params.date_to,
     }),
   });
   return data.data;
@@ -138,8 +174,19 @@ export async function rejectOrder(orderId: string): Promise<PartnerOrder> {
   return data.data;
 }
 
-export async function getPartnerAnalytics(): Promise<PartnerAnalytics> {
-  const { data } = await api.get<ApiEnvelope<PartnerAnalytics>>('/partner/analytics/summary');
+export async function getPartnerAnalytics(params?: PartnerAnalyticsParams): Promise<PartnerAnalytics> {
+  const query =
+    params?.period != null
+      ? {
+          period: params.period,
+          ...(params.period === 'custom'
+            ? { date_from: params.date_from, date_to: params.date_to }
+            : {}),
+        }
+      : undefined;
+  const { data } = await api.get<ApiEnvelope<PartnerAnalytics>>('/partner/analytics/summary', {
+    params: query,
+  });
   return data.data;
 }
 

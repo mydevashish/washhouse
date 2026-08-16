@@ -156,6 +156,14 @@ class GarmentBulkDeleteResponse(BaseModel):
     deleted_count: int
 
 
+class GarmentBulkVisibleRequest(BaseModel):
+    ids: list[UUID] = Field(min_length=1)
+
+
+class GarmentBulkVisibleResponse(BaseModel):
+    updated_count: int
+
+
 class GarmentImageUploadResponse(BaseModel):
     url: str
     garment: GarmentCatalogItemOut

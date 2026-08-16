@@ -213,7 +213,7 @@ export function PartnerOverviewView() {
   const createOrderHref = buildOrdersHubPath('/partner/orders', 'create');
 
   return (
-    <PartnerContent className="space-y-6 pb-10">
+    <PartnerContent className="space-y-4 pb-10">
       {analyticsQ.isError && (
         <QueryErrorState
           title="Could not load analytics"
@@ -338,7 +338,7 @@ export function PartnerOverviewView() {
               />
             </CardContent>
           </Card>
-          <div className="overflow-hidden rounded-3xl border border-border bg-muted/30">
+          <div className="overflow-hidden rounded-xl border border-border bg-muted/30">
             <Image
               src="/marketing/heroes/delivery.webp"
               alt="On-time delivery"

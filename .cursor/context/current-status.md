@@ -2,7 +2,7 @@
 
 > Updated whenever a major milestone shifts. The source of truth for "where are we?".
 
-**Last updated:** 2026-08-14
+**Last updated:** 2026-08-16
 
 ## Phase
 
@@ -31,6 +31,7 @@
 - **Partner laundry dashboard live data** (2026-08-14): **review** — Prompt 8 done (dark tokens, a11y, Jest view + Playwright smoke). Spec: [partner-laundry-dashboard-live-data.md](../../docs/features/partner-laundry-dashboard-live-data.md). Pack: [partner-laundry-dashboard-live-data.md](../prompts/partner-laundry-dashboard-live-data.md).
 - **Partner Customers & Orders — four pillars workspace** (2026-08-10): **review** — Prompt pack **0–8** (Customers · Orders · Coupons · Services tiles + modals on `/partner/orders`; nav redirects; `POST /partner/customers`). Spec: [partner-customers-orders-four-pillars-workspace.md](../../docs/features/partner-customers-orders-four-pillars-workspace.md). Matrix: [partner-four-pillars-workspace-matrix.md](../../docs/qa/partner-four-pillars-workspace-matrix.md).
 - **Partner garment service catalog** (2026-08-14): **review** — Prompt **9** done (dark tokens, lazy thumbnails, a11y, full Playwright spec, QA matrix, pricing cross-link). Spec: [partner-garment-service-catalog.md](../../docs/features/partner-garment-service-catalog.md). Matrix: [partner-garment-service-catalog-matrix.md](../../docs/qa/partner-garment-service-catalog-matrix.md).
+- **Partner Ops Fixes + Compact UI** (2026-08-16): **review** — Prompts **0–12** done (session 60m, 10-digit phone, compact density, create-order spend/qty, customers load/edit, picked-up gates, garment catalog tools, storefront save, orders paid/pending, reports/revenue filters, QA matrix + Playwright). Spec: [partner-ops-fixes-compact-ui.md](../../docs/features/partner-ops-fixes-compact-ui.md). Matrix: [partner-ops-fixes-compact-ui-matrix.md](../../docs/qa/partner-ops-fixes-compact-ui-matrix.md) — 25 Pass, 5 staging deferrals, 0 Fail.
 
 ## Blocked / Waiting
 

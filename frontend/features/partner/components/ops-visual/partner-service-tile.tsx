@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatInr } from '@/features/discover/detail/order-pricing';
 import { partnerServiceCategoryIcon } from '@/features/partner/components/ops-visual/partner-service-icon';
+import { PARTNER_BTN, PARTNER_CARD } from '@/features/partner/lib/partner-compact';
 import type { ServiceCatalogItem } from '@/services/partner-service-catalog';
 import { cn } from '@/lib/utils';
 
@@ -23,15 +24,9 @@ export function PartnerServiceTile({
   const rate = Number(service.price_inr);
 
   return (
-    <div
-      className={cn(
-        'flex flex-col rounded-3xl border border-border bg-background p-4 shadow-sm',
-        className,
-      )}
-    >
+    <div className={cn('flex flex-col shadow-sm', PARTNER_CARD, className)}>
       <div className="flex items-center gap-3">
-        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" aria-hidden />
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">          <Icon className="h-5 w-5" aria-hidden />
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{service.name}</p>
@@ -46,7 +41,7 @@ export function PartnerServiceTile({
           type="button"
           size="sm"
           variant="outline"
-          className="min-h-[36px] gap-1"
+          className={cn(PARTNER_BTN, 'gap-1')}
           disabled={disabled}
           onClick={onAdd}
         >

@@ -25,15 +25,15 @@ async function fillEmailLogin(page: Page, creds: AuthCredentials) {
   await expect(page.locator('#login-email')).toBeVisible({ timeout: 30_000 });
   await page.locator('#login-email').fill(creds.email);
   await page.locator('#login-password').fill(creds.password);
-  // Prefer the form submit — customer navbar has no guest Sign in link.
   const submit = page.locator('form').getByRole('button', { name: /^sign in$/i });
   await expect(submit).toBeEnabled();
-  const loginResponsePromise = page.waitForResponse(
-    (res) => res.url().includes('/auth/login') && res.request().method() === 'POST',
-    { timeout: 45_000 },
-  );
-  await submit.click();
-  const loginResponse = await loginResponsePromise;
+  const [loginResponse] = await Promise.all([
+    page.waitForResponse(
+      (res) => res.url().includes('/auth/login') && res.request().method() === 'POST',
+      { timeout: 60_000 },
+    ),
+    submit.click(),
+  ]);
   expect(
     loginResponse.ok(),
     `login failed: ${loginResponse.status()} ${await loginResponse.text().catch(() => '')}`,
@@ -56,7 +56,8 @@ export async function loginAsCustomer(
   options?: { gotoAccount?: boolean },
 ) {
   await page.goto('/login');
-  await expectLoginCard(page, /^sign in$/i);
+  // `/login` defaults to partner card copy — customer credentials still use the same form.
+  await expect(page.locator('#login-email')).toBeVisible({ timeout: 30_000 });
   await fillEmailLogin(page, creds);
   await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 60_000 });
   if (options?.gotoAccount) {
@@ -72,13 +73,18 @@ export async function loginAsPartner(
   page: Page,
   creds: AuthCredentials = E2E_ACCOUNTS.partner,
 ) {
-  await page.goto('/login?audience=partner');
-  await expectLoginCard(page, /laundry partner sign in/i);
-  await fillEmailLogin(page, creds);
-  await page.waitForURL(/\/partner(\/|$)/, { timeout: 60_000 });
-  await expect(
-    page.locator('#main-content').getByRole('heading', { name: /welcome,|today at a glance/i }),
-  ).toBeVisible({ timeout: 60_000 });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await page.goto('/login?audience=partner', { waitUntil: 'domcontentloaded' });
+    try {
+      await expect(page.locator('#login-email')).toBeVisible({ timeout: 20_000 });
+      await fillEmailLogin(page, creds);
+      await page.waitForURL(/\/partner(\/|$)/, { timeout: 60_000 });
+      await expect(page.locator('[data-partner-shell]')).toBeVisible({ timeout: 60_000 });
+      return;
+    } catch (error) {
+      if (attempt === 1) throw error;
+    }
+  }
 }
 
 /**

@@ -74,7 +74,7 @@ export function LaundryTrustScoreCard() {
           </div>
         </div>
         <div className="text-right">
-          <p className="text-3xl font-bold tabular-nums">{d.trust_score}</p>
+          <p className="text-lg font-bold tabular-nums">{d.trust_score}</p>
           <LaundryTrustScoreBadge level={d.level} className="mt-1" />
         </div>
       </div>

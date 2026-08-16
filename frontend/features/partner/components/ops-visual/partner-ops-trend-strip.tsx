@@ -24,7 +24,7 @@ export function PartnerOpsTrendStrip({
   const allZero = data.length === 0 || data.every((point) => point.value <= 0);
 
   return (
-    <div className={cn('rounded-3xl bg-muted/40 p-4', className)}>
+    <div className={cn('rounded-xl bg-muted/40 p-4', className)}>
       <p className="text-sm font-semibold text-foreground">{title}</p>
       {allZero ? (
         <div className="mt-3 space-y-2 text-sm text-muted-foreground">

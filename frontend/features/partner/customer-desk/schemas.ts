@@ -1,18 +1,11 @@
 import { z } from 'zod';
 
 import {
-  isValidIndianMobileE164,
-  normalizeIndianPhoneInput,
-} from '@/features/partner/customer-desk/phone';
+  partnerPhoneFieldSchema,
+  PARTNER_PHONE_INLINE_ERROR,
+} from '@/features/partner/lib/partner-phone-schema';
 
-export const phoneSearchSchema = z
-  .string()
-  .trim()
-  .min(1, 'Enter a phone number')
-  .transform(normalizeIndianPhoneInput)
-  .refine(isValidIndianMobileE164, {
-    message: 'Use a valid Indian mobile (+91 and 10 digits starting 6–9)',
-  });
+export const phoneSearchSchema = partnerPhoneFieldSchema;
 
 const lineItemSchema = z.object({
   service_id: z.string().min(1, 'Select a service'),
@@ -23,10 +16,7 @@ const lineItemSchema = z.object({
 export const assistedOrderFormSchema = z
   .object({
     customer_name: z.string().trim().min(1, 'Customer name is required').max(200),
-    phone: z
-      .string()
-      .transform(normalizeIndianPhoneInput)
-      .refine(isValidIndianMobileE164, { message: 'Invalid phone' }),
+    phone: partnerPhoneFieldSchema,
     laundry_id: z.string().uuid('Laundry is required'),
     address_line1: z.string().trim().min(1, 'Address is required').max(300),
     address_line2: z.string().trim().max(200).optional().or(z.literal('')),

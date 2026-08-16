@@ -103,6 +103,7 @@ function PartnerHubOrdersPillarCard() {
 
 function PartnerHubOrdersModalContent() {
   const { openCreateOrder } = usePartnerHubCreateOrder();
+  const { setWorkspace } = usePartnerHubWorkspaceUrl();
   const list = usePartnerHubOrdersList();
   const { needsAction } = usePartnerHubOrdersKpis();
   const enabled = usePartnerQueriesEnabled();
@@ -115,8 +116,9 @@ function PartnerHubOrdersModalContent() {
   const paginationProps = list.data ? partnerHubPaginationFromList(list.data) : null;
 
   const startCreate = useCallback(() => {
+    setWorkspace(null);
     openCreateOrder();
-  }, [openCreateOrder]);
+  }, [openCreateOrder, setWorkspace]);
 
   return (
     <PartnerHubWorkspaceModalGate
@@ -176,6 +178,18 @@ function PartnerHubCustomersModalContent() {
   );
 }
 
+/** Workspace modals driven by `?workspace=` — shared by hub pillars and `/partner/orders`. */
+export function PartnerHubWorkspaceModals() {
+  return (
+    <>
+      <PartnerHubCustomersModalContent />
+      <PartnerHubOrdersModalContent />
+      <PartnerHubCouponsModalContent />
+      <PartnerHubServicesModalContent />
+    </>
+  );
+}
+
 /** Four pillar tiles + workspace modals (CRUD inside each modal). */
 export function PartnerHubPillarsRow() {
   return (
@@ -186,10 +200,7 @@ export function PartnerHubPillarsRow() {
         <PartnerHubCouponsPillarCard />
         <PartnerHubServicesPillarCard />
       </PartnerHubPillarGrid>
-      <PartnerHubCustomersModalContent />
-      <PartnerHubOrdersModalContent />
-      <PartnerHubCouponsModalContent />
-      <PartnerHubServicesModalContent />
+      <PartnerHubWorkspaceModals />
     </>
   );
 }

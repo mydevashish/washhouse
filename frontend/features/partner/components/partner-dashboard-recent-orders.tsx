@@ -209,7 +209,7 @@ function RecentOrderCard({ order }: { order: PartnerOrder }) {
 
   return (
     <article
-      className="rounded-3xl border border-border bg-background p-4 shadow-sm"
+      className="rounded-xl border border-border bg-background p-4 shadow-sm"
       data-testid="partner-dashboard-recent-order-card"
     >
       <div className="flex items-start justify-between gap-3">
@@ -311,7 +311,7 @@ export function PartnerDashboardRecentOrders({ onCreateOrder }: PartnerDashboard
             ))}
           </div>
 
-          <div className="hidden overflow-hidden rounded-3xl border border-border md:block">
+          <div className="hidden overflow-hidden rounded-xl border border-border md:block">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="table-sticky-head border-b border-border/60 bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">

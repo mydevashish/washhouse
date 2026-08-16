@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Annotated
 from uuid import UUID
 
@@ -34,6 +35,7 @@ from app.schemas.walk_in_order import WalkInOrderWhatsAppRetryResponse
 from app.services.laundry_service import LaundryService
 from app.services.laundry_trust_score_service import LaundryTrustScoreService
 from app.services.order_invoice_service import OrderInvoiceService
+from app.services.order_payment_snapshot import compute_order_payment_snapshot
 from app.services.order_service import OrderService
 from app.services.order_tags_service import OrderTagsService
 from app.services.partner_service import PartnerService
@@ -74,7 +76,8 @@ async def register_laundry(
     return success_envelope(detail, request)
 
 
-def _partner_order_response(order, customer_name: str) -> PartnerOrderResponse:
+def _partner_order_response(order, customer_name: str, payment=None) -> PartnerOrderResponse:
+    amounts = compute_order_payment_snapshot(order, payment)
     return PartnerOrderResponse(
         id=order.id,
         laundry_id=order.laundry_id,
@@ -95,12 +98,25 @@ def _partner_order_response(order, customer_name: str) -> PartnerOrderResponse:
         cgst_inr=order.cgst_inr,
         sgst_inr=order.sgst_inr,
         total_inr=order.total_inr,
+        paid_inr=amounts["paid_inr"],
+        pending_inr=amounts["pending_inr"],
         payment_status=order.payment_status.value,
         customer_name=customer_name,
         customer_phone=order.customer_phone,
         order_source=order.order_source,
         items=[OrderItemResponse.model_validate(i) for i in order.items],
     )
+
+
+async def _payment_map_for_orders(session, order_ids: list[UUID]) -> dict[UUID, object]:
+    if not order_ids:
+        return {}
+    from sqlalchemy import select
+
+    from app.models.payment import Payment
+
+    rows = await session.scalars(select(Payment).where(Payment.order_id.in_(order_ids)))
+    return {payment.order_id: payment for payment in rows}
 
 
 @router.get("/orders")
@@ -126,8 +142,12 @@ async def partner_orders(
             request,
         )
 
+    payment_by_order = await _payment_map_for_orders(
+        session,
+        [order.id for order, _name in result["items"]],
+    )
     items = [
-        _partner_order_response(order, name)
+        _partner_order_response(order, name, payment_by_order.get(order.id))
         for order, name in result["items"]
     ]
     payload_body = PaginatedListResponse[PartnerOrderResponse].model_validate(
@@ -157,7 +177,11 @@ async def partner_order_detail(
     if order.user_id is not None:
         user_name = await session.scalar(select(User.full_name).where(User.id == order.user_id))
     display_name = user_name or order.customer_name or "Walk-in customer"
-    return success_envelope(_partner_order_response(order, display_name), request)
+    payment_by_order = await _payment_map_for_orders(session, [order.id])
+    return success_envelope(
+        _partner_order_response(order, display_name, payment_by_order.get(order.id)),
+        request,
+    )
 
 
 @router.get("/orders/{order_id}/tags")
@@ -309,14 +333,30 @@ async def partner_analytics(
     request: Request,
     session: SessionDep,
     payload: Annotated[dict, Depends(get_current_partner)],
+    period: Annotated[
+        str | None,
+        Query(description="Optional IST money window: today | week | month | year | custom"),
+    ] = None,
+    date_from: Annotated[date | None, Query(description="Inclusive IST start (YYYY-MM-DD) for custom")] = None,
+    date_to: Annotated[date | None, Query(description="Inclusive IST end (YYYY-MM-DD) for custom")] = None,
 ) -> dict:
     from app.core.exceptions import NotFoundError
 
     partner_id = UUID(payload["sub"])
     try:
-        data = await PartnerService(session).analytics_summary(partner_id)
+        data = await PartnerService(session).analytics_summary(
+            partner_id,
+            period_key=period,
+            date_from=date_from,
+            date_to=date_to,
+        )
     except NotFoundError:
-        data = await PartnerService(session).empty_analytics_summary(partner_id)
+        data = await PartnerService(session).empty_analytics_summary(
+            partner_id,
+            period_key=period,
+            date_from=date_from,
+            date_to=date_to,
+        )
     return success_envelope(PartnerAnalyticsResponse.model_validate(data), request)
 
 

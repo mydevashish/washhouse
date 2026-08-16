@@ -12,12 +12,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.models.catalog import LaundryItemPrice, PlatformCatalogItem
-from app.models.enums import CustodyActorRole, CustodyEventType, OrderSource, OrderStatus
+from app.models.enums import (
+    CustodyActorRole,
+    CustodyEventType,
+    GarmentServiceType,
+    OrderSource,
+    OrderStatus,
+)
+from app.models.garment_catalog import LaundryGarmentItem
 from app.models.laundry import LaundryService
 from app.models.order import Order, OrderItem, OrderStatusEvent
 from app.repositories.catalog import CatalogRepository
 from app.repositories.laundry import LaundryRepository
 from app.repositories.order import OrderRepository
+from app.repositories.partner_garment_catalog import PartnerGarmentCatalogRepository
 from app.repositories.partner_service_catalog import PartnerServiceCatalogRepository
 from app.repositories.user import UserRepository
 from app.repositories.walk_in_order import WalkInOrderRepository
@@ -33,6 +41,17 @@ from app.services.partner_coupon_service import PartnerCouponService
 GST_RATE_PERCENT = Decimal("18")
 WALK_IN_NOTE = "Walk-in order recorded by partner"
 GENDER_NOTE_PREFIX = "Gender:"
+_SINGLE_GARMENT_RATE_PRIORITY: tuple[GarmentServiceType, ...] = (
+    GarmentServiceType.commercial_service,
+    GarmentServiceType.shoe_cleaning,
+    GarmentServiceType.wash_and_fold,
+    GarmentServiceType.wash_n_iron,
+    GarmentServiceType.premium_laundry,
+    GarmentServiceType.express_service,
+    GarmentServiceType.on_hanger,
+    GarmentServiceType.lint_remover,
+    GarmentServiceType.starch,
+)
 
 
 class WalkInOrderService:
@@ -41,6 +60,7 @@ class WalkInOrderService:
         self._orders = OrderRepository(session)
         self._laundries = LaundryRepository(session)
         self._catalog = PartnerServiceCatalogRepository(session)
+        self._garment_catalog = PartnerGarmentCatalogRepository(session)
         self._platform_catalog = CatalogRepository(session)
         self._users = UserRepository(session)
         self._walk_in = WalkInOrderRepository(session)
@@ -102,9 +122,8 @@ class WalkInOrderService:
         total = (taxable + cgst + sgst).quantize(Decimal("0.01"))
 
         platform = PlatformConfigService(self._session)
-        min_amount, max_amount = await platform.get_order_limits()
-        if total < min_amount:
-            raise ValidationError(f"Order total must be at least ₹{min_amount}")
+        _min_amount, max_amount = await platform.get_order_limits()
+        # Walk-in counter orders may be small (single garment); online min does not apply.
         if total > max_amount:
             raise ValidationError(f"Order total cannot exceed ₹{max_amount}")
 
@@ -209,6 +228,14 @@ class WalkInOrderService:
                 raw.get("process"),
             )
 
+        garment_item_id = raw.get("garment_item_id")
+        if garment_item_id is not None:
+            return await self._resolve_garment_service(
+                laundry_id,
+                UUID(str(garment_item_id)),
+                raw.get("process"),
+            )
+
         service_id = UUID(str(raw["service_id"]))
         service = await self._catalog.get(service_id, laundry_id)
         if not service or not service.is_active or service.catalog_status != "active":
@@ -263,6 +290,77 @@ class WalkInOrderService:
                 catalog_status="active",
             ),
         )
+
+    async def _resolve_garment_service(
+        self,
+        laundry_id: UUID,
+        garment_item_id: UUID,
+        process_raw: Any,
+    ) -> LaundryService:
+        item = await self._garment_catalog.get(garment_item_id, laundry_id)
+        if not item or not item.is_visible:
+            raise ValidationError("One or more garment items are invalid or unavailable")
+
+        try:
+            process = WalkInCatalogProcess(str(process_raw))
+        except ValueError as exc:
+            raise ValidationError("Invalid garment process") from exc
+
+        service_type, unit_price = self._garment_rate_for_process(item, process)
+        if unit_price is None:
+            raise ValidationError(f"No price configured for {item.name} ({process.value})")
+
+        display_name = self._service_display_name(item.name, process)
+        existing = await self._catalog.get_by_garment_bridge(
+            laundry_id,
+            garment_item_id=garment_item_id,
+            process=process.value,
+        )
+        if existing:
+            existing.name = display_name[:120]
+            existing.price_inr = unit_price
+            existing.category = item.category.value
+            existing.unit = "piece"
+            existing.is_active = True
+            existing.catalog_status = "active"
+            await self._session.flush()
+            return existing
+
+        marker = f"garment:{garment_item_id}:{process.value}"
+        return await self._catalog.create(
+            LaundryService(
+                laundry_id=laundry_id,
+                name=display_name[:120],
+                category=item.category.value,
+                unit="piece",
+                price_inr=unit_price,
+                description=marker,
+                is_active=True,
+                catalog_status="active",
+            ),
+        )
+
+    @staticmethod
+    def _garment_rate_for_process(
+        item: LaundryGarmentItem,
+        process: WalkInCatalogProcess,
+    ) -> tuple[GarmentServiceType | None, Decimal | None]:
+        active_rates = {
+            rate.service_type: rate.price_inr
+            for rate in item.service_rates
+            if rate.deleted_at is None and rate.price_inr is not None
+        }
+        if process == WalkInCatalogProcess.dry_clean:
+            price = active_rates.get(GarmentServiceType.dry_cleaning)
+            return GarmentServiceType.dry_cleaning, price
+        if process == WalkInCatalogProcess.press:
+            price = active_rates.get(GarmentServiceType.steam_press)
+            return GarmentServiceType.steam_press, price
+        for service_type in _SINGLE_GARMENT_RATE_PRIORITY:
+            price = active_rates.get(service_type)
+            if price is not None:
+                return service_type, price
+        return None, None
 
     @staticmethod
     def _resolve_process(

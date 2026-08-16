@@ -181,15 +181,100 @@ async function mockHubApis(page: Page) {
     });
   });
 
-  await page.route('**/api/v1/partner/analytics/**', async (route) => {
+  await page.route('**/api/v1/partner/analytics/dashboard**', async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
         data: {
+          laundry_id: '00000000-0000-4000-8000-000000000001',
           laundry_name: 'Koramangala Demo',
-          avg_rating: 4.5,
+          period: 'week',
+          period_label_ist: 'This week (IST)',
+          kpis: {
+            orders_today: 3,
+            orders_yesterday: 2,
+            orders_week: 12,
+            orders_prev_week: 10,
+            orders_month: 40,
+            orders_prev_month: 35,
+            revenue_today_inr: '1200.00',
+            revenue_yesterday_inr: '1000.00',
+            revenue_week_inr: '3500.00',
+            revenue_prev_week_inr: '3000.00',
+            revenue_month_inr: '8000.00',
+            revenue_prev_month_inr: '7000.00',
+          },
+          status_snapshot: { in_process: 2, ready_for_delivery: 1, completed: 30 },
+          chart_series: [],
+          status_donut: { in_process: 2, ready: 1, completed: 30 },
+          top_services: [],
+          payment_summary: {
+            cash_paid_inr: '500.00',
+            upi_paid_inr: '700.00',
+            wallet_tracked: false,
+            pending_inr: '0.00',
+          },
+          bottom: {
+            customers_total: 18,
+            customers_new_week: 2,
+            customers_repeat: 10,
+            avg_order_value_inr: '416.67',
+            avg_delivery_minutes: 120,
+            avg_rating: '4.50',
+            review_count: 12,
+          },
+        },
+        meta: {},
+      }),
+    });
+  });
+
+  await page.route('**/api/v1/partner/analytics/summary**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: {
+          laundry_id: '00000000-0000-4000-8000-000000000001',
+          laundry_name: 'Koramangala Demo',
+          avg_rating: '4.5',
           review_count: 12,
+          orders_total: 40,
+          orders_today: 3,
+          orders_pending: 1,
+          orders_in_progress: 2,
+          orders_ready: 1,
+          pickup_requests: 1,
+          orders_delivered: 30,
+          customers_count: 18,
+          revenue_inr: '10000',
+          revenue_today_inr: '1200',
+          revenue_this_month_inr: '8000',
+          revenue_week_inr: '3500',
+          revenue_yesterday_inr: '1000',
+          revenue_prev_week_inr: '3000',
+          revenue_prev_month_inr: '7000',
+          growth_today_pct: '20.00',
+          growth_week_pct: '16.67',
+          growth_month_pct: '14.29',
+          effective_commission_rate: '10.00',
+          commission_today_inr: '120.00',
+          commission_week_inr: '350.00',
+          commission_month_inr: '800.00',
+          partner_net_today_inr: '1080.00',
+          partner_net_week_inr: '3150.00',
+          partner_net_month_inr: '7200.00',
+          revenue_walk_in_today_inr: '400.00',
+          revenue_doorstep_today_inr: '800.00',
+          revenue_walk_in_week_inr: '1000.00',
+          revenue_doorstep_week_inr: '2500.00',
+          revenue_walk_in_month_inr: '2500.00',
+          revenue_doorstep_month_inr: '5500.00',
         },
         meta: {},
       }),
@@ -205,16 +290,12 @@ describeHub('Partner Orders Hub smoke', () => {
     await loginAsPartner(page);
 
     await page.goto('/partner/orders');
-    await expect(page.getByTestId('partner-orders-hub')).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId('hub-pillar-grid')).toBeVisible();
-    await expect(page.getByTestId('hub-pillar-customers')).toBeVisible();
-    await expect(page.getByTestId('hub-pillar-orders')).toBeVisible();
-    await expect(page.getByTestId('hub-pillar-coupons')).toBeVisible();
-    await expect(page.getByTestId('hub-pillar-services')).toBeVisible();
-    await expect(page.getByTestId('orders-hub-tabs')).toHaveCount(0);
-    await expect(page.getByTestId('partner-orders-shortcut-chips')).toHaveCount(0);
+    await expect(page.locator('#main-content main .page-title').filter({ hasText: /^orders$/i })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByTestId('partner-orders-page-new-order')).toBeVisible();
 
-    await page.getByTestId('hub-pillar-customers').click();
+    await page.goto('/partner/orders?workspace=customers');
     await expect(page.getByTestId('hub-workspace-customers')).toBeVisible({ timeout: 15_000 });
     await expect(page).toHaveURL(/workspace=customers/);
     await page.keyboard.press('Escape');
@@ -222,13 +303,17 @@ describeHub('Partner Orders Hub smoke', () => {
 
     await page.getByRole('button', { name: /open navigation menu/i }).click();
     const partnerNav = page.getByRole('navigation', { name: /partner navigation/i });
-    await expect(partnerNav.getByRole('link', { name: /customers & orders/i })).toBeVisible();
+    await expect(partnerNav.getByRole('link', { name: /^customers$/i })).toBeVisible();
+    await expect(partnerNav.getByRole('link', { name: /orders/i })).toBeVisible();
     await expect(partnerNav.getByRole('link', { name: /^coupons$/i })).toHaveCount(0);
     await expect(partnerNav.getByRole('link', { name: /^services$/i })).toHaveCount(0);
-    await page.getByRole('button', { name: /^close$/i }).click();
+    await page.keyboard.press('Escape');
 
     await page.goto('/partner/customers');
-    await expect(page).toHaveURL(/workspace=customers/);
+    await expect(page).toHaveURL(/\/partner\/customers/);
+    await expect(page.locator('#main-content main .page-title').filter({ hasText: /^customers$/i })).toBeVisible({
+      timeout: 15_000,
+    });
 
     await page.goto('/partner/customer-desk?phone=%2B919876543210');
     await expect(page).toHaveURL(/workspace=customers/);
@@ -236,7 +321,7 @@ describeHub('Partner Orders Hub smoke', () => {
 
     await page.goto('/partner/booking-requests');
     await expect(page).toHaveURL(/\/partner\/booking-requests/);
-    await expect(page.getByRole('heading', { name: /booking requests/i })).toBeVisible({
+    await expect(page.locator('#main-content main .page-title').filter({ hasText: /^booking requests$/i })).toBeVisible({
       timeout: 15_000,
     });
 
@@ -309,7 +394,7 @@ describeHub('Partner Orders Hub smoke', () => {
     await expect.poll(() => ordersPageSize).toBe('10');
 
     await page.goto('/partner/orders');
-    await page.getByTestId('hub-pillar-customers').click();
+    await page.goto('/partner/orders?workspace=customers');
     await expect(page.getByTestId('hub-workspace-customers')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole('link', { name: /view orders for hub directory riya/i })).toBeVisible({
       timeout: 15_000,
@@ -320,7 +405,7 @@ describeHub('Partner Orders Hub smoke', () => {
 
     // Settings: no Shop Floor mode toggle; English help (matrix rows 6–7).
     await page.goto('/partner/settings');
-    await expect(page.getByRole('heading', { name: /^settings$/i })).toBeVisible({
+    await expect(page.locator('#main-content main .page-title').filter({ hasText: /^settings$/i })).toBeVisible({
       timeout: 30_000,
     });
     await expect(page.locator('[data-testid="partner-ui-mode-toggle"]')).toHaveCount(0);

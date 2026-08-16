@@ -7,6 +7,7 @@ import { PartnerCustomerDeskOrdersTab } from '@/features/partner/customer-desk/c
 import { PartnerCustomerDeskResults } from '@/features/partner/customer-desk/components/partner-customer-desk-results';
 import { PartnerCustomerDeskSearch } from '@/features/partner/customer-desk/components/partner-customer-desk-search';
 import { parseItemSummary } from '@/features/partner/customer-desk/schemas';
+import { PARTNER_PHONE_INLINE_ERROR } from '@/features/partner/lib/partner-phone-schema';
 
 jest.mock('@/features/partner/customer-desk/hooks', () => ({
   usePartnerCustomerDeskOrders: jest.fn(),
@@ -57,6 +58,20 @@ describe('PartnerCustomerDeskSearch', () => {
     await user.click(screen.getByRole('button', { name: /new order/i }));
 
     expect(onNewOrder).toHaveBeenCalledWith({ kind: 'query', q: 'Priya' });
+  });
+
+  it('rejects 9-digit phone with inline error', async () => {
+    const user = userEvent.setup();
+    const onNewOrder = jest.fn();
+    render(<PartnerCustomerDeskSearch onNewOrder={onNewOrder} onOpenDesk={jest.fn()} />);
+
+    await user.type(screen.getByPlaceholderText(/priya or/i), '987654321');
+    await user.click(screen.getByRole('button', { name: /new order/i }));
+
+    expect(onNewOrder).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(/Enter a valid 10-digit mobile number \(starts with 6–9\)/i),
+    ).toBeInTheDocument();
   });
 });
 
@@ -198,5 +213,16 @@ describe('parseItemSummary', () => {
       { name: 'Wash & Fold', quantity: 2 },
       { name: 'Dry Clean', quantity: 1 },
     ]);
+  });
+});
+
+describe('phoneSearchSchema', () => {
+  it('rejects 9-digit numbers with partner inline error', async () => {
+    const { phoneSearchSchema } = await import('@/features/partner/customer-desk/schemas');
+    const result = phoneSearchSchema.safeParse('987654321');
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(PARTNER_PHONE_INLINE_ERROR);
+    }
   });
 });

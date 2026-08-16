@@ -320,7 +320,7 @@ export function PartnerOperationsView() {
   const deliveryBuckets = useMemo(() => deliveryQ.data?.buckets ?? [], [deliveryQ.data]);
 
   return (
-    <PartnerContent className="space-y-5">
+    <PartnerContent className="space-y-4">
       <PartnerPageHeader
         title="Operations center"
         description="Pickup & delivery queues, driver assignment, and live operations metrics."

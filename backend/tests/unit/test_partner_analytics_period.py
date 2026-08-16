@@ -113,6 +113,32 @@ def test_parse_overview_period_still_rejects_year() -> None:
         parse_partner_overview_period("year")
 
 
+def test_summary_year_window_jan_first_through_today() -> None:
+    from app.services.partner_analytics_period import (
+        PartnerSummaryPeriod,
+        resolve_partner_summary_period,
+    )
+
+    now = datetime(2026, 8, 15, 12, 0, tzinfo=IST)
+    bounds = resolve_partner_summary_period(PartnerSummaryPeriod.year, now=now)
+    assert bounds.period_start_utc == datetime(2025, 12, 31, 18, 30, tzinfo=UTC)
+    assert bounds.period_end_utc == datetime(2026, 8, 15, 18, 30, tzinfo=UTC)
+    assert bounds.chart_buckets[0].bucket_label == "Jan"
+    assert bounds.chart_buckets[-1].bucket_label == "Aug"
+    assert len(bounds.chart_buckets) == 8
+
+
+def test_summary_custom_requires_dates() -> None:
+    from app.core.exceptions import ValidationError
+    from app.services.partner_analytics_period import (
+        PartnerSummaryPeriod,
+        resolve_partner_summary_period,
+    )
+
+    with pytest.raises(ValidationError):
+        resolve_partner_summary_period(PartnerSummaryPeriod.custom)
+
+
 def test_ist_sql_bucket_key_matches_bucket_def_for_day() -> None:
     from app.services.partner_analytics_period import (
         ChartBucketDef,

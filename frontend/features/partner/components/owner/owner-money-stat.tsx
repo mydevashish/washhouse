@@ -35,7 +35,7 @@ export function OwnerMoneyStat({
         <p
           className={cn(
             'mt-0.5 font-semibold tabular-nums tracking-tight text-foreground',
-            emphasize ? 'text-2xl sm:text-3xl' : 'text-lg',
+            emphasize ? 'text-lg font-semibold tabular-nums' : 'text-lg',
           )}
         >
           {value}

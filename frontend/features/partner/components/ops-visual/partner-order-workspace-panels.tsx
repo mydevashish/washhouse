@@ -89,7 +89,7 @@ export function PartnerOrderWorkspacePanels({
 
   return (
     <>
-      <section className="grid gap-5 xl:grid-cols-[1.55fr_0.95fr]">
+      <section className="grid gap-3 xl:grid-cols-[1.55fr_0.95fr]">
         <Card className="border-border xl:col-span-1">
           <CardHeader>
             <CardTitle>Invoice &amp; tags</CardTitle>
@@ -100,7 +100,7 @@ export function PartnerOrderWorkspacePanels({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-3xl border border-border bg-background p-4">
+            <div className="rounded-xl border border-border bg-background p-4">
               <PartnerOpsSectionLabel as="span">Tracking / invoice ref</PartnerOpsSectionLabel>
               <p className="mt-2 font-semibold">{order ? `#${tracking}` : '—'}</p>
               {order?.token_code ? (
@@ -160,20 +160,20 @@ export function PartnerOrderWorkspacePanels({
         ) : null}
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-2">
+      <section className="grid gap-3 xl:grid-cols-2">
         <Card className="border-border">
           <CardHeader>
             <CardTitle>Order details &amp; status</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl bg-muted/40 p-4">
+              <div className="rounded-xl bg-muted/40 p-4">
                 <PartnerOpsSectionLabel as="span">Customer details</PartnerOpsSectionLabel>
                 <p className="mt-2 font-semibold">{customer.name || '—'}</p>
                 <p className="text-sm">{customer.phone || '—'}</p>
                 {customer.address ? <p className="text-sm text-muted-foreground">{customer.address}</p> : null}
               </div>
-              <div className="rounded-3xl bg-muted/40 p-4">
+              <div className="rounded-xl bg-muted/40 p-4">
                 <PartnerOpsSectionLabel as="span">Order information</PartnerOpsSectionLabel>
                 <p className="mt-2 font-semibold">{order ? tracking : 'Draft'}</p>
                 <p className="text-sm">{order ? formatOrderDate(order.pickup_at) : 'Not saved yet'}</p>
@@ -183,7 +183,7 @@ export function PartnerOrderWorkspacePanels({
                 <p className="text-sm text-muted-foreground">Logistics: {deliveryType}</p>
               </div>
             </div>
-            <div className="overflow-hidden rounded-3xl border border-border">
+            <div className="overflow-hidden rounded-xl border border-border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -222,7 +222,7 @@ export function PartnerOrderWorkspacePanels({
             <CardDescription>GST invoice preview with bill summary.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-3xl bg-muted/40 p-4">
+            <div className="rounded-xl bg-muted/40 p-4">
               <PartnerOpsSectionLabel as="span">Invoice ref</PartnerOpsSectionLabel>
               <p className="mt-2 font-semibold">{order ? `#${tracking}` : '—'}</p>
               <div className="mt-4 grid gap-2 text-sm text-muted-foreground">
@@ -230,7 +230,7 @@ export function PartnerOrderWorkspacePanels({
                 <p>Payment method: {paymentMethod}</p>
               </div>
             </div>
-            <div className="overflow-hidden rounded-3xl border border-border">
+            <div className="overflow-hidden rounded-xl border border-border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -272,13 +272,13 @@ export function PartnerOrderWorkspacePanels({
         </Card>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-2">
+      <section className="grid gap-3 xl:grid-cols-2">
         <Card className="border-border">
           <CardHeader>
             <CardTitle>Tag / Label printing</CardTitle>
             <CardDescription>Bag and garment label preview — print opens your tag route.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-[30px] border border-border bg-background p-5 text-sm shadow-sm">
                 <PartnerOpsSectionLabel as="span">Bag tag</PartnerOpsSectionLabel>
@@ -337,7 +337,7 @@ export function PartnerOrderWorkspacePanels({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-3xl bg-muted/40 p-4">
+            <div className="rounded-xl bg-muted/40 p-4">
               <div className="grid gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold">Order</span>
@@ -350,7 +350,7 @@ export function PartnerOrderWorkspacePanels({
                   Delivery: {order ? formatOrderDate(order.delivery_at) : 'Set when order is saved'}
                 </p>
                 {order?.partner_notes ? (
-                  <div className="rounded-3xl bg-background p-4 text-sm">
+                  <div className="rounded-xl bg-background p-4 text-sm">
                     <p className="font-semibold">Delivery note</p>
                     <p className="mt-2 text-muted-foreground">{order.partner_notes}</p>
                   </div>

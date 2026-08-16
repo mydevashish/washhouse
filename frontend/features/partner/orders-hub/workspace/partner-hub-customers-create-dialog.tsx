@@ -17,9 +17,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createPartnerCustomer } from '@/features/partner/customer-desk/api';
 import {
+  formatPhoneInputDisplay,
+  getPartnerPhoneFieldError,
+  isPartnerPhoneReady,
   isValidIndianMobileE164,
-  normalizeIndianPhoneInput,
-} from '@/features/partner/customer-desk/phone';
+  PARTNER_PHONE_INLINE_ERROR,
+  partnerPhoneToE164,
+} from '@/features/partner/lib/partner-phone-schema';
 import { deskPrefillHref } from '@/features/partner/lib/owner-customer-crm';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { queryKeys } from '@/lib/query-keys';
@@ -42,14 +46,17 @@ export function PartnerHubCustomersCreateDialog({
   const [phoneRaw, setPhoneRaw] = useState('');
   const [openDeskAfter, setOpenDeskAfter] = useState(false);
 
+  const phoneError = getPartnerPhoneFieldError(phoneRaw);
+  const canSave = Boolean(name.trim()) && isPartnerPhoneReady(phoneRaw);
+
   const mutation = useMutation({
     mutationFn: () => {
-      const phone = normalizeIndianPhoneInput(phoneRaw);
+      const phone = partnerPhoneToE164(phoneRaw);
       if (!name.trim()) {
         throw new Error('Customer name is required');
       }
       if (!isValidIndianMobileE164(phone)) {
-        throw new Error('Enter a valid Indian mobile (+91)');
+        throw new Error(PARTNER_PHONE_INLINE_ERROR);
       }
       return createPartnerCustomer({ name: name.trim(), phone });
     },
@@ -104,13 +111,20 @@ export function PartnerHubCustomersCreateDialog({
               <Input
                 id="hub-customer-phone"
                 value={phoneRaw}
-                onChange={(e) => setPhoneRaw(e.target.value)}
+                onChange={(e) => setPhoneRaw(formatPhoneInputDisplay(e.target.value))}
                 inputMode="tel"
                 autoComplete="tel"
                 placeholder="9876543210"
                 required
                 className="h-9"
+                aria-invalid={Boolean(phoneError)}
+                aria-describedby={phoneError ? 'hub-customer-phone-error' : undefined}
               />
+              {phoneError ? (
+                <p id="hub-customer-phone-error" className="text-xs text-danger" role="alert">
+                  {phoneError}
+                </p>
+              ) : null}
             </div>
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
               <input
@@ -127,7 +141,7 @@ export function PartnerHubCustomersCreateDialog({
             <Button type="button" variant="outline" className="h-9" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="h-9" disabled={mutation.isPending}>
+            <Button type="submit" className="h-9" disabled={mutation.isPending || !canSave}>
               {mutation.isPending ? 'Saving…' : 'Save customer'}
             </Button>
           </DialogFooter>

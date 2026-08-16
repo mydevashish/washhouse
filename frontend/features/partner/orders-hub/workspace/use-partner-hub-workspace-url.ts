@@ -12,8 +12,27 @@ const PARTNER_ORDERS_HUB_PATH = '/partner/orders';
 
 const QUEUE_PARAM_KEYS = ['chip', 'q', 'status', 'source', 'payment', 'phone', 'customer'] as const;
 
+function paramPresent(params: URLSearchParams, key: (typeof QUEUE_PARAM_KEYS)[number]): boolean {
+  return params.has(key) && Boolean(params.get(key));
+}
+
+/** True when URL carries an orders-queue filter (not create-dialog phone/name prefill). */
 function hasQueueLens(params: URLSearchParams): boolean {
-  return QUEUE_PARAM_KEYS.some((key) => params.has(key) && params.get(key));
+  if (
+    paramPresent(params, 'chip') ||
+    paramPresent(params, 'q') ||
+    paramPresent(params, 'status') ||
+    paramPresent(params, 'source') ||
+    paramPresent(params, 'payment')
+  ) {
+    return true;
+  }
+  // Customer-scoped orders set phone + q together (see buildCustomerScopedOrdersHref).
+  if (paramPresent(params, 'phone') && paramPresent(params, 'q')) return true;
+  if (paramPresent(params, 'customer') && (paramPresent(params, 'phone') || paramPresent(params, 'q'))) {
+    return true;
+  }
+  return false;
 }
 
 /** Shallow `replace` for `?workspace=` while preserving other hub query params. */

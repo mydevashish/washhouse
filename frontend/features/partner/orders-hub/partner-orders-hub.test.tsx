@@ -57,7 +57,17 @@ jest.mock('@/features/partner/orders-hub/workspace/partner-hub-orders-workspace'
     isError: false,
   }),
   usePartnerHubOrdersKpis: () => ({ needsAction: 0, isLoadingAction: false }),
-  PartnerHubOrdersWorkspaceToolbar: () => <div data-testid="hub-orders-toolbar" />,
+  PartnerHubOrdersWorkspaceToolbar: ({
+    onNewOrder,
+  }: {
+    onNewOrder: () => void;
+  }) => (
+    <div data-testid="hub-orders-toolbar">
+      <button type="button" data-testid="hub-orders-new" onClick={onNewOrder}>
+        New order
+      </button>
+    </div>
+  ),
   PartnerHubOrdersWorkspaceBody: () => <div data-testid="hub-orders-body" />,
 }));
 
@@ -95,19 +105,29 @@ jest.mock('@/services/partner-coupons', () => ({
 }));
 
 jest.mock('@/services/partner-service-catalog', () => ({
-  listPartnerServices: jest.fn().mockResolvedValue([]),
+  listPartnerServices: jest.fn().mockResolvedValue({
+    items: [],
+    page: 1,
+    page_size: 10,
+    total_records: 0,
+    total_pages: 1,
+    has_next: false,
+    has_previous: false,
+  }),
   listPartnerServiceCategories: jest.fn().mockResolvedValue([]),
 }));
 
+let queryClient: QueryClient;
+
 function wrap(children: ReactNode) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
 
 describe('PartnerOrdersHub', () => {
   beforeEach(() => {
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
     replace.mockClear();
     push.mockClear();
     searchParams = new URLSearchParams();
@@ -173,6 +193,29 @@ describe('PartnerOrdersHub', () => {
     searchParams = new URLSearchParams('workspace=orders');
     rerender(wrap(<PartnerOrdersHub />));
     expect(screen.getByTestId('hub-workspace-orders')).toBeInTheDocument();
+  });
+
+  it('orders workspace New order closes modal and opens create dialog', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(wrap(<PartnerOrdersHub />));
+
+    await user.click(screen.getByTestId('hub-pillar-orders'));
+    searchParams = new URLSearchParams('workspace=orders');
+    rerender(wrap(<PartnerOrdersHub />));
+    expect(screen.getByTestId('hub-workspace-orders')).toBeInTheDocument();
+
+    replace.mockClear();
+    await user.click(screen.getByTestId('hub-orders-new'));
+
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/partner/orders', { scroll: false });
+    });
+
+    searchParams = new URLSearchParams();
+    rerender(wrap(<PartnerOrdersHub />));
+
+    expect(screen.queryByTestId('hub-workspace-orders')).not.toBeInTheDocument();
+    expect(screen.getByTestId('partner-create-order-dialog')).toBeInTheDocument();
   });
 
   it('opens coupons workspace modal from pillar', async () => {

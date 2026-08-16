@@ -38,7 +38,7 @@ import {
   type PartnerCustomerSnapshotStats,
 } from '@/features/partner/components/ops-visual';
 import { formatInr } from '@/features/discover/detail/order-pricing';
-import { listPartnerServices } from '@/services/partner-service-catalog';
+import { listAllPartnerServices } from '@/services/partner-service-catalog';
 import type { ServiceCatalogItem } from '@/services/partner-service-catalog';
 import { queryKeys } from '@/lib/query-keys';
 import { cn } from '@/lib/utils';
@@ -89,7 +89,7 @@ export function PartnerCustomerDeskPlaceOrderForm({
 
   const servicesQ = useQuery({
     queryKey: queryKeys.partnerServiceCatalog(),
-    queryFn: listPartnerServices,
+    queryFn: listAllPartnerServices,
     staleTime: 60_000,
   });
   const services = useMemo(
@@ -288,7 +288,7 @@ export function PartnerCustomerDeskPlaceOrderForm({
         <Input
           id="partner-desk-customer-name"
           autoComplete="name"
-          className={isOps ? 'min-h-[44px]' : undefined}
+          className={isOps ? 'h-9 min-h-9' : undefined}
           {...form.register('customer_name')}
         />
         {form.formState.errors.customer_name ? (
@@ -301,7 +301,7 @@ export function PartnerCustomerDeskPlaceOrderForm({
         <Label htmlFor="partner-desk-phone">Phone</Label>
         <Input
           id="partner-desk-phone"
-          className={isOps ? 'min-h-[44px] font-mono' : 'font-mono'}
+          className={isOps ? 'h-9 min-h-9 font-mono' : 'font-mono'}
           readOnly
           aria-readonly="true"
           {...form.register('phone')}
@@ -314,7 +314,7 @@ export function PartnerCustomerDeskPlaceOrderForm({
     <fieldset
       className={
         isOps
-          ? 'space-y-3 rounded-3xl border border-border bg-muted/20 p-4'
+          ? 'space-y-3 rounded-xl border border-border bg-muted/20 p-4'
           : 'space-y-3 rounded-lg border border-border/80 p-3'
       }
     >
@@ -371,7 +371,7 @@ export function PartnerCustomerDeskPlaceOrderForm({
         <Input
           id="partner-desk-pickup"
           type="datetime-local"
-          className={isOps ? 'min-h-[44px]' : undefined}
+          className={isOps ? 'h-9 min-h-9' : undefined}
           {...form.register('pickup_at')}
         />
         {form.formState.errors.pickup_at ? (
@@ -385,7 +385,7 @@ export function PartnerCustomerDeskPlaceOrderForm({
         <Input
           id="partner-desk-delivery"
           type="datetime-local"
-          className={isOps ? 'min-h-[44px]' : undefined}
+          className={isOps ? 'h-9 min-h-9' : undefined}
           {...form.register('delivery_at')}
         />
         {form.formState.errors.delivery_at ? (
@@ -495,7 +495,7 @@ export function PartnerCustomerDeskPlaceOrderForm({
         </div>
       )}
       <PartnerOpsSectionLabel>Line items</PartnerOpsSectionLabel>
-      <div className="overflow-hidden rounded-3xl border border-border">
+      <div className="overflow-hidden rounded-xl border border-border">
         <PartnerNewOrderLineItemsTable
           rows={lineRows}
           emptyMessage="Add services from the tiles above."
@@ -526,7 +526,7 @@ export function PartnerCustomerDeskPlaceOrderForm({
         )}
       </Button>
       <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:justify-between">
-        <Button asChild type="button" variant="outline" className="min-h-[44px] gap-1.5">
+        <Button asChild type="button" variant="outline" className="h-9 min-h-9 gap-1.5">
           <Link
             href={walkInHref}
             aria-label={`Record walk-in order for ${profile.name ?? profile.phone ?? 'customer'}`}
@@ -554,7 +554,7 @@ export function PartnerCustomerDeskPlaceOrderForm({
           <PartnerOpsSectionLabel as="h2">Order summary</PartnerOpsSectionLabel>
           <p className="mt-1 text-sm text-muted-foreground">Doorstep · COD</p>
         </div>
-        <div className="space-y-3 rounded-3xl border border-border bg-background/80 p-4">
+        <div className="space-y-3 rounded-xl border border-border bg-background/80 p-4">
           {scheduleFields}
           <div className="space-y-1.5">
             <Label htmlFor="partner-desk-notes">Notes (optional)</Label>
@@ -575,7 +575,7 @@ export function PartnerCustomerDeskPlaceOrderForm({
             </p>
           </div>
         </div>
-        <div className="rounded-3xl bg-muted p-4">
+        <div className="rounded-xl bg-muted p-4">
           <div className="flex items-center justify-between text-base font-semibold">
             <span>Grand total (est.)</span>
             <span className="tabular-nums">{formatInr(subtotal)}</span>
@@ -594,7 +594,7 @@ export function PartnerCustomerDeskPlaceOrderForm({
           )}
         </Button>
         <div className="flex flex-col gap-2">
-          <Button asChild type="button" variant="outline" className="min-h-[44px] gap-1.5">
+          <Button asChild type="button" variant="outline" className="h-9 min-h-9 gap-1.5">
             <Link href={walkInHref}>
               <Store className="h-4 w-4" aria-hidden />
               Record walk-in instead
@@ -617,7 +617,7 @@ export function PartnerCustomerDeskPlaceOrderForm({
   if (isOps) {
     return (
       <form
-        className="grid gap-5 xl:grid-cols-[1.55fr_0.95fr]"
+        className="grid gap-3 xl:grid-cols-[1.55fr_0.95fr]"
         onSubmit={form.handleSubmit(onSubmit)}
         noValidate
         aria-label="Place assisted doorstep order"
@@ -630,7 +630,7 @@ export function PartnerCustomerDeskPlaceOrderForm({
             if (dialogService) addAssistedService(dialogService.id, qty);
           }}
         />
-        <PartnerOpsSurface className="space-y-6">
+        <PartnerOpsSurface className="space-y-4">
           <div className="space-y-1">
             <p className="text-lg font-semibold tracking-tight">New order / Create order</p>
             <p className="text-sm text-muted-foreground">
@@ -638,7 +638,7 @@ export function PartnerCustomerDeskPlaceOrderForm({
             </p>
           </div>
           {banners}
-          <div className="grid gap-4 rounded-3xl border border-border bg-muted/40 p-4">
+          <div className="grid gap-4 rounded-xl border border-border bg-muted/40 p-4">
             <div>
               <p className="text-sm font-semibold">Search customer</p>
               <p className="text-xs text-muted-foreground">Profile from phone lookup.</p>

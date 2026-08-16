@@ -1,6 +1,5 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { IndianRupee, Package, Star, Truck } from 'lucide-react';
 
@@ -9,19 +8,13 @@ import { PartnerOrdersPanel } from '@/features/partner/partner-orders-panel';
 import { PartnerRevenuePanel } from '@/features/partner/partner-revenue-panel';
 import { PartnerTabNav, type PartnerTab } from '@/features/partner/partner-tab-nav';
 import { formatInr } from '@/features/discover/detail/order-pricing';
-import { queryKeys } from '@/lib/query-keys';
-import { STALE } from '@/lib/query-config';
-import { getPartnerAnalytics } from '@/services/partner';
+import { usePartnerAnalytics } from '@/features/partner/hooks/use-partner-operations';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function PartnerDashboard() {
   const [tab, setTab] = useState<PartnerTab>('orders');
 
-  const analyticsQ = useQuery({
-    queryKey: queryKeys.partnerAnalytics(),
-    queryFn: getPartnerAnalytics,
-    staleTime: STALE.partnerAnalytics,
-  });
+  const analyticsQ = usePartnerAnalytics();
 
   const stats = analyticsQ.data;
   const pendingBadge = stats?.orders_pending;
@@ -60,7 +53,7 @@ export function PartnerDashboard() {
     : [];
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 pb-8">
+    <div className="mx-auto max-w-lg space-y-4 pb-8">
       <header className="rounded-xl bg-hero-gradient p-4 text-on-hero shadow-pop sm:p-5">
         <p className="text-xs font-bold uppercase tracking-widest text-on-hero-muted">
           Franchise partner
@@ -90,7 +83,7 @@ export function PartnerDashboard() {
               <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {label}
               </p>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{value}</p>
+              <p className="mt-1 text-lg font-bold tabular-nums text-foreground">{value}</p>
               <p className="text-xs text-muted-foreground">{sub}</p>
             </div>
           ))}

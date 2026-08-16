@@ -43,6 +43,7 @@ export interface WalkInOrderWhatsAppRetryResult {
 export interface WalkInOrderLineItem {
   service_id?: string;
   catalog_item_id?: string;
+  garment_item_id?: string;
   process?: 'dry_clean' | 'press' | 'single';
   quantity: number;
 }

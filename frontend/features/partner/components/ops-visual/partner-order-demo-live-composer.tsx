@@ -42,9 +42,13 @@ import { searchPartnerCustomers } from '@/features/partner/customer-desk/api';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { queryKeys } from '@/lib/query-keys';
 import {
-  isValidIndianMobileE164,
-  normalizeIndianPhoneInput,
-} from '@/features/partner/customer-desk/phone';
+  formatPhoneInputDisplay,
+  getPartnerPhoneFieldError,
+  isPartnerPhoneReady,
+  partnerPhoneDisplayValue,
+  partnerPhoneToE164,
+} from '@/features/partner/lib/partner-phone-schema';
+import { PARTNER_BTN, PARTNER_INPUT } from '@/features/partner/lib/partner-compact';
 import type { CustomerDeskProfile } from '@/features/partner/customer-desk/types';
 import type { PartnerWalkInOrderComposer } from '@/features/partner/hooks/use-partner-walk-in-order-composer';
 import { catalogLineKey, type ClothWallLine } from '@/features/partner-shop-floor/lib/cloth-wall-qty';
@@ -55,6 +59,7 @@ import {
   unitPriceForTile,
 } from '@/features/partner-shop-floor/lib/cloth-wall-items';
 import type { ServiceCatalogItem } from '@/services/partner-service-catalog';
+import { cn } from '@/lib/utils';
 
 function isPerPieceCatalogService(service: ServiceCatalogItem, hasCatalog: boolean): boolean {
   if (!hasCatalog) return false;
@@ -106,7 +111,7 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
   const submitDisabled =
     composer.lineRows.length === 0 ||
     !composer.customerName.trim() ||
-    !isValidIndianMobileE164(normalizeIndianPhoneInput(composer.customerPhone)) ||
+    !isPartnerPhoneReady(composer.customerPhone) ||
     !composer.customerGender;
 
   function handleSearch() {
@@ -115,9 +120,9 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
       toast.error('Enter at least 2 characters (name or phone)');
       return;
     }
-    const asPhone = normalizeIndianPhoneInput(q);
-    if (isValidIndianMobileE164(asPhone)) {
-      composer.applyCustomerFromSearch({ name: composer.customerName || 'Customer', phone: asPhone });
+    const phone = partnerPhoneToE164(q);
+    if (isPartnerPhoneReady(q)) {
+      composer.applyCustomerFromSearch({ name: composer.customerName || 'Customer', phone });
       setSearchResults([]);
       return;
     }
@@ -182,9 +187,12 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
     composer.submitOrder();
   }
 
+  const customerPhoneDisplay = partnerPhoneDisplayValue(composer.customerPhone);
+  const customerPhoneError = getPartnerPhoneFieldError(customerPhoneDisplay);
+
   const snapshotProfile =
     composer.customerName.trim() &&
-    isValidIndianMobileE164(normalizeIndianPhoneInput(composer.customerPhone)) &&
+    isPartnerPhoneReady(composer.customerPhone) &&
     composer.walkInProfile
       ? {
           ...composer.walkInProfile,
@@ -226,7 +234,7 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
               </Button>
             ))}
           </div>
-          <div className="max-h-64 space-y-3 overflow-y-auto rounded-3xl border border-border bg-muted/40 p-4">
+          <div className="max-h-64 space-y-3 overflow-y-auto rounded-xl border border-border bg-muted/40 p-4">
             {catalogTilesFiltered.length === 0 ? (
               <div className="space-y-3 py-4 text-center text-sm">
                 <p className="text-muted-foreground">
@@ -294,14 +302,14 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
         </DialogContent>
       </Dialog>
 
-      <section className="grid gap-5 xl:grid-cols-[1.55fr_0.95fr]">
+      <section className="grid gap-3 xl:grid-cols-[1.55fr_0.95fr]">
         <Card className="border-border">
           <CardHeader>
             <CardTitle>New order / Create order</CardTitle>
             <CardDescription>Search customer and add services with popup entry.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-4 rounded-3xl border border-border bg-muted/40 p-4">
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 rounded-xl border border-border bg-muted/40 p-4">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold">Search Customer</p>
@@ -314,7 +322,7 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Name or +91 mobile"
-                    className="min-w-[220px]"
+                    className={cn('min-w-[220px]', PARTNER_INPUT)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleSearch();
                     }}
@@ -323,6 +331,7 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
                     type="button"
                     size="sm"
                     variant="outline"
+                    className={PARTNER_BTN}
                     disabled={searchMutation.isPending}
                     onClick={handleSearch}
                   >
@@ -331,6 +340,7 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
                   <Button
                     type="button"
                     size="sm"
+                    className={PARTNER_BTN}
                     onClick={() => {
                       setSearchQuery('');
                       composer.setCustomerName('');
@@ -366,13 +376,21 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
                   <Input
                     id="dash-phone"
                     type="tel"
-                    value={composer.customerPhone}
+                    inputMode="tel"
+                    value={customerPhoneDisplay}
                     onChange={(e) =>
-                      composer.setCustomerPhone(normalizeIndianPhoneInput(e.target.value))
+                      composer.setCustomerPhone(formatPhoneInputDisplay(e.target.value))
                     }
-                    className="min-h-9"
+                    className={PARTNER_INPUT}
                     data-testid="create-order-phone"
+                    aria-invalid={Boolean(customerPhoneError)}
+                    aria-describedby={customerPhoneError ? 'dash-phone-error' : undefined}
                   />
+                  {customerPhoneError ? (
+                    <p id="dash-phone-error" className="text-xs text-danger" role="alert">
+                      {customerPhoneError}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="dash-name">Customer name</Label>
@@ -380,7 +398,7 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
                     id="dash-name"
                     value={composer.customerName}
                     onChange={(e) => composer.setCustomerName(e.target.value)}
-                    className="min-h-9"
+                    className={PARTNER_INPUT}
                     data-testid="create-order-name"
                   />
                 </div>
@@ -455,7 +473,7 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
               )}
             </div>
 
-            <div className="overflow-hidden rounded-3xl border border-border">
+            <div className="overflow-hidden rounded-xl border border-border">
               {composer.lineRows.length > 0 ? (
                 <PartnerNewOrderLineItemsTable
                   rows={composer.lineRows}
@@ -514,7 +532,7 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
               <CardTitle>Invoice &amp; tags</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="rounded-3xl border border-border bg-background p-4">
+              <div className="rounded-xl border border-border bg-background p-4">
                 <p className="text-xs uppercase tracking-[.24em] text-muted-foreground">
                   Tracking / invoice ref
                 </p>

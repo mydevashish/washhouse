@@ -66,7 +66,7 @@ function CoverageColumn({
           ) : null}
         </ul>
       ) : (
-        <Button asChild variant="outline" size="sm" className="mt-3 min-h-[44px]">
+        <Button asChild variant="outline" size="sm" className="mt-3 h-9 min-h-9">
           <Link href={staffHref({ capability, action: 'add' })}>Add {capability} helper</Link>
         </Button>
       )}

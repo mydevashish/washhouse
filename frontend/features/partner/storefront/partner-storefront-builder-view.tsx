@@ -15,12 +15,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
+import { PARTNER_BTN, PARTNER_CARD, PARTNER_INPUT, PARTNER_PAGE } from '@/features/partner/lib/partner-compact';
 import { StorefrontFacilitiesSection } from '@/features/partner/storefront/sections/facilities-section';
 import { StorefrontGallerySection } from '@/features/partner/storefront/sections/gallery-section';
 import { StorefrontHighlightsSection } from '@/features/partner/storefront/sections/highlights-section';
 import { StorefrontMachinesSection } from '@/features/partner/storefront/sections/machines-section';
 import { StorefrontTeamCertsSection } from '@/features/partner/storefront/sections/team-certs-section';
 import { StorefrontTemplatesSection } from '@/features/partner/storefront/sections/templates-section';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 import { useOnlineBookingEnabled } from '@/lib/hooks/use-online-booking-enabled';
 import { HORIZONTAL_SCROLL_TOUCH_CLASS } from '@/lib/horizontal-scroll-touch';
 import { queryKeys } from '@/lib/query-keys';
@@ -28,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { STALE } from '@/lib/query-config';
 import {
   applyStorefrontTemplate,
+  buildStorefrontSavePayload,
   getPartnerStorefront,
   getStorefrontOptions,
   listStorefrontTemplates,
@@ -92,7 +95,7 @@ export function PartnerStorefrontBuilderView() {
       setDraft(null);
       toast.success('Storefront saved');
     },
-    onError: () => toast.error('Could not save storefront'),
+    onError: (error) => toast.error(getApiErrorMessage(error, 'Could not save storefront')),
   });
 
   const templateMut = useMutation({
@@ -102,16 +105,27 @@ export function PartnerStorefrontBuilderView() {
       setDraft(null);
       toast.success('Template applied');
     },
-    onError: () => toast.error('Could not apply template'),
+    onError: (error) => toast.error(getApiErrorMessage(error, 'Could not apply template')),
   });
 
-  const patch = useCallback((partial: Partial<StorefrontData>) => {
-    setDraft((prev) => ({ ...(prev ?? storefrontQ.data!), ...partial }));
-  }, [storefrontQ.data]);
+  const patch = useCallback(
+    (partial: Partial<StorefrontData>) => {
+      setDraft((prev) => {
+        const base = prev ?? storefrontQ.data;
+        if (!base) return prev;
+        return { ...base, ...partial };
+      });
+    },
+    [storefrontQ.data],
+  );
 
   function save() {
-    if (!draft) return;
-    const { laundry_id: _id, completeness_score: _s, ...patchBody } = draft;
+    if (!draft || !storefrontQ.data) return;
+    const patchBody = buildStorefrontSavePayload(draft, storefrontQ.data);
+    if (Object.keys(patchBody).length === 0) {
+      setDraft(null);
+      return;
+    }
     saveMut.mutate(patchBody);
   }
 
@@ -137,13 +151,13 @@ export function PartnerStorefrontBuilderView() {
   const score = data.completeness_score;
 
   return (
-    <PartnerContent className="space-y-5 pb-10">
+    <PartnerContent className={`${PARTNER_PAGE} pb-10`}>
       <PartnerPageHeader
         title="Storefront builder"
         description="Design your custom shop — customers see this when they open your listing."
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" size="sm" asChild>
+            <Button type="button" variant="outline" size="sm" className={PARTNER_BTN} asChild>
               <Link href={`/discover/${data.laundry_id}`} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="mr-1.5 h-4 w-4" />
                 Preview shop
@@ -152,8 +166,10 @@ export function PartnerStorefrontBuilderView() {
             <Button
               type="button"
               size="sm"
+              className={PARTNER_BTN}
               disabled={!dirty || saveMut.isPending}
               onClick={save}
+              data-testid="storefront-save"
             >
               {saveMut.isPending ? (
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -172,7 +188,7 @@ export function PartnerStorefrontBuilderView() {
         </InfoBanner>
       )}
 
-      <Card>
+      <Card className={PARTNER_CARD}>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Store completeness</CardTitle>
           <CardDescription>
@@ -217,19 +233,19 @@ export function PartnerStorefrontBuilderView() {
       </div>
 
       {tab === 'brand' && (
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           <StorefrontTemplatesSection
             templates={templatesQ.data ?? []}
             currentId={data.template_id}
             loading={templateMut.isPending}
             onApply={(id) => templateMut.mutate(id)}
           />
-          <Card>
+          <Card className={PARTNER_CARD}>
             <CardHeader>
               <CardTitle className="text-base">Brand colors & banner</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
+            <CardContent className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="brand_primary">Primary color</Label>
                   <div className="flex gap-2">
@@ -238,9 +254,10 @@ export function PartnerStorefrontBuilderView() {
                       type="color"
                       value={data.brand_primary ?? '#1e3a5f'}
                       onChange={(e) => patch({ brand_primary: e.target.value })}
-                      className="h-10 w-14 cursor-pointer p-1"
+                      className="h-9 w-14 cursor-pointer p-1"
                     />
                     <Input
+                      className={PARTNER_INPUT}
                       value={data.brand_primary ?? ''}
                       onChange={(e) => patch({ brand_primary: e.target.value })}
                       placeholder="#1e3a5f"
@@ -255,9 +272,10 @@ export function PartnerStorefrontBuilderView() {
                       type="color"
                       value={data.brand_secondary ?? '#c9a227'}
                       onChange={(e) => patch({ brand_secondary: e.target.value })}
-                      className="h-10 w-14 cursor-pointer p-1"
+                      className="h-9 w-14 cursor-pointer p-1"
                     />
                     <Input
+                      className={PARTNER_INPUT}
                       value={data.brand_secondary ?? ''}
                       onChange={(e) => patch({ brand_secondary: e.target.value })}
                       placeholder="#c9a227"
@@ -269,6 +287,7 @@ export function PartnerStorefrontBuilderView() {
                 <Label htmlFor="cover_url">Cover banner URL</Label>
                 <Input
                   id="cover_url"
+                  className={PARTNER_INPUT}
                   value={data.cover_url ?? ''}
                   onChange={(e) => patch({ cover_url: e.target.value || null })}
                   placeholder="https://..."
@@ -278,6 +297,7 @@ export function PartnerStorefrontBuilderView() {
                 <Label htmlFor="logo_url">Shop logo URL</Label>
                 <Input
                   id="logo_url"
+                  className={PARTNER_INPUT}
                   value={data.logo_url ?? ''}
                   onChange={(e) => patch({ logo_url: e.target.value || null })}
                   placeholder="https://..."
@@ -287,9 +307,11 @@ export function PartnerStorefrontBuilderView() {
                 <Label htmlFor="tagline">Tagline</Label>
                 <Input
                   id="tagline"
+                  className={PARTNER_INPUT}
                   value={data.tagline ?? ''}
                   onChange={(e) => patch({ tagline: e.target.value || null })}
                   maxLength={300}
+                  data-testid="storefront-tagline"
                 />
               </div>
             </CardContent>
@@ -298,11 +320,11 @@ export function PartnerStorefrontBuilderView() {
       )}
 
       {tab === 'profile' && (
-        <Card>
+        <Card className={PARTNER_CARD}>
           <CardHeader>
             <CardTitle className="text-base">Store profile</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+          <CardContent className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="brand_story">About / brand story</Label>
               <Textarea

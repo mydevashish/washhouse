@@ -16,6 +16,8 @@ from app.models.enums import GarmentCategory
 from app.schemas.garment_catalog import (
     GarmentBulkDeleteRequest,
     GarmentBulkDeleteResponse,
+    GarmentBulkVisibleRequest,
+    GarmentBulkVisibleResponse,
     GarmentCatalogCreate,
     GarmentCatalogItemOut,
     GarmentCatalogListResponse,
@@ -45,7 +47,7 @@ async def list_partner_garment_catalog(
     category: Annotated[GarmentCategory | None, Query()] = None,
     search: Annotated[str | None, Query(max_length=120)] = None,
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 10,
 ) -> dict:
     data = await PartnerGarmentCatalogService(session).list_garments(
         UUID(payload["sub"]),
@@ -80,7 +82,7 @@ async def download_garment_catalog_template(
     session: SessionDep,
 ) -> Response:
     _ = payload, session
-    content = PartnerGarmentCatalogService(session).export_template()
+    content = await PartnerGarmentCatalogService(session).export_template()
     return Response(
         content=content,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -127,6 +129,24 @@ async def confirm_garment_catalog_import(
         skip_invalid=body.skip_invalid,
     )
     return success_envelope(GarmentImportConfirmResponse.model_validate(data), request)
+
+
+@router.post(
+    "/bulk-visible",
+    summary="Set is_visible for multiple garments (current page bulk action)",
+)
+async def bulk_set_garment_catalog_visible(
+    body: GarmentBulkVisibleRequest,
+    request: Request,
+    session: SessionDep,
+    payload: Annotated[dict, Depends(get_current_partner)],
+) -> dict:
+    data = await PartnerGarmentCatalogService(session).bulk_set_visible(
+        UUID(payload["sub"]),
+        ids=body.ids,
+        is_visible=True,
+    )
+    return success_envelope(GarmentBulkVisibleResponse.model_validate(data), request)
 
 
 @router.post(

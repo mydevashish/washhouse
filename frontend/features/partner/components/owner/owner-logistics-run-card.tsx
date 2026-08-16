@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { ClientDate } from '@/components/ui/client-date';
 import { Select } from '@/components/ui/select';
 import { PartnerStatusBadge } from '@/features/partner/components/partner-status-badge';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 import {
   getPartnerAdvanceLabel,
   getPartnerNextStatus,
@@ -83,7 +84,7 @@ export function OwnerLogisticsRunCard({
       toast.success(order.assignment ? 'Rider reassigned' : 'Rider assigned');
       invalidate();
     },
-    onError: () => toast.error('Could not assign rider'),
+    onError: (e) => toast.error(getApiErrorMessage(e, 'Could not assign rider')),
   });
 
   const acceptM = useMutation({
@@ -92,7 +93,7 @@ export function OwnerLogisticsRunCard({
       toast.success('Order accepted');
       invalidate();
     },
-    onError: () => toast.error('Could not accept order'),
+    onError: (e) => toast.error(getApiErrorMessage(e, 'Could not accept order')),
   });
 
   const advanceM = useMutation({
@@ -101,7 +102,7 @@ export function OwnerLogisticsRunCard({
       toast.success('Status updated');
       invalidate();
     },
-    onError: () => toast.error('Could not update status'),
+    onError: (e) => toast.error(getApiErrorMessage(e, 'Could not update status')),
   });
 
   const needsAccept = isOrderNeedsAction(order.status, 'online');

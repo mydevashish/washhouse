@@ -8,6 +8,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
+from app.core.pagination import build_paginated_response, normalize_page_size
 from app.models.laundry import LaundryService
 from app.repositories.laundry import LaundryRepository
 from app.repositories.partner_service_catalog import PartnerServiceCatalogRepository
@@ -45,10 +46,30 @@ class PartnerServiceCatalogService:
             raise NotFoundError("Laundry not found for this partner")
         return laundry
 
-    async def list_services(self, partner_user_id: UUID) -> list[dict]:
+    async def list_services(
+        self,
+        partner_user_id: UUID,
+        *,
+        page: int = 1,
+        page_size: int = 10,
+        search: str | None = None,
+    ) -> dict:
         laundry = await self._laundry_for_partner(partner_user_id)
-        rows = await self._repo.list_for_laundry(laundry.id)
-        return [_serialize(r) for r in rows]
+        safe_page = max(1, page)
+        safe_size = normalize_page_size(page_size)
+        term = search.strip() if search and search.strip() else None
+        rows, total = await self._repo.list_for_laundry_paginated(
+            laundry.id,
+            search=term,
+            page=safe_page,
+            page_size=safe_size,
+        )
+        return build_paginated_response(
+            items=[_serialize(r) for r in rows],
+            total_records=total,
+            page=safe_page,
+            page_size=safe_size,
+        )
 
     async def create_service(self, partner_user_id: UUID, body: dict) -> dict:
         laundry = await self._laundry_for_partner(partner_user_id)

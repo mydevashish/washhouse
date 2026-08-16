@@ -63,6 +63,17 @@ async def update_partner_storefront(
     return success_envelope(StorefrontResponse.model_validate(data), request)
 
 
+@router.patch("/partner/storefront")
+async def patch_partner_storefront(
+    body: StorefrontUpdateRequest,
+    request: Request,
+    session: SessionDep,
+    payload: Annotated[dict, Depends(get_current_partner)],
+) -> dict:
+    data = await StorefrontService(session).update_for_partner(UUID(payload["sub"]), body)
+    return success_envelope(StorefrontResponse.model_validate(data), request)
+
+
 @router.post("/partner/storefront/apply-template")
 async def apply_storefront_template(
     body: ApplyTemplateRequest,

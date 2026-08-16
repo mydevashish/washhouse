@@ -480,11 +480,11 @@ export function PartnerDashboardAnalyticsChart({ className }: { className?: stri
 
       {loading ? (
 
-        <Skeleton className="mt-4 h-64 w-full rounded-3xl" />
+        <Skeleton className="mt-4 h-64 w-full rounded-xl" />
 
       ) : !hasChartData ? (
 
-        <div className="mt-4 space-y-2 rounded-3xl bg-muted/40 p-4 text-sm text-muted-foreground">
+        <div className="mt-4 space-y-2 rounded-xl bg-muted/40 p-4 text-sm text-muted-foreground">
 
           <p>No activity in this period yet.</p>
 

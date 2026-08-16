@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { GarmentBulkDeleteDialog } from '@/features/partner/garment-catalog/components/garment-bulk-delete-dialog';
 import { GarmentBulkUploadDialog } from '@/features/partner/garment-catalog/components/garment-bulk-upload-dialog';
+import { GarmentBulkVisibleDialog } from '@/features/partner/garment-catalog/components/garment-bulk-visible-dialog';
 import { GarmentCatalogCategoryTabs } from '@/features/partner/garment-catalog/components/garment-catalog-category-tabs';
 import { GarmentDeleteDialog } from '@/features/partner/garment-catalog/components/garment-delete-dialog';
 import { GarmentFormSheet } from '@/features/partner/garment-catalog/components/garment-form-sheet';
@@ -36,6 +37,7 @@ export function GarmentCatalogPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkVisibleOpen, setBulkVisibleOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
 
   const { updateM, deleteM } = usePartnerGarmentCatalogMutations();
@@ -47,6 +49,8 @@ export function GarmentCatalogPage() {
 
   const kpis = usePartnerGarmentCatalogKpis();
   const listQ = usePartnerGarmentCatalogList({ category, search, page });
+  const pageItems = listQ.data?.items ?? [];
+  const pageIds = pageItems.map((item) => item.id);
 
   function openBulkDelete() {
     setBulkDeleteOpen(true);
@@ -82,8 +86,9 @@ export function GarmentCatalogPage() {
     try {
       await downloadGarmentTemplate();
       toast.success('Template downloaded');
-    } catch {
-      toast.error('Could not download template');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not download template';
+      toast.error(message);
     }
   }
 
@@ -117,13 +122,19 @@ export function GarmentCatalogPage() {
     if (!deleteTarget) return;
     await deleteM.mutateAsync(deleteTarget.id);
     setDeleteTarget(null);
+    setPage(1);
+  }
+
+  function openMakeAllVisible() {
+    if (pageIds.length === 0) return;
+    setBulkVisibleOpen(true);
   }
 
   return (
     <div className="space-y-4" data-testid="partner-services-page">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Service catalog</h1>
+          <h1 className="page-title">Service catalog</h1>
           <p className="text-sm text-muted-foreground">
             Your garment list and rates — used at the counter and in orders.
           </p>
@@ -131,6 +142,8 @@ export function GarmentCatalogPage() {
         <GarmentCatalogToolbar
           onBulkUpload={openBulkUpload}
           onBulkDelete={openBulkDelete}
+          onMakeAllVisible={openMakeAllVisible}
+          makeAllVisibleDisabled={pageIds.length === 0 || listQ.isLoading || listQ.isPending}
           onAddGarment={openCreate}
         />
       </div>
@@ -157,8 +170,11 @@ export function GarmentCatalogPage() {
       <GarmentCatalogList
         data={listQ.data}
         isLoading={listQ.isLoading}
+        isPending={listQ.isPending}
         isError={listQ.isError}
         error={listQ.error}
+        category={category}
+        search={search}
         togglingId={togglingId}
         onRetry={() => void listQ.refetch()}
         onUpload={openBulkUpload}
@@ -172,7 +188,7 @@ export function GarmentCatalogPage() {
       />
 
       <div
-        className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3"
+        className="rounded-xl border border-border bg-muted/20 px-4 py-3"
         data-testid="garment-catalog-pricing-link"
       >
         <Link
@@ -197,6 +213,13 @@ export function GarmentCatalogPage() {
         selectedIds={[...selectedIds]}
         selectedCategory={deleteCategory}
         totalCount={kpis.total}
+        onSuccess={() => setPage(1)}
+      />
+
+      <GarmentBulkVisibleDialog
+        open={bulkVisibleOpen}
+        onOpenChange={setBulkVisibleOpen}
+        pageIds={pageIds}
       />
 
       <GarmentFormSheet

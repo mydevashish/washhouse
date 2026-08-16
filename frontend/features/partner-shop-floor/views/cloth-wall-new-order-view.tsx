@@ -7,6 +7,7 @@ import { Loader2, List, LayoutGrid } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,7 @@ import {
   unitPriceForTile,
 } from '@/features/partner-shop-floor/lib/cloth-wall-items';
 import {
+  buildWalkInItemsFromClothWallLines,
   catalogLineKey,
   clothWallPieceCount,
   clothWallSubtotalInr,
@@ -51,12 +53,11 @@ import {
 import { useVisibleGarmentCatalogItems } from '@/features/partner/garment-catalog/hooks/use-visible-garment-catalog-items';
 import { queryKeys } from '@/lib/query-keys';
 import { cn } from '@/lib/utils';
-import { listPartnerServices } from '@/services/partner-service-catalog';
+import { listAllPartnerServices } from '@/services/partner-service-catalog';
 import {
   advanceWalkInOrderStatus,
   createWalkInOrder,
   type WalkInOrder,
-  type WalkInOrderLineItem,
 } from '@/services/partner-walk-in-orders';
 
 type WizardStep = 'customer' | 'wall' | 'confirm' | 'success';
@@ -104,7 +105,7 @@ export function ClothWallNewOrderView({
 
   const servicesQ = useQuery({
     queryKey: queryKeys.partnerServiceCatalog(),
-    queryFn: listPartnerServices,
+    queryFn: listAllPartnerServices,
     enabled,
   });
 
@@ -137,7 +138,7 @@ export function ClothWallNewOrderView({
       setCreatedOrder(order);
       setStep('success');
     },
-    onError: () => toast.error('Could not save order'),
+    onError: (err) => toast.error(getApiErrorMessage(err, 'Could not save order')),
   });
 
   const startWashMutation = useMutation({
@@ -247,19 +248,7 @@ export function ClothWallNewOrderView({
       return;
     }
 
-    const items: WalkInOrderLineItem[] = lines.map((line) => {
-      if (line.catalogItemId && line.process) {
-        return {
-          catalog_item_id: line.catalogItemId,
-          process: line.process,
-          quantity: line.quantity,
-        };
-      }
-      return {
-        service_id: line.serviceId!,
-        quantity: line.quantity,
-      };
-    });
+    const items = buildWalkInItemsFromClothWallLines(lines);
 
     createMutation.mutate({
       customer_name: customerName.trim(),
@@ -560,9 +549,9 @@ function ListModePicker({
   pieceCount,
   subtotal,
 }: {
-  services: Awaited<ReturnType<typeof listPartnerServices>>;
+  services: Awaited<ReturnType<typeof listAllPartnerServices>>;
   lines: ClothWallLine[];
-  onAddService: (svc: Awaited<ReturnType<typeof listPartnerServices>>[number]) => void;
+  onAddService: (svc: Awaited<ReturnType<typeof listAllPartnerServices>>[number]) => void;
   onDec: (key: string) => void;
   onContinue: () => void;
   pieceCount: number;

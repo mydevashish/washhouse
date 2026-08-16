@@ -1,8 +1,10 @@
 import { api, type ApiEnvelope } from '@/lib/api';
 import type { PaginatedList } from '@/lib/pagination/types';
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination/types';
+import type { AxiosError } from 'axios';
 
-/** Default page size for garment catalog (backend allows 1–100; spec default 20). */
-export const GARMENT_CATALOG_DEFAULT_PAGE_SIZE = 20;
+/** Default page size for garment catalog — aligned with pagination standard. */
+export const GARMENT_CATALOG_DEFAULT_PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 /** Excel `Category` column values (normalized slug). */
 export type GarmentCategory =
@@ -159,6 +161,14 @@ export type GarmentBulkDeleteResult = {
   deleted_count: number;
 };
 
+export type GarmentBulkVisibleInput = {
+  ids: string[];
+};
+
+export type GarmentBulkVisibleResult = {
+  updated_count: number;
+};
+
 export type GarmentImageUploadResult = {
   url: string;
   garment: GarmentCatalogItem;
@@ -195,12 +205,92 @@ export async function getPartnerGarment(id: string): Promise<GarmentCatalogItem>
   return data.data;
 }
 
+async function blobToText(blob: Blob): Promise<string> {
+  if (typeof blob.text === 'function') {
+    try {
+      return await blob.text();
+    } catch {
+      // fall through for partial Blob implementations
+    }
+  }
+  if (typeof Response !== 'undefined') {
+    return new Response(blob).text();
+  }
+  const buffer = await blob.arrayBuffer();
+  return new TextDecoder().decode(buffer);
+}
+
+/** Parse JSON error body when axios used responseType blob. */
+async function parseBlobApiError(blob: Blob): Promise<string | null> {
+  try {
+    const text = await blobToText(blob);
+    const parsed = JSON.parse(text) as { error?: { message?: string } };
+    return parsed.error?.message ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function filenameFromContentDisposition(header: string | undefined, fallback: string): string {
+  if (!header) return fallback;
+  const match = /filename\*?=(?:UTF-8''|")?([^";]+)/i.exec(header);
+  return match?.[1]?.trim().replace(/^"|"$/g, '') || fallback;
+}
+
+function isJsonBlob(blob: Blob, contentType?: string): boolean {
+  const type = contentType ?? blob.type ?? '';
+  return type.includes('application/json') || type.includes('text/json');
+}
+
+function isBlobLike(value: unknown): value is Blob {
+  return (
+    value instanceof Blob ||
+    (typeof value === 'object' &&
+      value !== null &&
+      typeof (value as Blob).arrayBuffer === 'function')
+  );
+}
+
 /** Trigger browser download of the xlsx import template. */
 export async function downloadGarmentTemplate(filename = 'garment-catalog-template.xlsx'): Promise<void> {
-  const { data } = await api.get<Blob>('/partner/garment-catalog/template', {
-    responseType: 'blob',
-  });
-  const url = URL.createObjectURL(data);
+  try {
+    const response = await api.get<Blob>('/partner/garment-catalog/template', {
+      responseType: 'blob',
+    });
+    const blob = response.data;
+    const contentType = String(response.headers['content-type'] ?? '');
+
+    if (isJsonBlob(blob, contentType)) {
+      const message = await parseBlobApiError(blob);
+      throw new Error(message ?? 'Could not download template');
+    }
+
+    const resolvedFilename = filenameFromContentDisposition(
+      response.headers['content-disposition'] as string | undefined,
+      filename,
+    );
+    triggerBlobDownload(blob, resolvedFilename);
+  } catch (error) {
+    const ax = error as AxiosError<Blob | string>;
+    const payload = ax.response?.data;
+    if (isBlobLike(payload)) {
+      const message = await parseBlobApiError(payload);
+      if (message) throw new Error(message);
+    } else if (typeof payload === 'string') {
+      try {
+        const parsed = JSON.parse(payload) as { error?: { message?: string } };
+        if (parsed.error?.message) throw new Error(parsed.error.message);
+      } catch (parseError) {
+        if (parseError instanceof Error && parseError.message !== 'Unexpected token') throw parseError;
+      }
+    }
+    if (error instanceof Error) throw error;
+    throw new Error('Could not download template');
+  }
+}
+
+function triggerBlobDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = filename;
@@ -260,6 +350,14 @@ export async function bulkDeletePartnerGarments(
   return data.data;
 }
 
+export async function bulkSetGarmentsVisible(input: GarmentBulkVisibleInput): Promise<GarmentBulkVisibleResult> {
+  const { data } = await api.post<ApiEnvelope<GarmentBulkVisibleResult>>(
+    '/partner/garment-catalog/bulk-visible',
+    input,
+  );
+  return data.data;
+}
+
 export async function uploadGarmentImage(id: string, file: File): Promise<GarmentImageUploadResult> {
   const form = new FormData();
   form.append('file', file);
@@ -273,12 +371,13 @@ export async function uploadGarmentImage(id: string, file: File): Promise<Garmen
 
 /** First non-zero primary service price for KPI / card subtitle. */
 export function garmentPrimaryPriceInr(item: GarmentCatalogItem): string | null {
+  const rates = item.rates ?? {};
   for (const key of GARMENT_PRIMARY_SERVICE_TYPES) {
-    const rate = item.rates[key];
+    const rate = rates[key];
     if (rate?.price_inr) return rate.price_inr;
   }
   for (const key of GARMENT_SERVICE_TYPES) {
-    const rate = item.rates[key];
+    const rate = rates[key];
     if (rate?.price_inr) return rate.price_inr;
   }
   return null;

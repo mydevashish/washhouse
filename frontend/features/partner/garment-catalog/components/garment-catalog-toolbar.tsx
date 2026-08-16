@@ -1,15 +1,18 @@
 'use client';
 
-import { Download, Plus, Trash2, Upload } from 'lucide-react';
+import { Download, Eye, Plus, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { PARTNER_BTN } from '@/features/partner/lib/partner-compact';
 import { downloadGarmentTemplate } from '@/services/partner-garment-catalog';
 
 type GarmentCatalogToolbarProps = {
   onAddGarment?: () => void;
   onBulkUpload?: () => void;
   onBulkDelete?: () => void;
+  onMakeAllVisible?: () => void;
+  makeAllVisibleDisabled?: boolean;
   downloading?: boolean;
 };
 
@@ -17,14 +20,17 @@ export function GarmentCatalogToolbar({
   onAddGarment,
   onBulkUpload,
   onBulkDelete,
+  onMakeAllVisible,
+  makeAllVisibleDisabled = false,
   downloading = false,
 }: GarmentCatalogToolbarProps) {
   async function handleDownloadTemplate() {
     try {
       await downloadGarmentTemplate();
       toast.success('Template downloaded');
-    } catch {
-      toast.error('Could not download template');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not download template';
+      toast.error(message);
     }
   }
 
@@ -36,7 +42,7 @@ export function GarmentCatalogToolbar({
       <Button
         type="button"
         variant="default"
-        className="h-9 gap-1.5"
+        className={`${PARTNER_BTN} gap-1.5`}
         data-testid="bulk-upload-btn"
         onClick={() => {
           if (onBulkUpload) onBulkUpload();
@@ -49,7 +55,7 @@ export function GarmentCatalogToolbar({
       <Button
         type="button"
         variant="outline"
-        className="h-9 gap-1.5"
+        className={`${PARTNER_BTN} gap-1.5`}
         data-testid="download-template-btn"
         disabled={downloading}
         onClick={() => void handleDownloadTemplate()}
@@ -60,7 +66,20 @@ export function GarmentCatalogToolbar({
       <Button
         type="button"
         variant="outline"
-        className="h-9 gap-1.5"
+        className={`${PARTNER_BTN} gap-1.5`}
+        data-testid="make-all-visible-btn"
+        disabled={makeAllVisibleDisabled}
+        onClick={() => {
+          if (onMakeAllVisible) onMakeAllVisible();
+        }}
+      >
+        <Eye className="h-4 w-4" aria-hidden />
+        All visible
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        className={`${PARTNER_BTN} gap-1.5`}
         data-testid="bulk-delete-btn"
         onClick={() => {
           if (onBulkDelete) onBulkDelete();
@@ -72,7 +91,7 @@ export function GarmentCatalogToolbar({
       </Button>
       <Button
         type="button"
-        className="h-9 gap-1.5 sm:ml-auto"
+        className={`${PARTNER_BTN} gap-1.5 sm:ml-auto`}
         data-testid="add-garment-btn"
         onClick={() => {
           if (onAddGarment) onAddGarment();

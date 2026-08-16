@@ -1,9 +1,10 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 import { DataTablePagination } from '@/components/data-table/data-table-pagination';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerOrderCard } from '@/features/partner/partner-order-card';
@@ -22,6 +23,11 @@ import {
 import { usePartnerOrderMutations } from '@/features/partner/hooks/use-partner-operations';
 import { getPrintLifecycleEmphasis, canPrintBillOrInvoice } from '@/features/partner-shop-floor/lib/print-lifecycle';
 import { formatInr } from '@/features/discover/detail/order-pricing';
+import {
+  partnerOrderHasUnpaidBalance,
+  partnerOrderPaidInr,
+  partnerOrderPendingInr,
+} from '@/features/partner/lib/partner-order-payment';
 import { ClientDate } from '@/components/ui/client-date';
 import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
@@ -157,7 +163,7 @@ export function PartnerOrdersTable({
             {list.rows.map((o) => (
               <div
                 key={o.id}
-                className="rounded-3xl border border-border bg-background p-4 shadow-sm"
+                className="rounded-xl border border-border bg-background p-4 shadow-sm"
               >
                 <PartnerOrderCard
                   order={o}
@@ -173,7 +179,7 @@ export function PartnerOrdersTable({
             ))}
           </div>
 
-          <div className="hidden overflow-hidden rounded-3xl border border-border md:block">
+          <div className="hidden overflow-hidden rounded-xl border border-border md:block" data-testid="partner-orders-table-desktop">
             <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="table-sticky-head border-b border-border/60 bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
@@ -181,7 +187,9 @@ export function PartnerOrdersTable({
                   <th className="px-4 py-2 font-semibold">Order</th>
                   <th className="px-4 py-2 font-semibold">Customer</th>
                   <th className="hidden px-4 py-2 font-semibold lg:table-cell">Services</th>
-                  <th className="px-4 py-2 font-semibold">Amount</th>
+                  <th className="px-4 py-2 font-semibold">Total</th>
+                  <th className="px-4 py-2 font-semibold">Paid</th>
+                  <th className="px-4 py-2 font-semibold">Pending</th>
                   <th className="hidden px-4 py-2 font-semibold sm:table-cell">Pickup</th>
                   <th className="px-4 py-2 font-semibold">Status</th>
                   <th className="px-4 py-2 font-semibold text-right">Actions</th>
@@ -217,7 +225,28 @@ export function PartnerOrdersTable({
                       <td className="hidden max-w-[140px] truncate px-4 py-2 text-xs text-muted-foreground lg:table-cell">
                         {formatServices(o)}
                       </td>
-                      <td className="px-4 py-2 tabular-nums font-medium">{formatInr(Number(o.total_inr))}</td>
+                      <td className="px-4 py-2 text-xs tabular-nums font-medium">
+                        {formatInr(Number(o.total_inr))}
+                      </td>
+                      <td className="px-4 py-2 text-xs tabular-nums text-muted-foreground">
+                        {formatInr(partnerOrderPaidInr(o))}
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-xs tabular-nums font-medium">
+                            {formatInr(partnerOrderPendingInr(o))}
+                          </span>
+                          {partnerOrderHasUnpaidBalance(o) ? (
+                            <Badge
+                              variant="outline"
+                              className="border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-normal"
+                              data-testid="partner-order-unpaid-badge"
+                            >
+                              Unpaid
+                            </Badge>
+                          ) : null}
+                        </div>
+                      </td>
                       <td className="hidden whitespace-nowrap px-4 py-2 text-xs text-muted-foreground sm:table-cell">
                         <ClientDate iso={o.pickup_at} />
                       </td>

@@ -59,7 +59,7 @@ export function PartnerCustomerDeskResults({ results, isLoading, query, onSelect
           <button
             type="button"
             role="option"
-            className="flex w-full min-h-[44px] items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex w-full h-9 min-h-9 items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => onSelect(row)}
           >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">

@@ -113,11 +113,26 @@ class CustomerDeskService:
         if not display_phone:
             display_phone = ""
 
+        gender: str | None = None
+        notes: str | None = None
+        if laundry_id is not None and user is not None:
+            from app.repositories.laundry_customer_registration import LaundryCustomerRegistrationRepository
+
+            registration = await LaundryCustomerRegistrationRepository(self._session).get_for_laundry_user(
+                laundry_id,
+                user.id,
+            )
+            if registration is not None:
+                gender = registration.gender
+                notes = registration.crm_notes
+
         return {
             "user_id": user.id if user else None,
             "name": (user.full_name if user else None) or guest_name,
             "phone": display_phone,
             "email": user.email if user else None,
+            "gender": gender,
+            "notes": notes,
             "registered": user is not None,
             "order_count": order_count,
             "last_order_at": last_order_at,

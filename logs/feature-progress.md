@@ -175,6 +175,16 @@
 - Done: Prompts 0–6 — BE search confirm; shared `usePartnerTagsOrderSearch`; dashboard Tags UI + verify panel; wired on `/partner`; RTL + Playwright placement smoke
 - Next: Manual QA matrix (375/1280, light/dark, live API search)
 
+## Partner Ops Fixes + Compact UI
+- Status: **review** (Prompts 0–12 complete 2026-08-16)
+- Spec: `docs/features/partner-ops-fixes-compact-ui.md`
+- Matrix: `docs/qa/partner-ops-fixes-compact-ui-matrix.md`
+- Why: Stakeholder pass — 15 bugs/gaps (session 60m, 10-digit phone, create-order spend/qty, customers load/edit, picked up, garment catalog tools, storefront save, reports/revenue filters, orders paid/pending) + partner-wide compact density
+- Scope: Prompts 0–12; density `h-9` / `rounded-xl` / `gap-3` / `p-3 sm:p-4`; 44px touch only on mobile create-order checkout CTA
+- Done: Prompt 0 — spec + QA matrix; Prompt 1 — session 60m + `partner-phone-schema`; Prompt 2 — `partner-compact.ts` density sweep; Prompt 3 — total spent + decimal qty; Prompt 4 — customers load + edit sheet + PATCH API; Prompt 5 — picked-up gates + toast; Prompt 6 — catalog fix, template, select-all, all-visible; Prompt 7 — services workspace search + 10/page; Prompt 8 — storefront save; Prompt 9 — orders paid/pending columns; Prompt 10 — reports IST filters; Prompt 11 — revenue year + custom; Prompt 12 — QA matrix 25 Pass / 5 staging deferrals, Playwright `partner-ops-fixes.spec.ts`, Jest 255/255 green
+- Next: Staging manual pass (M01 idle, M10 live pickup, M21–M22 CSV spot-check, M29 dark AA); merge when green
+- Non-goals: Admin density; Shop Floor revival; new payment provider
+
 ## Partner garment service catalog (bulk Excel + multi-service rates)
 - Status: **review** (Prompt 9 polish 2026-08-14)
 - Spec: `docs/features/partner-garment-service-catalog.md`

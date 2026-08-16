@@ -101,7 +101,7 @@ export function PartnerCustomerDeskOrdersTab({
         <p className="text-xs text-muted-foreground">
           Showing only orders at your laundry ({data.total_records} total).
         </p>
-        <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5 text-xs">
+        <Button asChild variant="outline" size="sm" className="h-9 min-h-9 gap-1.5 text-xs">
           <Link href={viewAllHref} aria-label="View all orders for this customer on Orders tab">
             View all on Orders
           </Link>
@@ -124,7 +124,7 @@ export function PartnerCustomerDeskOrdersTab({
               type="button"
               variant="outline"
               size="sm"
-              className="min-h-[44px]"
+              className="h-9 min-h-9"
               disabled={!data.has_previous || ordersQ.isFetching}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
@@ -134,7 +134,7 @@ export function PartnerCustomerDeskOrdersTab({
               type="button"
               variant="outline"
               size="sm"
-              className="min-h-[44px]"
+              className="h-9 min-h-9"
               disabled={!data.has_next || ordersQ.isFetching}
               onClick={() => setPage((p) => p + 1)}
             >

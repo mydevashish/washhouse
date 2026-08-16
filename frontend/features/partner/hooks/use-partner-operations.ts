@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { getPartnerNextStatus } from '@/features/partner/lib/partner-status';
 import { useMounted } from '@/lib/hooks/use-mounted';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 import { DEFAULT_PAGE_SIZE } from '@/lib/pagination/types';
 import { queryKeys } from '@/lib/query-keys';
 import { STALE } from '@/lib/query-config';
@@ -18,7 +19,10 @@ import {
   rejectOrder,
   updateOrderStatus,
   type PartnerAnalyticsDashboardPeriod,
+  type PartnerAnalyticsParams,
+  type PartnerOrder,
   type PartnerOrdersListParams,
+  type PartnerRevenuePeriod,
 } from '@/services/partner';
 import { listPartnerCustomerInsights } from '@/services/customer-insights';
 import { useAuthStore } from '@/store/auth.store';
@@ -30,14 +34,35 @@ export function usePartnerQueriesEnabled() {
   return mounted && Boolean(accessToken);
 }
 
-export function usePartnerAnalytics() {
+export function usePartnerAnalytics(params?: PartnerAnalyticsParams) {
   const enabled = usePartnerQueriesEnabled();
+  const requestKey = params
+    ? {
+        period: params.period,
+        ...(params.period === 'custom'
+          ? { date_from: params.date_from, date_to: params.date_to }
+          : {}),
+      }
+    : undefined;
   return useQuery({
-    queryKey: queryKeys.partnerAnalytics(),
-    queryFn: getPartnerAnalytics,
+    queryKey: queryKeys.partnerAnalytics(requestKey),
+    queryFn: () => getPartnerAnalytics(params),
     staleTime: STALE.partnerAnalytics,
-    enabled,
+    enabled: enabled && (params?.period !== 'custom' || Boolean(params.date_from && params.date_to)),
+    placeholderData: keepPreviousData,
   });
+}
+
+/** Revenue / Money page — always requests ?period= so KPIs match the selected IST window. */
+export function usePartnerRevenueAnalytics(
+  period: PartnerRevenuePeriod,
+  customRange?: { date_from: string; date_to: string },
+) {
+  const params: PartnerAnalyticsParams =
+    period === 'custom' && customRange
+      ? { period, date_from: customRange.date_from, date_to: customRange.date_to }
+      : { period };
+  return usePartnerAnalytics(params);
 }
 
 export function usePartnerAnalyticsOverview(period: PartnerDashboardPeriod) {
@@ -78,6 +103,10 @@ export function usePartnerOrders(params: PartnerOrdersListParams = {}) {
     search: params.search,
     status: params.status,
     order_source: params.order_source,
+    payment_status: params.payment_status,
+    created_today: params.created_today,
+    date_from: params.date_from,
+    date_to: params.date_to,
   };
 
   return useQuery({
@@ -105,10 +134,23 @@ export function usePartnerTopCustomers() {
 export function usePartnerOrderMutations() {
   const queryClient = useQueryClient();
 
+  const patchOrderInListCaches = (updated: PartnerOrder) => {
+    queryClient.setQueriesData<{ items?: PartnerOrder[] }>(
+      { queryKey: ['partner-orders'] },
+      (old) => {
+        if (!old?.items?.length) return old;
+        return {
+          ...old,
+          items: old.items.map((row) => (row.id === updated.id ? { ...row, ...updated } : row)),
+        };
+      },
+    );
+  };
+
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
     void queryClient.invalidateQueries({ queryKey: ['partner-order'] });
-    void queryClient.invalidateQueries({ queryKey: queryKeys.partnerAnalytics() });
+    void queryClient.invalidateQueries({ queryKey: ['partner-analytics'] });
     void queryClient.invalidateQueries({ queryKey: ['partner-analytics-overview'] });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerCustomers() });
     void queryClient.invalidateQueries({ queryKey: queryKeys.partnerWalkInOrders() });
@@ -120,29 +162,35 @@ export function usePartnerOrderMutations() {
 
   const acceptMutation = useMutation({
     mutationFn: acceptOrder,
-    onSuccess: () => {
+    onSuccess: (updated) => {
       toast.success('Order accepted');
+      queryClient.setQueryData(queryKeys.partnerOrder(updated.id), updated);
+      patchOrderInListCaches(updated);
       invalidate();
     },
-    onError: () => toast.error('Could not accept order'),
+    onError: (e) => toast.error(getApiErrorMessage(e, 'Could not accept order')),
   });
 
   const rejectMutation = useMutation({
     mutationFn: rejectOrder,
-    onSuccess: () => {
+    onSuccess: (updated) => {
       toast.success('Order rejected');
+      queryClient.setQueryData(queryKeys.partnerOrder(updated.id), updated);
+      patchOrderInListCaches(updated);
       invalidate();
     },
-    onError: () => toast.error('Could not reject order'),
+    onError: (e) => toast.error(getApiErrorMessage(e, 'Could not reject order')),
   });
 
   const advanceMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => updateOrderStatus(id, status),
-    onSuccess: () => {
+    onSuccess: (updated, { id }) => {
       toast.success('Status updated');
+      queryClient.setQueryData(queryKeys.partnerOrder(id), updated);
+      patchOrderInListCaches(updated);
       invalidate();
     },
-    onError: () => toast.error('Could not update status'),
+    onError: (e) => toast.error(getApiErrorMessage(e, 'Could not update status')),
   });
 
   function advanceOrder(

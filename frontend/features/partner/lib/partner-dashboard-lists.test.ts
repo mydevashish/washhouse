@@ -20,6 +20,8 @@ function order(partial: Partial<PartnerOrder> & Pick<PartnerOrder, 'id' | 'statu
     cgst_inr: '0',
     sgst_inr: '0',
     total_inr: '450.00',
+    paid_inr: '450.00',
+    pending_inr: '0.00',
     payment_status: 'paid',
     customer_name: 'Anita',
     items: [{ service_name: 'Dry Cleaning', quantity: 1, line_total_inr: '450.00' }],

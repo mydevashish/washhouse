@@ -13,6 +13,11 @@ import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 import {
+  canRunPartnerCustomerSearch,
+  formatPhoneInputDisplay,
+  getPartnerCustomerSearchError,
+} from '@/features/partner/lib/partner-phone-schema';
+import {
   OWNER_IMAGES,
   OwnerEmptyState,
   OwnerSectionHeader,
@@ -25,8 +30,10 @@ import {
   type PartnerOpsKpiItem,
 } from '@/features/partner/components/ops-visual';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
+import { PARTNER_CARD } from '@/features/partner/lib/partner-compact';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { cn } from '@/lib/utils';
 import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
 import { useServerList } from '@/lib/pagination/use-server-list';
 import { queryKeys } from '@/lib/query-keys';
@@ -47,6 +54,20 @@ const SEGMENT_OPTIONS: { value: CustomerSegment | ''; label: string }[] = [
   { value: 'inactive', label: 'At risk (inactive)' },
 ];
 
+function OwnerCustomerListSkeleton() {
+  return (
+    <div
+      className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      data-testid="owner-customer-grid-skeleton"
+      aria-hidden
+    >
+      {Array.from({ length: 6 }, (_, index) => (
+        <Skeleton key={index} className="h-44 w-full rounded-xl" />
+      ))}
+    </div>
+  );
+}
+
 export function PartnerCustomersView({ embedded = false }: { embedded?: boolean }) {
   const enabled = usePartnerQueriesEnabled();
   const [segmentFilter, setSegmentFilter] = useState<CustomerSegment | ''>('');
@@ -64,7 +85,10 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
       listPartnerCustomerInsights({
         page: params.page,
         page_size: params.page_size,
-        search: params.search,
+        search:
+          params.search && canRunPartnerCustomerSearch(params.search)
+            ? params.search
+            : undefined,
         segment: params.segment,
       }),
     filters: segmentFilter ? { segment: segmentFilter } : {},
@@ -94,9 +118,22 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
   }, [dashboardQ.data]);
 
   const customers = list.rows;
-  const loadingList = list.isLoading || dashboardQ.isLoading;
+  const awaitingAuth = !enabled;
+  const dashboardBusy =
+    awaitingAuth ||
+    dashboardQ.isPending ||
+    (dashboardQ.isFetching && dashboardQ.data === undefined && !dashboardQ.isError);
+  const listBusy =
+    awaitingAuth ||
+    list.isPending ||
+    (list.isFetching && list.rows.length === 0 && !list.isError);
   const hasAnyCustomers = (dashboardQ.data?.total_customers ?? customers.length) > 0;
   const searchActive = Boolean(list.search.trim());
+  const directorySearchError = getPartnerCustomerSearchError(list.search);
+  const directorySearchBlocked =
+    Boolean(list.search.trim()) && !canRunPartnerCustomerSearch(list.search);
+  const showListContent = enabled && !listBusy && !list.isError;
+  const showEmptyStates = showListContent;
 
   const body = (
     <>
@@ -105,7 +142,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
           title="Customers"
           description="Your laundry’s relationships — call, WhatsApp, view orders, or open Desk."
           actions={
-            <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
+            <Button asChild variant="outline" size="sm" className="h-9 min-h-9 gap-1.5">
               <Link href={buildOrdersHubPath('/partner/orders', 'desk')}>
                 <Headset className="h-3.5 w-3.5" aria-hidden />
                 Find customer
@@ -118,7 +155,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
           title="Customers"
           description="Your laundry’s relationships — open Desk, view their orders, or start a new order."
           action={
-            <Button asChild variant="outline" size="sm" className="min-h-[44px] gap-1.5">
+            <Button asChild variant="outline" size="sm" className="h-9 min-h-9 gap-1.5">
               <Link href={buildOrdersHubPath('/partner/orders', 'desk')}>
                 <Headset className="h-3.5 w-3.5" aria-hidden />
                 Find customer
@@ -135,7 +172,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
         ) : null}
         <PartnerOpsKpiGrid
           items={segmentKpiItems}
-          loading={dashboardQ.isLoading}
+          loading={dashboardBusy}
           error={
             dashboardQ.isError ? getApiErrorMessage(dashboardQ.error) : undefined
           }
@@ -146,7 +183,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
       </PartnerOpsSurface>
       </section>
 
-      <div className="grid gap-4 rounded-3xl border border-border bg-muted/40 p-4">
+      <div className={cn('grid gap-4 bg-muted/40', PARTNER_CARD)}>
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold">Search customer</p>
@@ -160,19 +197,37 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
               />
               <Input
                 value={list.search}
-                onChange={(e) => list.setSearch(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  const digits = next.replace(/\D/g, '');
+                  const looksPhone = digits.length > 0 && /^[\d\s+\-()+ ]+$/.test(next);
+                  list.setSearch(looksPhone ? formatPhoneInputDisplay(next) : next);
+                }}
                 placeholder="Name or phone"
                 aria-label="Search customers"
-                className="min-h-[44px] bg-background pl-9"
+                aria-invalid={Boolean(directorySearchError)}
+                aria-describedby={
+                  directorySearchError ? 'owner-customer-search-error' : undefined
+                }
+                className="h-9 min-h-9 bg-background pl-9"
                 data-testid="owner-customer-search"
               />
+              {directorySearchError ? (
+                <p
+                  id="owner-customer-search-error"
+                  className="mt-1 text-xs text-danger"
+                  role="alert"
+                >
+                  {directorySearchError}
+                </p>
+              ) : null}
             </div>
             <div className="w-full sm:w-52">
               <Select
                 value={segmentFilter}
                 onChange={(e) => setSegmentFilter(e.target.value as CustomerSegment | '')}
                 aria-label="Filter by relationship tag"
-                className="min-h-[44px] bg-background"
+                className="h-9 min-h-9 bg-background"
               >
                 {SEGMENT_OPTIONS.map((o) => (
                   <option key={o.value || 'all'} value={o.value}>
@@ -185,9 +240,9 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
         </div>
       </div>
 
-      {loadingList ? <Skeleton className="h-64 w-full rounded-2xl" /> : null}
+      {listBusy ? <OwnerCustomerListSkeleton /> : null}
 
-      {list.isError ? (
+      {enabled && list.isError ? (
         <QueryErrorState
           title="Could not load customers"
           message={getApiErrorMessage(list.error)}
@@ -196,7 +251,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
         />
       ) : null}
 
-      {enabled && !list.isPending && !hasAnyCustomers && !searchActive && !segmentFilter ? (
+      {showEmptyStates && !hasAnyCustomers && !searchActive && !segmentFilter ? (
         <OwnerEmptyState
           title="No customers yet"
           description="First walk-in starts your book — take a phone number and place an order."
@@ -209,10 +264,10 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
         />
       ) : null}
 
-      {enabled &&
-      !list.isPending &&
+      {showEmptyStates &&
       customers.length === 0 &&
-      (searchActive || segmentFilter || hasAnyCustomers) ? (
+      (searchActive || segmentFilter || hasAnyCustomers) &&
+      !directorySearchBlocked ? (
         <OwnerEmptyState
           title="No matches"
           description="Try another name, phone, or soft-tag filter."
@@ -221,7 +276,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
         />
       ) : null}
 
-      {customers.length > 0 ? (
+      {showListContent && customers.length > 0 ? (
         <>
           <div
             className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
@@ -248,11 +303,11 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
   );
 
   if (embedded) {
-    return <div className="space-y-5" data-testid="partner-customers-view">{body}</div>;
+    return <div className="space-y-4" data-testid="partner-customers-view">{body}</div>;
   }
 
   return (
-    <PartnerContent className="space-y-5">
+    <PartnerContent className="space-y-4">
       <div data-testid="partner-customers-view">{body}</div>
     </PartnerContent>
   );

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 
 import { getPartnerPriceList } from '@/features/partner-price-list/api/partner-price-list';
 import {
@@ -14,12 +15,16 @@ import {
   unitPriceForTile,
 } from '@/features/partner-shop-floor/lib/cloth-wall-items';
 import {
+  buildWalkInItemsFromClothWallLines,
   catalogLineKey,
+  CLOTH_WALL_MIN_QTY,
   clothWallPieceCount,
   clothWallSubtotalInr,
   decrementClothWallQty,
   garmentLineKey,
   incrementClothWallQty,
+  lineAmountInr,
+  roundClothWallQty,
   serviceLineKey,
   type ClothWallLine,
   type ClothWallProcess,
@@ -38,13 +43,17 @@ import {
   isValidIndianMobileE164,
   normalizeIndianPhoneInput,
 } from '@/features/partner/customer-desk/phone';
+import {
+  PARTNER_PHONE_INLINE_ERROR,
+  partnerPhoneToE164,
+} from '@/features/partner/lib/partner-phone-schema';
 import type { AssistedOrderCreateResult } from '@/features/partner/customer-desk/types';
-import { guestDeskProfile } from '@/features/partner/customer-desk/types';
+import { guestDeskProfile, type CustomerDeskProfile } from '@/features/partner/customer-desk/types';
 import type { PartnerCustomerGender } from '@/features/partner/components/partner-customer-gender-field';
 import { usePartnerAnalytics, usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import { queryKeys } from '@/lib/query-keys';
 import { useVisibleGarmentCatalogItems } from '@/features/partner/garment-catalog/hooks/use-visible-garment-catalog-items';
-import { listPartnerServices } from '@/services/partner-service-catalog';
+import { listAllPartnerServices } from '@/services/partner-service-catalog';
 import { validatePartnerCoupon } from '@/services/partner-coupons';
 import {
   advanceWalkInOrderStatus,
@@ -153,6 +162,8 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   const [deliveryChargeOverride, setDeliveryChargeOverride] = useState(30);
   const [advancePaid, setAdvancePaid] = useState(0);
   const [lookupSuppressedState, setLookupSuppressedState] = useState(lookupSuppressed);
+  /** Search / manual customer pick — keeps user_id before lookup runs. */
+  const [deskProfileHint, setDeskProfileHint] = useState<CustomerDeskProfile | null>(null);
   const [staffNote, setStaffNote] = useState('');
   const [gstInvoiceRequested, setGstInvoiceRequested] = useState(false);
 
@@ -162,7 +173,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
 
   const servicesQ = useQuery({
     queryKey: queryKeys.partnerServiceCatalog(),
-    queryFn: listPartnerServices,
+    queryFn: listAllPartnerServices,
     enabled,
   });
 
@@ -226,12 +237,51 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setCustomerEmail((prev) => (prev.trim() ? prev : profileEmail));
   }, [walkInLookupQ.data?.email, createdOrder, createdDoorstepOrder]);
 
-  const walkInSnapshotProfile =
-    customerName.trim() && walkInLookupPhone && walkInProfile ? walkInProfile : null;
+  const walkInSnapshotProfile = useMemo((): CustomerDeskProfile | null => {
+    const phoneE164 =
+      walkInLookupPhone ??
+      (deskProfileHint?.phone && isValidIndianMobileE164(partnerPhoneToE164(deskProfileHint.phone))
+        ? partnerPhoneToE164(deskProfileHint.phone)
+        : null);
+
+    if (!phoneE164 && !deskProfileHint?.user_id) return null;
+
+    const fromLookup = walkInLookupQ.data;
+    if (fromLookup) {
+      return {
+        ...fromLookup,
+        name: customerName.trim() || fromLookup.name,
+        phone: phoneE164 ?? fromLookup.phone,
+      };
+    }
+
+    if (deskProfileHint) {
+      return {
+        ...deskProfileHint,
+        name: customerName.trim() || deskProfileHint.name,
+        phone: phoneE164 || deskProfileHint.phone,
+      };
+    }
+
+    if (phoneE164) {
+      return {
+        ...guestDeskProfile(phoneE164),
+        name: customerName.trim() || null,
+      };
+    }
+
+    return null;
+  }, [customerName, deskProfileHint, walkInLookupPhone, walkInLookupQ.data]);
+
+  const walkInInsightEnabled = Boolean(
+    walkInSnapshotProfile &&
+      (walkInSnapshotProfile.user_id ||
+        (walkInLookupPhone && isValidIndianMobileE164(walkInLookupPhone))),
+  );
 
   const walkInInsightQ = usePartnerCustomerInsightRow(
     walkInSnapshotProfile,
-    Boolean(walkInSnapshotProfile),
+    walkInInsightEnabled,
   );
 
   const createMutation = useMutation({
@@ -241,7 +291,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       invalidatePartnerOrderQueries(queryClient);
       setCreatedOrder(order);
     },
-    onError: () => toast.error('Could not save order'),
+    onError: (err) => toast.error(getApiErrorMessage(err, 'Could not save order')),
   });
 
   const createDoorstepMutation = useMutation({
@@ -257,7 +307,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       invalidatePartnerOrderQueries(queryClient);
       setCreatedDoorstepOrder(result);
     },
-    onError: () => toast.error('Could not create doorstep order'),
+    onError: (err) => toast.error(getApiErrorMessage(err, 'Could not create doorstep order')),
   });
 
   const startWashMutation = useMutation({
@@ -305,13 +355,18 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   }
 
   function setServiceQty(serviceId: string, quantity: number) {
-    if (quantity < 1) {
+    const qty = roundClothWallQty(quantity);
+    if (qty < CLOTH_WALL_MIN_QTY) {
       setServiceItems((prev) => prev.filter((i) => i.service_id !== serviceId));
       return;
     }
-    setServiceItems((prev) =>
-      prev.map((i) => (i.service_id === serviceId ? { ...i, quantity } : i)),
-    );
+    setServiceItems((prev) => {
+      const existing = prev.find((i) => i.service_id === serviceId);
+      if (existing) {
+        return prev.map((i) => (i.service_id === serviceId ? { ...i, quantity: qty } : i));
+      }
+      return [...prev, { service_id: serviceId, quantity: qty }];
+    });
   }
 
   function removeServiceLine(serviceId: string) {
@@ -323,12 +378,13 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       setServiceQty(lineKey, quantity);
       return;
     }
-    if (quantity < 1) {
+    const qty = roundClothWallQty(quantity);
+    if (qty < CLOTH_WALL_MIN_QTY) {
       setGarmentLines((prev) => prev.filter((l) => l.key !== lineKey));
       return;
     }
     setGarmentLines((prev) =>
-      prev.map((l) => (l.key === lineKey ? { ...l, quantity } : l)),
+      prev.map((l) => (l.key === lineKey ? { ...l, quantity: qty } : l)),
     );
   }
 
@@ -389,7 +445,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     if (!catalogOrGarmentId || prevProcess === process) return;
     const oldKey = lineKeyForTile(tile, prevProcess);
     const qty = garmentLines.find((l) => l.key === oldKey)?.quantity ?? 0;
-    if (qty < 1) return;
+    if (qty < CLOTH_WALL_MIN_QTY) return;
     const newKey = lineKeyForTile(tile, process);
     const price = unitPriceForTile(tile, process);
     setGarmentLines((prev) => {
@@ -418,7 +474,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
           ...item,
           name: svc?.name ?? 'Service',
           rate,
-          amount: rate * item.quantity,
+          amount: lineAmountInr(rate, item.quantity),
         };
       });
     }
@@ -427,7 +483,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       quantity: line.quantity,
       name: line.label,
       rate: line.unitPriceInr,
-      amount: line.unitPriceInr * line.quantity,
+      amount: lineAmountInr(line.unitPriceInr, line.quantity),
     }));
   }, [garmentLines, intakeMode, serviceItems, services]);
 
@@ -496,18 +552,23 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setCouponError(null);
   }
 
+  function setLookupSuppressed(suppressed: boolean) {
+    setLookupSuppressedState(suppressed);
+    if (!suppressed) setDeskProfileHint(null);
+  }
+
   useEffect(() => {
     setLookupSuppressedState(lookupSuppressed);
   }, [lookupSuppressed]);
 
   function validateCustomer(): boolean {
-    const phone = normalizeIndianPhoneInput(customerPhone);
+    const phone = partnerPhoneToE164(customerPhone);
     if (!customerName.trim()) {
       toast.error('Customer name is required');
       return false;
     }
     if (!isValidIndianMobileE164(phone)) {
-      toast.error('Enter a valid Indian mobile (+91)');
+      toast.error(PARTNER_PHONE_INLINE_ERROR);
       return false;
     }
     if (fulfillment === 'doorstep') {
@@ -578,19 +639,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
         quantity: item.quantity,
       }));
     }
-    return garmentLines.map((line) => {
-      if (line.catalogItemId && line.process) {
-        return {
-          catalog_item_id: line.catalogItemId,
-          process: line.process,
-          quantity: line.quantity,
-        };
-      }
-      return {
-        service_id: line.serviceId!,
-        quantity: line.quantity,
-      };
-    });
+    return buildWalkInItemsFromClothWallLines(garmentLines);
   }
 
   function validateForSubmit(): boolean {
@@ -615,7 +664,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       return;
     }
     if (!validateForSubmit()) return;
-    const phone = normalizeIndianPhoneInput(customerPhone);
+    const phone = partnerPhoneToE164(customerPhone);
     const e164 = phone.startsWith('+') ? phone : `+${phone}`;
 
     if (fulfillment === 'doorstep') {
@@ -680,6 +729,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setExpressOrder(false);
     setStaffNote('');
     setGstInvoiceRequested(false);
+    setDeskProfileHint(null);
     const slots = defaultDoorstepSlots();
     setPickupAtLocal(slots.pickup_at);
     setDeliveryAtLocal(slots.delivery_at);
@@ -734,9 +784,18 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setIntakeMode(mode);
   }
 
-  function applyCustomerFromSearch(profile: { name: string; phone: string }) {
-    setCustomerName(profile.name);
-    setCustomerPhone(normalizeIndianPhoneInput(profile.phone));
+  function applyCustomerFromSearch(
+    profile: Pick<CustomerDeskProfile, 'phone'> & Partial<Omit<CustomerDeskProfile, 'phone'>>,
+  ) {
+    const normalized: CustomerDeskProfile = {
+      ...guestDeskProfile(profile.phone),
+      ...profile,
+      phone: profile.phone,
+    };
+    setCustomerName(normalized.name?.trim() || 'Customer');
+    setCustomerPhone(normalizeIndianPhoneInput(normalized.phone));
+    setDeskProfileHint(normalized);
+    setLookupSuppressed(true);
   }
 
   const insightStats = walkInInsightQ.data
@@ -768,7 +827,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     customerEmail,
     setCustomerEmail,
     lookupSuppressed: lookupSuppressedState,
-    setLookupSuppressed: setLookupSuppressedState,
+    setLookupSuppressed,
     expressOrder,
     setExpressOrder,
     staffNote,

@@ -41,7 +41,7 @@
 
 @layer components {
   .page-title {
-    @apply text-xl font-semibold tracking-tight text-foreground;
+    @apply text-lg font-semibold tracking-tight text-foreground;
   }
   .section-title {
     @apply text-base font-semibold text-foreground;

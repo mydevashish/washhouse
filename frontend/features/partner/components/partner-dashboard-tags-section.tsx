@@ -32,7 +32,7 @@ function TagsSearchResultCard({
 
   return (
     <article
-      className="rounded-3xl border border-border bg-background p-4 shadow-sm"
+      className="rounded-xl border border-border bg-background p-4 shadow-sm"
       data-testid="partner-dashboard-tags-result"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

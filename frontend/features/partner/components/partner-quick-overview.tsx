@@ -210,7 +210,7 @@ export function PartnerQuickOverview({ className }: { className?: string }) {
       {loading ? (
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-[5.5rem] rounded-3xl" />
+            <Skeleton key={i} className="h-[5.5rem] rounded-xl" />
           ))}
         </div>
       ) : (

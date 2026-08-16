@@ -177,7 +177,7 @@ export function WalkInOrderForm({
         </div>
       </div>
 
-      <Button type="submit" className="min-h-[44px] w-full sm:w-auto" disabled={isSubmitting}>
+      <Button type="submit" className="h-9 min-h-9 w-full sm:w-auto" disabled={isSubmitting}>
         {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : 'Save walk-in order'}
       </Button>
     </form>

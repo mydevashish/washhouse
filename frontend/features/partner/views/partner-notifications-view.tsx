@@ -47,7 +47,7 @@ export function PartnerNotificationsView() {
   const truncated = actionTotal > 50 || activeTotal > 50;
 
   return (
-    <PartnerContent className="space-y-5">
+    <PartnerContent className="space-y-4">
       <PartnerPageHeader
         title="Notifications"
         description="Open-order alerts that need attention (from current queues — not a full inbox yet)."

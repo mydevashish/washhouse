@@ -16,7 +16,7 @@ export function PartnerLogisticsView({
   description?: string;
 }) {
   return (
-    <PartnerContent className="space-y-5">
+    <PartnerContent className="space-y-4">
       <PartnerPageHeader title={title} description={description} />
       <OwnerLogisticsBoard
         initialTab={initialTab}

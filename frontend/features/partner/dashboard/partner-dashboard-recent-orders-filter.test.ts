@@ -24,11 +24,13 @@ describe('partnerDashboardRecentOrdersListParams', () => {
 });
 
 describe('partnerDashboardRecentOrdersViewAllHref', () => {
-  it('deep-links hub with chip or status params', () => {
+  it('deep-links hub with chip or status params and orders workspace', () => {
     expect(partnerDashboardRecentOrdersViewAllHref('needs_action')).toBe(
-      '/partner/orders?chip=needs_action',
+      '/partner/orders?chip=needs_action&workspace=orders',
     );
-    expect(partnerDashboardRecentOrdersViewAllHref('ready')).toBe('/partner/orders?status=ready');
+    expect(partnerDashboardRecentOrdersViewAllHref('ready')).toBe(
+      '/partner/orders?status=ready&workspace=orders',
+    );
     expect(partnerDashboardRecentOrdersViewAllHref('all')).toBe('/partner/orders');
   });
 });

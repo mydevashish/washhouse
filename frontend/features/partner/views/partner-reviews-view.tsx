@@ -114,7 +114,7 @@ export function PartnerReviewsView() {
   const reviews = list.rows;
 
   return (
-    <PartnerContent className="space-y-5">
+    <PartnerContent className="space-y-4">
       <PartnerPageHeader
         title="Review management"
         description="View customer feedback, reply publicly, filter reviews, and report abuse."

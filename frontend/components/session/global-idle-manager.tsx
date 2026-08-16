@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePathname } from 'next/navigation';
 
@@ -8,7 +8,7 @@ import { IdleWarningOverlay } from '@/components/session/idle-warning-overlay';
 import { startActivityTracker } from '@/lib/idle/activity-tracker';
 import { publishSessionSync, subscribeSessionSync } from '@/lib/idle/tab-sync';
 import { logger } from '@/lib/logger';
-import { sessionConfig } from '@/lib/session-config';
+import { resolveSessionConfig } from '@/lib/session-config';
 import { performSessionLogout } from '@/lib/session-logout';
 import { setApiActivityCallback } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
@@ -21,6 +21,8 @@ type IdlePhase = 'active' | 'warning';
  */
 export function GlobalIdleManager() {
   const pathname = usePathname();
+  const isPartnerPortal = pathname?.startsWith('/partner') ?? false;
+  const idlePolicy = useMemo(() => resolveSessionConfig(isPartnerPortal), [isPartnerPortal]);
   const accessToken = useAuthStore((s) => s.accessToken);
   const isAuthenticated = Boolean(accessToken);
   const queryClient = useQueryClient();
@@ -37,15 +39,16 @@ export function GlobalIdleManager() {
 
   useEffect(() => {
     logger.info('idle.config', {
-      idleMinutes: sessionConfig.idleMinutes,
-      warningMinutes: sessionConfig.warningMinutes,
-      idleMs: sessionConfig.idleMs,
-      warningMs: sessionConfig.warningMs,
-      enableIdleAnimations: sessionConfig.enableIdleAnimations,
-      seasonMode: sessionConfig.seasonMode,
-      idleAnimation: sessionConfig.idleAnimation,
+      isPartnerPortal,
+      idleMinutes: idlePolicy.idleMinutes,
+      warningMinutes: idlePolicy.warningMinutes,
+      idleMs: idlePolicy.idleMs,
+      warningMs: idlePolicy.warningMs,
+      enableIdleAnimations: idlePolicy.enableIdleAnimations,
+      seasonMode: idlePolicy.seasonMode,
+      idleAnimation: idlePolicy.idleAnimation,
     });
-  }, []);
+  }, [idlePolicy, isPartnerPortal]);
 
   const clearTimers = useCallback(() => {
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
@@ -66,11 +69,11 @@ export function GlobalIdleManager() {
     clearTimers();
 
     const elapsed = Date.now() - lastActivityRef.current;
-    const untilIdle = Math.max(0, sessionConfig.idleMs - elapsed);
+    const untilIdle = Math.max(0, idlePolicy.idleMs - elapsed);
 
     idleTimerRef.current = setTimeout(() => {
       setPhase('warning');
-      const ends = Date.now() + sessionConfig.warningMs;
+      const ends = Date.now() + idlePolicy.warningMs;
       setWarningEndsAt(ends);
 
       warningTimerRef.current = setTimeout(() => {
@@ -88,9 +91,9 @@ export function GlobalIdleManager() {
           clearTimers();
           scheduleIdleCheckRef.current();
         }
-      }, sessionConfig.warningMs);
+      }, idlePolicy.warningMs);
     }, untilIdle);
-  }, [clearTimers, queryClient]);
+  }, [clearTimers, queryClient, idlePolicy]);
 
   scheduleIdleCheckRef.current = scheduleIdleCheck;
 
@@ -127,7 +130,7 @@ export function GlobalIdleManager() {
       stopSync();
       clearTimers();
     };
-  }, [pathname, resetActivity, clearTimers, isAuthenticated]);
+  }, [pathname, resetActivity, clearTimers, isAuthenticated, idlePolicy]);
 
   if (phase !== 'warning') return null;
 

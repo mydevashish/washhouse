@@ -31,7 +31,7 @@ class PartnerGarmentCatalogRepository:
         category: GarmentCategory | None = None,
         search: str | None = None,
         page: int = 1,
-        page_size: int = 20,
+        page_size: int = 10,
     ) -> tuple[list[LaundryGarmentItem], int]:
         clauses = list(self._active_item_filters(laundry_id))
         if category is not None:
@@ -130,6 +130,24 @@ class PartnerGarmentCatalogRepository:
             if rate.deleted_at is None:
                 rate.deleted_at = now
         await self._session.flush()
+
+    async def set_visible_by_ids(self, laundry_id: UUID, ids: list[UUID], *, is_visible: bool) -> int:
+        if not ids:
+            return 0
+        rows = await self._session.scalars(
+            select(LaundryGarmentItem).where(
+                LaundryGarmentItem.id.in_(ids),
+                *self._active_item_filters(laundry_id),
+            ),
+        )
+        count = 0
+        for row in rows.all():
+            if row.is_visible != is_visible:
+                row.is_visible = is_visible
+                count += 1
+        if count:
+            await self._session.flush()
+        return count
 
     async def soft_delete_by_ids(self, laundry_id: UUID, ids: list[UUID]) -> int:
         if not ids:

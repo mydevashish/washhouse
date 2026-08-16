@@ -18,6 +18,13 @@ import {
   isValidIndianMobileE164,
   normalizeIndianPhoneInput,
 } from '@/features/partner/customer-desk/phone';
+import {
+  formatPhoneInputDisplay,
+  getPartnerPhoneFieldError,
+  isPartnerPhoneReady,
+  partnerPhoneDisplayValue,
+  partnerPhoneToE164,
+} from '@/features/partner/lib/partner-phone-schema';
 import { guestDeskProfile } from '@/features/partner/customer-desk/types';
 import type { AssistedOrderCreateResult } from '@/features/partner/customer-desk/types';
 import {
@@ -55,6 +62,10 @@ export function PartnerNewOrderView() {
   const [lookupPhone, setLookupPhone] = useState<string | null>(null);
   const [createdAssisted, setCreatedAssisted] = useState<AssistedCreateSuccess | null>(null);
 
+  const assistedPhoneDisplay = partnerPhoneDisplayValue(customerPhone);
+  const assistedPhoneError = getPartnerPhoneFieldError(assistedPhoneDisplay);
+  const canStartAssistedLookup = isPartnerPhoneReady(customerPhone);
+
   useEffect(() => {
     setMode(initialMode);
   }, [initialMode]);
@@ -87,10 +98,11 @@ export function PartnerNewOrderView() {
   );
 
   function startAssistedLookup() {
-    const phone = normalizeIndianPhoneInput(customerPhone);
+    const phone = partnerPhoneToE164(customerPhone);
     if (!isValidIndianMobileE164(phone)) {
       return;
     }
+    setCustomerPhone(phone);
     setLookupPhone(phone);
     setAssistedReady(true);
   }
@@ -122,7 +134,7 @@ export function PartnerNewOrderView() {
     : null;
 
   return (
-    <PartnerContent className="space-y-5">
+    <PartnerContent className="space-y-4">
       <PartnerPageHeader
         title="New order"
         description="Counter intake — customer, services or garments, then print tags."
@@ -170,7 +182,7 @@ export function PartnerNewOrderView() {
               setLookupPhone(null);
             }}
             className={cn(
-              'inline-flex min-h-[44px] items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+              'inline-flex h-9 min-h-9 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
               mode === id
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground',
@@ -185,14 +197,14 @@ export function PartnerNewOrderView() {
       {mode === 'walk_in' ? (
         <PartnerWalkInOrderWorkspace initialName={nameParam} initialPhone={phoneParam} />
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {!assistedReady || !profile ? (
             <PartnerOpsSurface className="space-y-4">
               <div>
                 <PartnerOpsSectionLabel>Create order</PartnerOpsSectionLabel>
                 <p className="mt-1 text-lg font-semibold tracking-tight">Find customer</p>
               </div>
-              <div className="rounded-3xl border border-border bg-muted/40 p-4">
+              <div className="rounded-xl border border-border bg-muted/40 p-4">
                 <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                   <div className="space-y-1.5">
                     <Label htmlFor="assisted-phone">Customer phone</Label>
@@ -200,18 +212,29 @@ export function PartnerNewOrderView() {
                       id="assisted-phone"
                       type="tel"
                       inputMode="tel"
-                      placeholder="+91XXXXXXXXXX"
-                      value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                      className="min-h-[44px]"
+                      placeholder="9876543210"
+                      value={assistedPhoneDisplay}
+                      onChange={(e) =>
+                        setCustomerPhone(formatPhoneInputDisplay(e.target.value))
+                      }
+                      className="h-9 min-h-9"
+                      aria-invalid={Boolean(assistedPhoneError)}
+                      aria-describedby={
+                        assistedPhoneError ? 'assisted-phone-error' : undefined
+                      }
                     />
+                    {assistedPhoneError ? (
+                      <p id="assisted-phone-error" className="text-xs text-danger" role="alert">
+                        {assistedPhoneError}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex items-end">
                     <Button
                       type="button"
-                      className="min-h-[44px] w-full sm:w-auto"
+                      className="h-9 min-h-9 w-full sm:w-auto"
                       onClick={startAssistedLookup}
-                      disabled={lookupQ.isFetching}
+                      disabled={lookupQ.isFetching || !canStartAssistedLookup}
                     >
                       {lookupQ.isFetching ? (
                         <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

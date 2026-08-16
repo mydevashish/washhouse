@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
@@ -16,11 +17,18 @@ import {
   OwnerSectionHeader,
 } from '@/features/partner/components/owner';
 import { formatInr } from '@/features/discover/detail/order-pricing';
-import { usePartnerAnalytics } from '@/features/partner/hooks/use-partner-operations';
+import { usePartnerRevenueAnalytics } from '@/features/partner/hooks/use-partner-operations';
 import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
+import { PARTNER_INPUT } from '@/features/partner/lib/partner-compact';
+import {
+  isValidCustomReportsRange,
+  PARTNER_REVENUE_PERIOD_OPTIONS,
+  resolvePartnerRevenueCustomRange,
+  type PartnerRevenuePeriod,
+} from '@/features/partner/lib/partner-revenue-period';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { cn } from '@/lib/utils';
-import type { PartnerAnalytics } from '@/services/partner';
+import type { PartnerAnalyticsPeriodScope } from '@/services/partner';
 
 const PartnerRevenueChart = dynamic(
   () =>
@@ -30,14 +38,6 @@ const PartnerRevenueChart = dynamic(
     loading: () => <Skeleton className="h-48 w-full" />,
   },
 );
-
-type MoneyPeriod = 'today' | 'week' | 'month';
-
-const PERIOD_LABEL: Record<MoneyPeriod, string> = {
-  today: 'Today',
-  week: 'This week',
-  month: 'This month',
-};
 
 function parseNum(value: string | null | undefined): number {
   const n = Number(value ?? 0);
@@ -50,8 +50,12 @@ function parsePct(value: string | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function periodValues(stats: PartnerAnalytics | undefined, period: MoneyPeriod) {
-  if (!stats) {
+function periodLabel(period: PartnerRevenuePeriod): string {
+  return PARTNER_REVENUE_PERIOD_OPTIONS.find((o) => o.value === period)?.label ?? period;
+}
+
+function scopeValues(scope: PartnerAnalyticsPeriodScope | null | undefined) {
+  if (!scope) {
     return {
       gross: 0,
       commission: 0,
@@ -60,75 +64,52 @@ function periodValues(stats: PartnerAnalytics | undefined, period: MoneyPeriod) 
       walkIn: 0,
       doorstep: 0,
       priorLabel: 'prior period',
-    };
-  }
-  if (period === 'today') {
-    return {
-      gross: parseNum(stats.revenue_today_inr),
-      commission: parseNum(stats.commission_today_inr),
-      net: parseNum(stats.partner_net_today_inr),
-      growth: parsePct(stats.growth_today_pct),
-      walkIn: parseNum(stats.revenue_walk_in_today_inr),
-      doorstep: parseNum(stats.revenue_doorstep_today_inr),
-      priorLabel: 'yesterday',
-    };
-  }
-  if (period === 'week') {
-    return {
-      gross: parseNum(stats.revenue_week_inr),
-      commission: parseNum(stats.commission_week_inr),
-      net: parseNum(stats.partner_net_week_inr),
-      growth: parsePct(stats.growth_week_pct),
-      walkIn: parseNum(stats.revenue_walk_in_week_inr),
-      doorstep: parseNum(stats.revenue_doorstep_week_inr),
-      priorLabel: 'last week',
+      label: '',
     };
   }
   return {
-    gross: parseNum(stats.revenue_this_month_inr),
-    commission: parseNum(stats.commission_month_inr),
-    net: parseNum(stats.partner_net_month_inr),
-    growth: parsePct(stats.growth_month_pct),
-    walkIn: parseNum(stats.revenue_walk_in_month_inr),
-    doorstep: parseNum(stats.revenue_doorstep_month_inr),
-    priorLabel: 'last month',
+    gross: parseNum(scope.revenue_gross_inr),
+    commission: parseNum(scope.commission_inr),
+    net: parseNum(scope.partner_net_inr),
+    growth: parsePct(scope.growth_pct),
+    walkIn: parseNum(scope.revenue_walk_in_inr),
+    doorstep: parseNum(scope.revenue_doorstep_inr),
+    priorLabel: scope.prior_period_label,
+    label: scope.period_label_ist,
   };
 }
 
 export function PartnerRevenueView() {
-  const analyticsQ = usePartnerAnalytics();
-  const stats = analyticsQ.data;
-  const [period, setPeriod] = useState<MoneyPeriod>('today');
+  const [period, setPeriod] = useState<PartnerRevenuePeriod>('today');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
 
-  const values = periodValues(stats, period);
+  const customReady = period !== 'custom' || isValidCustomReportsRange(customFrom, customTo);
+  const customRange = useMemo(() => {
+    if (period !== 'custom' || !customReady) return undefined;
+    const resolved = resolvePartnerRevenueCustomRange(customFrom, customTo);
+    return { date_from: resolved.date_from, date_to: resolved.date_to };
+  }, [period, customFrom, customTo, customReady]);
+
+  const analyticsQ = usePartnerRevenueAnalytics(period, customRange);
+  const stats = analyticsQ.data;
+  const scope = stats?.period_scope;
+  const values = scopeValues(scope);
   const rate = parseNum(stats?.effective_commission_rate ?? '10');
 
   const chartData = useMemo(() => {
-    if (!stats) return [];
-    return [
-      { label: 'Yesterday', revenue: parseNum(stats.revenue_yesterday_inr), net: 0 },
-      {
-        label: 'Today',
-        revenue: parseNum(stats.revenue_today_inr),
-        net: parseNum(stats.partner_net_today_inr),
-      },
-      {
-        label: 'This week',
-        revenue: parseNum(stats.revenue_week_inr),
-        net: parseNum(stats.partner_net_week_inr),
-      },
-      {
-        label: 'This month',
-        revenue: parseNum(stats.revenue_this_month_inr),
-        net: parseNum(stats.partner_net_month_inr),
-      },
-    ];
-  }, [stats]);
+    if (!scope?.chart_series?.length) return [];
+    return scope.chart_series.map((point) => ({
+      label: point.bucket_label,
+      revenue: parseNum(point.revenue_gross_inr),
+      net: parseNum(point.partner_net_inr),
+    }));
+  }, [scope]);
 
-  const hasMoney = values.gross > 0 || parseNum(stats?.revenue_inr) > 0;
+  const hasMoney = values.gross > 0;
 
   return (
-    <PartnerContent className="space-y-5">
+    <PartnerContent className="space-y-4">
       <PartnerPageHeader
         title="Money"
         description="Your net after the platform cut — from delivered orders."
@@ -148,48 +129,96 @@ export function PartnerRevenueView() {
         />
       )}
 
-      <div
-        className="flex flex-wrap gap-1.5 rounded-xl bg-muted/50 p-1 ring-1 ring-border/50"
-        role="tablist"
-        aria-label="Money period"
-      >
-        {(Object.keys(PERIOD_LABEL) as MoneyPeriod[]).map((key) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={period === key}
-            className={cn(
-              'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
-              period === key
-                ? 'bg-card text-foreground shadow-sm ring-1 ring-border/60'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-            onClick={() => setPeriod(key)}
-          >
-            {PERIOD_LABEL[key]}
-          </button>
-        ))}
+      <div className="space-y-2">
+        <div
+          className="flex flex-wrap gap-1 rounded-xl bg-muted/50 p-1 ring-1 ring-border/50"
+          role="tablist"
+          aria-label="Money period"
+          data-testid="partner-revenue-period-bar"
+        >
+          {PARTNER_REVENUE_PERIOD_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="tab"
+              data-testid={`partner-revenue-period-${option.value}`}
+              aria-selected={period === option.value}
+              className={cn(
+                'inline-flex h-8 items-center rounded-lg px-3 text-xs font-semibold transition-colors',
+                period === option.value
+                  ? 'bg-card text-foreground shadow-sm ring-1 ring-border/60'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+              onClick={() => setPeriod(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+
+        {period === 'custom' ? (
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <label
+                htmlFor="partner-revenue-from"
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
+                From (IST)
+              </label>
+              <Input
+                id="partner-revenue-from"
+                type="date"
+                className={cn(PARTNER_INPUT, 'w-[10.5rem] text-sm')}
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                data-testid="partner-revenue-date-from"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="partner-revenue-to"
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
+                To (IST)
+              </label>
+              <Input
+                id="partner-revenue-to"
+                type="date"
+                className={cn(PARTNER_INPUT, 'w-[10.5rem] text-sm')}
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                data-testid="partner-revenue-date-to"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {scope?.period_label_ist ? (
+          <p className="text-xs text-muted-foreground" aria-live="polite">
+            {scope.period_label_ist}
+          </p>
+        ) : null}
       </div>
 
-      {!analyticsQ.isLoading && !analyticsQ.isError && !hasMoney ? (
+      {!analyticsQ.isLoading && !analyticsQ.isError && customReady && !hasMoney ? (
         <OwnerEmptyState
           title="No delivered earnings yet"
-          description="When orders are marked delivered, gross, platform cut, and your net show up here."
+          description="When orders are marked delivered in this range, gross, platform cut, and your net show up here."
           imageSrc={OWNER_IMAGES.money}
           imageAlt="Premium laundry"
           action={{ label: 'New Order', href: buildPartnerCreateOrderHref() }}
         />
-      ) : !analyticsQ.isError ? (
+      ) : !analyticsQ.isError && customReady ? (
         <section
-          className="rounded-xl bg-card p-4 ring-1 ring-border/60 sm:p-6"
-          aria-label={`${PERIOD_LABEL[period]} money`}
+          className="rounded-xl bg-card p-4 ring-1 ring-border/60 sm:p-4"
+          aria-label={`${periodLabel(period)} money`}
+          data-testid="partner-revenue-money-panel"
         >
           <OwnerSectionHeader
-            title={`Your net · ${PERIOD_LABEL[period].toLowerCase()}`}
+            title={`Your net · ${periodLabel(period).toLowerCase()}`}
             description={`Platform keeps ${rate.toFixed(0)}% of delivered order value (your rate). Settlements pay your net.`}
           />
-          <div className="mt-4">
+          <div className="mt-4" data-testid="partner-revenue-net">
             <OwnerMoneyStat
               label="Your net"
               value={analyticsQ.isLoading ? '—' : formatInr(values.net)}
@@ -206,7 +235,10 @@ export function PartnerRevenueView() {
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <div className="rounded-lg bg-muted/40 px-3 py-2.5">
               <p className="text-[11px] font-medium text-muted-foreground">Gross</p>
-              <p className="mt-0.5 text-base font-semibold tabular-nums">
+              <p
+                className="mt-0.5 text-base font-semibold tabular-nums"
+                data-testid="partner-revenue-gross"
+              >
                 {analyticsQ.isLoading ? '—' : formatInr(values.gross)}
               </p>
             </div>
@@ -244,35 +276,39 @@ export function PartnerRevenueView() {
         </Button>
       </PartnerPanel>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <PartnerPanel title="Gross & net snapshot" bodyClassName="p-4">
-          {analyticsQ.isLoading ? (
-            <Skeleton className="h-48 w-full" />
-          ) : (
-            <PartnerRevenueChart data={chartData} />
-          )}
-        </PartnerPanel>
+      {customReady ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <PartnerPanel title="Gross & net snapshot" bodyClassName="p-4">
+            {analyticsQ.isLoading ? (
+              <Skeleton className="h-48 w-full" />
+            ) : chartData.length ? (
+              <PartnerRevenueChart data={chartData} />
+            ) : (
+              <p className="text-sm text-muted-foreground">No chart data for this range.</p>
+            )}
+          </PartnerPanel>
 
-        <PartnerPanel title="Walk-in vs doorstep" bodyClassName="p-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-[11px] text-muted-foreground">Walk-in gross</p>
-              <p className="mt-1 text-lg font-semibold tabular-nums">
-                {analyticsQ.isLoading ? '—' : formatInr(values.walkIn)}
-              </p>
+          <PartnerPanel title="Walk-in vs doorstep" bodyClassName="p-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[11px] text-muted-foreground">Walk-in gross</p>
+                <p className="mt-1 text-lg font-semibold tabular-nums">
+                  {analyticsQ.isLoading ? '—' : formatInr(values.walkIn)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground">Doorstep gross</p>
+                <p className="mt-1 text-lg font-semibold tabular-nums">
+                  {analyticsQ.isLoading ? '—' : formatInr(values.doorstep)}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground">Doorstep gross</p>
-              <p className="mt-1 text-lg font-semibold tabular-nums">
-                {analyticsQ.isLoading ? '—' : formatInr(values.doorstep)}
-              </p>
-            </div>
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            For {PERIOD_LABEL[period].toLowerCase()}. Doorstep includes online and assisted orders.
-          </p>
-        </PartnerPanel>
-      </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              For {periodLabel(period).toLowerCase()}. Doorstep includes online and assisted orders.
+            </p>
+          </PartnerPanel>
+        </div>
+      ) : null}
     </PartnerContent>
   );
 }
