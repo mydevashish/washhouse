@@ -74,6 +74,33 @@ export function PartnerCreateOrderDialog({
   const submitPending =
     composer.createMutation.isPending || composer.createDoorstepMutation.isPending;
 
+  const footerAction = (() => {
+    if (composer.step === 'customer') {
+      return {
+        label: 'Continue order',
+        disabled: !composer.customerName.trim() || !composer.customerPhone,
+        onClick: () => composer.goFromCustomer(),
+      };
+    }
+
+    if (composer.step === 'intake') {
+      return {
+        label: 'Continue to review',
+        disabled:
+          composer.intakeMode === 'services'
+            ? composer.serviceItems.length === 0
+            : composer.garmentLines.length === 0,
+        onClick: () => composer.goFromIntake(),
+      };
+    }
+
+    return {
+      label: submitPending ? 'Saving…' : 'Save order',
+      disabled: submitPending || composer.lineRows.length === 0,
+      onClick: () => composer.submitOrder(),
+    };
+  })();
+
   return (
     <Dialog
       open={open}
@@ -119,8 +146,8 @@ export function PartnerCreateOrderDialog({
           </Button>
           <Button
             type="button"
-            onClick={() => composer.submitOrder()}
-            disabled={submitPending}
+            onClick={footerAction.onClick}
+            disabled={footerAction.disabled || submitPending}
             aria-busy={submitPending}
             data-testid="partner-dashboard-create-order-save"
           >
@@ -130,7 +157,7 @@ export function PartnerCreateOrderDialog({
                 Saving…
               </>
             ) : (
-              'Save order'
+              footerAction.label
             )}
           </Button>
         </DialogFooter>

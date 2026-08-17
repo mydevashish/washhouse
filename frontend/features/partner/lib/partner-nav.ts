@@ -170,29 +170,29 @@ export const PARTNER_NAV_SECTIONS: PartnerNavSection[] = [
       },
     ],
   },
-  {
-    id: 'logistics',
-    label: 'Logistics',
-    items: [
-      {
-        href: PARTNER_LOGISTICS_HREF,
-        label: 'Logistics',
-        icon: Truck,
-        badgeKey: 'pickups',
-      },
-    ],
-  },
-  {
-    id: 'people',
-    label: 'People',
-    items: [{ href: '/partner/staff', label: 'Staff', icon: UserCog }],
-  },
+  // {
+  //   id: 'logistics',
+  //   label: 'Logistics',
+  //   items: [
+  //     {
+  //       href: PARTNER_LOGISTICS_HREF,
+  //       label: 'Logistics',
+  //       icon: Truck,
+  //       badgeKey: 'pickups',
+  //     },
+  //   ],
+  // },
+  // {
+  //   id: 'people',
+  //   label: 'People',
+  //   items: [{ href: '/partner/staff', label: 'Staff', icon: UserCog }],
+  // },
   {
     id: 'money',
     label: 'Money',
     items: [
       { href: '/partner/revenue', label: 'Revenue', icon: Wallet },
-      { href: '/partner/settlements', label: 'Settlements', icon: IndianRupee },
+      // { href: '/partner/settlements', label: 'Settlements', icon: IndianRupee },
       { href: '/partner/reports', label: 'Reports', icon: BarChart3 },
     ],
   },
@@ -202,18 +202,18 @@ export const PARTNER_NAV_SECTIONS: PartnerNavSection[] = [
     items: [
       { href: '/partner/storefront', label: 'Storefront builder', icon: Sparkles },
       { href: '/partner/services', label: 'Service catalog', icon: ClipboardList },
-      { href: '/partner/pricing', label: 'Garment prices', icon: IndianRupee },
-      { href: '/partner/reviews', label: 'Reviews', icon: Star },
+      // { href: '/partner/pricing', label: 'Garment prices', icon: IndianRupee },
+      // { href: '/partner/reviews', label: 'Reviews', icon: Star },
     ],
   },
   {
     id: 'system',
     label: 'System',
     items: [
-      { href: '/partner/operations', label: 'Operations center', icon: Radio },
+      // { href: '/partner/operations', label: 'Operations center', icon: Radio },
       { href: '/partner/notifications', label: 'Notifications', icon: Bell, badgeKey: 'notifications' },
       { href: '/partner/audit', label: 'Audit logs', icon: FileText },
-      { href: '/partner/settings', label: 'Settings', icon: Settings },
+      // { href: '/partner/settings', label: 'Settings', icon: Settings },
     ],
   },
 ];

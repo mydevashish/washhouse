@@ -9,10 +9,8 @@ import {
   BadgeCheck,
   Clock,
   MapPin,
-  Shield,
   Star,
   Truck,
-  Wrench,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -397,147 +395,6 @@ export function LaundryStorefrontView({ laundryId }: { laundryId: string }) {
                 )}
               </p>
             )}
-          </section>
-        )}
-
-        {/* Facilities */}
-        {sf.facilities.length > 0 && (
-          <section aria-labelledby="facilities-heading">
-            <h2 id="facilities-heading" className="mb-4 text-xl font-bold">
-              Facilities
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {sf.facilities.map((f) => (
-                <Badge
-                  key={f}
-                  variant="secondary"
-                  className="px-3 py-1.5 text-sm"
-                  style={{ borderColor: `${primary}33` }}
-                >
-                  {f}
-                </Badge>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Highlights */}
-        {sf.highlights.length > 0 && (
-          <section aria-labelledby="highlights-heading">
-            <h2 id="highlights-heading" className="mb-4 text-xl font-bold">
-              Why choose us
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {sf.highlights.map((h, i) => (
-                <Card key={i} className="border-border/60 shadow-soft">
-                  <CardContent className="p-5">
-                    <Shield className="mb-2 h-6 w-6" style={{ color: primary }} />
-                    <p className="font-semibold">{h.title}</p>
-                    {h.description && (
-                      <p className="mt-2 text-sm text-muted-foreground">{h.description}</p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Machines */}
-        {sf.machines.length > 0 && (
-          <section aria-labelledby="machines-heading">
-            <h2 id="machines-heading" className="mb-4 text-xl font-bold">
-              Machines & infrastructure
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {sf.machines.map((m) => (
-                <Card key={m.id} className="overflow-hidden">
-                  {m.image_url && (
-                    <div className="relative aspect-video bg-muted">
-                      <Image
-                        src={resolveStorefrontImage(m.image_url)}
-                        alt=""
-                        fill
-                        className="object-cover"
-                        sizes="400px"
-                      />
-                    </div>
-                  )}
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-2">
-                      <Wrench className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                      <div>
-                        <p className="font-semibold">{m.name}</p>
-                        {m.brand && (
-                          <p className="text-xs text-muted-foreground">{m.brand}</p>
-                        )}
-                        {m.description && (
-                          <p className="mt-2 text-sm text-muted-foreground">{m.description}</p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Team */}
-        {sf.team.length > 0 && (
-          <section aria-labelledby="team-heading">
-            <h2 id="team-heading" className="mb-4 text-xl font-bold">
-              Our team
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {sf.team.map((member) => (
-                <Card key={member.id}>
-                  <CardContent className="flex gap-4 p-4">
-                    {member.photo_url && (
-                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-muted">
-                        <Image
-                          src={resolveStorefrontImage(member.photo_url)}
-                          alt=""
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-semibold">{member.name}</p>
-                      <p className="text-sm text-primary">{member.role}</p>
-                      {member.description && (
-                        <p className="mt-1 text-xs text-muted-foreground">{member.description}</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Certifications */}
-        {sf.certifications.length > 0 && (
-          <section aria-labelledby="certs-heading">
-            <h2 id="certs-heading" className="mb-4 text-xl font-bold">
-              Certifications
-            </h2>
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {sf.certifications.map((c) => (
-                <li
-                  key={c.id}
-                  className="flex items-center gap-3 rounded-xl border border-border/60 p-4"
-                >
-                  <Shield className="h-8 w-8 shrink-0" style={{ color: secondary }} />
-                  <div>
-                    <p className="font-medium">{c.title}</p>
-                    {c.issuer && <p className="text-sm text-muted-foreground">{c.issuer}</p>}
-                  </div>
-                </li>
-              ))}
-            </ul>
           </section>
         )}
 

@@ -140,4 +140,104 @@ describe('usePartnerWalkInOrderComposer insight fetch', () => {
     });
     expect(result.current.serviceItems).toEqual([{ service_id: serviceId, quantity: 2.5 }]);
   });
+
+  it('preserves weight items while adding garment dry-clean and press lines', () => {
+    const { result } = renderHook(() => usePartnerWalkInOrderComposer());
+
+    act(() => {
+      result.current.setServiceQty('svc-wash-fold', 1.5);
+      result.current.setIntakeMode('garments');
+      result.current.setGarmentProcess('dry_clean');
+      result.current.setGarmentLines([
+        {
+          key: 'catalog:shirt:dry_clean',
+          quantity: 2,
+          unitPriceInr: 120,
+          label: 'Shirt',
+          catalogItemId: 'shirt',
+          process: 'dry_clean',
+        },
+      ]);
+      result.current.setGarmentProcess('press');
+      result.current.setGarmentLines((prev) => [
+        ...prev,
+        {
+          key: 'catalog:shirt:press',
+          quantity: 1,
+          unitPriceInr: 80,
+          label: 'Shirt',
+          catalogItemId: 'shirt',
+          process: 'press',
+        },
+      ]);
+    });
+
+    expect(result.current.serviceItems).toEqual([{ service_id: 'svc-wash-fold', quantity: 1.5 }]);
+    expect(result.current.garmentLines).toHaveLength(2);
+    expect(result.current.lineRows).toHaveLength(3);
+    expect(result.current.estimatedSubtotal).toBeGreaterThan(0);
+  });
+
+  it('labels combined summary rows as Weight, Dry clean, or Press', () => {
+    const { result } = renderHook(() => usePartnerWalkInOrderComposer());
+
+    act(() => {
+      result.current.setServiceQty('svc-wash-fold', 1.5);
+      result.current.setGarmentProcess('dry_clean');
+      result.current.setGarmentLines([
+        {
+          key: 'catalog:shirt:dry_clean',
+          quantity: 2,
+          unitPriceInr: 120,
+          label: 'Shirt',
+          catalogItemId: 'shirt',
+          process: 'dry_clean',
+        },
+      ]);
+      result.current.setGarmentLines((prev) => [
+        ...prev,
+        {
+          key: 'catalog:shirt:press',
+          quantity: 1,
+          unitPriceInr: 80,
+          label: 'Shirt',
+          catalogItemId: 'shirt',
+          process: 'press',
+        },
+      ]);
+    });
+
+    expect(result.current.lineRows.map((row) => row.name)).toEqual([
+      expect.stringContaining('Weight'),
+      expect.stringContaining('Dry clean'),
+      expect.stringContaining('Press'),
+    ]);
+  });
+
+  it('clears all intake state when the workspace is reset', () => {
+    const { result } = renderHook(() => usePartnerWalkInOrderComposer());
+
+    act(() => {
+      result.current.setServiceQty('svc-wash-fold', 1.5);
+      result.current.setIntakeMode('garments');
+      result.current.setGarmentProcess('press');
+      result.current.setGarmentLines([
+        {
+          key: 'catalog:shirt:press',
+          quantity: 1,
+          unitPriceInr: 80,
+          label: 'Shirt',
+          catalogItemId: 'shirt',
+          process: 'press',
+        },
+      ]);
+      result.current.resetWorkspace();
+    });
+
+    expect(result.current.serviceItems).toEqual([]);
+    expect(result.current.garmentLines).toEqual([]);
+    expect(result.current.step).toBe('customer');
+    expect(result.current.intakeMode).toBe('services');
+    expect(result.current.garmentProcess).toBe('dry_clean');
+  });
 });

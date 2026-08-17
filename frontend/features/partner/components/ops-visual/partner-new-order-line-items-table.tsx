@@ -12,12 +12,14 @@ export type PartnerNewOrderLineRow = {
   quantity: number;
   rate: number;
   amount: number;
+  kind?: 'weight' | 'dry_clean' | 'press';
 };
 
 type Props = {
   rows: PartnerNewOrderLineRow[];
   emptyMessage?: string;
   onSetQty: (serviceId: string, quantity: number) => void;
+  onSetRate?: (serviceId: string, rate: number) => void;
   onRemove: (serviceId: string) => void;
   className?: string;
 };
@@ -26,6 +28,7 @@ export function PartnerNewOrderLineItemsTable({
   rows,
   emptyMessage = 'Add services from the grid above.',
   onSetQty,
+  onSetRate,
   onRemove,
   className,
 }: Props) {
@@ -80,7 +83,21 @@ export function PartnerNewOrderLineItemsTable({
                   </Button>
                 </div>
               </td>
-              <td className="px-4 py-2 tabular-nums">{formatInr(row.rate)}</td>
+              <td className="px-4 py-2">
+                {onSetRate ? (
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={row.rate}
+                    onChange={(event) => onSetRate(row.service_id, Number(event.target.value || 0))}
+                    className="w-24 rounded-md border border-border bg-background px-2 py-1 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    aria-label={`Adjust rate for ${row.name}`}
+                  />
+                ) : (
+                  <span className="tabular-nums">{formatInr(row.rate)}</span>
+                )}
+              </td>
               <td className="px-4 py-2 tabular-nums font-medium">{formatInr(row.amount)}</td>
               <td className="px-4 py-2 text-right">
                 <Button

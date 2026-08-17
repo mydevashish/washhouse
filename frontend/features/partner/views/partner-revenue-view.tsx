@@ -113,11 +113,11 @@ export function PartnerRevenueView() {
       <PartnerPageHeader
         title="Money"
         description="Your net after the platform cut — from delivered orders."
-        actions={
-          <Button type="button" size="sm" variant="outline" asChild>
-            <Link href="/partner/settlements">Settlements</Link>
-          </Button>
-        }
+        // actions={
+        //   <Button type="button" size="sm" variant="outline" asChild>
+        //     <Link href="/partner/settlements">Settlements</Link>
+        //   </Button>
+        // }
       />
 
       {analyticsQ.isError && (

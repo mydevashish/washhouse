@@ -108,7 +108,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     items: [
       { href: '/admin/revenue/analytics', label: 'Revenue analytics', icon: BarChart3 },
       { href: '/admin/settlements', label: 'Settlements', icon: Wallet },
-      { href: '/admin/profit-sharing', label: 'Profit sharing', icon: Percent },
+      // { href: '/admin/profit-sharing', label: 'Profit sharing', icon: Percent },
       { href: '/admin/revenue', label: 'Transactions', icon: IndianRupee },
       { href: '/admin/commission', label: 'Commission', icon: Percent },
     ],
@@ -118,11 +118,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     label: 'Approvals',
     items: [
       { href: '/admin/approvals', label: 'Approval center', icon: ClipboardCheck, badgeKey: 'approvals' },
-      { href: '/admin/inventory-changes', label: 'Inventory changes', icon: ClipboardList, badgeKey: 'inventoryChanges' },
-      { href: '/admin/disputes', label: 'Disputes', icon: AlertTriangle, badgeKey: 'complaints' },
-      { href: '/admin/disputes/analytics', label: 'Dispute analytics', icon: BarChart3 },
-      { href: '/admin/reviews/moderation', label: 'Review moderation', icon: Star },
-      { href: '/admin/trust-scores', label: 'Trust scores', icon: Shield },
+      // { href: '/admin/inventory-changes', label: 'Inventory changes', icon: ClipboardList, badgeKey: 'inventoryChanges' },
+      // { href: '/admin/disputes', label: 'Disputes', icon: AlertTriangle, badgeKey: 'complaints' },
+      // { href: '/admin/disputes/analytics', label: 'Dispute analytics', icon: BarChart3 },
+      // { href: '/admin/reviews/moderation', label: 'Review moderation', icon: Star },
+      // { href: '/admin/trust-scores', label: 'Trust scores', icon: Shield },
     ],
   },
   {
@@ -130,17 +130,17 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     label: 'Monitoring',
     items: [
       { href: '/admin/audit', label: 'Audit logs', icon: FileText },
-      { href: '/admin/fraud', label: 'Fraud detection', icon: AlertOctagon, badgeKey: 'fraudAlerts' },
+      // { href: '/admin/fraud', label: 'Fraud detection', icon: AlertOctagon, badgeKey: 'fraudAlerts' },
       { href: '/admin/notifications', label: 'Notifications', icon: Bell, badgeKey: 'complaints' },
       { href: '/admin/announcements', label: 'Announcement Center', icon: Megaphone },
-      { href: '/admin/customer-experience', label: 'Customer experience', icon: Store },
+      // { href: '/admin/customer-experience', label: 'Customer experience', icon: Store },
     ],
   },
   {
     id: 'configuration',
     label: 'Configuration',
     items: [
-      { href: '/admin/configuration', label: 'Configuration Center', icon: Settings },
+      // { href: '/admin/configuration', label: 'Configuration Center', icon: Settings },
       { href: '/admin/settings', label: 'Settings', icon: Settings },
     ],
   },

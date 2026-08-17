@@ -127,6 +127,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   const [fulfillment, setFulfillment] = useState<WalkInComposerFulfillment>(initialFulfillment);
   const [step, setStep] = useState<WalkInComposerStep>('customer');
   const [intakeMode, setIntakeMode] = useState<WalkInComposerIntakeMode>('services');
+  const [garmentProcess, setGarmentProcess] = useState<ClothWallProcess>('dry_clean');
   const [customerName, setCustomerName] = useState(initialName);
   const [customerPhone, setCustomerPhone] = useState(initialPhone);
   const [customerGender, setCustomerGender] = useState<PartnerCustomerGender | null>(null);
@@ -134,6 +135,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   const [expectedReadyAt, setExpectedReadyAt] = useState('');
   const [serviceItems, setServiceItems] = useState<ServiceLine[]>([]);
   const [garmentLines, setGarmentLines] = useState<ClothWallLine[]>([]);
+  const [lineRateOverrides, setLineRateOverrides] = useState<Record<string, number>>({});
   const [tileProcess, setTileProcess] = useState<Record<string, ClothWallProcess>>({});
   const [category, setCategory] = useState<ClothWallCategoryChip | 'all'>('all');
   const [createdOrder, setCreatedOrder] = useState<WalkInOrder | null>(null);
@@ -153,7 +155,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   const [discountType, setDiscountType] = useState<'percent' | 'flat'>('percent');
   const [discountValue, setDiscountValue] = useState(10);
   const [paymentMethod, setPaymentMethod] = useState('Cash');
-  const [deliveryType, setDeliveryType] = useState<PartnerDeliveryType>('Both');
+  const [deliveryType, setDeliveryType] = useState<PartnerDeliveryType>('Walk-in');
   const [preferredDeliveryDate, setPreferredDeliveryDate] = useState('');
   const [couponError, setCouponError] = useState<string | null>(null);
   const [customerEmail, setCustomerEmail] = useState('');
@@ -337,7 +339,6 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   function addCatalogLines(lines: ClothWallLine[]) {
     if (lines.length === 0) return;
     setIntakeMode('garments');
-    setServiceItems([]);
     setGarmentLines((prev) => {
       let next = [...prev];
       for (const line of lines) {
@@ -397,7 +398,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   }
 
   function processForTile(tile: ClothWallTile): ClothWallProcess {
-    return tileProcess[tile.id] ?? tile.defaultProcess;
+    return tileProcess[tile.id] ?? garmentProcess ?? tile.defaultProcess;
   }
 
   function lineKeyForTile(tile: ClothWallTile, process: ClothWallProcess): string {
@@ -466,36 +467,40 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   }
 
   const lineRows: PartnerNewOrderLineRow[] = useMemo(() => {
-    if (intakeMode === 'services') {
-      return serviceItems.map((item) => {
-        const svc = services.find((s) => s.id === item.service_id);
-        const rate = Number(svc?.price_inr ?? 0);
-        return {
-          ...item,
-          name: svc?.name ?? 'Service',
-          rate,
-          amount: lineAmountInr(rate, item.quantity),
-        };
-      });
-    }
-    return garmentLines.map((line) => ({
-      service_id: line.key,
-      quantity: line.quantity,
-      name: line.label,
-      rate: line.unitPriceInr,
-      amount: lineAmountInr(line.unitPriceInr, line.quantity),
-    }));
-  }, [garmentLines, intakeMode, serviceItems, services]);
+    const serviceRows: PartnerNewOrderLineRow[] = serviceItems.map((item) => {
+      const svc = services.find((s) => s.id === item.service_id);
+      const key = `service:${item.service_id}`;
+      const baseRate = Number(svc?.price_inr ?? 0);
+      const rate = lineRateOverrides[key] ?? baseRate;
+      return {
+        ...item,
+        service_id: key,
+        name: `${svc?.name ?? 'Service'} — Weight`,
+        rate,
+        amount: lineAmountInr(rate, item.quantity),
+        kind: 'weight',
+      };
+    });
 
-  const estimatedSubtotal =
-    intakeMode === 'services'
-      ? lineRows.reduce((sum, row) => sum + row.amount, 0)
-      : clothWallSubtotalInr(garmentLines);
+    const garmentRows: PartnerNewOrderLineRow[] = garmentLines.map((line) => {
+      const key = line.key;
+      const processName = line.process === 'press' ? 'Press' : 'Dry clean';
+      const rate = lineRateOverrides[key] ?? line.unitPriceInr;
+      return {
+        service_id: key,
+        quantity: line.quantity,
+        name: `${line.label} — ${processName}`,
+        rate,
+        amount: lineAmountInr(rate, line.quantity),
+        kind: line.process === 'press' ? 'press' : 'dry_clean',
+      };
+    });
 
-  const pieceCount =
-    intakeMode === 'services'
-      ? lineRows.reduce((s, r) => s + r.quantity, 0)
-      : clothWallPieceCount(garmentLines);
+    return [...serviceRows, ...garmentRows];
+  }, [garmentLines, lineRateOverrides, serviceItems, services]);
+
+  const estimatedSubtotal = lineRows.reduce((sum, row) => sum + row.amount, 0);
+  const pieceCount = lineRows.reduce((sum, row) => sum + row.quantity, 0);
 
   const applyCouponMutation = useMutation({
     mutationFn: (code: string) => validatePartnerCoupon(code),
@@ -516,6 +521,11 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       setCouponError('Invalid or inactive coupon');
     },
   });
+
+  function setLineRate(lineKey: string, rate: number) {
+    const nextRate = Number.isFinite(rate) ? Math.max(0, rate) : 0;
+    setLineRateOverrides((prev) => ({ ...prev, [lineKey]: nextRate }));
+  }
 
   function applyCoupon() {
     const code = couponCode.trim();
@@ -621,25 +631,21 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       toast.error('Doorstep orders use services — switch to By service');
       return;
     }
-    if (intakeMode === 'services' && serviceItems.length === 0) {
-      toast.error('Add at least one service');
-      return;
-    }
-    if (intakeMode === 'garments' && garmentLines.length === 0) {
-      toast.error('Add at least one garment');
+    if (serviceItems.length === 0 && garmentLines.length === 0) {
+      toast.error('Add at least one item');
       return;
     }
     setStep('review');
   }
 
   function buildWalkInItems(): WalkInOrderLineItem[] {
-    if (intakeMode === 'services') {
-      return serviceItems.map((item) => ({
+    return [
+      ...serviceItems.map((item) => ({
         service_id: item.service_id,
         quantity: item.quantity,
-      }));
-    }
-    return buildWalkInItemsFromClothWallLines(garmentLines);
+      })),
+      ...buildWalkInItemsFromClothWallLines(garmentLines),
+    ];
   }
 
   function validateForSubmit(): boolean {
@@ -717,8 +723,16 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setCreatedOrder(null);
     setCreatedDoorstepOrder(null);
     setStep('customer');
+    setFulfillment(initialFulfillment);
+    setIntakeMode('services');
+    setGarmentProcess('dry_clean');
+    setTileProcess({});
+    setCategory('all');
     setServiceItems([]);
     setGarmentLines([]);
+    setLineRateOverrides({});
+    setCustomerName(initialName);
+    setCustomerPhone(initialPhone);
     setNotes('');
     setExpectedReadyAt('');
     setCustomerGender(null);
@@ -730,6 +744,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setStaffNote('');
     setGstInvoiceRequested(false);
     setDeskProfileHint(null);
+    setLookupSuppressedState(lookupSuppressed);
     const slots = defaultDoorstepSlots();
     setPickupAtLocal(slots.pickup_at);
     setDeliveryAtLocal(slots.delivery_at);
@@ -776,10 +791,8 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
 
   function switchIntakeMode(mode: WalkInComposerIntakeMode) {
     if (mode === intakeMode) return;
-    if (serviceItems.length || garmentLines.length) {
-      toast.message('Cleared items — pick services or garments for this order, not both.');
-      setServiceItems([]);
-      setGarmentLines([]);
+    if (mode === 'garments') {
+      setGarmentProcess((prev) => (prev === 'press' || prev === 'dry_clean' ? prev : 'dry_clean'));
     }
     setIntakeMode(mode);
   }
@@ -818,6 +831,9 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setStep,
     intakeMode,
     switchIntakeMode,
+    garmentProcess,
+    setGarmentProcess,
+    setGarmentLines,
     customerName,
     setCustomerName,
     customerPhone,
@@ -909,6 +925,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setServiceQty,
     removeServiceLine,
     setLineQty,
+    setLineRate,
     removeLine,
     processForTile,
     qtyForTile,

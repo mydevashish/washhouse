@@ -81,14 +81,14 @@ export function GlobalNavbar({
           </div>
 
           {/* Center — search (desktop) */}
-          <div className="hidden flex-1 justify-center md:flex">
+          {/* <div className="hidden flex-1 justify-center md:flex">
             <NavbarCommandSearchDesktopTrigger />
-          </div>
+          </div> */}
 
           {/* Right */}
           <div className="flex shrink-0 items-center gap-1">
-            <NavbarCommandSearchMobileTrigger />
-            <NavbarQuickActions app={app} role={userRole} />
+            {/* <NavbarCommandSearchMobileTrigger /> */}
+            {/* <NavbarQuickActions app={app} role={userRole} /> */}
             <div className="hidden sm:block">
               <NavbarNotifications app={app} viewAllHref={notificationsHref} />
             </div>

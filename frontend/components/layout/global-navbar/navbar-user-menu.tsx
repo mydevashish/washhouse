@@ -114,7 +114,7 @@ export function NavbarUserMenu({
           </div>
           <div className="p-1">
             <Link
-              href="/account"
+              href="partner/storefront"
               role="menuitem"
               className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm hover:bg-muted"
               onClick={() => setOpen(false)}
@@ -122,7 +122,7 @@ export function NavbarUserMenu({
               <User className="h-4 w-4 text-muted-foreground" />
               Profile
             </Link>
-            <Link
+            {/* <Link
               href={settingsHref}
               role="menuitem"
               className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm hover:bg-muted"
@@ -130,8 +130,8 @@ export function NavbarUserMenu({
             >
               <Settings className="h-4 w-4 text-muted-foreground" />
               {app === 'customer' ? 'Account settings' : 'Settings'}
-            </Link>
-            <Link
+            </Link> */}
+            {/* <Link
               href="/discover"
               role="menuitem"
               className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm hover:bg-muted"
@@ -139,7 +139,7 @@ export function NavbarUserMenu({
             >
               <HelpCircle className="h-4 w-4 text-muted-foreground" />
               Help center
-            </Link>
+            </Link> */}
           </div>
           <div className="border-t border-border/60 px-3 py-2 sm:hidden">
             <p className="mb-2 text-xs font-medium text-muted-foreground">Theme</p>

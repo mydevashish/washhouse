@@ -254,6 +254,9 @@ function PartnerWalkInOrderWorkspaceContent({
     pincode: '',
     state: '',
   });
+  const [garmentSearch, setGarmentSearch] = useState('');
+  const [garmentPage, setGarmentPage] = useState(1);
+  const GARMENT_PAGE_SIZE = 12;
   const searchBoxRef = useRef<HTMLDivElement>(null);
   const searchRequestRef = useRef(0);
   const qc = useQueryClient();
@@ -386,6 +389,31 @@ function PartnerWalkInOrderWorkspaceContent({
     setNewCustomerOpen(false);
     toast.success('New customer added to the order');
   }
+
+  useEffect(() => {
+    setGarmentPage(1);
+  }, [c.category, c.garmentProcess, garmentSearch]);
+
+  const garmentSelectionTiles = (c.visibleGarmentTiles ?? []).filter((tile) => {
+    const hasProcessPrice =
+      c.garmentProcess === 'dry_clean' ? tile.dryCleanInr != null : tile.pressInr != null;
+    if (!hasProcessPrice) return false;
+
+    const query = garmentSearch.trim().toLowerCase();
+    if (!query) return true;
+
+    return (
+      tile.hinglish.toLowerCase().includes(query) ||
+      tile.english.toLowerCase().includes(query) ||
+      tile.name.toLowerCase().includes(query)
+    );
+  });
+
+  const garmentPageCount = Math.max(1, Math.ceil(garmentSelectionTiles.length / GARMENT_PAGE_SIZE));
+  const garmentPageItems = garmentSelectionTiles.slice(
+    (garmentPage - 1) * GARMENT_PAGE_SIZE,
+    garmentPage * GARMENT_PAGE_SIZE,
+  );
 
   const profileForSnapshot = c.walkInSnapshotProfile
     ? {
@@ -696,7 +724,7 @@ function PartnerWalkInOrderWorkspaceContent({
             </Badge>
           ) : null}
 
-          <Button
+          {/* <Button
             type="button"
             className="h-9 min-h-9 w-full sm:w-auto"
             onClick={c.goFromCustomer}
@@ -705,7 +733,7 @@ function PartnerWalkInOrderWorkspaceContent({
           >
             Continue to items
             <ChevronRight className="ml-1 h-4 w-4" aria-hidden />
-          </Button>
+          </Button> */}
         </PartnerOpsSurface>
       ) : null}
 
@@ -755,7 +783,7 @@ function PartnerWalkInOrderWorkspaceContent({
           <p className="text-sm text-muted-foreground">
             {c.intakeMode === 'services'
               ? 'Dry clean, wash & fold, and other offerings from your live service catalog.'
-              : 'Shirt, pant, saree — one tag per piece when you print with “1 tag per piece”.'}
+              : 'Search, filter, and add garments by dry clean or press — quantities stay in the order even if you switch back to weight.'}
           </p>
 
           {c.intakeMode === 'services' ? (
@@ -878,7 +906,7 @@ function PartnerWalkInOrderWorkspaceContent({
                     </Button>
                   </div>
 
-                  {c.lineRows.length > 0 ? (
+                  {/* {c.lineRows.length > 0 ? (
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                       {c.lineRows.map((row) => (
                         <div
@@ -897,7 +925,7 @@ function PartnerWalkInOrderWorkspaceContent({
                         </div>
                       ))}
                     </div>
-                  ) : null}
+                  ) : null} */}
                 </>
               )}
             </>
@@ -913,9 +941,40 @@ function PartnerWalkInOrderWorkspaceContent({
                 />
               ) : (
                 <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {(['dry_clean', 'press'] as const).map((process) => (
+                      <button
+                        key={process}
+                        type="button"
+                        className={cn(
+                          'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                          c.garmentProcess === process
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border bg-background text-foreground hover:bg-muted',
+                        )}
+                        onClick={() => c.setGarmentProcess(process)}
+                      >
+                        {process === 'dry_clean' ? 'Dryclean' : 'Press'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <Input
+                      value={garmentSearch}
+                      onChange={(e) => setGarmentSearch(e.target.value)}
+                      placeholder="Search garments..."
+                      className="min-h-9 sm:max-w-xs"
+                    />
+                    <div className="text-xs text-muted-foreground">
+                      {garmentSelectionTiles.length} items
+                    </div>
+                  </div>
+
                   <ClothWallCategoryChips value={c.category} onChange={c.setCategory} />
+
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                    {c.visibleGarmentTiles.map((tile) => (
+                    {garmentPageItems.map((tile) => (
                       <ClothWallTileButton
                         key={tile.id}
                         tile={tile}
@@ -928,6 +987,32 @@ function PartnerWalkInOrderWorkspaceContent({
                     ))}
                     <PartnerGarmentAddTile onClick={() => setGarmentOfferOpen(true)} />
                   </div>
+
+                  {garmentSelectionTiles.length > GARMENT_PAGE_SIZE ? (
+                    <div className="flex items-center justify-between gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={garmentPage === 1}
+                        onClick={() => setGarmentPage((p) => Math.max(1, p - 1))}
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        Page {garmentPage} of {garmentPageCount}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={garmentPage >= garmentPageCount}
+                        onClick={() => setGarmentPage((p) => Math.min(garmentPageCount, p + 1))}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  ) : null}
                 </>
               )}
             </>
@@ -938,7 +1023,7 @@ function PartnerWalkInOrderWorkspaceContent({
               <ChevronLeft className="mr-1 h-4 w-4" aria-hidden />
               Back
             </Button>
-            <Button
+            {/* <Button
               type="button"
               onClick={c.goFromIntake}
               disabled={
@@ -947,7 +1032,7 @@ function PartnerWalkInOrderWorkspaceContent({
               data-testid="create-order-intake-next"
             >
               Review order
-            </Button>
+            </Button> */}
           </div>
         </PartnerOpsSurface>
       ) : null}
@@ -962,7 +1047,7 @@ function PartnerWalkInOrderWorkspaceContent({
                 <p className="font-semibold">{c.customerName.trim()}</p>
                 <p className="text-muted-foreground">{c.customerPhone}</p>
               </div>
-              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
+              {/* <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
                 <p className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-100">
                   <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
                   Mix-up safety
@@ -972,13 +1057,14 @@ function PartnerWalkInOrderWorkspaceContent({
                   <li>Print bag tag + per-piece tags before processing</li>
                   <li>Match phone last 4 on tag to customer phone</li>
                 </ul>
-              </div>
+              </div> */}
             </div>
 
             <div className="overflow-hidden rounded-xl border border-border">
               <PartnerNewOrderLineItemsTable
                 rows={c.lineRows}
                 onSetQty={c.setLineQty}
+                onSetRate={c.setLineRate}
                 onRemove={c.removeLine}
               />
             </div>
