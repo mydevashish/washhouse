@@ -464,7 +464,7 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
                         process={composer.processForTile(tile)}
                         onIncrement={() => composer.bumpTile(tile, 1)}
                         onDecrement={() => composer.bumpTile(tile, -1)}
-                        onProcessChange={(p) => composer.changeProcess(tile, p)}
+                        // onProcessChange={(p) => composer.changeProcess(tile, p)}
                       />
                     ))}
                     <PartnerGarmentAddTile onClick={() => setGarmentOfferOpen(true)} />
@@ -522,6 +522,8 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
             onAdvancePaidChange={composer.setAdvancePaid}
             expressOrder={composer.expressOrder}
             onExpressOrderChange={composer.setExpressOrder}
+            expressCharge={composer.expressChargeOverride}
+            onExpressChargeChange={composer.setExpressChargeOverride}
             submitPending={composer.createMutation.isPending}
             submitDisabled={submitDisabled}
             submitLabel="Create Order & Generate Tags"

@@ -425,11 +425,11 @@ export function ClothWallNewOrderView({
                         process={processForTile(tile)}
                         onIncrement={() => bumpTile(tile, 1)}
                         onDecrement={() => bumpTile(tile, -1)}
-                        onProcessChange={
-                          tile.priceMode === 'dual'
-                            ? (p) => changeProcess(tile, p)
-                            : undefined
-                        }
+                        // onProcessChange={
+                        //   tile.priceMode === 'dual'
+                        //     ? (p) => changeProcess(tile, p)
+                        //     : undefined
+                        // }
                         imagePriority={index < 4}
                       />
                     );

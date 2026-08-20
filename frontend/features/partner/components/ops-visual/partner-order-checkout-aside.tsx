@@ -20,7 +20,6 @@ export type PartnerCheckoutTotals = {
   discount: number;
   pickupCharge: number;
   deliveryCharge: number;
-  packingCharge: number;
   expressCharge: number;
   advancePaid: number;
   balanceDue: number;
@@ -43,6 +42,7 @@ export function computePartnerCheckoutTotals(input: {
   pickupChargeOverride?: number;
   deliveryChargeOverride?: number;
   advancePaid?: number;
+  expressChargeOverride?: number;
 }): PartnerCheckoutTotals {
   const manualDiscount =
     input.discountType === 'none'
@@ -65,7 +65,6 @@ export function computePartnerCheckoutTotals(input: {
         )
       : Math.min(100, Math.round(input.subtotal * 0.07))
     : manualDiscount;
-  const packingCharge = input.lineCount > 0 ? 10 : 0;
   const pickupCharge =
     input.pickupChargeOverride ??
     (input.deliveryType === 'Delivery' || input.deliveryType === 'Walk-in'
@@ -80,10 +79,10 @@ export function computePartnerCheckoutTotals(input: {
       : input.lineCount > 0
         ? 30
         : 0);
-  const expressCharge = input.expressOrder ? 100 : 0;
+  const expressCharge = input.expressOrder ? (input.expressChargeOverride ?? 100) : 0;
   const subtotalWithExtras = Math.max(
     0,
-    input.subtotal - discount + pickupCharge + deliveryCharge + packingCharge + expressCharge,
+    input.subtotal - discount + pickupCharge + deliveryCharge + expressCharge,
   );
   const advancePaid = Math.max(0, input.advancePaid ?? 0);
   const grandTotal = subtotalWithExtras;
@@ -94,7 +93,6 @@ export function computePartnerCheckoutTotals(input: {
     discount,
     pickupCharge,
     deliveryCharge,
-    packingCharge,
     expressCharge,
     advancePaid,
     balanceDue,
@@ -129,6 +127,8 @@ type Props = {
   onPickupChargeChange: (value: number) => void;
   deliveryCharge: number;
   onDeliveryChargeChange: (value: number) => void;
+  expressCharge?: number;
+  onExpressChargeChange?: (value: number) => void;
   advancePaid: number;
   onAdvancePaidChange: (value: number) => void;
   expressOrder: boolean;
@@ -170,6 +170,8 @@ export function PartnerOrderCheckoutAside({
   onAdvancePaidChange,
   expressOrder,
   onExpressOrderChange,
+  expressCharge,
+  onExpressChargeChange,
   submitPending,
   submitDisabled,
   submitLabel = 'Create order & generate tags',
@@ -221,12 +223,12 @@ export function PartnerOrderCheckoutAside({
       <Card className="flex min-h-0 flex-1 flex-col border-border">
         <CardHeader className="shrink-0 space-y-3">
           <CardTitle>Order summary</CardTitle>
-          {!hideSubmitButton ? (
-            <>
+          <div className="flex gap-2">
+            {!hideSubmitButton ? (
               <Button
                 type={onSubmit ? 'button' : 'submit'}
                 size="lg"
-                className={cn(PARTNER_CHECKOUT_CTA, 'w-full text-base')}
+                className={cn(PARTNER_CHECKOUT_CTA, 'flex-1 text-base')}
                 disabled={submitDisabled || submitPending}
                 aria-busy={submitPending}
                 data-testid="partner-create-order-submit"
@@ -238,12 +240,14 @@ export function PartnerOrderCheckoutAside({
                   submitLabel
                 )}
               </Button>
-              {submitDisabled && !submitPending ? (
-                <p className="text-center text-xs text-muted-foreground">
-                  Add at least one service in the line items table, then tap create order.
-                </p>
-              ) : null}
-            </>
+            ) : (
+              <div className="flex-1" />
+            )}
+          </div>
+          {submitDisabled && !submitPending && !hideSubmitButton ? (
+            <p className="text-center text-xs text-muted-foreground">
+              Add at least one service in the line items table, then tap create order.
+            </p>
           ) : null}
         </CardHeader>
         <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto">
@@ -403,6 +407,21 @@ export function PartnerOrderCheckoutAside({
               Express service (+₹100)
             </label>
 
+            {expressOrder ? (
+              <div className="mt-2">
+                <Label htmlFor="po-express-charge">Express charge</Label>
+                <Input
+                  id="po-express-charge"
+                  type="number"
+                  min="0"
+                  step={10}
+                  value={expressCharge ?? totals.expressCharge}
+                  onChange={(e) => onExpressChargeChange?.(Number(e.target.value || 0))}
+                  className="mt-2 min-h-9"
+                />
+              </div>
+            ) : null}
+
             <div>
               <Label htmlFor="po-delivery-date">Preferred delivery date</Label>
               <Input
@@ -428,7 +447,7 @@ export function PartnerOrderCheckoutAside({
               </Select>
             </div>
 
-            <div>
+            {/* <div>
               <Label htmlFor="po-notes">Notes</Label>
               <Textarea
                 id="po-notes"
@@ -436,7 +455,7 @@ export function PartnerOrderCheckoutAside({
                 value={notes}
                 onChange={(e) => onNotesChange(e.target.value)}
               />
-            </div>
+            </div> */}
           </div>
 
           <div className="space-y-3 rounded-xl bg-muted/10 p-4">
@@ -444,9 +463,9 @@ export function PartnerOrderCheckoutAside({
               <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
                 {totals.serviceCount} service{totals.serviceCount === 1 ? '' : 's'}
               </span>
-              <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
+              {/* <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
                 {totals.itemCount} item{totals.itemCount === 1 ? '' : 's'}
-              </span>
+              </span> */}
             </div>
             {breakdown.map((row) => (
               <div key={row.label} className="flex justify-between text-sm text-muted-foreground">

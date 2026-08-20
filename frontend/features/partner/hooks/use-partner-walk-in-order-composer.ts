@@ -66,6 +66,8 @@ export type WalkInComposerStep = 'customer' | 'intake' | 'review';
 export type WalkInComposerIntakeMode = 'services' | 'garments';
 export type WalkInComposerFulfillment = 'walk_in' | 'doorstep';
 
+export type WalkInTopLevelProcess = 'by_weight' | 'dry_clean_press';
+
 type ServiceLine = { service_id: string; quantity: number };
 
 function toDatetimeLocalValue(d: Date): string {
@@ -128,6 +130,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   const [step, setStep] = useState<WalkInComposerStep>('customer');
   const [intakeMode, setIntakeMode] = useState<WalkInComposerIntakeMode>('services');
   const [garmentProcess, setGarmentProcess] = useState<ClothWallProcess>('dry_clean');
+  const [topLevelProcess, setTopLevelProcess] = useState<WalkInTopLevelProcess>('by_weight');
   const [customerName, setCustomerName] = useState(initialName);
   const [customerPhone, setCustomerPhone] = useState(initialPhone);
   const [customerGender, setCustomerGender] = useState<PartnerCustomerGender | null>(null);
@@ -152,14 +155,15 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   const [couponCode, setCouponCode] = useState('');
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponDiscountInr, setCouponDiscountInr] = useState(0);
-  const [discountType, setDiscountType] = useState<'percent' | 'flat'>('percent');
-  const [discountValue, setDiscountValue] = useState(10);
+  const [discountType, setDiscountType] = useState<'none' | 'percent' | 'flat'>('none');
+  const [discountValue, setDiscountValue] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [deliveryType, setDeliveryType] = useState<PartnerDeliveryType>('Walk-in');
   const [preferredDeliveryDate, setPreferredDeliveryDate] = useState('');
   const [couponError, setCouponError] = useState<string | null>(null);
   const [customerEmail, setCustomerEmail] = useState('');
   const [expressOrder, setExpressOrder] = useState(false);
+  const [expressChargeOverride, setExpressChargeOverride] = useState(100);
   const [pickupChargeOverride, setPickupChargeOverride] = useState(30);
   const [deliveryChargeOverride, setDeliveryChargeOverride] = useState(30);
   const [advancePaid, setAdvancePaid] = useState(0);
@@ -338,14 +342,28 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
 
   function addCatalogLines(lines: ClothWallLine[]) {
     if (lines.length === 0) return;
-    setIntakeMode('garments');
+    // If these lines are not tied to a weight service (no serviceId),
+    // switch the intake mode to garments so user sees the Garments UI.
+    // If lines are associated with a service (per-weight garments),
+    // do NOT switch intake mode or top-level process — keep user in By Weight.
+    const hasOnlyServiceBound = lines.every((l) => l.serviceId != null);
+    if (!hasOnlyServiceBound) {
+      setIntakeMode('garments');
+      // ensure the top-level process reflects garment flow when switching
+      setTopLevelProcess('dry_clean_press');
+    }
+
+    // Merge incoming lines with existing lines using both `key` and `serviceId`
+    // so the same catalog/process for different weight services remain separate.
     setGarmentLines((prev) => {
       let next = [...prev];
       for (const line of lines) {
-        const existing = next.find((l) => l.key === line.key);
-        if (existing) {
-          next = next.map((l) =>
-            l.key === line.key ? { ...l, quantity: l.quantity + line.quantity } : l,
+        const existingIndex = next.findIndex(
+          (l) => l.key === line.key && (l.serviceId ?? null) === (line.serviceId ?? null),
+        );
+        if (existingIndex !== -1) {
+          next = next.map((l, idx) =>
+            idx === existingIndex ? { ...l, quantity: l.quantity + line.quantity } : l,
           );
         } else {
           next.push(line);
@@ -375,30 +393,50 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   }
 
   function setLineQty(lineKey: string, quantity: number) {
-    if (intakeMode === 'services') {
-      setServiceQty(lineKey, quantity);
-      return;
-    }
+
     const qty = roundClothWallQty(quantity);
-    if (qty < CLOTH_WALL_MIN_QTY) {
-      setGarmentLines((prev) => prev.filter((l) => l.key !== lineKey));
-      return;
-    }
-    setGarmentLines((prev) =>
-      prev.map((l) => (l.key === lineKey ? { ...l, quantity: qty } : l)),
-    );
+
+    setGarmentLines((prev) => {
+      const next = prev.map((l) =>
+        l.key === lineKey
+          ? { ...l, quantity: qty }
+          : l,
+      );
+      return next;
+    });
   }
 
   function removeLine(lineKey: string) {
-    if (intakeMode === 'services') {
-      removeServiceLine(lineKey);
+    const garmentLineExists = garmentLines.some((l) => l.key === lineKey);
+
+    if (garmentLineExists) {
+      setGarmentLines((prev) => prev.filter((l) => l.key !== lineKey));
       return;
     }
-    setGarmentLines((prev) => prev.filter((l) => l.key !== lineKey));
+
+    // Support removing service rows which may be passed as `service:<id>` from the UI.
+    if (lineKey.startsWith('service:')) {
+      const parts = lineKey.split(':');
+      const svc = parts[1];
+      if (svc) {
+        removeServiceLine(svc);
+      }
+      return;
+    }
+
+    removeServiceLine(lineKey);
   }
 
   function processForTile(tile: ClothWallTile): ClothWallProcess {
-    return tileProcess[tile.id] ?? garmentProcess ?? tile.defaultProcess;
+    // When user is operating in Dry Clean & Press top-level flow, honor
+    // per-tile overrides and the global `garmentProcess` fallback.
+    // When user is in By Weight, never fallback to the global
+    // `garmentProcess` (which is for dry_clean/press). Instead prefer
+    // tile-specific overrides or the tile's default process.
+    if (topLevelProcess === 'dry_clean_press') {
+      return tileProcess[tile.id] ?? garmentProcess ?? tile.defaultProcess;
+    }
+    return tileProcess[tile.id] ?? tile.defaultProcess;
   }
 
   function lineKeyForTile(tile: ClothWallTile, process: ClothWallProcess): string {
@@ -414,14 +452,24 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   function qtyForTile(tile: ClothWallTile): number {
     const process = processForTile(tile);
     const key = lineKeyForTile(tile, process);
-    return garmentLines.find((l) => l.key === key)?.quantity ?? 0;
+    // Include service-scoped lines when computing the global tile quantity
+    // so items added under weight services are visible in Dryclean/Press views.
+    return garmentLines
+      .filter((l) => l.key === key)
+      .reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
   }
 
   function bumpTile(tile: ClothWallTile, delta: 1 | -1) {
     const process = processForTile(tile);
     const key = lineKeyForTile(tile, process);
     if (delta < 0) {
-      setGarmentLines((prev) => decrementClothWallQty(prev, key));
+      setGarmentLines((prev) => {
+        // When decrementing from the global cloth wall, prefer the non-service-scoped line
+        // so we don't accidentally decrement a per-weight line.
+        const target = prev.find((l) => l.key === key && (l.serviceId == null));
+        if (!target) return prev;
+        return decrementClothWallQty(prev, target.key);
+      });
       return;
     }
     const price = unitPriceForTile(tile, process);
@@ -482,7 +530,9 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       };
     });
 
-    const garmentRows: PartnerNewOrderLineRow[] = garmentLines.map((line) => {
+    const garmentRows: PartnerNewOrderLineRow[] = garmentLines
+      .filter((line) => line.serviceId == null)
+      .map((line) => {
       const key = line.key;
       const processName = line.process === 'press' ? 'Press' : 'Dry clean';
       const rate = lineRateOverrides[key] ?? line.unitPriceInr;
@@ -626,6 +676,10 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setStep('intake');
   }
 
+  function goBackToCustomer() {
+    setStep('customer');
+  }
+
   function goFromIntake() {
     if (fulfillment === 'doorstep' && intakeMode === 'garments') {
       toast.error('Doorstep orders use services — switch to By service');
@@ -728,6 +782,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setGarmentProcess('dry_clean');
     setTileProcess({});
     setCategory('all');
+    setTopLevelProcess('by_weight');
     setServiceItems([]);
     setGarmentLines([]);
     setLineRateOverrides({});
@@ -745,6 +800,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setGstInvoiceRequested(false);
     setDeskProfileHint(null);
     setLookupSuppressedState(lookupSuppressed);
+    setExpressChargeOverride(100);
     const slots = defaultDoorstepSlots();
     setPickupAtLocal(slots.pickup_at);
     setDeliveryAtLocal(slots.delivery_at);
@@ -755,7 +811,8 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       computePartnerCheckoutTotals({
         subtotal: estimatedSubtotal,
         couponApplied,
-        couponDiscountType: discountType,
+        // normalize discountType so we don't pass 'none' where computePartnerCheckoutTotals expects undefined
+        couponDiscountType: discountType === 'none' ? undefined : (discountType as 'percent' | 'flat'),
         couponDiscountInr,
         discountType,
         discountValue,
@@ -763,6 +820,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
         lineCount: lineRows.length,
         itemQty: pieceCount,
         expressOrder,
+        expressChargeOverride,
         pickupChargeOverride: pickupChargeOverride,
         deliveryChargeOverride: deliveryChargeOverride,
         advancePaid,
@@ -780,6 +838,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       pickupChargeOverride,
       deliveryChargeOverride,
       advancePaid,
+      expressChargeOverride,
     ],
   );
 
@@ -793,6 +852,10 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     if (mode === intakeMode) return;
     if (mode === 'garments') {
       setGarmentProcess((prev) => (prev === 'press' || prev === 'dry_clean' ? prev : 'dry_clean'));
+      setTopLevelProcess('dry_clean_press');
+    }
+    if (mode === 'services') {
+      setTopLevelProcess('by_weight');
     }
     setIntakeMode(mode);
   }
@@ -833,6 +896,8 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     switchIntakeMode,
     garmentProcess,
     setGarmentProcess,
+    topLevelProcess,
+    setTopLevelProcess,
     setGarmentLines,
     customerName,
     setCustomerName,
@@ -895,6 +960,8 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setPickupChargeOverride,
     deliveryChargeOverride,
     setDeliveryChargeOverride,
+    expressChargeOverride,
+    setExpressChargeOverride,
     advancePaid,
     setAdvancePaid,
     checkoutTotals,
@@ -932,6 +999,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     bumpTile,
     changeProcess,
     goFromCustomer,
+    goBackToCustomer,
     goFromIntake,
     submitOrder,
     validateForSubmit,

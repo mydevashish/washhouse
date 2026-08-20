@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useId } from 'react';
-import { Loader2 } from 'lucide-react';
+import { ChevronLeft, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -144,22 +144,45 @@ export function PartnerCreateOrderDialog({
           <Button type="button" variant="outline" onClick={handleDismiss} disabled={submitPending}>
             Cancel
           </Button>
-          <Button
-            type="button"
-            onClick={footerAction.onClick}
-            disabled={footerAction.disabled || submitPending}
-            aria-busy={submitPending}
-            data-testid="partner-dashboard-create-order-save"
-          >
-            {submitPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                Saving…
-              </>
-            ) : (
-              footerAction.label
+          <div className="flex gap-2">
+            {composer.step === 'intake' && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => composer.goBackToCustomer()}
+                disabled={submitPending}
+              >
+                <ChevronLeft className="mr-1 h-4 w-4" aria-hidden />
+                Back
+              </Button>
             )}
-          </Button>
+            {composer.step === 'review' && (
+            <>
+              <Button type="button" variant="outline" onClick={handleDismiss} disabled={submitPending}>
+                Print invoice
+              </Button>
+              <Button type="button" variant="outline" onClick={handleDismiss} disabled={submitPending}>
+                Print tags
+              </Button>
+            </>
+            )}
+            <Button
+              type="button"
+              onClick={footerAction.onClick}
+              disabled={footerAction.disabled || submitPending}
+              aria-busy={submitPending}
+              data-testid="partner-dashboard-create-order-save"
+            >
+              {submitPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                  Saving…
+                </>
+              ) : (
+                footerAction.label
+              )}
+            </Button>
+          </div>          
         </DialogFooter>
       </DialogContent>
     </Dialog>

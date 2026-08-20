@@ -38,6 +38,8 @@ import {
 import { OrderCreateSuccessPanel } from '@/features/partner-shop-floor/components/order-create-success-panel';
 import { ClothWallCategoryChips } from '@/features/partner-shop-floor/components/cloth-wall-category-chips';
 import { ClothWallTileButton } from '@/features/partner-shop-floor/components/cloth-wall-tile';
+import { unitPriceForTile } from '@/features/partner-shop-floor/lib/cloth-wall-items';
+import { catalogLineKey, garmentLineKey, serviceLineKey } from '@/features/partner-shop-floor/lib/cloth-wall-qty';
 import { WalkInSuccessPanel } from '@/features/partner-shop-floor/components/walk-in-success-panel';
 import {
   isValidIndianMobileE164,
@@ -239,6 +241,11 @@ function PartnerWalkInOrderWorkspaceContent({
   const [dialogService, setDialogService] = useState<ServiceCatalogItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [garmentOfferOpen, setGarmentOfferOpen] = useState(false);
+  const [weightGarmentService, setWeightGarmentService] = useState<
+    | { serviceId: string; label: string; serviceName: string }
+    | null
+  >(null);
+  const [weightGarmentDialogOpen, setWeightGarmentDialogOpen] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
   const [customerSearchResults, setCustomerSearchResults] = useState<CustomerDeskProfile[]>([]);
   const [customerSelectionLocked, setCustomerSelectionLocked] = useState(false);
@@ -256,7 +263,8 @@ function PartnerWalkInOrderWorkspaceContent({
   });
   const [garmentSearch, setGarmentSearch] = useState('');
   const [garmentPage, setGarmentPage] = useState(1);
-  const GARMENT_PAGE_SIZE = 12;
+  // Show 5 items per page in the weight dialog as requested
+  const GARMENT_PAGE_SIZE = 5;
   const searchBoxRef = useRef<HTMLDivElement>(null);
   const searchRequestRef = useRef(0);
   const qc = useQueryClient();
@@ -826,13 +834,18 @@ function PartnerWalkInOrderWorkspaceContent({
                                 <p className="text-sm font-semibold text-foreground">{card.label}</p>
                                 <p className="text-[11px] text-muted-foreground">{card.serviceName}</p>
                               </div>
-                              {selectedQty > 0 ? (
-                                <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary">
-                                  {selectedQty} kg
-                                </span>
-                              ) : null}
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setWeightGarmentService({ serviceId: card.serviceId, label: card.label, serviceName: card.serviceName });
+                                  setWeightGarmentDialogOpen(true);
+                                }}
+                              >
+                                + Add garments
+                              </Button>
                             </div>
-
                             <div className="flex items-center gap-2">
                               <Button
                                 type="button"
@@ -897,14 +910,14 @@ function PartnerWalkInOrderWorkspaceContent({
                     })}
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-border bg-muted/30 p-3">
+                  {/* <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-border bg-muted/30 p-3">
                     <p className="text-sm text-muted-foreground">
                       Need pieces too? Add garments from your catalog and pricing list.
                     </p>
                     <Button type="button" variant="outline" size="sm" onClick={() => setGarmentOfferOpen(true)}>
                       + Add garments
                     </Button>
-                  </div>
+                  </div> */}
 
                   {/* {c.lineRows.length > 0 ? (
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -940,8 +953,15 @@ function PartnerWalkInOrderWorkspaceContent({
                   applyPending={applySuggestedM.isPending}
                 />
               ) : (
-                <>
+                <>   
                   <div className="flex flex-wrap items-center gap-2">
+                    <Input
+                      value={garmentSearch}
+                      onChange={(e) => setGarmentSearch(e.target.value)}
+                      placeholder="Search garments..."
+                      className="min-h-9 sm:max-w-xs"
+                    />
+                    
                     {(['dry_clean', 'press'] as const).map((process) => (
                       <button
                         key={process}
@@ -957,16 +977,8 @@ function PartnerWalkInOrderWorkspaceContent({
                         {process === 'dry_clean' ? 'Dryclean' : 'Press'}
                       </button>
                     ))}
-                  </div>
-
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <Input
-                      value={garmentSearch}
-                      onChange={(e) => setGarmentSearch(e.target.value)}
-                      placeholder="Search garments..."
-                      className="min-h-9 sm:max-w-xs"
-                    />
-                    <div className="text-xs text-muted-foreground">
+                  
+                    <div className="ml-auto text-xs text-muted-foreground">
                       {garmentSelectionTiles.length} items
                     </div>
                   </div>
@@ -982,10 +994,14 @@ function PartnerWalkInOrderWorkspaceContent({
                         process={c.processForTile(tile)}
                         onIncrement={() => c.bumpTile(tile, 1)}
                         onDecrement={() => c.bumpTile(tile, -1)}
-                        onProcessChange={(p) => c.changeProcess(tile, p)}
+                        // onProcessChange={(p) => c.changeProcess(tile, p)}
+                        compact
                       />
                     ))}
-                    <PartnerGarmentAddTile onClick={() => setGarmentOfferOpen(true)} />
+                    {/* Hide the Add tile when viewing Dryclean or Press processes */}
+                    {!(c.intakeMode === 'garments' && (c.garmentProcess === 'dry_clean' || c.garmentProcess === 'press')) && (
+                      <PartnerGarmentAddTile onClick={() => setGarmentOfferOpen(true)} />
+                    )}
                   </div>
 
                   {garmentSelectionTiles.length > GARMENT_PAGE_SIZE ? (
@@ -1018,12 +1034,12 @@ function PartnerWalkInOrderWorkspaceContent({
             </>
           )}
 
-          <div className="flex flex-wrap gap-2">
+          {/* <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" size="sm" onClick={() => c.setStep('customer')}>
               <ChevronLeft className="mr-1 h-4 w-4" aria-hidden />
               Back
             </Button>
-            {/* <Button
+            <Button
               type="button"
               onClick={c.goFromIntake}
               disabled={
@@ -1032,8 +1048,8 @@ function PartnerWalkInOrderWorkspaceContent({
               data-testid="create-order-intake-next"
             >
               Review order
-            </Button> */}
-          </div>
+            </Button>
+          </div> */}
         </PartnerOpsSurface>
       ) : null}
 
@@ -1062,7 +1078,9 @@ function PartnerWalkInOrderWorkspaceContent({
 
             <div className="overflow-hidden rounded-xl border border-border">
               <PartnerNewOrderLineItemsTable
-                rows={c.lineRows}
+                rows={c.lineRows.filter((r) => r.kind !== 'weight')}
+                weightRows={c.lineRows.filter((r) => r.kind === 'weight')}
+                garmentLines={c.garmentLines}
                 onSetQty={c.setLineQty}
                 onSetRate={c.setLineRate}
                 onRemove={c.removeLine}
@@ -1114,7 +1132,7 @@ function PartnerWalkInOrderWorkspaceContent({
                   />
                   Express service (+₹100)
                 </label>
-                <div className="space-y-1.5">
+                {/* <div className="space-y-1.5">
                   <Label htmlFor="ws-staff-note">Internal staff note</Label>
                   <Textarea
                     id="ws-staff-note"
@@ -1123,7 +1141,7 @@ function PartnerWalkInOrderWorkspaceContent({
                     rows={2}
                     placeholder="Not shown on customer tag"
                   />
-                </div>
+                </div> */}
               </div>
             ) : null}
 
@@ -1168,6 +1186,8 @@ function PartnerWalkInOrderWorkspaceContent({
               onAdvancePaidChange={c.setAdvancePaid}
               expressOrder={c.expressOrder}
               onExpressOrderChange={c.setExpressOrder}
+              expressCharge={c.expressChargeOverride}
+              onExpressChargeChange={c.setExpressChargeOverride}
               submitPending={c.createMutation.isPending || c.createDoorstepMutation.isPending}
               submitDisabled={c.lineRows.length === 0}
               submitLabel={
@@ -1179,13 +1199,13 @@ function PartnerWalkInOrderWorkspaceContent({
               hideSubmitButton={isDialog}
               className={isDialog ? 'lg:max-h-none' : undefined}
             />
-            {c.fulfillment === 'walk_in' ? <PartnerNewOrderPrintHintCard /> : null}
+            {/* {c.fulfillment === 'walk_in' ? <PartnerNewOrderPrintHintCard /> : null} */}
           </div>
         </div>
       ) : null}
 
       <Dialog open={newCustomerOpen} onOpenChange={setNewCustomerOpen}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-4xl max-w-[95vw] max-h-[85vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>Add new customer</DialogTitle>
             <DialogDescription>Fill the customer details and add them directly to this order.</DialogDescription>
@@ -1298,6 +1318,172 @@ function PartnerWalkInOrderWorkspaceContent({
         onOpenChange={setGarmentOfferOpen}
         onSaved={() => void qc.invalidateQueries({ queryKey: queryKeys.partnerPriceList() })}
       />
+
+      <Dialog open={weightGarmentDialogOpen} onOpenChange={setWeightGarmentDialogOpen}>
+        {/* <DialogContent className="sm:max-w-xl"> */}
+        <DialogContent className="w-[95vw] sm:!max-w-[1100px] max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {weightGarmentService ? `Add garments — ${weightGarmentService.label}` : 'Add garments'}
+            </DialogTitle>
+            <DialogDescription>
+              Select garments to associate with this weight service. Prices hidden in this view.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Input
+                value={garmentSearch}
+                onChange={(e) => setGarmentSearch(e.target.value)}
+                placeholder="Search garments..."
+                className="min-h-9 sm:max-w-xs"
+              />
+            </div>
+
+            <ClothWallCategoryChips value={c.category} onChange={c.setCategory} />
+
+            <div className="flex gap-2 py-2 overflow-x-auto flex-nowrap">
+              {garmentPageItems.map((tile) => {
+                const process = c.processForTile(tile);
+                // compute quantity scoped to the selected weight service
+                const qtyForWeight = (c.garmentLines ?? []).find((l) =>
+                  tile.catalogItemId
+                    ? l.catalogItemId === tile.catalogItemId && l.serviceId === weightGarmentService?.serviceId
+                    : tile.garmentItemId
+                    ? l.garmentItemId === tile.garmentItemId && l.serviceId === weightGarmentService?.serviceId
+                    : l.serviceId === weightGarmentService?.serviceId,
+                )?.quantity ?? 0;
+
+                return (
+                  <ClothWallTileButton
+                    key={tile.id}
+                    tile={tile}
+                    quantity={qtyForWeight}
+                    process={process}
+                    onIncrement={() => {
+                      // build a service-scoped key so this tile is tracked under the weight service
+                        const svc = weightGarmentService?.serviceId ?? tile.serviceId;
+                        const p = process;
+                        const baseKey = tile.catalogItemId
+                          ? catalogLineKey(tile.catalogItemId, p)
+                          : tile.garmentItemId
+                          ? garmentLineKey(tile.garmentItemId, p)
+                          : svc
+                          ? serviceLineKey(svc)
+                          : `tile:${tile.id}`;
+                        const key = svc ? `${baseKey}::service:${svc}` : baseKey;
+
+                        const line = {
+                          key,
+                          quantity: 1,
+                          unitPriceInr: unitPriceForTile(tile, p),
+                          label: `${tile.hinglish} — ${weightGarmentService?.label ?? ''}`,
+                          catalogItemId: tile.catalogItemId,
+                          garmentItemId: tile.garmentItemId,
+                          serviceId: svc,
+                          // For service-scoped garments (added to a weight service)
+                          // do NOT set a garment process. If `process` is set to
+                          // 'dry_clean' or 'press', the review summary will show
+                          // them under Dry Clean/Press. Leaving `process` undefined
+                          // ensures these lines are treated as service items.
+                          process: svc ? undefined : p,
+                        } as const;
+
+                        c.addCatalogLines([line as any]);
+                    }}
+                    onDecrement={() => {
+                      const svc = weightGarmentService?.serviceId ?? tile.serviceId;
+                      const p = process;
+                      const baseKey = tile.catalogItemId
+                        ? catalogLineKey(tile.catalogItemId, p)
+                        : tile.garmentItemId
+                          ? garmentLineKey(tile.garmentItemId, p)
+                          : svc
+                            ? serviceLineKey(svc)
+                            : `tile:${tile.id}`;
+
+                      const key = svc ? `${baseKey}::service:${svc}` : baseKey;
+
+                      const existing = (c.garmentLines ?? []).find(
+                        (l) =>
+                          l.key === key &&
+                          (l.serviceId ?? null) === (svc ?? null),
+                      );
+
+                      if (!existing) {
+                        return;
+                      }
+
+                      const existingQty = Number(existing.quantity ?? 0);
+                      const nextQty = existingQty - 1;
+
+                      if (nextQty <= 0) {
+                        c.removeLine(existing.key);
+                      } else {
+                        c.setLineQty(existing.key, nextQty);
+                      }
+                    }}
+                    hidePrice
+                    compact
+                  />
+                );
+              })}
+            </div>
+
+          {/* Per-weight service garment summary */}
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {weightCards.map((card) => {
+              const lines = (c.garmentLines ?? []).filter((l) => l.serviceId === card.serviceId);
+              if (lines.length === 0) return null;
+              return (
+                <div key={`summary-${card.id}`} className="rounded-2xl border border-border bg-background p-3 shadow-sm">
+                  <p className="text-sm font-semibold">{card.label}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{lines.length} {lines.length > 1 ? 'items' : 'item'}</p>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {lines.slice(0, 5).map((l) => (
+                      <div key={l.key} className="truncate">{l.label}</div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+            {garmentSelectionTiles.length > GARMENT_PAGE_SIZE ? (
+              <div className="flex items-center justify-between gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={garmentPage === 1}
+                  onClick={() => setGarmentPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  Page {garmentPage} of {garmentPageCount}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={garmentPage >= garmentPageCount}
+                  onClick={() => setGarmentPage((p) => Math.min(garmentPageCount, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            ) : null}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setWeightGarmentDialogOpen(false)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
