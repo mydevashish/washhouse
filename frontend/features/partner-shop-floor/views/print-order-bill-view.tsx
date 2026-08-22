@@ -102,14 +102,14 @@ export function PrintOrderBillView({ orderId }: PrintOrderBillViewProps) {
             Print
           </Button>
         </div>
-        <div className="flex flex-wrap gap-2">
+        {/* <div className="flex flex-wrap gap-2">
           <Button type="button" variant="ghost" size="sm" asChild>
             <Link href={`/partner/floor/print/${orderId}/invoice`}>GST Invoice</Link>
           </Button>
           <Button type="button" variant="ghost" size="sm" asChild>
             <Link href="/partner/floor/print">Print center</Link>
           </Button>
-        </div>
+        </div> */}
       </div>
 
       <article
@@ -124,9 +124,9 @@ export function PrintOrderBillView({ orderId }: PrintOrderBillViewProps) {
             <p className="text-[11px] text-neutral-600">{payload.laundry_address}</p>
           ) : null}
           <p className="text-xs">
-            {payload.customer_name} · …{payload.customer_phone_last4}
+            {payload.customer_name} 
           </p>
-          {payload.token_code ? (
+          {/* {payload.token_code ? (
             <div className="flex justify-center py-1">
               <ColorTokenChip
                 colorToken={payload.color_token}
@@ -135,7 +135,7 @@ export function PrintOrderBillView({ orderId }: PrintOrderBillViewProps) {
                 showLabel
               />
             </div>
-          ) : null}
+          ) : null} */}
         </div>
 
         <ul className="divide-y divide-neutral-200 border-y border-neutral-200">
@@ -147,7 +147,7 @@ export function PrintOrderBillView({ orderId }: PrintOrderBillViewProps) {
                 className="flex items-start gap-2 px-3 py-2"
                 data-testid="bill-line"
               >
-                <CatalogGarmentThumb photo={photo} size="sm" />
+                {/* <CatalogGarmentThumb photo={photo} size="sm" /> */}
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium leading-snug">{line.service_name}</p>
                   <p className="text-[11px] text-neutral-600">
@@ -167,20 +167,18 @@ export function PrintOrderBillView({ orderId }: PrintOrderBillViewProps) {
             <span>Subtotal</span>
             <span className="tabular-nums">₹{moneyInr(payload.subtotal_inr)}</span>
           </div>
-          {delivery > 0 ? (
-            <div className="flex justify-between">
-              <span>Delivery</span>
-              <span className="tabular-nums">₹{moneyInr(payload.delivery_fee_inr)}</span>
-            </div>
-          ) : null}
-          <div className="flex justify-between" data-testid="bill-cgst">
+          <div className="flex justify-between">
+            <span>Delivery</span>
+            <span className="tabular-nums">₹{moneyInr(payload.delivery_fee_inr)}</span>
+          </div>
+          {/* <div className="flex justify-between" data-testid="bill-cgst">
             <span>{formatGstLineLabel('CGST', payload.gst_rate)}</span>
             <span className="tabular-nums">₹{moneyInr(payload.cgst_inr)}</span>
           </div>
           <div className="flex justify-between" data-testid="bill-sgst">
             <span>{formatGstLineLabel('SGST', payload.gst_rate)}</span>
             <span className="tabular-nums">₹{moneyInr(payload.sgst_inr)}</span>
-          </div>
+          </div> */}
           <div
             className="flex items-end justify-between border-t-2 border-black pt-2"
             data-testid="bill-total"

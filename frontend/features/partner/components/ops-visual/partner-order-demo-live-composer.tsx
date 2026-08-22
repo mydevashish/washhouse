@@ -520,6 +520,12 @@ export function PartnerOrderDemoLiveComposer({ composer }: Props) {
             onDeliveryChargeChange={composer.setDeliveryChargeOverride}
             advancePaid={composer.advancePaid}
             onAdvancePaidChange={composer.setAdvancePaid}
+            walletRemainingInr={composer.walletRemainingInr}
+            walletAmountUsed={composer.walletAmountUsed}
+            onWalletAmountUsedChange={composer.setWalletAmountUsed}
+            planName={composer.insightStats?.plan_name ?? null}
+            walletEnabled={composer.walletEnabled}
+            onWalletEnabledChange={composer.setWalletEnabled}
             expressOrder={composer.expressOrder}
             onExpressOrderChange={composer.setExpressOrder}
             expressCharge={composer.expressChargeOverride}

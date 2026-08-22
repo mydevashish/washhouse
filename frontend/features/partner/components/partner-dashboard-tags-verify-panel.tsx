@@ -7,20 +7,37 @@ import { ExternalLink, Loader2 } from 'lucide-react';
 
 import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Button } from '@/components/ui/button';
-import { CatalogGarmentThumb } from '@/features/laundry-price-list/components/catalog-garment-thumb';
 import { ColorTokenBar } from '@/features/partner-shop-floor/components/color-token-bar';
 import { ColorTokenChip } from '@/features/partner-shop-floor/components/color-token-chip';
 import { readTagPerPieceSetting } from '@/features/partner-shop-floor/lib/color-tokens';
 import { buildPartnerPrintPath } from '@/features/partner-shop-floor/lib/print-lifecycle';
-import { resolveWashhouseCatalogPhoto } from '@/features/marketing/catalog/washhouse-catalog-photos';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { STALE } from '@/lib/query-config';
 import { cn } from '@/lib/utils';
 import { getPartnerOrderTags, type OrderTagLine } from '@/services/partner-order-tags';
 
-function garmentPhotoForLabel(label: string) {
-  const base = label.split(' · ')[0]?.trim() ?? label;
-  return resolveWashhouseCatalogPhoto('', base);
+function stripTagCodeNoise(value: string): string {
+  return value
+    .replace(/\s*[·•|-]\s*(?:g(?:code)?|gc|code)\s*[-_ ]?[A-Za-z0-9-]*$/gi, '')
+    .replace(/\b(?:g(?:code)?|gc|code)\s*[-_ ]?[A-Za-z0-9-]*\b/gi, '')
+    .replace(/\s*[·•]\s*/g, ' ')
+    .trim();
+}
+
+function garmentCategoryShortForm(value: string): string {
+  const lower = value.toLowerCase();
+  if (lower.includes('women')) return 'W';
+  if (lower.includes('kids')) return 'K';
+  if (lower.includes('household')) return 'H';
+  if (lower.includes('men')) return 'M';
+  return '';
+}
+
+function formatTagServiceLabel(tag: OrderTagLine): string {
+  const name = stripTagCodeNoise(tag.service_name ?? tag.label ?? 'Item');
+  if (tag.qty_index) return `${name} (${tag.qty_index})`;
+  if (tag.piece_index && tag.piece_total) return `${name} (${tag.piece_index}/${tag.piece_total})`;
+  return name;
 }
 
 function TagLinePreview({
@@ -32,16 +49,12 @@ function TagLinePreview({
   tokenCode: string;
   colorToken: string;
 }) {
-  const photo = tag.kind === 'item' ? garmentPhotoForLabel(tag.label) : undefined;
-  const isBag = tag.kind === 'bag_master';
+  const categoryShort = garmentCategoryShortForm(tag.label);
 
   return (
     <article
-      className={cn(
-        'overflow-hidden rounded-xl border border-border bg-card text-foreground shadow-sm',
-        isBag && 'ring-1 ring-primary/20',
-      )}
-      data-testid={isBag ? 'partner-dashboard-tags-verify-bag-master' : 'partner-dashboard-tags-verify-item'}
+      className={cn('overflow-hidden rounded-xl border border-border bg-card text-foreground shadow-sm')}
+      data-testid="partner-dashboard-tags-verify-item"
     >
       <ColorTokenBar
         colorToken={colorToken}
@@ -49,22 +62,11 @@ function TagLinePreview({
         className="h-6 w-full"
         label={`${tokenCode} color bar`}
       />
-      <div className="space-y-1 p-3">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {isBag ? 'Bag master' : 'Item'}
-        </p>
-        <p className="font-mono text-2xl font-extrabold leading-none tracking-tight">{tokenCode}</p>
-        <p className="text-sm font-medium">
-          {tag.label}
-          {tag.qty_index ? ` (${tag.qty_index})` : null}
-        </p>
+      <div className="space-y-2 p-3">
+        <p className="text-sm font-semibold leading-tight">{formatTagServiceLabel(tag)}</p>
+        {categoryShort ? <p className="text-xs text-muted-foreground">{categoryShort}</p> : null}
         {tag.quantity > 1 && !tag.qty_index ? (
           <p className="text-xs text-muted-foreground">Qty {tag.quantity}</p>
-        ) : null}
-        {photo ? (
-          <div className="py-1">
-            <CatalogGarmentThumb photo={photo} size="sm" />
-          </div>
         ) : null}
       </div>
     </article>
@@ -118,9 +120,6 @@ export function PartnerDashboardTagsVerifyPanel({ orderId }: PartnerDashboardTag
         <>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {tagsQ.data.laundry_name}
-              </p>
               <ColorTokenChip
                 colorToken={tagsQ.data.color_token}
                 tokenCode={tagsQ.data.token_code}
@@ -136,7 +135,8 @@ export function PartnerDashboardTagsVerifyPanel({ orderId }: PartnerDashboardTag
               <p className="font-mono text-xs text-muted-foreground">#{tagsQ.data.tracking_code}</p>
               <p className="text-sm text-muted-foreground">
                 {tagsQ.data.piece_count} piece{tagsQ.data.piece_count === 1 ? '' : 's'} ·{' '}
-                {tagsQ.data.tags.length} tag{tagsQ.data.tags.length === 1 ? '' : 's'}
+                {tagsQ.data.tags.filter((tag) => tag.kind !== 'bag_master').length} tag
+                {tagsQ.data.tags.filter((tag) => tag.kind !== 'bag_master').length === 1 ? '' : 's'}
                 {tagsQ.data.per_piece ? ' (per piece)' : null}
               </p>
             </div>
@@ -149,7 +149,7 @@ export function PartnerDashboardTagsVerifyPanel({ orderId }: PartnerDashboardTag
           </div>
 
           <ul className="grid gap-3 sm:grid-cols-2">
-            {tagsQ.data.tags.map((tag, idx) => (
+            {tagsQ.data.tags.filter((tag) => tag.kind !== 'bag_master').map((tag, idx) => (
               <li key={`${tag.kind}-${idx}`}>
                 <TagLinePreview
                   tag={tag}

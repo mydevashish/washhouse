@@ -20,15 +20,15 @@ export function formatGstLineLabel(kind: 'CGST' | 'SGST', gstRate: string | numb
 export function gstTotalsConsistent(payload: {
   subtotal_inr: string | number;
   delivery_fee_inr?: string | number;
-  cgst_inr: string | number;
-  sgst_inr: string | number;
+  // cgst_inr: string | number;
+  // sgst_inr: string | number;
   total_inr: string | number;
 }): boolean {
   const sub = Number(payload.subtotal_inr);
   const delivery = Number(payload.delivery_fee_inr ?? 0);
-  const cgst = Number(payload.cgst_inr);
-  const sgst = Number(payload.sgst_inr);
+  // const cgst = Number(payload.cgst_inr);
+  // const sgst = Number(payload.sgst_inr);
   const total = Number(payload.total_inr);
-  const sum = Math.round((sub + delivery + cgst + sgst) * 100) / 100;
+  const sum = Math.round((sub + delivery) * 100) / 100;
   return Math.abs(sum - total) < 0.02;
 }

@@ -137,7 +137,7 @@ export function PartnerOrderTableActionsMenu({
           data-testid="print-bill-link"
         >
           <Printer className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
-          Print bill
+          Print counter bill
         </Link>,
         <Link
           key="invoice"
@@ -148,7 +148,7 @@ export function PartnerOrderTableActionsMenu({
           data-testid="print-gst-invoice-link"
         >
           <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
-          Print GST invoice
+          Print Invoice
         </Link>,
       );
     }

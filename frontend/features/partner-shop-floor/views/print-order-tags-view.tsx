@@ -7,7 +7,6 @@ import { Loader2, Printer } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { QueryErrorState } from '@/components/feedback/query-error-state';
-import { CatalogGarmentThumb } from '@/features/laundry-price-list/components/catalog-garment-thumb';
 import { ColorTokenBar } from '@/features/partner-shop-floor/components/color-token-bar';
 import { ColorTokenChip } from '@/features/partner-shop-floor/components/color-token-chip';
 import { usePartnerFloorVoice } from '@/features/partner-shop-floor/hooks/use-partner-floor-voice';
@@ -16,14 +15,38 @@ import {
   writeTagPerPieceSetting,
 } from '@/features/partner-shop-floor/lib/color-tokens';
 import { FLOOR_VOICE_PRINT_TAGS } from '@/features/partner-shop-floor/lib/floor-voice';
-import { resolveWashhouseCatalogPhoto } from '@/features/marketing/catalog/washhouse-catalog-photos';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { getPartnerOrderTags } from '@/services/partner-order-tags';
 import { cn } from '@/lib/utils';
 
-function garmentPhotoForLabel(label: string) {
-  const base = label.split(' · ')[0]?.trim() ?? label;
-  return resolveWashhouseCatalogPhoto('', base);
+function stripTagCodeNoise(value: string): string {
+  return value
+    .replace(/\s*[·•|-]\s*(?:g(?:code)?|gc|code)\s*[-_ ]?[A-Za-z0-9-]*$/gi, '')
+    .replace(/\b(?:g(?:code)?|gc|code)\s*[-_ ]?[A-Za-z0-9-]*\b/gi, '')
+    .replace(/\s*[·•]\s*/g, ' ')
+    .trim();
+}
+
+function garmentCategoryShortForm(value: string): string {
+  const lower = value.toLowerCase();
+  if (lower.includes('women')) return 'W';
+  if (lower.includes('kids')) return 'K';
+  if (lower.includes('household')) return 'H';
+  if (lower.includes('men')) return 'M';
+  return '';
+}
+
+function formatTagServiceLabel(tag: { service_name?: string | null; label: string; qty_index?: string | null; piece_index?: number | null; piece_total?: number | null }): string {
+  const name = stripTagCodeNoise(tag.service_name ?? tag.label ?? 'Item');
+  if (tag.qty_index) return `${name} (${tag.qty_index})`;
+  if (tag.piece_index && tag.piece_total) return `${name} (${tag.piece_index}/${tag.piece_total})`;
+  return name;
+}
+
+function formatPrintDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Date unavailable';
+  return new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
 }
 
 type PrintOrderTagsViewProps = {
@@ -80,10 +103,50 @@ export function PrintOrderTagsView({ orderId }: PrintOrderTagsViewProps) {
       className="mx-auto max-w-md space-y-4 p-4 print:max-w-none print:p-0"
     >
       <style>{`
-        @media print {
-          @page { size: 58mm auto; margin: 2mm; }
-        }
-      `}</style>
+  @media print {
+  @page {
+    size: 58mm auto;
+    margin: 2mm;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-tags-sheet {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 50mm;
+  }
+
+  .tag-card {
+    box-sizing: border-box;
+    width: 50mm;
+    min-height: 25mm;
+    height: auto;
+    overflow: visible;
+
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .tag-card:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+}
+`}</style>
       <div className="no-print space-y-3 rounded-2xl border border-border bg-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -118,65 +181,57 @@ export function PrintOrderTagsView({ orderId }: PrintOrderTagsViewProps) {
           />
           1 tag per piece (warna 1 per line)
         </label>
-        <Button type="button" variant="ghost" size="sm" asChild>
+        {/* <Button type="button" variant="ghost" size="sm" asChild>
           <Link href="/partner/floor/print">Print center</Link>
-        </Button>
+        </Button> */}
       </div>
 
       <div className="print-tags-sheet space-y-3 print:space-y-0">
-        {payload.tags.map((tag, idx) => {
-          const photo = tag.kind === 'item' ? garmentPhotoForLabel(tag.label) : undefined;
+        {payload.tags.filter((tag) => tag.kind !== 'bag_master').map((tag, idx) => {
+          const categoryShort = garmentCategoryShortForm(tag.label);
+          const serviceText = formatTagServiceLabel(tag);
+          const orderDate = formatPrintDate(payload.created_at);
           return (
             <article
               key={`${tag.kind}-${idx}`}
-              id={tag.kind === 'bag_master' ? 'tag-bag-master' : undefined}
               className={cn(
                 'tag-card overflow-hidden rounded-xl border border-border bg-white text-black shadow-sm',
                 'print:rounded-none print:border-0 print:shadow-none',
               )}
-              data-testid={tag.kind === 'bag_master' ? 'tag-bag-master' : 'tag-item'}
+              data-testid="tag-item"
             >
               <ColorTokenBar
-                colorToken={payload.color_token}
-                variant="bar"
-                className="h-8 w-full print:h-[8mm]"
-                label={`${payload.token_code} color bar`}
-              />
-              <div className="space-y-1 p-3 print:p-[3mm]">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
-                  {tag.kind === 'bag_master' ? 'Bag' : 'Item'}
-                </p>
-                <p
-                  className="font-mono text-4xl font-extrabold leading-none tracking-tight print:text-[28px]"
-                  data-testid="tag-token-code"
-                >
-                  {payload.token_code}
-                </p>
-                <p className="text-sm">
-                  {payload.customer_name} · …{payload.customer_phone_last4}
-                </p>
-                <p className="text-sm font-medium">
-                  {tag.label} {tag.qty_index ? `(${tag.qty_index})` : null}
-                </p>
-                {photo ? (
-                  <div className="py-1">
-                    <CatalogGarmentThumb photo={photo} size="md" />
-                  </div>
-                ) : null}
-                <p className="font-mono text-xs font-semibold tracking-wide">
-                  {payload.tracking_code}
-                </p>
-                <div
-                  className="mt-2 flex h-16 w-16 items-center justify-center border border-neutral-300 bg-white print:h-[16mm] print:w-[16mm]"
-                  aria-hidden
-                >
-                  {/* Text stand-in until QR image endpoint ships — scannable via tracking_code. */}
-                  <span className="break-all px-1 text-center font-[6px] leading-tight text-neutral-700">
-                    {payload.tracking_code}
-                  </span>
-                </div>
-                <p className="text-xs text-neutral-600">{payload.laundry_name}</p>
-              </div>
+  colorToken={payload.color_token}
+  variant="bar"
+  className="h-6 w-full print:h-[5mm]"
+  label={`${payload.token_code} color bar`}
+/>
+              <div className="space-y-1 p-2 print:space-y-1 print:p-[2mm]">
+  <div className="border-b border-neutral-200 pb-1">
+    <p className="text-[8px] font-semibold uppercase tracking-wider text-neutral-500">
+      Order #{payload.tracking_code}
+    </p>
+    <p className="text-[10px] font-semibold leading-tight text-neutral-800">
+      {payload.customer_name}
+    </p>
+  </div>
+
+  <div>
+    <p className="text-[12px] font-black leading-tight text-neutral-900">
+      {serviceText}
+    </p>
+
+    {categoryShort ? (
+      <p className="text-[8px] leading-tight text-neutral-600">
+        {categoryShort}
+      </p>
+    ) : null}
+  </div>
+
+  <p className="text-[8px] font-medium uppercase leading-tight tracking-wide text-neutral-600">
+    {orderDate}
+  </p>
+</div>
             </article>
           );
         })}

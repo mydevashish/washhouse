@@ -22,6 +22,7 @@ import {
 import { usePartnerGarmentCatalogKpis } from '@/features/partner/garment-catalog/hooks/use-partner-garment-catalog-summary';
 import { nextGarmentVisibility } from '@/features/partner/garment-catalog/lib/garment-catalog-display';
 import { downloadGarmentTemplate, type GarmentCatalogItem, type GarmentCategory } from '@/services/partner-garment-catalog';
+import { PartnerContent } from '../../components/partner-content';
 
 type FormState =
   | { open: false }
@@ -131,119 +132,121 @@ export function GarmentCatalogPage() {
   }
 
   return (
-    <div className="space-y-4" data-testid="partner-services-page">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="page-title">Service catalog</h1>
-          <p className="text-sm text-muted-foreground">
-            Your garment list and rates — used at the counter and in orders.
+    <PartnerContent className="space-y-4">
+      <div className="space-y-4" data-testid="partner-services-page">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1">
+            <h1 className="page-title">Service catalog</h1>
+            <p className="text-sm text-muted-foreground">
+              Your garment list and rates — used at the counter and in orders.
+            </p>
+          </div>
+          <GarmentCatalogToolbar
+            onBulkUpload={openBulkUpload}
+            onBulkDelete={openBulkDelete}
+            onMakeAllVisible={openMakeAllVisible}
+            makeAllVisibleDisabled={pageIds.length === 0 || listQ.isLoading || listQ.isPending}
+            onAddGarment={openCreate}
+          />
+        </div>
+
+        <GarmentCatalogKpiStrip
+          total={kpis.total}
+          visible={kpis.visible}
+          categories={kpis.categories}
+          loading={kpis.isLoading}
+        />
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <GarmentCatalogCategoryTabs value={category} onChange={setCategory} />
+          <Input
+            className="h-9 min-h-9 w-full sm:max-w-xs"
+            placeholder="Search garment or code"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            data-testid="garment-catalog-search"
+            aria-label="Search garment or code"
+          />
+        </div>
+
+        <GarmentCatalogList
+          data={listQ.data}
+          isLoading={listQ.isLoading}
+          isPending={listQ.isPending}
+          isError={listQ.isError}
+          error={listQ.error}
+          category={category}
+          search={search}
+          togglingId={togglingId}
+          onRetry={() => void listQ.refetch()}
+          onUpload={openBulkUpload}
+          onDownloadTemplate={() => void handleDownloadTemplate()}
+          onPageChange={setPage}
+          onEdit={openEdit}
+          onToggleVisibility={(item) => void handleToggleVisibility(item)}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelect}
+          onToggleSelectAll={toggleSelectAll}
+        />
+
+        <div
+          className="rounded-xl border border-border bg-muted/20 px-4 py-3"
+          data-testid="garment-catalog-pricing-link"
+        >
+          <Link
+            href="/partner/pricing"
+            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Marketplace garment prices
+          </Link>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Per-garment compare list for customers — separate from your counter rate card.
           </p>
         </div>
-        <GarmentCatalogToolbar
-          onBulkUpload={openBulkUpload}
-          onBulkDelete={openBulkDelete}
-          onMakeAllVisible={openMakeAllVisible}
-          makeAllVisibleDisabled={pageIds.length === 0 || listQ.isLoading || listQ.isPending}
-          onAddGarment={openCreate}
+
+        <GarmentBulkUploadDialog open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
+
+        <GarmentBulkDeleteDialog
+          open={bulkDeleteOpen}
+          onOpenChange={(open) => {
+            setBulkDeleteOpen(open);
+            if (!open) setSelectedIds(new Set());
+          }}
+          selectedIds={[...selectedIds]}
+          selectedCategory={deleteCategory}
+          totalCount={kpis.total}
+          onSuccess={() => setPage(1)}
+        />
+
+        <GarmentBulkVisibleDialog
+          open={bulkVisibleOpen}
+          onOpenChange={setBulkVisibleOpen}
+          pageIds={pageIds}
+        />
+
+        <GarmentFormSheet
+          open={formState.open}
+          mode={formState.open ? formState.mode : 'create'}
+          item={formState.open && formState.mode === 'edit' ? formState.item : null}
+          defaultCategory={
+            formState.open && formState.mode === 'create' ? formState.defaultCategory : undefined
+          }
+          onOpenChange={(open) => {
+            if (!open) setFormState({ open: false });
+          }}
+          onDelete={handleDeleteRequest}
+        />
+
+        <GarmentDeleteDialog
+          item={deleteTarget}
+          open={deleteTarget != null}
+          deleting={deleteM.isPending}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+          onConfirm={() => void handleDeleteConfirm()}
         />
       </div>
-
-      <GarmentCatalogKpiStrip
-        total={kpis.total}
-        visible={kpis.visible}
-        categories={kpis.categories}
-        loading={kpis.isLoading}
-      />
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <GarmentCatalogCategoryTabs value={category} onChange={setCategory} />
-        <Input
-          className="h-9 min-h-9 w-full sm:max-w-xs"
-          placeholder="Search garment or code"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          data-testid="garment-catalog-search"
-          aria-label="Search garment or code"
-        />
-      </div>
-
-      <GarmentCatalogList
-        data={listQ.data}
-        isLoading={listQ.isLoading}
-        isPending={listQ.isPending}
-        isError={listQ.isError}
-        error={listQ.error}
-        category={category}
-        search={search}
-        togglingId={togglingId}
-        onRetry={() => void listQ.refetch()}
-        onUpload={openBulkUpload}
-        onDownloadTemplate={() => void handleDownloadTemplate()}
-        onPageChange={setPage}
-        onEdit={openEdit}
-        onToggleVisibility={(item) => void handleToggleVisibility(item)}
-        selectedIds={selectedIds}
-        onToggleSelect={toggleSelect}
-        onToggleSelectAll={toggleSelectAll}
-      />
-
-      <div
-        className="rounded-xl border border-border bg-muted/20 px-4 py-3"
-        data-testid="garment-catalog-pricing-link"
-      >
-        <Link
-          href="/partner/pricing"
-          className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-        >
-          Marketplace garment prices
-        </Link>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Per-garment compare list for customers — separate from your counter rate card.
-        </p>
-      </div>
-
-      <GarmentBulkUploadDialog open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
-
-      <GarmentBulkDeleteDialog
-        open={bulkDeleteOpen}
-        onOpenChange={(open) => {
-          setBulkDeleteOpen(open);
-          if (!open) setSelectedIds(new Set());
-        }}
-        selectedIds={[...selectedIds]}
-        selectedCategory={deleteCategory}
-        totalCount={kpis.total}
-        onSuccess={() => setPage(1)}
-      />
-
-      <GarmentBulkVisibleDialog
-        open={bulkVisibleOpen}
-        onOpenChange={setBulkVisibleOpen}
-        pageIds={pageIds}
-      />
-
-      <GarmentFormSheet
-        open={formState.open}
-        mode={formState.open ? formState.mode : 'create'}
-        item={formState.open && formState.mode === 'edit' ? formState.item : null}
-        defaultCategory={
-          formState.open && formState.mode === 'create' ? formState.defaultCategory : undefined
-        }
-        onOpenChange={(open) => {
-          if (!open) setFormState({ open: false });
-        }}
-        onDelete={handleDeleteRequest}
-      />
-
-      <GarmentDeleteDialog
-        item={deleteTarget}
-        open={deleteTarget != null}
-        deleting={deleteM.isPending}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-        onConfirm={() => void handleDeleteConfirm()}
-      />
-    </div>
+    </PartnerContent>
   );
 }

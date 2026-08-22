@@ -48,6 +48,11 @@ export interface CustomerInsightRow {
   retention_score: number;
   segment: CustomerSegment;
   segment_label: string;
+  /** Optional plan metadata surfaced in customer value widgets and checkout. */
+  plan_name?: string | null;
+  plan_amount_inr?: string | null;
+  wallet_used_inr?: string | null;
+  wallet_remaining_inr?: string | null;
   is_high_risk: boolean;
   dispute_count: number;
   risk_label: string;

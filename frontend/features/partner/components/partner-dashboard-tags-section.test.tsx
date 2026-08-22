@@ -135,8 +135,9 @@ describe('PartnerDashboardTagsSection', () => {
     expect(
       screen.getByTestId('partner-dashboard-tags-verify-aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
     ).toBeInTheDocument();
-    expect(await screen.findByText('Test Laundry')).toBeInTheDocument();
-    expect(screen.getByTestId('partner-dashboard-tags-verify-bag-master')).toBeInTheDocument();
+    expect(screen.queryByTestId('partner-dashboard-tags-verify-bag-master')).not.toBeInTheDocument();
+    expect(screen.queryByText('Bag master')).not.toBeInTheDocument();
+    expect(screen.queryByText('Garment tag')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /open full print view/i })).toHaveAttribute(
       'href',
       '/partner/floor/print/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/tags',

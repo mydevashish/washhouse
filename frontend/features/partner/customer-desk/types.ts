@@ -47,8 +47,8 @@ export type CustomerDeskOrderRow = {
   customer_phone: string | null;
   subtotal_inr: string;
   delivery_fee_inr: string;
-  cgst_inr: string;
-  sgst_inr: string;
+  // cgst_inr: string;
+  // sgst_inr: string;
   total_inr: string;
   currency: string;
   pickup_at: string;
@@ -110,8 +110,8 @@ export type AssistedOrderQuote = {
   subtotal_inr: string;
   delivery_fee_inr: string;
   gst_rate: string;
-  cgst_inr: string;
-  sgst_inr: string;
+  // cgst_inr: string;
+  // sgst_inr: string;
   total_inr: string;
   currency: string;
   warnings: string[];

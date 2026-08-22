@@ -80,9 +80,9 @@ export function PrintOrderActions({
           >
             <Link
               href={buildPartnerPrintPath(orderId, 'bill')}
-              aria-label="Print bill"
+              aria-label="Print counter bill"
               data-testid="print-bill-link"
-              title="Print bill"
+              title="Print counter bill"
             >
               <Printer className="h-4 w-4" aria-hidden />
             </Link>
@@ -92,9 +92,9 @@ export function PrintOrderActions({
           <Button type="button" size="sm" variant="outline" className={compactClass} asChild>
             <Link
               href={buildPartnerPrintPath(orderId, 'invoice')}
-              aria-label="Print GST invoice"
+              aria-label="Print invoice"
               data-testid="print-gst-invoice-link"
-              title="Print GST invoice"
+              title="Print invoice"
             >
               <FileText className="h-4 w-4" aria-hidden />
             </Link>
@@ -124,6 +124,17 @@ export function PrintOrderActions({
           </Link>
         </Button>
       ) : null}
+      {showInvoiceResolved ? (
+        <Button type="button" size={size} variant="outline" className={btnClass} asChild>
+          <Link
+            href={buildPartnerPrintPath(orderId, 'invoice')}
+            data-testid="print-gst-invoice-link"
+          >
+            <FileText className="h-4 w-4" aria-hidden />
+            Print invoice
+          </Link>
+        </Button>
+      ) : null}
       {showBillResolved ? (
         <Button
           type="button"
@@ -134,21 +145,10 @@ export function PrintOrderActions({
         >
           <Link href={buildPartnerPrintPath(orderId, 'bill')} data-testid="print-bill-link">
             <Printer className="h-4 w-4" aria-hidden />
-            Print bill
+            Print counter bill
           </Link>
         </Button>
-      ) : null}
-      {showInvoiceResolved ? (
-        <Button type="button" size={size} variant="outline" className={btnClass} asChild>
-          <Link
-            href={buildPartnerPrintPath(orderId, 'invoice')}
-            data-testid="print-gst-invoice-link"
-          >
-            <FileText className="h-4 w-4" aria-hidden />
-            Print GST invoice
-          </Link>
-        </Button>
-      ) : null}
+      ) : null}      
     </div>
   );
 }

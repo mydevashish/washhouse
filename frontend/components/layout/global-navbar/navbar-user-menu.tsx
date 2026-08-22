@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { HelpCircle, LogOut, Settings, User } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import { NavbarThemeToggle } from '@/components/layout/global-navbar/navbar-theme-toggle';

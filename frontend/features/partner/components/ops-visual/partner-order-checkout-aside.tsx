@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatInr } from '@/features/discover/detail/order-pricing';
 import { PARTNER_CHECKOUT_CTA } from '@/features/partner/lib/partner-compact';
 import { cn } from '@/lib/utils';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export type PartnerDeliveryType = 'Pickup' | 'Delivery' | 'Both' | 'Walk-in';
 
@@ -131,6 +131,12 @@ type Props = {
   onExpressChargeChange?: (value: number) => void;
   advancePaid: number;
   onAdvancePaidChange: (value: number) => void;
+  walletRemainingInr?: number | null;
+  walletAmountUsed?: number;
+  onWalletAmountUsedChange?: (value: number) => void;
+  planName?: string | null;
+  walletEnabled?: boolean;
+  onWalletEnabledChange?: (value: boolean) => void;
   expressOrder: boolean;
   onExpressOrderChange: (value: boolean) => void;
   submitPending?: boolean;
@@ -168,6 +174,12 @@ export function PartnerOrderCheckoutAside({
   onDeliveryChargeChange,
   advancePaid,
   onAdvancePaidChange,
+  walletRemainingInr,
+  walletAmountUsed = 0,
+  onWalletAmountUsedChange,
+  planName,
+  walletEnabled,
+  onWalletEnabledChange,
   expressOrder,
   onExpressOrderChange,
   expressCharge,
@@ -179,6 +191,31 @@ export function PartnerOrderCheckoutAside({
   className,
   hideSubmitButton,
 }: Props) {
+  const walletAvailable = Number(walletRemainingInr ?? 0) > 0;
+  const [splitCash, setSplitCash] = useState(0);
+  const [splitUpi, setSplitUpi] = useState(0);
+
+  const remainingAfterWallet = Math.max(0, totals.grandTotal - walletAmountUsed);
+  const splitSummary = useMemo(() => {
+    const cash = Math.max(0, splitCash);
+    const upi = Math.max(0, splitUpi);
+    const wallet = Math.max(0, walletAmountUsed);
+    const total = cash + upi + wallet;
+    return { cash, upi, wallet, total, remaining: Math.max(0, totals.grandTotal - total) };
+  }, [splitCash, splitUpi, totals.grandTotal, walletAmountUsed]);
+
+  useEffect(() => {
+    if (paymentMethod !== 'Split') {
+      setSplitCash(0);
+      setSplitUpi(0);
+      return;
+    }
+
+    const remaining = Math.max(0, totals.grandTotal - walletAmountUsed);
+    setSplitCash((prev) => (Number.isFinite(prev) && prev > 0 ? prev : Math.max(0, Math.round(remaining * 0.4))));
+    setSplitUpi((prev) => (Number.isFinite(prev) && prev > 0 ? prev : Math.max(0, remaining - Math.max(0, Math.round(remaining * 0.4)))));
+  }, [paymentMethod, totals.grandTotal, walletAmountUsed]);
+
   const breakdown = [
     { label: 'Sub total', value: formatInr(totals.subtotal) },
     ...(totals.discount > 0
@@ -313,12 +350,11 @@ export function PartnerOrderCheckoutAside({
                   </Label>
                   <Input
                     id="po-discount-value"
-                    type="number"
-                    min="0"
-                    step={discountType === 'percent' ? '1' : '10'}
-                    max={discountType === 'percent' ? '100' : undefined}
-                    value={discountValue}
-                    onChange={(e) => onDiscountValueChange(Number(e.target.value || 0))}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={discountValue === 0 ? '' : discountValue}
+                    onChange={(e) => onDiscountValueChange(Number(e.target.value.replace(/[^\d]/g, '') || 0))}
                     className="mt-1 min-h-9"
                   />
                 </div>
@@ -361,11 +397,11 @@ export function PartnerOrderCheckoutAside({
                   <Label htmlFor="po-pickup-charge">Pickup charge</Label>
                   <Input
                     id="po-pickup-charge"
-                    type="number"
-                    min="0"
-                    step="10"
-                    value={pickupCharge}
-                    onChange={(e) => onPickupChargeChange(Number(e.target.value || 0))}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={pickupCharge === 0 ? '' : pickupCharge}
+                    onChange={(e) => onPickupChargeChange(Number(e.target.value.replace(/[^\d]/g, '') || 0))}
                     className="mt-2 min-h-9"
                   />
                 </div>
@@ -373,26 +409,72 @@ export function PartnerOrderCheckoutAside({
                   <Label htmlFor="po-delivery-charge">Delivery charge</Label>
                   <Input
                     id="po-delivery-charge"
-                    type="number"
-                    min="0"
-                    step="10"
-                    value={deliveryCharge}
-                    onChange={(e) => onDeliveryChargeChange(Number(e.target.value || 0))}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={deliveryCharge === 0 ? '' : deliveryCharge}
+                    onChange={(e) => onDeliveryChargeChange(Number(e.target.value.replace(/[^\d]/g, '') || 0))}
                     className="mt-2 min-h-9"
                   />
                 </div>
               </div>
             ) : null}  
 
+            {walletRemainingInr != null && walletRemainingInr > 0 ? (
+              <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
+                <div className="flex items-center justify-between gap-2 text-sm">
+                  <span className="font-medium">Plan wallet</span>
+                  <span className="text-primary">{planName || 'Active plan'}</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <span>Available</span>
+                  <span className="font-medium text-foreground tabular-nums">
+                    {formatInr(walletRemainingInr)}
+                  </span>
+                </div>
+                <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-border"
+                    checked={Boolean(walletEnabled)}
+                    onChange={(e) => onWalletEnabledChange?.(e.target.checked)}
+                  />
+                  Use wallet for this order
+                </label>
+                {walletEnabled ? (
+                  <div className="mt-3 space-y-2">
+                    <div>
+                      <Label htmlFor="po-wallet-amount">Wallet amount to use</Label>
+                      <Input
+                        id="po-wallet-amount"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={walletAmountUsed === 0 ? '' : walletAmountUsed}
+                        onChange={(e) => onWalletAmountUsedChange?.(Number(e.target.value.replace(/[^\d]/g, '') || 0))}
+                        className="mt-1 min-h-9"
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Remaining due = {formatInr(Math.max(0, totals.grandTotal - walletAmountUsed))}. This amount can be paid by cash or UPI.
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Split rule: set wallet usage to the wallet share, then pay the balance by cash or UPI. Example: 40% cash + 60% wallet means use 60% of the total on wallet and pay the remaining 40% by cash.
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
             <div>
               <Label htmlFor="po-advance-paid">Advance payment</Label>
               <Input
                 id="po-advance-paid"
-                type="number"
-                min="0"
-                step="10"
-                value={advancePaid}
-                onChange={(e) => onAdvancePaidChange(Number(e.target.value || 0))}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={advancePaid === 0 ? '' : advancePaid}
+                onChange={(e) => onAdvancePaidChange(Number(e.target.value.replace(/[^\d]/g, '') || 0))}
                 className="mt-2 min-h-9"
               />
             </div>
@@ -412,11 +494,11 @@ export function PartnerOrderCheckoutAside({
                 <Label htmlFor="po-express-charge">Express charge</Label>
                 <Input
                   id="po-express-charge"
-                  type="number"
-                  min="0"
-                  step={10}
-                  value={expressCharge ?? totals.expressCharge}
-                  onChange={(e) => onExpressChargeChange?.(Number(e.target.value || 0))}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={Number(expressCharge ?? totals.expressCharge) === 0 ? '' : (expressCharge ?? totals.expressCharge)}
+                  onChange={(e) => onExpressChargeChange?.(Number(e.target.value.replace(/[^\d]/g, '') || 0))}
                   className="mt-2 min-h-9"
                 />
               </div>
@@ -438,14 +520,75 @@ export function PartnerOrderCheckoutAside({
               <Select
                 id="po-payment"
                 value={paymentMethod}
-                onChange={(e) => onPaymentMethodChange(e.target.value)}
+                onChange={(e) => {
+                  const nextValue = e.target.value;
+                  if (nextValue === 'Wallet' && !walletAvailable) {
+                    return;
+                  }
+                  onPaymentMethodChange(nextValue);
+                }}
                 className="mt-2 min-h-9"
               >
                 <option value="Cash">Cash</option>
                 <option value="UPI">UPI</option>
+                {walletAvailable ? <option value="Wallet">Wallet</option> : null}
+                <option value="Split">Split payment</option>
                 <option value="Card">Card</option>
               </Select>
             </div>
+
+            {paymentMethod === 'Split' ? (
+              <div className="rounded-xl border border-border bg-background/60 p-3">
+                <p className="mb-2 text-sm font-medium">Split payment</p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <div>
+                    <Label htmlFor="po-split-cash">Cash amount</Label>
+                    <Input
+                      id="po-split-cash"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={splitCash === 0 ? '' : splitCash}
+                      onChange={(e) => setSplitCash(Number(e.target.value.replace(/[^\d]/g, '') || 0))}
+                      className="mt-1 min-h-9"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="po-split-upi">UPI amount</Label>
+                    <Input
+                      id="po-split-upi"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={splitUpi === 0 ? '' : splitUpi}
+                      onChange={(e) => setSplitUpi(Number(e.target.value.replace(/[^\d]/g, '') || 0))}
+                      className="mt-1 min-h-9"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="po-split-wallet">Wallet amount</Label>
+                    <Input
+                      id="po-split-wallet"
+                      type="number"
+                      min="0"
+                      max={Math.max(0, Math.min(walletRemainingInr ?? 0, totals.grandTotal))}
+                      step="10"
+                      value={walletAmountUsed}
+                      onChange={(e) => onWalletAmountUsedChange?.(Number(e.target.value || 0))}
+                      className="mt-1 min-h-9"
+                    />
+                  </div>
+                </div>
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Entry will be recorded as Cash {formatInr(splitSummary.cash)} + UPI {formatInr(splitSummary.upi)} + Wallet {formatInr(splitSummary.wallet)}.
+                </p>
+                {splitSummary.remaining > 0 ? (
+                  <p className="mt-1 text-[11px] text-danger">
+                    Remaining split amount left to settle: {formatInr(splitSummary.remaining)}.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
             {/* <div>
               <Label htmlFor="po-notes">Notes</Label>

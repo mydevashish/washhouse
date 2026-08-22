@@ -6,13 +6,11 @@ import { WashhouseLogo } from '@/components/brand/washhouse-logo';
 import { NavbarBackButton } from '@/components/layout/global-navbar/navbar-back-button';
 import { NavbarBreadcrumbs } from '@/components/layout/global-navbar/navbar-breadcrumbs';
 import {
-  NavbarCommandSearchDesktopTrigger,
-  NavbarCommandSearchMobileTrigger,
   NavbarCommandSearchRoot,
 } from '@/components/layout/global-navbar/navbar-command-search';
 import { NavbarCustomerMenu } from '@/components/layout/global-navbar/navbar-customer-menu';
 import { NavbarNotifications } from '@/components/layout/global-navbar/navbar-notifications';
-import { NavbarQuickActions } from '@/components/layout/global-navbar/navbar-quick-actions';
+// import { NavbarQuickActions } from '@/components/layout/global-navbar/navbar-quick-actions';
 import { NavbarThemeToggle } from '@/components/layout/global-navbar/navbar-theme-toggle';
 import { NavbarUserMenu } from '@/components/layout/global-navbar/navbar-user-menu';
 import type { AppContext } from '@/lib/navigation/types';
@@ -35,7 +33,7 @@ export type GlobalNavbarProps = {
 export function GlobalNavbar({
   app,
   pageTitle,
-  userRole,
+  // userRole,
   laundryName,
   onOpenSidebar,
   notificationsHref,

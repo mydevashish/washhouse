@@ -73,7 +73,7 @@ export function PrintOrderInvoiceView({ orderId }: PrintOrderInvoiceViewProps) {
       <div className="no-print space-y-3 rounded-2xl border border-border bg-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="text-sm text-muted-foreground">A4 GST invoice</p>
+            <p className="text-sm text-muted-foreground">Invoice</p>
             <p className="font-mono text-sm font-semibold">{payload.invoice_number}</p>
           </div>
           <Button type="button" className="min-h-12 gap-2" onClick={() => window.print()}>
@@ -81,14 +81,14 @@ export function PrintOrderInvoiceView({ orderId }: PrintOrderInvoiceViewProps) {
             Print
           </Button>
         </div>
-        <div className="flex flex-wrap gap-2">
+        {/* <div className="flex flex-wrap gap-2">
           <Button type="button" variant="ghost" size="sm" asChild>
             <Link href={`/partner/floor/print/${orderId}/bill`}>Counter bill</Link>
           </Button>
           <Button type="button" variant="ghost" size="sm" asChild>
             <Link href="/partner/floor/print">Print center</Link>
           </Button>
-        </div>
+        </div> */}
       </div>
 
       <article
@@ -106,22 +106,22 @@ export function PrintOrderInvoiceView({ orderId }: PrintOrderInvoiceViewProps) {
             {payload.laundry_city ? (
               <p className="text-sm text-neutral-600">{payload.laundry_city}</p>
             ) : null}
-            <p className="mt-2 text-sm">
+            {/* <p className="mt-2 text-sm">
               GSTIN:{' '}
               {payload.laundry_gstin
                 ? payload.laundry_gstin
                 : '— (add in Advanced when available)'}
-            </p>
+            </p> */}
           </div>
           <div className="text-right">
             <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-              Tax Invoice
+              Invoice
             </p>
             <p className="font-mono text-lg font-bold" data-testid="invoice-number">
               {payload.invoice_number}
             </p>
             <p className="font-mono text-xs text-neutral-600">#{payload.tracking_code}</p>
-            {payload.token_code ? (
+            {/* {payload.token_code ? (
               <div className="mt-2 flex justify-end">
                 <ColorTokenChip
                   colorToken={payload.color_token}
@@ -130,7 +130,7 @@ export function PrintOrderInvoiceView({ orderId }: PrintOrderInvoiceViewProps) {
                   showLabel
                 />
               </div>
-            ) : null}
+            ) : null} */}
           </div>
         </header>
 
@@ -141,10 +141,10 @@ export function PrintOrderInvoiceView({ orderId }: PrintOrderInvoiceViewProps) {
             <p className="text-sm">{payload.customer_phone || '—'}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide text-neutral-500">GST summary</p>
+            {/* <p className="text-xs uppercase tracking-wide text-neutral-500">GST summary</p>
             <p className="text-sm">
               Rate: {moneyInr(payload.gst_rate)}% (CGST {half}% + SGST {half}%)
-            </p>
+            </p> */}
             <p className="text-sm">Payment: {payload.payment_status}</p>
           </div>
         </div>
@@ -162,7 +162,7 @@ export function PrintOrderInvoiceView({ orderId }: PrintOrderInvoiceViewProps) {
             </thead>
             <tbody>
               {payload.lines.map((line, idx) => {
-                const photo = resolveOrderLinePhoto(line.service_name);
+                // const photo = resolveOrderLinePhoto(line.service_name);
                 return (
                   <tr
                     key={`${line.service_name}-${idx}`}
@@ -172,7 +172,7 @@ export function PrintOrderInvoiceView({ orderId }: PrintOrderInvoiceViewProps) {
                     <td className="py-2 pr-2 align-top tabular-nums">{idx + 1}</td>
                     <td className="py-2 pr-2 align-top">
                       <div className="flex items-center gap-2">
-                        <CatalogGarmentThumb photo={photo} size="sm" />
+                        {/* <CatalogGarmentThumb photo={photo} size="sm" /> */}
                         <span className="font-medium">{line.service_name}</span>
                       </div>
                     </td>
@@ -195,20 +195,18 @@ export function PrintOrderInvoiceView({ orderId }: PrintOrderInvoiceViewProps) {
             <span>Subtotal</span>
             <span className="tabular-nums">₹{moneyInr(payload.subtotal_inr)}</span>
           </div>
-          {delivery > 0 ? (
-            <div className="flex justify-between">
-              <span>Delivery</span>
-              <span className="tabular-nums">₹{moneyInr(payload.delivery_fee_inr)}</span>
-            </div>
-          ) : null}
-          <div className="flex justify-between" data-testid="invoice-cgst">
+          <div className="flex justify-between">
+            <span>Delivery</span>
+            <span className="tabular-nums">₹{moneyInr(payload.delivery_fee_inr)}</span>
+          </div>
+          {/* <div className="flex justify-between" data-testid="invoice-cgst">
             <span>{formatGstLineLabel('CGST', payload.gst_rate)}</span>
             <span className="tabular-nums">₹{moneyInr(payload.cgst_inr)}</span>
           </div>
           <div className="flex justify-between" data-testid="invoice-sgst">
             <span>{formatGstLineLabel('SGST', payload.gst_rate)}</span>
             <span className="tabular-nums">₹{moneyInr(payload.sgst_inr)}</span>
-          </div>
+          </div> */}
           <div
             className="flex items-end justify-between border-t-2 border-black pt-2"
             data-testid="invoice-total"
@@ -221,9 +219,10 @@ export function PrintOrderInvoiceView({ orderId }: PrintOrderInvoiceViewProps) {
         </div>
 
         <p className="mt-6 text-xs text-neutral-500">
-          Amounts are frozen at order create. Reprint does not recalculate GST. CGST ₹
+          Thank You for using The WashHouse Laundry and Dry Cleaning Services. We appreciate your business and look forward to serving you again!
+          {/* Amounts are frozen at order create. Reprint does not recalculate GST. CGST ₹
           {moneyInr(payload.cgst_inr)} · SGST ₹{moneyInr(payload.sgst_inr)} · Total ₹
-          {moneyInr(payload.total_inr)}
+          {moneyInr(payload.total_inr)} */}
         </p>
       </article>
     </div>

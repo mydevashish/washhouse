@@ -73,11 +73,11 @@ export function OrderSummarySidebar({
         <dl className="space-y-2.5 text-sm">
           <Row label="Service price" value={formatInr(quote.subtotal)} />
           <Row label="Delivery fee" value={formatInr(quote.deliveryFee)} hint="Pickup & drop" />
-          <Row
+          {/* <Row
             label={`Taxes (GST ${quote.cgst > 0 ? '18%' : ''})`}
             value={formatInr(quote.taxesTotal)}
             hint="CGST + SGST"
-          />
+          /> */}
         </dl>
 
         <div className="mt-4 rounded-xl bg-primary/5 p-4 ring-1 ring-primary/10">

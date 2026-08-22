@@ -29,8 +29,41 @@ export type InputProps = React.InputHTMLAttributes<HTMLInputElement> &
   VariantProps<typeof inputVariants>;
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type = 'text', variant, ...props }, ref) => (
-    <input type={type} className={cn(inputVariants({ variant }), className)} ref={ref} {...props} />
-  ),
+  ({ className, type = 'text', variant, onKeyDown, onWheel, inputMode, ...props }, ref) => {
+    const isNumericInput = type === 'number';
+
+    const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (event) => {
+      if (isNumericInput) {
+        if (['ArrowUp', 'ArrowDown', 'e', 'E', '+', '-'].includes(event.key)) {
+          event.preventDefault();
+        }
+      }
+      onKeyDown?.(event);
+    };
+
+    const handleWheel: React.WheelEventHandler<HTMLInputElement> = (event) => {
+      if (isNumericInput) {
+        event.preventDefault();
+      }
+      onWheel?.(event);
+    };
+
+    return (
+      <input
+        {...props}
+        type={isNumericInput ? 'text' : type}
+        inputMode={isNumericInput ? 'numeric' : inputMode}
+        pattern={isNumericInput ? '[0-9]*' : props.pattern}
+        onKeyDown={handleKeyDown}
+        onWheel={handleWheel}
+        className={cn(
+          inputVariants({ variant }),
+          isNumericInput && 'appearance-none [moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+          className,
+        )}
+        ref={ref}
+      />
+    );
+  },
 );
 Input.displayName = 'Input';

@@ -14,8 +14,8 @@ export interface WalkInOrder {
   delivery_at: string;
   subtotal_inr: string;
   delivery_fee_inr: string;
-  cgst_inr: string;
-  sgst_inr: string;
+  // cgst_inr: string;
+  // sgst_inr: string;
   total_inr: string;
   payment_status: string;
   customer_name: string;

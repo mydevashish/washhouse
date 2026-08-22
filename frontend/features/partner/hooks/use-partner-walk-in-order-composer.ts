@@ -167,6 +167,8 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   const [pickupChargeOverride, setPickupChargeOverride] = useState(30);
   const [deliveryChargeOverride, setDeliveryChargeOverride] = useState(30);
   const [advancePaid, setAdvancePaid] = useState(0);
+  const [walletEnabled, setWalletEnabled] = useState(false);
+  const [walletAmountUsed, setWalletAmountUsed] = useState(0);
   const [lookupSuppressedState, setLookupSuppressedState] = useState(lookupSuppressed);
   /** Search / manual customer pick — keeps user_id before lookup runs. */
   const [deskProfileHint, setDeskProfileHint] = useState<CustomerDeskProfile | null>(null);
@@ -878,8 +880,45 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     ? {
         lifetime_spend_inr: walkInInsightQ.data.lifetime_spend_inr,
         segment_label: walkInInsightQ.data.segment_label,
+        plan_name: walkInInsightQ.data.plan_name ?? null,
+        plan_amount_inr: walkInInsightQ.data.plan_amount_inr ?? null,
+        wallet_used_inr: walkInInsightQ.data.wallet_used_inr ?? null,
+        wallet_remaining_inr: walkInInsightQ.data.wallet_remaining_inr ?? null,
       }
     : null;
+
+  const walletRemainingInr = (() => {
+    const raw = walkInInsightQ.data?.wallet_remaining_inr;
+    if (raw == null || raw === '') return null;
+    const cleaned = String(raw).replace(/[₹,\s]/g, '');
+    const value = Number(cleaned);
+    return Number.isFinite(value) ? value : null;
+  })();
+
+  const clampWalletAmount = (value: number) => {
+    const maxAllowed = Math.min(
+      Number.isFinite(walletRemainingInr) ? Math.max(0, walletRemainingInr ?? 0) : 0,
+      Math.max(0, checkoutTotals.grandTotal),
+    );
+    return Math.max(0, Math.min(maxAllowed, Number.isFinite(value) ? value : 0));
+  };
+
+  useEffect(() => {
+    if (!walletEnabled) {
+      setWalletAmountUsed(0);
+      return;
+    }
+
+    setWalletAmountUsed((prev) => {
+      const safePrev = Number.isFinite(prev) ? Math.max(0, prev) : 0;
+      return clampWalletAmount(safePrev);
+    });
+  }, [checkoutTotals.grandTotal, walletEnabled, walletRemainingInr]);
+
+  const handleWalletAmountChange = (nextValue: number) => {
+    if (!Number.isFinite(nextValue)) return;
+    setWalletAmountUsed(clampWalletAmount(nextValue));
+  };
 
   const customerPanel = {
     name: createdOrder?.customer_name ?? customerName.trim(),
@@ -964,6 +1003,11 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     setExpressChargeOverride,
     advancePaid,
     setAdvancePaid,
+    walletEnabled,
+    setWalletEnabled,
+    walletAmountUsed,
+    setWalletAmountUsed: handleWalletAmountChange,
+    walletRemainingInr,
     checkoutTotals,
     toggleCouponApplied,
     applyCoupon,

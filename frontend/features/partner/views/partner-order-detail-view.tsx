@@ -83,7 +83,7 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
     );
   }
 
-  const tax = Number(order.cgst_inr) + Number(order.sgst_inr);
+  // const tax = Number(order.cgst_inr) + Number(order.sgst_inr);
   const paidInr = partnerOrderPaidInr(order);
   const pendingInr = partnerOrderPendingInr(order);
   const printEmphasis = getPrintLifecycleEmphasis(order.status);
@@ -99,14 +99,14 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
             <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{order.customer_name}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {order.token_code ? (
+            {/* {order.token_code ? (
               <ColorTokenChip
                 colorToken={order.color_token}
                 tokenCode={order.token_code}
                 size="md"
                 showLabel
               />
-            ) : null}
+            ) : null} */}
             <Button type="button" size="sm" variant="outline" asChild>
               <Link href="/partner/orders" className="gap-1.5">
                 <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
@@ -125,13 +125,13 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-semibold">{order.customer_name}</p>
               <PartnerOrderSourceBadge order={order} />
-              {order.token_code ? (
+              {/* {order.token_code ? (
                 <ColorTokenChip
                   colorToken={order.color_token}
                   tokenCode={order.token_code}
                   size="sm"
                 />
-              ) : null}
+              ) : null} */}
             </div>
             {order.customer_phone ? (
               <p className="text-muted-foreground">{order.customer_phone}</p>
@@ -253,12 +253,12 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
                 <span className="text-muted-foreground">Delivery fee</span>
                 <span className="tabular-nums">{formatInr(Number(order.delivery_fee_inr))}</span>
               </div>
-              {tax > 0 && (
+              {/* {tax > 0 && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">GST</span>
                   <span className="tabular-nums">{formatInr(tax)}</span>
                 </div>
-              )}
+              )} */}
               <div className="flex justify-between border-t border-border/60 pt-2 text-base font-semibold">
                 <span>Total</span>
                 <span className="tabular-nums">{formatInr(Number(order.total_inr))}</span>

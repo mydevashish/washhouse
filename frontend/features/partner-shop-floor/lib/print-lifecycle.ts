@@ -36,7 +36,7 @@ export function canPrintBillOrInvoice(status: string | null | undefined): boolea
 /** English copy for detail / row print panels. */
 export function getPrintLifecycleHint(status: string | null | undefined): string {
   if (shouldEmphasizePrintBill(status)) {
-    return 'Order is ready for handover — print the bill or GST invoice.';
+    return 'Order is ready for handover — print the counter bill or invoice.';
   }
   return 'Print garment tags so bags stay matched on the floor.';
 }

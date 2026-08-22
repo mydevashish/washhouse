@@ -95,8 +95,8 @@ async function mockClothWallApis(page: Page) {
           delivery_at: new Date(Date.now() + 86400000).toISOString(),
           subtotal_inr: '138.00',
           delivery_fee_inr: '0.00',
-          cgst_inr: '12.42',
-          sgst_inr: '12.42',
+          // cgst_inr: '12.42',
+          // sgst_inr: '12.42',
           total_inr: '162.84',
           payment_status: 'pending',
           customer_name: body.customer_name,
@@ -181,9 +181,9 @@ async function mockClothWallApis(page: Page) {
             currency: 'INR',
             subtotal_inr: '138.00',
             delivery_fee_inr: '0.00',
-            gst_rate: '18.00',
-            cgst_inr: '12.42',
-            sgst_inr: '12.42',
+            // gst_rate: '18.00',
+            // cgst_inr: '12.42',
+            // sgst_inr: '12.42',
             total_inr: '162.84',
             payment_status: 'pending',
             lines: [
@@ -248,8 +248,8 @@ describeFloor('Partner Shop Floor Cloth Wall', () => {
     await page.goto('/partner/floor/print/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/bill');
     await expect(page.getByTestId('print-order-bill')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('bill-invoice-number')).toContainText('WH-2026-DLMCLOTH01');
-    await expect(page.getByTestId('bill-cgst')).toContainText('CGST (9.00%)');
-    await expect(page.getByTestId('bill-sgst')).toContainText('SGST (9.00%)');
+    // await expect(page.getByTestId('bill-cgst')).toContainText('CGST (9.00%)');
+    // await expect(page.getByTestId('bill-sgst')).toContainText('SGST (9.00%)');
     await expect(page.getByTestId('bill-total')).toContainText('162.84');
     await expect(page.getByTestId('bill-line').first()).toBeVisible();
     await expect(page.getByRole('button', { name: /^print$/i })).toBeVisible();
@@ -257,7 +257,7 @@ describeFloor('Partner Shop Floor Cloth Wall', () => {
     await page.goto('/partner/floor/print/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/invoice');
     await expect(page.getByTestId('print-order-invoice')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('invoice-number')).toHaveText('WH-2026-DLMCLOTH01');
-    await expect(page.getByTestId('invoice-cgst')).toContainText('CGST (9.00%)');
+    // await expect(page.getByTestId('invoice-cgst')).toContainText('CGST (9.00%)');
     await expect(page.getByTestId('invoice-total')).toContainText('162.84');
     await expect(page.getByRole('button', { name: /^print$/i })).toBeVisible();
   });

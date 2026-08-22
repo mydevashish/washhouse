@@ -28,8 +28,8 @@ export interface OrderInvoicePayload {
   subtotal_inr: string;
   delivery_fee_inr: string;
   gst_rate: string;
-  cgst_inr: string;
-  sgst_inr: string;
+  // cgst_inr: string;
+  // sgst_inr: string;
   total_inr: string;
   payment_status: string;
   lines: OrderInvoiceLine[];

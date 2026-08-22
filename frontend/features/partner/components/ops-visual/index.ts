@@ -15,6 +15,7 @@ export { PartnerOpsHero } from './partner-ops-hero';
 export { PartnerServiceTile } from './partner-service-tile';
 export { partnerServiceCategoryIcon } from './partner-service-icon';
 export {
+  PartnerCustomerIdentitySummary,
   PartnerCustomerSnapshotCards,
   type PartnerCustomerSnapshotStats,
 } from './partner-customer-snapshot-cards';

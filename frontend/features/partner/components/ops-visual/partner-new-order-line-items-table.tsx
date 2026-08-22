@@ -80,11 +80,14 @@ export function PartnerNewOrderLineItemsTable({
                       <td className="px-4 py-2">
                         {onSetRate ? (
                           <input
-                            type="number"
-                            min={0}
-                            step={1}
-                            value={row.rate}
-                            onChange={(event) => onSetRate(row.service_id, Number(event.target.value || 0))}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={row.rate === 0 ? '' : row.rate}
+                            onChange={(event) => {
+                              const raw = event.target.value.replace(/[^\d]/g, '');
+                              onSetRate(row.service_id, Number(raw || 0));
+                            }}
                             className="w-24 rounded-md border border-border bg-background px-2 py-1 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30"
                             aria-label={`Adjust rate for ${row.name}`}
                           />
@@ -136,11 +139,14 @@ export function PartnerNewOrderLineItemsTable({
                   <td className="px-4 py-2 tabular-nums">
                     {onSetRate ? (
                       <input
-                        type="number"
-                        min={0}
-                        step={1}
-                        value={row.rate}
-                        onChange={(event) => onSetRate(row.service_id, Number(event.target.value || 0))}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={row.rate === 0 ? '' : row.rate}
+                        onChange={(event) => {
+                          const raw = event.target.value.replace(/[^\d]/g, '');
+                          onSetRate(row.service_id, Number(raw || 0));
+                        }}
                         className="w-24 rounded-md border border-border bg-background px-2 py-1 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30"
                         aria-label={`Adjust rate for ${row.name}`}
                       />
@@ -196,11 +202,14 @@ export function PartnerNewOrderLineItemsTable({
                 <td className="px-4 py-2">
                   {onSetRate ? (
                     <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={row.rate}
-                      onChange={(event) => onSetRate(row.service_id, Number(event.target.value || 0))}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={row.rate === 0 ? '' : row.rate}
+                      onChange={(event) => {
+                        const raw = event.target.value.replace(/[^\d]/g, '');
+                        onSetRate(row.service_id, Number(raw || 0));
+                      }}
                       className="w-24 rounded-md border border-border bg-background px-2 py-1 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30"
                       aria-label={`Adjust rate for ${row.name}`}
                     />

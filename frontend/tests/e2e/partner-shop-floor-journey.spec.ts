@@ -57,8 +57,8 @@ function orderPayload(status: string) {
     delivery_at: new Date(Date.now() + 86400000).toISOString(),
     subtotal_inr: '346.00',
     delivery_fee_inr: '0.00',
-    cgst_inr: '31.14',
-    sgst_inr: '31.14',
+    // cgst_inr: '31.14',
+    // sgst_inr: '31.14',
     total_inr: '408.28',
     payment_status: 'pending',
     customer_name: 'Journey Partner',
@@ -281,9 +281,9 @@ async function mockJourneyApis(page: Page) {
           currency: 'INR',
           subtotal_inr: '346.00',
           delivery_fee_inr: '0.00',
-          gst_rate: '18.00',
-          cgst_inr: '31.14',
-          sgst_inr: '31.14',
+          // gst_rate: '18.00',
+          // cgst_inr: '31.14',
+          // sgst_inr: '31.14',
           total_inr: '408.28',
           payment_status: 'pending',
           lines: [
@@ -394,7 +394,7 @@ describeJourney('Partner Shop Floor usability journey', () => {
     await page.goto(`/partner/floor/print/${ORDER_ID}/bill`);
     await expect(page.getByTestId('print-order-bill')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('bill-total')).toContainText('408.28');
-    await expect(page.getByTestId('bill-cgst')).toContainText('CGST');
+    // await expect(page.getByTestId('bill-cgst')).toContainText('CGST');
     await expect(page.getByRole('button', { name: /print bill/i })).toBeVisible();
 
     // Task 4 — Legacy Today board → hub Today chip (boards folded in P7)

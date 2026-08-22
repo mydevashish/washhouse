@@ -293,9 +293,9 @@ export function AdminOrderDemoView({
   const packingCharge = 10;
   const pickupCharge = deliveryType === 'Delivery' ? 0 : 30;
   const deliveryCharge = deliveryType === 'Pickup' ? 0 : 30;
-  const cgst = Math.round(((subtotal - discount + pickupCharge + deliveryCharge + packingCharge) * 0.025) * 100) / 100;
-  const sgst = cgst;
-  const grandTotal = subtotal - discount + pickupCharge + deliveryCharge + packingCharge + cgst + sgst;
+  // const cgst = Math.round(((subtotal - discount + pickupCharge + deliveryCharge + packingCharge) * 0.025) * 100) / 100;
+  // const sgst = cgst;
+  const grandTotal = subtotal - discount + pickupCharge + deliveryCharge + packingCharge; // + cgst + sgst;
 
   const itemCount = selectedItems.reduce((sum, item) => sum + item.qty, 0);
   const serviceCount = selectedItems.length;
@@ -807,8 +807,8 @@ export function AdminOrderDemoView({
                       { label: 'Pickup charge', value: `₹${pickupCharge}` },
                       { label: 'Delivery charge', value: `₹${deliveryCharge}` },
                       { label: 'Packing charge', value: `₹${packingCharge}` },
-                      { label: 'SGST 2.5%', value: `₹${sgst.toFixed(2)}` },
-                      { label: 'CGST 2.5%', value: `₹${cgst.toFixed(2)}` },
+                      // { label: 'SGST 2.5%', value: `₹${sgst.toFixed(2)}` },
+                      // { label: 'CGST 2.5%', value: `₹${cgst.toFixed(2)}` },
                     ].map((row) => (
                       <div key={row.label} className="flex justify-between text-sm text-muted-foreground">
                         <span>{row.label}</span>

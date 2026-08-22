@@ -1,314 +1,421 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { Headset, Search } from 'lucide-react';
-import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { Pencil, Search } from 'lucide-react';
+import { useState } from 'react';
 
-import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { QueryErrorState } from '@/components/feedback/query-error-state';
+import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
-  canRunPartnerCustomerSearch,
   formatPhoneInputDisplay,
-  getPartnerCustomerSearchError,
+  getPartnerPhoneFieldError,
+  isPartnerPhoneReady,
+  PARTNER_PHONE_INLINE_ERROR,
+  partnerPhoneToE164,
 } from '@/features/partner/lib/partner-phone-schema';
-import {
-  OWNER_IMAGES,
-  OwnerEmptyState,
-  OwnerSectionHeader,
-} from '@/features/partner/components/owner';
-import { OwnerCustomerCard } from '@/features/partner/components/owner/owner-customer-card';
-import {
-  PartnerOpsKpiGrid,
-  PartnerOpsSectionLabel,
-  PartnerOpsSurface,
-  type PartnerOpsKpiItem,
-} from '@/features/partner/components/ops-visual';
-import { PartnerContent, PartnerPageHeader } from '@/features/partner/components/partner-content';
-import { PARTNER_CARD } from '@/features/partner/lib/partner-compact';
-import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
-import { getApiErrorMessage } from '@/lib/api-error-message';
-import { cn } from '@/lib/utils';
-import { buildOrdersHubPath } from '@/lib/navigation/orders-hub';
-import { useServerList } from '@/lib/pagination/use-server-list';
-import { queryKeys } from '@/lib/query-keys';
-import { STALE } from '@/lib/query-config';
-import {
-  getPartnerCustomerInsightsDashboard,
-  listPartnerCustomerInsights,
-  type CustomerInsightRow,
-  type CustomerSegment,
-} from '@/services/customer-insights';
+import { PartnerContent, PartnerPageHeader } from '../components/partner-content';
 
-const SEGMENT_OPTIONS: { value: CustomerSegment | ''; label: string }[] = [
-  { value: '', label: 'All soft tags' },
-  { value: 'new', label: 'New' },
-  { value: 'active', label: 'Regular (active)' },
-  { value: 'vip', label: 'Regular (VIP)' },
-  { value: 'at_risk', label: 'At risk' },
-  { value: 'inactive', label: 'At risk (inactive)' },
+type CustomerRole = 'franchise' | 'admin';
+
+type CustomerDirectoryRow = {
+  id: string;
+  name: string;
+  number: string;
+  address: string;
+  state: string;
+  pincode: string;
+  spend: number;
+  planName: string;
+  planAmount: number;
+  walletUsed: number;
+  walletRemaining: number;
+  franchiseName?: string;
+};
+
+const currentRole: CustomerRole = 'franchise';
+
+const dummyCustomers: CustomerDirectoryRow[] = [
+  {
+    id: 'cust-101',
+    name: 'Priya Sharma',
+    number: '+91 98765 43210',
+    address: '12 Green Park Road',
+    state: 'Delhi',
+    pincode: '110016',
+    spend: 12500,
+    planName: 'Premium Care',
+    planAmount: 2999,
+    walletUsed: 1500,
+    walletRemaining: 1499,
+    franchiseName: 'WashHouse South',
+  },
+  {
+    id: 'cust-102',
+    name: 'Aman Verma',
+    number: '+91 99887 66554',
+    address: '4th Floor, Sector 15',
+    state: 'Gurugram',
+    pincode: '122001',
+    spend: 8900,
+    planName: 'Care Plus',
+    planAmount: 2499,
+    walletUsed: 1500,
+    walletRemaining: 999,
+    franchiseName: 'WashHouse Central',
+  },
+  {
+    id: 'cust-103',
+    name: 'Mehak Singh',
+    number: '+91 98111 22334',
+    address: 'Block B, Ashok Vihar',
+    state: 'Delhi',
+    pincode: '110052',
+    spend: 16450,
+    planName: 'Elite Laundry',
+    planAmount: 3999,
+    walletUsed: 1800,
+    walletRemaining: 2199,
+    franchiseName: 'WashHouse West',
+  },
+  {
+    id: 'cust-104',
+    name: 'Rohit Gupta',
+    number: '+91 97333 77888',
+    address: '22 Janpath Lane',
+    state: 'Noida',
+    pincode: '201301',
+    spend: 7200,
+    planName: 'Monthly Wash',
+    planAmount: 1999,
+    walletUsed: 1200,
+    walletRemaining: 799,
+    franchiseName: 'WashHouse East',
+  },
 ];
 
-function OwnerCustomerListSkeleton() {
-  return (
-    <div
-      className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
-      data-testid="owner-customer-grid-skeleton"
-      aria-hidden
-    >
-      {Array.from({ length: 6 }, (_, index) => (
-        <Skeleton key={index} className="h-44 w-full rounded-xl" />
-      ))}
-    </div>
-  );
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
 export function PartnerCustomersView({ embedded = false }: { embedded?: boolean }) {
-  const enabled = usePartnerQueriesEnabled();
-  const [segmentFilter, setSegmentFilter] = useState<CustomerSegment | ''>('');
+  const showFranchiseColumn = currentRole === 'admin';
+  const emptyCustomerForm = {
+    title: 'Ms',
+    name: '',
+    phone: '',
+    plan: 'No plan',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    pincode: '',
+    state: '',
+  };
 
-  const dashboardQ = useQuery({
-    queryKey: queryKeys.partnerCustomerInsightsDashboard(),
-    queryFn: getPartnerCustomerInsightsDashboard,
-    enabled,
-    staleTime: STALE.adminDashboard,
-  });
+  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [customerForm, setCustomerForm] = useState(emptyCustomerForm);
 
-  const list = useServerList<CustomerInsightRow, { segment?: CustomerSegment }>({
-    queryKey: queryKeys.partnerCustomerInsights('directory', segmentFilter || 'all'),
-    fetcher: (params) =>
-      listPartnerCustomerInsights({
-        page: params.page,
-        page_size: params.page_size,
-        search:
-          params.search && canRunPartnerCustomerSearch(params.search)
-            ? params.search
-            : undefined,
-        segment: params.segment,
-      }),
-    filters: segmentFilter ? { segment: segmentFilter } : {},
-    defaultPageSize: 10,
-    enabled,
-  });
+  function openAddCustomerDialog() {
+    setIsEditMode(false);
+    setCustomerForm(emptyCustomerForm);
+    setCustomerDialogOpen(true);
+  }
 
-  const segmentKpiItems = useMemo((): PartnerOpsKpiItem[] => {
-    const d = dashboardQ.data;
-    if (!d) {
-      return [
-        { label: 'Total customers', value: '—' },
-        { label: 'New', value: '—' },
-        { label: 'Regular (active)', value: '—' },
-        { label: 'VIP', value: '—' },
-        { label: 'At risk', value: '—' },
-      ];
+  function handleDeleteCustomer(customer: CustomerDirectoryRow) {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${customer.name}?`
+    );
+
+    if (!confirmed) return;
+
+    // TODO: Delete API call
+    console.log('Delete customer:', customer.id);
+  }
+
+  function openEditCustomerDialog(customer: CustomerDirectoryRow) {
+    const formName = customer.name.replace(/^(Mr|Mrs|Ms)\s+/i, '').trim();
+    setIsEditMode(true);
+    setCustomerForm({
+      title: customer.name.match(/^(Mr|Mrs|Ms)\b/i)?.[1] ?? 'Ms',
+      name: formName,
+      phone: customer.number,
+      plan: customer.planName || 'No plan',
+      addressLine1: customer.address,
+      addressLine2: '',
+      city: customer.state,
+      pincode: customer.pincode,
+      state: customer.state,
+    });
+    setCustomerDialogOpen(true);
+  }
+
+  function submitCustomerDialog() {
+    const phone = partnerPhoneToE164(customerForm.phone);
+    const name = customerForm.name.trim();
+
+    if (!name) {
+      return;
     }
-    const atRisk = d.segments.at_risk + d.segments.inactive;
-    return [
-      { label: 'Total customers', value: String(d.total_customers) },
-      { label: 'New', value: String(d.segments.new) },
-      { label: 'Regular (active)', value: String(d.segments.active) },
-      { label: 'VIP', value: String(d.segments.vip) },
-      { label: 'At risk', value: String(atRisk) },
-    ];
-  }, [dashboardQ.data]);
+    if (!isPartnerPhoneReady(customerForm.phone)) {
+      return;
+    }
 
-  const customers = list.rows;
-  const awaitingAuth = !enabled;
-  const dashboardBusy =
-    awaitingAuth ||
-    dashboardQ.isPending ||
-    (dashboardQ.isFetching && dashboardQ.data === undefined && !dashboardQ.isError);
-  const listBusy =
-    awaitingAuth ||
-    list.isPending ||
-    (list.isFetching && list.rows.length === 0 && !list.isError);
-  const hasAnyCustomers = (dashboardQ.data?.total_customers ?? customers.length) > 0;
-  const searchActive = Boolean(list.search.trim());
-  const directorySearchError = getPartnerCustomerSearchError(list.search);
-  const directorySearchBlocked =
-    Boolean(list.search.trim()) && !canRunPartnerCustomerSearch(list.search);
-  const showListContent = enabled && !listBusy && !list.isError;
-  const showEmptyStates = showListContent;
+    if (!isPartnerPhoneReady(phone)) {
+      return;
+    }
+
+    setCustomerDialogOpen(false);
+  }
+
+  const customerPhoneError = getPartnerPhoneFieldError(customerForm.phone);
+  const canSaveCustomer = Boolean(customerForm.name.trim()) && isPartnerPhoneReady(customerForm.phone);
 
   const body = (
-    <>
-      {!embedded ? (
-        <PartnerPageHeader
-          title="Customers"
-          description="Your laundry’s relationships — call, WhatsApp, view orders, or open Desk."
-          actions={
-            <Button asChild variant="outline" size="sm" className="h-9 min-h-9 gap-1.5">
-              <Link href={buildOrdersHubPath('/partner/orders', 'desk')}>
-                <Headset className="h-3.5 w-3.5" aria-hidden />
-                Find customer
-              </Link>
-            </Button>
-          }
-        />
-      ) : (
-        <OwnerSectionHeader
-          title="Customers"
-          description="Your laundry’s relationships — open Desk, view their orders, or start a new order."
-          action={
-            <Button asChild variant="outline" size="sm" className="h-9 min-h-9 gap-1.5">
-              <Link href={buildOrdersHubPath('/partner/orders', 'desk')}>
-                <Headset className="h-3.5 w-3.5" aria-hidden />
-                Find customer
-              </Link>
-            </Button>
-          }
-        />
-      )}
+    <PartnerContent className="space-y-4">
+      <PartnerPageHeader
+        title="Customers"
+        description="Search by name or number and manage the day’s queue."
+        actions={
+          <Button
+            type="button"
+            size="sm"
+            className="h-9 min-h-9"
+            data-testid="partner-customers-page-new-customer"
+            onClick={openAddCustomerDialog}
+          >
+            Add New Customer
+          </Button>
+        }
+      />
 
-      <section aria-label="Customer insights" data-testid="owner-customer-insights">
-      <PartnerOpsSurface className="space-y-4">
-        {!embedded ? (
-          <PartnerOpsSectionLabel as="h2">Customer insights</PartnerOpsSectionLabel>
-        ) : null}
-        <PartnerOpsKpiGrid
-          items={segmentKpiItems}
-          loading={dashboardBusy}
-          error={
-            dashboardQ.isError ? getApiErrorMessage(dashboardQ.error) : undefined
-          }
-          onRetry={
-            dashboardQ.isError ? () => void dashboardQ.refetch() : undefined
-          }
-        />
-      </PartnerOpsSurface>
-      </section>
-
-      <div className={cn('grid gap-4 bg-muted/40', PARTNER_CARD)}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold">Search customer</p>
-            <p className="text-xs text-muted-foreground">Search by name or mobile number.</p>
-          </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            <div className="relative min-w-0 flex-1 sm:min-w-[220px]">
-              <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                aria-hidden
-              />
-              <Input
-                value={list.search}
-                onChange={(e) => {
-                  const next = e.target.value;
-                  const digits = next.replace(/\D/g, '');
-                  const looksPhone = digits.length > 0 && /^[\d\s+\-()+ ]+$/.test(next);
-                  list.setSearch(looksPhone ? formatPhoneInputDisplay(next) : next);
-                }}
-                placeholder="Name or phone"
-                aria-label="Search customers"
-                aria-invalid={Boolean(directorySearchError)}
-                aria-describedby={
-                  directorySearchError ? 'owner-customer-search-error' : undefined
-                }
-                className="h-9 min-h-9 bg-background pl-9"
-                data-testid="owner-customer-search"
-              />
-              {directorySearchError ? (
-                <p
-                  id="owner-customer-search-error"
-                  className="mt-1 text-xs text-danger"
-                  role="alert"
-                >
-                  {directorySearchError}
-                </p>
-              ) : null}
-            </div>
-            <div className="w-full sm:w-52">
-              <Select
-                value={segmentFilter}
-                onChange={(e) => setSegmentFilter(e.target.value as CustomerSegment | '')}
-                aria-label="Filter by relationship tag"
-                className="h-9 min-h-9 bg-background"
-              >
-                {SEGMENT_OPTIONS.map((o) => (
-                  <option key={o.value || 'all'} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
+      <div className="rounded-xl border border-border bg-background p-3 shadow-sm">
+        <div className="relative max-w-md">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search by name or number…"
+            className="h-10 pl-9"
+            aria-label="Search customers"
+            defaultValue=""
+          />
         </div>
       </div>
 
-      {listBusy ? <OwnerCustomerListSkeleton /> : null}
-
-      {enabled && list.isError ? (
-        <QueryErrorState
-          title="Could not load customers"
-          message={getApiErrorMessage(list.error)}
-          onRetry={() => void list.refetch()}
-          isRetrying={list.isFetching}
-        />
-      ) : null}
-
-      {showEmptyStates && !hasAnyCustomers && !searchActive && !segmentFilter ? (
-        <OwnerEmptyState
-          title="No customers yet"
-          description="First walk-in starts your book — take a phone number and place an order."
-          imageSrc={OWNER_IMAGES.emptyCustomers}
-          imageAlt="Quiet laundry shop ready for customers"
-          action={{
-            label: 'New walk-in order',
-            href: buildPartnerCreateOrderHref(),
-          }}
-        />
-      ) : null}
-
-      {showEmptyStates &&
-      customers.length === 0 &&
-      (searchActive || segmentFilter || hasAnyCustomers) &&
-      !directorySearchBlocked ? (
-        <OwnerEmptyState
-          title="No matches"
-          description="Try another name, phone, or soft-tag filter."
-          imageSrc={OWNER_IMAGES.people}
-          imageAlt="Shop floor"
-        />
-      ) : null}
-
-      {showListContent && customers.length > 0 ? (
-        <>
-          <div
-            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
-            data-testid="owner-customer-grid"
-            aria-label={`${list.totalRecords} customers`}
-          >
-            {customers.map((c) => (
-              <OwnerCustomerCard key={c.user_id} customer={c} />
+      <div className="overflow-hidden rounded-xl border border-border bg-card" data-testid="owner-customer-grid">
+        <Table className="min-w-[1200px]" aria-label="Customers list">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-center">Name</TableHead>
+              <TableHead className="text-center">Number</TableHead>
+              <TableHead className="text-center">Address</TableHead>
+              <TableHead className="text-center">State</TableHead>
+              <TableHead className="text-center">Pincode</TableHead>
+              <TableHead className="text-center">Overall Spend</TableHead>
+              <TableHead className="text-center">Pending Amount</TableHead>
+              <TableHead className="text-center">Plan / Wallet</TableHead>
+              <TableHead className="text-center">Wallet Left</TableHead>
+              {showFranchiseColumn ? <TableHead className="text-center">Franchise</TableHead> : null}
+              <TableHead className="w-36 text-center">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {dummyCustomers.map((customer) => (
+              <TableRow key={customer.id}>
+                <TableCell className="text-center font-medium text-foreground">{customer.name}</TableCell>
+                <TableCell className="text-center text-muted-foreground">{customer.number}</TableCell>
+                <TableCell className="text-center">{customer.address}</TableCell>
+                <TableCell className="text-center">{customer.state}</TableCell>
+                <TableCell className="text-center">{customer.pincode}</TableCell>
+                <TableCell className="text-center font-medium tabular-nums">
+                  {formatCurrency(customer.spend)}
+                </TableCell>
+                <TableCell className="text-center font-medium tabular-nums">
+                  {formatCurrency(customer.spend)}
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex flex-col items-center">
+                    <span className="font-medium text-foreground">{customer.planName}</span>
+                    <span className="text-xs text-muted-foreground">
+                      Used {formatCurrency(customer.walletUsed)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Wallet {formatCurrency(customer.planAmount)}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-center font-medium tabular-nums text-amber-600">
+                  {formatCurrency(customer.walletRemaining)}
+                </TableCell>
+                {showFranchiseColumn ? (
+                  <TableCell className="text-center text-muted-foreground">{customer.franchiseName}</TableCell>
+                ) : null}
+                <TableCell className="text-center">
+                  <div className="flex justify-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 px-2.5 text-xs"
+                      onClick={() => openEditCustomerDialog(customer)}
+                      aria-label={`Edit ${customer.name}`}
+                    >
+                      <span className="flex items-center gap-1">
+                        <Pencil className="h-3.5 w-3.5" aria-hidden />
+                        Edit
+                      </span>
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
             ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
+        <DialogContent className="sm:max-w-4xl max-w-[95vw] max-h-[85vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>{isEditMode ? 'Edit customer' : 'Add new customer'}</DialogTitle>
+            <DialogDescription>
+              {isEditMode ? 'Update the client details and save the changes.' : 'Fill the customer details and add them directly to this order.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="customer-dialog-title">Title</Label>
+              <Select
+                id="customer-dialog-title"
+                value={customerForm.title}
+                onChange={(e) => setCustomerForm((prev) => ({ ...prev, title: e.target.value }))}
+                className="min-h-9"
+              >
+                <option value="Ms">Ms</option>
+                <option value="Mrs">Mrs</option>
+                <option value="Mr">Mr</option>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="customer-dialog-name">Name</Label>
+              <Input
+                id="customer-dialog-name"
+                value={customerForm.name}
+                onChange={(e) => setCustomerForm((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="Customer name"
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="customer-dialog-phone">Mobile number</Label>
+                  <Input
+                    id="customer-dialog-phone"
+                    type="tel"
+                    inputMode="tel"
+                    value={customerForm.phone}
+                    onChange={(e) =>
+                      setCustomerForm((prev) => ({
+                        ...prev,
+                        phone: formatPhoneInputDisplay(e.target.value),
+                      }))
+                    }
+                    placeholder="e.g. 9876543210"
+                    aria-invalid={Boolean(customerPhoneError)}
+                    aria-describedby={customerPhoneError ? 'customer-dialog-phone-error' : undefined}
+                  />
+                  {customerPhoneError ? (
+                    <p id="customer-dialog-phone-error" className="text-xs text-danger" role="alert">
+                      {customerPhoneError}
+                    </p>
+                  ) : null}
+                </div>
+                <div>
+                  <Label htmlFor="customer-dialog-plan">Plan</Label>
+                  <Select
+                    id="customer-dialog-plan"
+                    value={customerForm.plan}
+                    onChange={(e) => setCustomerForm((prev) => ({ ...prev, plan: e.target.value }))}
+                    className="min-h-9"
+                  >
+                    <option value="No plan">No plan</option>
+                    <option value="Basic Care">Basic Care</option>
+                    <option value="Premium Care">Premium Care</option>
+                    <option value="Family Plan">Family Plan</option>
+                    <option value="Wallet Plan">Wallet Plan</option>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="customer-dialog-address">Address line 1</Label>
+              <Input
+                id="customer-dialog-address"
+                value={customerForm.addressLine1}
+                onChange={(e) => setCustomerForm((prev) => ({ ...prev, addressLine1: e.target.value }))}
+                placeholder="House / flat / building"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="customer-dialog-address2">Address line 2</Label>
+              <Input
+                id="customer-dialog-address2"
+                value={customerForm.addressLine2}
+                onChange={(e) => setCustomerForm((prev) => ({ ...prev, addressLine2: e.target.value }))}
+                placeholder="Area / landmark"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="customer-dialog-city">City</Label>
+              <Input
+                id="customer-dialog-city"
+                value={customerForm.city}
+                onChange={(e) => setCustomerForm((prev) => ({ ...prev, city: e.target.value }))}
+                placeholder="City"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="customer-dialog-pincode">Pincode</Label>
+              <Input
+                id="customer-dialog-pincode"
+                value={customerForm.pincode}
+                onChange={(e) => setCustomerForm((prev) => ({ ...prev, pincode: e.target.value }))}
+                placeholder="Pincode"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="customer-dialog-state">State</Label>
+              <Input
+                id="customer-dialog-state"
+                value={customerForm.state}
+                onChange={(e) => setCustomerForm((prev) => ({ ...prev, state: e.target.value }))}
+                placeholder="State"
+              />
+            </div>
           </div>
-          <DataTablePagination
-            page={list.page}
-            pageCount={list.pageCount}
-            pageSize={list.pageSize}
-            pageStart={list.pageStart}
-            pageEnd={list.pageEnd}
-            totalCount={list.totalRecords}
-            onPageChange={list.setPage}
-            onPageSizeChange={list.setPageSize}
-          />
-        </>
-      ) : null}
-    </>
-  );
-
-  if (embedded) {
-    return <div className="space-y-4" data-testid="partner-customers-view">{body}</div>;
-  }
-
-  return (
-    <PartnerContent className="space-y-4">
-      <div data-testid="partner-customers-view">{body}</div>
+          <DialogFooter className="mt-2">
+            <Button type="button" variant="outline" onClick={() => setCustomerDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={submitCustomerDialog} disabled={!canSaveCustomer}>
+              {isEditMode ? 'Save changes' : 'Add customer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PartnerContent>
   );
+
+  return embedded ? <div className="space-y-4">{body}</div> : <div className="space-y-4">{body}</div>;
 }

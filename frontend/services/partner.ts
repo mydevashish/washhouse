@@ -106,8 +106,8 @@ export interface PartnerOrder {
   address_pincode?: string | null;
   subtotal_inr: string;
   delivery_fee_inr: string;
-  cgst_inr: string;
-  sgst_inr: string;
+  // cgst_inr: string;
+  // sgst_inr: string;
   total_inr: string;
   paid_inr: string;
   pending_inr: string;

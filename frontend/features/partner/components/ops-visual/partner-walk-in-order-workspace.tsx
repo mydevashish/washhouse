@@ -23,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatInr } from '@/features/discover/detail/order-pricing';
 import { WASHHOUSE_CATALOG_PHOTOS } from '@/features/marketing/catalog/washhouse-catalog-photos';
 import {
+  PartnerCustomerIdentitySummary,
   PartnerCustomerSnapshotCards,
   PartnerNewOrderLineItemsTable,
   PartnerNewOrderPrintHintCard,
@@ -255,6 +256,7 @@ function PartnerWalkInOrderWorkspaceContent({
     title: 'Ms',
     name: '',
     phone: '',
+    plan: 'No plan',
     addressLine1: '',
     addressLine2: '',
     city: '',
@@ -382,6 +384,9 @@ function PartnerWalkInOrderWorkspaceContent({
     c.setAddressPincode(newCustomerForm.pincode.trim());
     c.setAddressLine2(newCustomerForm.addressLine2.trim());
     c.setAddressLandmark(newCustomerForm.state.trim());
+    if (newCustomerForm.plan && newCustomerForm.plan !== 'No plan') {
+      toast.success(`Plan selected: ${newCustomerForm.plan}`);
+    }
     setCustomerSearchQuery('');
     setCustomerSearchResults([]);
     setCustomerSelectionLocked(true);
@@ -1058,23 +1063,11 @@ function PartnerWalkInOrderWorkspaceContent({
           <PartnerOpsSurface className="space-y-4">
             <PartnerOpsSectionLabel>Step 3 — Review &amp; save</PartnerOpsSectionLabel>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl bg-muted/40 p-4 text-sm">
-                <p className="font-semibold">{c.customerName.trim()}</p>
-                <p className="text-muted-foreground">{c.customerPhone}</p>
-              </div>
-              {/* <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
-                <p className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-100">
-                  <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-                  Mix-up safety
-                </p>
-                <ul className="mt-2 list-inside list-disc space-y-1 text-muted-foreground">
-                  <li>Color token + day number assigned when you save</li>
-                  <li>Print bag tag + per-piece tags before processing</li>
-                  <li>Match phone last 4 on tag to customer phone</li>
-                </ul>
-              </div> */}
-            </div>
+            <PartnerCustomerIdentitySummary
+              name={c.customerName}
+              phone={c.customerPhone}
+              stats={c.insightStats}
+            />
 
             <div className="overflow-hidden rounded-xl border border-border">
               <PartnerNewOrderLineItemsTable
@@ -1184,6 +1177,12 @@ function PartnerWalkInOrderWorkspaceContent({
               onDeliveryChargeChange={c.setDeliveryChargeOverride}
               advancePaid={c.advancePaid}
               onAdvancePaidChange={c.setAdvancePaid}
+              walletRemainingInr={c.walletRemainingInr}
+              walletAmountUsed={c.walletAmountUsed}
+              onWalletAmountUsedChange={c.setWalletAmountUsed}
+              planName={c.insightStats?.plan_name ?? null}
+              walletEnabled={c.walletEnabled}
+              onWalletEnabledChange={c.setWalletEnabled}
               expressOrder={c.expressOrder}
               onExpressOrderChange={c.setExpressOrder}
               expressCharge={c.expressChargeOverride}
@@ -1234,27 +1233,46 @@ function PartnerWalkInOrderWorkspaceContent({
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="new-customer-phone">Mobile number</Label>
-              <Input
-                id="new-customer-phone"
-                type="tel"
-                inputMode="tel"
-                value={newCustomerForm.phone}
-                onChange={(e) =>
-                  setNewCustomerForm((prev) => ({
-                    ...prev,
-                    phone: formatPhoneInputDisplay(e.target.value),
-                  }))
-                }
-                placeholder="e.g. 9876543210"
-                aria-invalid={Boolean(newCustomerPhoneError)}
-                aria-describedby={newCustomerPhoneError ? 'new-customer-phone-error' : undefined}
-              />
-              {newCustomerPhoneError ? (
-                <p id="new-customer-phone-error" className="text-xs text-danger" role="alert">
-                  {newCustomerPhoneError}
-                </p>
-              ) : null}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="new-customer-phone">Mobile number</Label>
+                  <Input
+                    id="new-customer-phone"
+                    type="tel"
+                    inputMode="tel"
+                    value={newCustomerForm.phone}
+                    onChange={(e) =>
+                      setNewCustomerForm((prev) => ({
+                        ...prev,
+                        phone: formatPhoneInputDisplay(e.target.value),
+                      }))
+                    }
+                    placeholder="e.g. 9876543210"
+                    aria-invalid={Boolean(newCustomerPhoneError)}
+                    aria-describedby={newCustomerPhoneError ? 'new-customer-phone-error' : undefined}
+                  />
+                  {newCustomerPhoneError ? (
+                    <p id="new-customer-phone-error" className="text-xs text-danger" role="alert">
+                      {newCustomerPhoneError}
+                    </p>
+                  ) : null}
+                </div>
+                <div>
+                  <Label htmlFor="new-customer-plan">Plan</Label>
+                  <Select
+                    id="new-customer-plan"
+                    value={newCustomerForm.plan}
+                    onChange={(e) => setNewCustomerForm((prev) => ({ ...prev, plan: e.target.value }))}
+                    className="min-h-9"
+                  >
+                    <option value="No plan">No plan</option>
+                    <option value="Basic Care">Basic Care</option>
+                    <option value="Premium Care">Premium Care</option>
+                    <option value="Family Plan">Family Plan</option>
+                    <option value="Wallet Plan">Wallet Plan</option>
+                  </Select>
+                </div>
+              </div>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="new-customer-address">Address line 1</Label>
@@ -1429,26 +1447,7 @@ function PartnerWalkInOrderWorkspaceContent({
                   />
                 );
               })}
-            </div>
-
-          {/* Per-weight service garment summary */}
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {weightCards.map((card) => {
-              const lines = (c.garmentLines ?? []).filter((l) => l.serviceId === card.serviceId);
-              if (lines.length === 0) return null;
-              return (
-                <div key={`summary-${card.id}`} className="rounded-2xl border border-border bg-background p-3 shadow-sm">
-                  <p className="text-sm font-semibold">{card.label}</p>
-                  <p className="mt-2 text-sm text-muted-foreground">{lines.length} {lines.length > 1 ? 'items' : 'item'}</p>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    {lines.slice(0, 5).map((l) => (
-                      <div key={l.key} className="truncate">{l.label}</div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+            </div>          
 
             {garmentSelectionTiles.length > GARMENT_PAGE_SIZE ? (
               <div className="flex items-center justify-between gap-2 pt-2">
@@ -1475,6 +1474,25 @@ function PartnerWalkInOrderWorkspaceContent({
                 </Button>
               </div>
             ) : null}
+          </div>
+
+          {/* Per-weight service garment summary */}
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {weightCards.map((card) => {
+              const lines = (c.garmentLines ?? []).filter((l) => l.serviceId === card.serviceId);
+              if (lines.length === 0) return null;
+              return (
+                <div key={`summary-${card.id}`} className="rounded-2xl border border-border bg-background p-3 shadow-sm">
+                  <p className="text-sm font-semibold">{card.label}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{lines.length} {lines.length > 1 ? 'items' : 'item'}</p>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {lines.slice(0, 5).map((l) => (
+                      <div key={l.key} className="truncate">{l.label}</div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <DialogFooter>

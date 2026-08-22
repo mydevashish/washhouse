@@ -27,9 +27,9 @@ export function OwnerEmptyState({
         className,
       )}
     >
-      <div className="relative h-24 w-24 overflow-hidden rounded-2xl ring-1 ring-border/50 sm:h-28 sm:w-28">
+      {/* <div className="relative h-24 w-24 overflow-hidden rounded-2xl ring-1 ring-border/50 sm:h-28 sm:w-28">
         <Image src={imageSrc} alt={imageAlt} fill sizes="112px" className="object-cover" />
-      </div>
+      </div> */}
       <h3 className="mt-5 text-balance text-lg font-semibold text-foreground">{title}</h3>
       <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-muted-foreground">{description}</p>
       {action ? (

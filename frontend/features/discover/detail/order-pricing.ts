@@ -16,9 +16,9 @@ export type OrderQuote = {
   lines: OrderLineItem[];
   subtotal: number;
   deliveryFee: number;
-  cgst: number;
-  sgst: number;
-  taxesTotal: number;
+  // cgst: number;
+  // sgst: number;
+  // taxesTotal: number;
   total: number;
   maxDeliveryHours: number;
   estimatedDeliveryBy: Date | null;
@@ -56,9 +56,9 @@ export function computeOrderQuote(
       lines: [],
       subtotal: 0,
       deliveryFee: 0,
-      cgst: 0,
-      sgst: 0,
-      taxesTotal: 0,
+      // cgst: 0,
+      // sgst: 0,
+      // taxesTotal: 0,
       total: 0,
       maxDeliveryHours: 0,
       estimatedDeliveryBy: null,
@@ -68,11 +68,11 @@ export function computeOrderQuote(
 
   const deliveryFee = DELIVERY_FEE_INR;
   const taxable = subtotal + deliveryFee;
-  const halfGst = (taxable * GST_RATE_PERCENT) / 200;
-  const cgst = roundMoney(halfGst);
-  const sgst = roundMoney(halfGst);
-  const taxesTotal = cgst + sgst;
-  const total = roundMoney(taxable + taxesTotal);
+  // const halfGst = (taxable * GST_RATE_PERCENT) / 200;
+  // const cgst = roundMoney(halfGst);
+  // const sgst = roundMoney(halfGst);
+  // const taxesTotal = cgst + sgst;
+  const total = roundMoney(taxable); // + taxesTotal);
 
   const maxDeliveryHours = Math.max(
     ...lines.map((l) => serviceDeliveryHours(l.service.category)),
@@ -83,9 +83,9 @@ export function computeOrderQuote(
     lines,
     subtotal: roundMoney(subtotal),
     deliveryFee,
-    cgst,
-    sgst,
-    taxesTotal,
+    // cgst,
+    // sgst,
+    // taxesTotal,
     total,
     maxDeliveryHours,
     estimatedDeliveryBy,
