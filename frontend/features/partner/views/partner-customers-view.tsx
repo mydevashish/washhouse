@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Search } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -19,6 +19,8 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { createPartnerCustomer } from '@/features/partner/customer-desk/api';
+import { updatePartnerCustomerByPhone } from '@/features/partner/customer-desk/api';
+import type { CustomerDeskProfile, PartnerCustomerUpdateResult } from '@/features/partner/customer-desk/types';
 import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import {
   formatPhoneInputDisplay,
@@ -30,6 +32,8 @@ import {
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { queryKeys } from '@/lib/query-keys';
 import { listPartnerCustomerInsights } from '@/services/customer-insights';
+import { useServerList } from '@/lib/pagination/use-server-list';
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { PartnerContent, PartnerPageHeader } from '../components/partner-content';
 
 type CustomerRole = 'franchise' | 'admin';
@@ -67,7 +71,6 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
   const showFranchiseColumn = currentRole === 'admin';
   const queryClient = useQueryClient();
   const enabled = usePartnerQueriesEnabled();
-  const [searchTerm, setSearchTerm] = useState('');
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [customerForm, setCustomerForm] = useState({
@@ -82,18 +85,14 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
     state: '',
   });
 
-  const customerQuery = useQuery({
-    queryKey: ['partner-customer-insights', { page: 1, page_size: 10, search: searchTerm || undefined }],
-    queryFn: () =>
-      listPartnerCustomerInsights({
-        page: 1,
-        page_size: 10,
-        search: searchTerm || undefined,
-      }),
+  const customerList = useServerList({
+    queryKey: ['partner-customer-insights'],
+    fetcher: (params) => listPartnerCustomerInsights(params),
+    defaultPageSize: 10,
     enabled,
   });
 
-  const createCustomerMutation = useMutation({
+  const createCustomerMutation = useMutation<PartnerCustomerUpdateResult | CustomerDeskProfile, unknown, void>({
     mutationFn: () => {
       const name = customerForm.name.trim();
       const phone = partnerPhoneToE164(customerForm.phone);
@@ -101,6 +100,23 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
       if (!name) throw new Error('Customer name is required');
       if (!isPartnerPhoneReady(customerForm.phone)) throw new Error(PARTNER_PHONE_INLINE_ERROR);
       if (!isPartnerPhoneReady(phone)) throw new Error(PARTNER_PHONE_INLINE_ERROR);
+      if (isEditMode) {
+        // Update existing customer by phone (supports address/plan/title now)
+        return updatePartnerCustomerByPhone(phone, {
+          name: payloadName,
+          email: undefined,
+          gender: undefined,
+          notes: undefined,
+          title: customerForm.title || undefined,
+          plan: customerForm.plan as 'No plan' | 'Mini Plan' | 'Value Plan' | undefined,
+          address_line_1: customerForm.addressLine1.trim() || undefined,
+          address_line_2: customerForm.addressLine2.trim() || undefined,
+          city: customerForm.city.trim() || undefined,
+          state: customerForm.state.trim() || undefined,
+          pincode: customerForm.pincode.trim() || undefined,
+        });
+      }
+
       return createPartnerCustomer({
         name: payloadName,
         phone,
@@ -172,7 +188,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
     createCustomerMutation.mutate();
   }
 
-  const customerRows: CustomerDirectoryRow[] = (customerQuery.data?.items ?? []).map((customer, index) => {
+  const customerRows: CustomerDirectoryRow[] = (customerList.rows ?? []).map((customer, index) => {
     const extra = customer as Partial<{
       address_line_1?: string | null;
       address?: string | null;
@@ -184,18 +200,33 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
       wallet_remaining_inr?: string | number | null;
     }>;
 
+    // Normalize multiple possible API field names and join address parts into one string
+    const addr1 = (customer as any).address_line1 ?? (customer as any).address_line_1 ?? extra.address_line_1 ?? extra.address ?? '';
+    const addr2 = (customer as any).address_line2 ?? (customer as any).address_line_2 ?? '';
+    const city = (customer as any).city ?? extra.city ?? '';
+    const state = (customer as any).state ?? extra.state ?? '';
+    const pincode = (customer as any).pincode ?? extra.pincode ?? '';
+    const fullAddress = [addr1, addr2, city, state, pincode].filter(Boolean).join(', ');
+
+    const planName = (customer as any).plan_name ?? customer.segment_label ?? 'No plan';
+    const planAmount = Number(extra.plan_amount_inr ?? (customer as any).plan_amount_inr ?? customer.avg_order_value_inr ?? 0);
+    const walletUsed = Number(extra.wallet_used_inr ?? (customer as any).wallet_used_inr ?? customer.order_count ?? 0);
+    const walletRemaining = Number(
+      extra.wallet_remaining_inr ?? (customer as any).wallet_remaining_inr ?? (customer as any).wallet_balance_inr ?? customer.retention_score ?? 0,
+    );
+
     return {
       id: customer.customer_id ?? customer.user_id ?? `customer-${index}`,
       name: customer.name,
       number: customer.phone ?? '',
-      address: extra.address_line_1 ?? extra.address ?? '',
-      state: extra.state ?? '',
-      pincode: extra.pincode ?? '',
+      address: fullAddress,
+      state,
+      pincode,
       spend: Number(customer.lifetime_spend_inr ?? 0),
-      planName: customer.segment_label ?? 'No plan',
-      planAmount: Number(extra.plan_amount_inr ?? customer.avg_order_value_inr ?? 0),
-      walletUsed: Number(extra.wallet_used_inr ?? customer.order_count ?? 0),
-      walletRemaining: Number(extra.wallet_remaining_inr ?? customer.retention_score ?? 0),
+      planName,
+      planAmount,
+      walletUsed,
+      walletRemaining,
       franchiseName: customer.segment_label,
     };
   });
@@ -222,14 +253,14 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
       />
 
       <div className="rounded-xl border border-border bg-background p-3 shadow-sm">
-        <div className="relative max-w-md">
+          <div className="relative max-w-md">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search by name or number…"
             className="h-10 pl-9"
             aria-label="Search customers"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
+              value={customerList.search}
+              onChange={(event) => customerList.setSearch(event.target.value)}
           />
         </div>
       </div>
@@ -241,8 +272,8 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
               <TableHead className="text-center">Name</TableHead>
               <TableHead className="text-center">Number</TableHead>
               <TableHead className="text-center">Address</TableHead>
-              <TableHead className="text-center">State</TableHead>
-              <TableHead className="text-center">Pincode</TableHead>
+              {/* <TableHead className="text-center">State</TableHead> */}
+              {/* <TableHead className="text-center">Pincode</TableHead> */}
               <TableHead className="text-center">Overall Spend</TableHead>
               <TableHead className="text-center">Pending Amount</TableHead>
               <TableHead className="text-center">Plan / Wallet</TableHead>
@@ -264,8 +295,8 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
                   <TableCell className="text-center font-medium text-foreground">{customer.name}</TableCell>
                   <TableCell className="text-center text-muted-foreground">{customer.number}</TableCell>
                   <TableCell className="text-center">{customer.address}</TableCell>
-                  <TableCell className="text-center">{customer.state}</TableCell>
-                  <TableCell className="text-center">{customer.pincode}</TableCell>
+                  {/* <TableCell className="text-center">{customer.state}</TableCell> */}
+                  {/* <TableCell className="text-center">{customer.pincode}</TableCell> */}
                   <TableCell className="text-center font-medium tabular-nums">
                     {formatCurrency(customer.spend)}
                   </TableCell>
@@ -275,12 +306,12 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
                   <TableCell className="text-center">
                     <div className="flex flex-col items-center">
                       <span className="font-medium text-foreground">{customer.planName}</span>
-                      <span className="text-xs text-muted-foreground">
-                        Used {formatCurrency(customer.walletUsed)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        Wallet {formatCurrency(customer.planAmount)}
-                      </span>
+                      {customer.planName !== 'No plan' ? (
+                        <>
+                          <span className="text-xs text-muted-foreground">Used {formatCurrency(customer.walletUsed)}</span>
+                          <span className="text-xs text-muted-foreground">Wallet {formatCurrency(customer.planAmount)}</span>
+                        </>
+                      ) : null}
                     </div>
                   </TableCell>
                   <TableCell className="text-center font-medium tabular-nums text-amber-600">
@@ -312,6 +343,17 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
           </TableBody>
         </Table>
       </div>
+
+      <DataTablePagination
+        page={customerList.page}
+        pageCount={customerList.pageCount}
+        pageSize={customerList.pageSize}
+        pageStart={customerList.pageStart}
+        pageEnd={customerList.pageEnd}
+        totalCount={customerList.totalRecords}
+        onPageChange={customerList.setPage}
+        onPageSizeChange={customerList.setPageSize}
+      />
 
       <Dialog open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
         <DialogContent className="sm:max-w-4xl max-w-[95vw] max-h-[85vh] overflow-auto">

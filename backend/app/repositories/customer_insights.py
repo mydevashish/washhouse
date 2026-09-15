@@ -64,6 +64,7 @@ class CustomerInsightsRepository:
                 LaundryCustomer.city,
                 LaundryCustomer.state,
                 LaundryCustomer.pincode,
+                LaundryCustomer.wallet_balance,
                 User.trust_score,
                 User.fraud_risk_level,
                 func.count(Order.id).label("order_count"),
@@ -98,11 +99,12 @@ class CustomerInsightsRepository:
                 LaundryCustomer.city,
                 LaundryCustomer.state,
                 LaundryCustomer.pincode,
+                LaundryCustomer.wallet_balance,
                 User.trust_score,
                 User.fraud_risk_level,
                 dispute_subq.c.dispute_count,
             )
-            .order_by(func.coalesce(func.sum(Order.total_inr), 0).desc())
+            .order_by(LaundryCustomer.created_at.desc().nulls_last())
         )
         if search and search.strip():
             term = f"%{search.strip()}%"
@@ -136,6 +138,7 @@ class CustomerInsightsRepository:
                     "last_order_at": row.last_order_at,
                     "first_order_at": row.first_order_at,
                     "dispute_count": int(row.dispute_count or 0),
+                    "wallet_balance": int(row.wallet_balance or 0),
                 },
             )
         return result

@@ -19,6 +19,15 @@ export type PartnerCustomerUpdatePayload = {
   gender?: 'male' | 'female' | null;
   notes?: string | null;
 };
+export type PartnerCustomerUpdateByPhonePayload = PartnerCustomerUpdatePayload & {
+  title?: string | null;
+  plan?: 'No plan' | 'Mini Plan' | 'Value Plan' | null;
+  address_line_1?: string | null;
+  address_line_2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+};
 
 export type PartnerCustomerUpdateResult = {
   user_id: string;

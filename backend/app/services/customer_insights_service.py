@@ -209,6 +209,12 @@ class CustomerInsightsService:
             "is_high_risk": row["is_high_risk"],
             "dispute_count": row["dispute_count"],
             "risk_label": row["risk_label"],
+            # Wallet / plan fields
+            "plan_name": row.get("plan_name"),
+            # If a plan exists surface plan_amount_inr; best-effort use wallet_balance when explicit plan amount not stored
+            "plan_amount_inr": (str(row.get("plan_amount_inr")) if row.get("plan_name") and row.get("plan_amount_inr") is not None else (str(int(row.get("wallet_balance"))) if row.get("plan_name") else None)),
+            "wallet_used_inr": (str(0) if row.get("plan_name") else None),
+            "wallet_remaining_inr": (str(int(row.get("wallet_balance"))) if row.get("plan_name") or row.get("wallet_balance") is not None else None),
         }
 
     async def partner_dashboard(self, actor_user_id: UUID, actor_role: str) -> dict:

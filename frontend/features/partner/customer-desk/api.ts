@@ -9,6 +9,7 @@ import type {
   CustomerDeskOrdersPage,
   CustomerDeskProfile,
   PartnerCustomerUpdatePayload,
+  PartnerCustomerUpdateByPhonePayload,
   PartnerCustomerUpdateResult,
 } from '@/features/partner/customer-desk/types';
 
@@ -66,7 +67,7 @@ export async function updatePartnerCustomer(
 /** Update by phone for registered customers without a stable user id in UI. */
 export async function updatePartnerCustomerByPhone(
   phone: string,
-  payload: PartnerCustomerUpdatePayload,
+  payload: PartnerCustomerUpdateByPhonePayload,
 ): Promise<PartnerCustomerUpdateResult> {
   const { data } = await api.patch<ApiEnvelope<PartnerCustomerUpdateResult>>(
     '/partner/customers/by-phone',
