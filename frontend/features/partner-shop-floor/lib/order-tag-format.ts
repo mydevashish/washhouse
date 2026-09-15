@@ -20,7 +20,7 @@ export function getServiceShortCode(value: string): string {
   if (normalized.includes('wash') && normalized.includes('fold')) return 'WF';
   if (normalized.includes('wash') && normalized.includes('iron')) return 'WI';
   if (normalized.includes('dry') && normalized.includes('clean')) return 'DC';
-  if (normalized.includes('press')) return 'P';
+  if (normalized.includes('press')) return 'SP';
 
   if (!normalized) return 'ITEM';
 

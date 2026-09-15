@@ -76,7 +76,7 @@ describe('cloth-wall-qty', () => {
     expect(clothWallPieceCount(lines)).toBe(2);
   });
 
-  it('maps garment catalog lines to garment_item_id payload', () => {
+  it('maps garment catalog lines to garment_item_id payload with precise pricing and override support', () => {
     const items = buildWalkInItemsFromClothWallLines([
       {
         key: 'garment:g1:dry_clean',
@@ -86,9 +86,21 @@ describe('cloth-wall-qty', () => {
         garmentItemId: 'g1',
         process: 'dry_clean',
       },
-    ]);
+      {
+        key: 'garment:g2:press',
+        quantity: 1,
+        unitPriceInr: 80,
+        label: 'Trouser',
+        garmentItemId: 'g2',
+        process: 'press',
+      },
+    ], {
+      'garment:g1:dry_clean': 75,
+      'garment:g2:press': 95,
+    });
     expect(items).toEqual([
-      { garment_item_id: 'g1', process: 'dry_clean', quantity: 2 },
+      { garment_item_id: 'g1', process: 'dry_clean', quantity: 2, unit_price_inr: 75, line_total_inr: 150 },
+      { garment_item_id: 'g2', process: 'press', quantity: 1, unit_price_inr: 95, line_total_inr: 95 },
     ]);
   });
 });

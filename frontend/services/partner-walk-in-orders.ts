@@ -70,7 +70,13 @@ export async function createWalkInOrder(body: {
   notes?: string;
   expected_ready_at?: string;
   coupon_code?: string;
+  discount_inr?: number;
+  pickup_charge_inr?: number;
+  delivery_charge_inr?: number;
+  express_charge_inr?: number;
+  wallet_amount_used_inr?: number;
   advance_paid_inr?: number;
+  payment_method?: string;
 }): Promise<WalkInOrder> {
   const { data } = await api.post<ApiEnvelope<WalkInOrder>>('/partner/walk-in-orders', body);
   return data.data;

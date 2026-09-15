@@ -95,28 +95,50 @@ export function clothWallSubtotalInr(lines: ClothWallLine[]): number {
 /** Map Cloth Wall cart lines to walk-in order API payload items. */
 export function buildWalkInItemsFromClothWallLines(
   lines: ClothWallLine[],
+  rateOverrides: Record<string, number> = {},
 ): WalkInOrderLineItem[] {
-  return lines.map((line) => {
+  const result: WalkInOrderLineItem[] = [];
+
+  for (const line of lines) {
+    const overrideValue = rateOverrides[line.key];
+    const basePrice = Number(line.unitPriceInr ?? 0);
+    const unitPriceInr =
+      typeof overrideValue === 'number' && Number.isFinite(overrideValue)
+        ? Math.max(0, overrideValue)
+        : basePrice;
+    const lineTotalInr = lineAmountInr(unitPriceInr, line.quantity);
+
     if (line.garmentItemId && line.process) {
-      return {
+      result.push({
         garment_item_id: line.garmentItemId,
         process: line.process,
         quantity: line.quantity,
-      };
+        unit_price_inr: unitPriceInr,
+        line_total_inr: lineTotalInr,
+      });
+      continue;
     }
+
     if (line.catalogItemId && line.process) {
-      return {
+      result.push({
         catalog_item_id: line.catalogItemId,
         process: line.process,
         quantity: line.quantity,
-      };
+        unit_price_inr: unitPriceInr,
+        line_total_inr: lineTotalInr,
+      });
+      continue;
     }
+
     if (line.serviceId) {
-      return {
+      result.push({
         service_id: line.serviceId,
         quantity: line.quantity,
-      };
+        unit_price_inr: unitPriceInr,
+        line_total_inr: lineTotalInr,
+      });
     }
-    throw new Error('Cloth wall line is missing a service source');
-  });
+  }
+
+  return result;
 }

@@ -84,48 +84,62 @@ export function PrintOrderTagsView({ orderId }: PrintOrderTagsViewProps) {
     >
       <style>{`
   @media print {
-  @page {
-    size: 58mm auto;
-    margin: 2mm;
+    @page {
+      size: 50.8mm 25.4mm;
+      margin: 0;
+    }
+
+    html,
+    body {
+      width: 50.8mm !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    .no-print {
+      display: none !important;
+    }
+
+    [data-testid="print-order-tags"] {
+      width: 50.8mm !important;
+      max-width: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    .print-tags-sheet {
+      display: block !important;
+      width: 50.8mm !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    .tag-card {
+      box-sizing: border-box !important;
+
+      width: 50.8mm !important;
+      height: 25.4mm !important;
+
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+
+      break-inside: avoid !important;
+      page-break-inside: avoid !important;
+
+      break-after: page !important;
+      page-break-after: always !important;
+    }
+
+    .tag-card:last-child {
+      break-after: auto !important;
+      page-break-after: auto !important;
+    }
   }
-
-  html,
-  body {
-    margin: 0;
-    padding: 0;
-  }
-
-  .no-print {
-    display: none !important;
-  }
-
-  .print-tags-sheet {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 50mm;
-  }
-
-  .tag-card {
-    box-sizing: border-box;
-    width: 50mm;
-    min-height: 25mm;
-    height: auto;
-    overflow: visible;
-
-    margin: 0;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-
-    break-after: page;
-    page-break-after: always;
-  }
-
-  .tag-card:last-child {
-    break-after: auto;
-    page-break-after: auto;
-  }
-}
 `}</style>
       <div className="no-print space-y-3 rounded-2xl border border-border bg-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -166,7 +180,7 @@ export function PrintOrderTagsView({ orderId }: PrintOrderTagsViewProps) {
         </Button> */}
       </div>
 
-      <div className="print-tags-sheet space-y-3 print:space-y-0">
+      <div className="print-tags-sheet space-y-3">
         {payload.tags.filter((tag) => tag.kind !== 'bag_master').map((tag, idx) => {
           const serviceCode = getServiceShortCode(tag.service_name ?? tag.label ?? 'Item');
           const countLabel = getTagCountLabel(tag);

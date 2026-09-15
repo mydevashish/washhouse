@@ -108,7 +108,13 @@ export interface PartnerOrder {
   address_pincode?: string | null;
   subtotal_inr: string;
   delivery_fee_inr: string;
-  discount_inr?: string;
+  pickup_charge_inr?: string | null;
+  delivery_charge_inr?: string | null;
+  express_charge_inr?: string | null;
+  discount_inr?: string | null;
+  wallet_amount_used_inr?: string | null;
+  advance_paid_inr?: string | null;
+  payment_method?: string | null;
   cgst_inr?: string;
   sgst_inr?: string;
   total_inr: string;
@@ -120,6 +126,7 @@ export interface PartnerOrder {
   customer_phone?: string | null;
   customer_id?: string | null;
   order_source?: 'online' | 'walk_in';
+  notes?: string | null;
   items: OrderItem[];
 }
 

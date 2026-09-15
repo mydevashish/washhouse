@@ -263,7 +263,7 @@ function PartnerWalkInOrderWorkspaceContent({
     useState<CustomerDeskProfile | null>(null);
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({
-    title: 'Ms',
+    title: 'Mr',
     name: '',
     phone: '',
     plan: 'No plan',
@@ -319,8 +319,35 @@ function PartnerWalkInOrderWorkspaceContent({
   });
 
   const createCustomerMutation = useMutation({
-    mutationFn: ({ name, phone }: { name: string; phone: string }) =>
-      createPartnerCustomer({ name, phone }),
+    mutationFn: ({
+      name,
+      phone,
+      address_line_1,
+      address_line_2,
+      city,
+      state,
+      pincode,
+      plan,
+    }: {
+      name: string;
+      phone: string;
+      address_line_1?: string;
+      address_line_2?: string;
+      city?: string;
+      state?: string;
+      pincode?: string;
+      plan?: 'No plan' | 'Mini Plan' | 'Value Plan';
+    }) =>
+      createPartnerCustomer({
+        name,
+        phone,
+        address_line_1,
+        address_line_2,
+        city,
+        state,
+        pincode,
+        plan,
+      }),
     onSuccess: (profile) => {
       c.applyCustomerFromSearch(profile);
       setCustomerSearchQuery('');
@@ -377,6 +404,7 @@ function PartnerWalkInOrderWorkspaceContent({
   function openNewCustomerDialog() {
     setNewCustomerForm((prev) => ({
       ...prev,
+      title: 'Mr',
       name: c.customerName.trim(),
       phone: customerPhoneDisplay,
     }));
@@ -402,7 +430,17 @@ function PartnerWalkInOrderWorkspaceContent({
     c.setAddressPincode(newCustomerForm.pincode.trim());
     c.setAddressLine2(newCustomerForm.addressLine2.trim());
     c.setAddressLandmark(newCustomerForm.state.trim());
-    createCustomerMutation.mutate({ name: `${newCustomerForm.title} ${name}`.trim(), phone });
+
+    createCustomerMutation.mutate({
+      name: `${newCustomerForm.title} ${name}`.trim(),
+      phone,
+      address_line_1: newCustomerForm.addressLine1.trim() || undefined,
+      address_line_2: newCustomerForm.addressLine2.trim() || undefined,
+      city: newCustomerForm.city.trim() || undefined,
+      state: newCustomerForm.state.trim() || undefined,
+      pincode: newCustomerForm.pincode.trim() || undefined,
+      plan: newCustomerForm.plan as 'No plan' | 'Mini Plan' | 'Value Plan',
+    });
   }
 
   useEffect(() => {
@@ -1240,9 +1278,9 @@ function PartnerWalkInOrderWorkspaceContent({
                 onChange={(e) => setNewCustomerForm((prev) => ({ ...prev, title: e.target.value }))}
                 className="min-h-9"
               >
+                <option value="Mr">Mr</option>
                 <option value="Ms">Ms</option>
                 <option value="Mrs">Mrs</option>
-                <option value="Mr">Mr</option>
               </Select>
             </div>
             <div className="space-y-1.5">

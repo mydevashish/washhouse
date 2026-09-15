@@ -94,6 +94,43 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
   const printHint = getPrintLifecycleHint(order.status);
   const walkIn = isWalkInOrder(order);
   const serviceGroups = partnerOrderServiceGroups(order.items);
+  const chargeRows = [
+    {
+      label: 'Discount',
+      value: Number(order.discount_inr ?? 0),
+      hide: Number(order.discount_inr ?? 0) <= 0,
+    },
+    {
+      label: 'Pickup charge',
+      value: Number(order.pickup_charge_inr ?? order.delivery_fee_inr ?? 0),
+      hide: Number(order.pickup_charge_inr ?? order.delivery_fee_inr ?? 0) <= 0,
+    },
+    {
+      label: 'Delivery charge',
+      value: Number(order.delivery_charge_inr ?? 0),
+      hide: Number(order.delivery_charge_inr ?? 0) <= 0,
+    },
+    {
+      label: 'Express charge',
+      value: Number(order.express_charge_inr ?? 0),
+      hide: Number(order.express_charge_inr ?? 0) <= 0,
+    },
+    {
+      label: 'Wallet used',
+      value: Number(order.wallet_amount_used_inr ?? 0),
+      hide: Number(order.wallet_amount_used_inr ?? 0) <= 0,
+    },
+    {
+      label: 'Advance paid',
+      value: Number(order.advance_paid_inr ?? 0),
+      hide: Number(order.advance_paid_inr ?? 0) <= 0,
+    },
+    {
+      label: 'Payment method',
+      value: order.payment_method ? order.payment_method.toUpperCase() : '',
+      hide: !order.payment_method,
+    },
+  ].filter((row) => !row.hide);
 
   return (
     <PartnerContent className="space-y-4">
@@ -143,7 +180,12 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
             ) : null}
             <p className="text-muted-foreground">
               Payment:{' '}
-              <span className="font-medium capitalize text-foreground">{order.payment_status}</span>
+              {/* <span className="font-medium capitalize text-foreground">{order.payment_status}</span> */}
+              {pendingInr > 0 ? (
+                <span className="ml-2 font-medium text-amber-600">
+                  Pending {formatInr(pendingInr)}
+                </span>
+              ) : null}
               {partnerOrderHasUnpaidBalance(order) ? (
                 <Badge
                   variant="outline"
@@ -197,37 +239,41 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
                     {order.items.map((item, idx) => {
                       const garments = item.garments?.filter((g) => g.quantity > 0) ?? [];
                       const garmentQty = garments.reduce((sum, g) => sum + g.quantity, 0);
-                      const billedQty =
-                        garments.length > 0 && item.quantity === garmentQty ? 1 : item.quantity;
-                      const rate =
-                        billedQty > 0 ? Number(item.line_total_inr) / billedQty : 0;
+                      const isPieceService = /(dry clean|dryclean|press|steam press)/i.test(
+                        item.service_name,
+                      );
+                      const displayQty = isPieceService ? Math.max(item.quantity, garmentQty) : item.quantity;
+                      const rate = displayQty > 0 ? Number(item.line_total_inr ?? 0) / displayQty : 0;
+                      const showGarmentBreakdown =
+                        garments.length > 0 && !isPieceService && garmentQty > 0 && item.quantity !== garmentQty;
+
                       return (
                         <Fragment key={`${item.service_name}-${idx}`}>
                           <tr>
                             <td className="px-4 py-2 font-medium">{item.service_name}</td>
-                            <td className="px-4 py-2 tabular-nums">{billedQty}</td>
-                            <td className="px-4 py-2 tabular-nums">
-                              {formatInr(rate)}
-                            </td>
+                            <td className="px-4 py-2 tabular-nums">{displayQty}</td>
+                            <td className="px-4 py-2 tabular-nums">{formatInr(rate)}</td>
                             <td className="px-4 py-2 tabular-nums font-medium">
                               {formatInr(Number(item.line_total_inr ?? 0))}
                             </td>
                           </tr>
-                          {garments.map((g) => (
-                            <tr
-                              key={`${item.service_name}-${g.garment_item_id}-${g.garment_name}`}
-                              className="bg-muted/20"
-                            >
-                              <td className="px-4 py-1.5 pl-8 text-sm text-muted-foreground">
-                                {g.garment_name}
-                              </td>
-                              <td className="px-4 py-1.5 tabular-nums text-sm text-muted-foreground">
-                                {g.quantity}
-                              </td>
-                              <td className="px-4 py-1.5 text-sm text-muted-foreground">—</td>
-                              <td className="px-4 py-1.5" />
-                            </tr>
-                          ))}
+                          {showGarmentBreakdown
+                            ? garments.map((g) => (
+                                <tr
+                                  key={`${item.service_name}-${g.garment_item_id}-${g.garment_name}`}
+                                  className="bg-muted/20"
+                                >
+                                  <td className="px-4 py-1.5 pl-8 text-sm text-muted-foreground">
+                                    {g.garment_name}
+                                  </td>
+                                  <td className="px-4 py-1.5 tabular-nums text-sm text-muted-foreground">
+                                    {g.quantity}
+                                  </td>
+                                  <td className="px-4 py-1.5 text-sm text-muted-foreground">—</td>
+                                  <td className="px-4 py-1.5" />
+                                </tr>
+                              ))
+                            : null}
                         </Fragment>
                       );
                     })}
@@ -275,6 +321,18 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
                 <span className="text-muted-foreground">Subtotal</span>
                 <span className="tabular-nums">{formatInr(Number(order.subtotal_inr))}</span>
               </div>
+              {chargeRows.length > 0 ? (
+                <div className="space-y-1.5 border-t border-border/60 pt-2">
+                  {chargeRows.map((row) => (
+                    <div key={row.label} className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">{row.label}</span>
+                      <span className="tabular-nums">
+                        {typeof row.value === 'number' ? formatInr(row.value) : row.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Delivery fee</span>
                 <span className="tabular-nums">{formatInr(Number(order.delivery_fee_inr))}</span>
@@ -290,6 +348,12 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
                 <span className="tabular-nums">{formatInr(Number(order.total_inr))}</span>
               </div>
             </div>
+            {order.notes ? (
+              <div className="space-y-1 border-t border-border/60 pt-3 text-sm">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Notes</p>
+                <p className="text-foreground">{order.notes}</p>
+              </div>
+            ) : null}
             <div className="space-y-2 border-t border-border/60 pt-3">
               <p className="text-xs text-muted-foreground">{printHint}</p>
               <PrintOrderActions

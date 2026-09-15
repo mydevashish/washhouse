@@ -694,6 +694,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   function buildWalkInItems(): WalkInOrderLineItem[] {
     const garmentsByService = new Map<string, { garment_id: string; quantity: number }[]>();
     const standalone: WalkInOrderLineItem[] = [];
+
     for (const line of garmentLines) {
       if (line.serviceId && line.garmentItemId && !line.process) {
         const next = garmentsByService.get(line.serviceId) ?? [];
@@ -701,8 +702,14 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
         garmentsByService.set(line.serviceId, next);
         continue;
       }
-      standalone.push(...buildWalkInItemsFromClothWallLines([line]));
+
+      const mapped = buildWalkInItemsFromClothWallLines([line], lineRateOverrides);
+      const item = mapped[0];
+      if (item) {
+        standalone.push(item);
+      }
     }
+
     const used = new Set<string>();
     const fromServices: WalkInOrderLineItem[] = serviceItems.map((item) => {
       used.add(item.service_id);
@@ -801,7 +808,13 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       notes: buildOrderNotes(),
       expected_ready_at: expectedReadyAt ? `${expectedReadyAt}T12:00:00.000Z` : undefined,
       coupon_code: couponApplied && couponCode.trim() ? couponCode.trim() : undefined,
+      discount_inr: checkoutTotals.discount > 0 ? checkoutTotals.discount : undefined,
+      pickup_charge_inr: checkoutTotals.pickupCharge > 0 ? checkoutTotals.pickupCharge : undefined,
+      delivery_charge_inr: checkoutTotals.deliveryCharge > 0 ? checkoutTotals.deliveryCharge : undefined,
+      express_charge_inr: checkoutTotals.expressCharge > 0 ? checkoutTotals.expressCharge : undefined,
+      wallet_amount_used_inr: walletEnabled && walletAmountUsed > 0 ? walletAmountUsed : undefined,
       advance_paid_inr: advancePaid > 0 ? advancePaid : undefined,
+      payment_method: paymentMethod,
     });
   }
 
