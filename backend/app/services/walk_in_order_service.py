@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import secrets
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -18,10 +19,14 @@ from app.models.enums import (
     GarmentServiceType,
     OrderSource,
     OrderStatus,
+    PaymentMethod,
+    PaymentStatus,
 )
+from app.models.order import Order, OrderItem, OrderItemGarment, OrderStatusEvent
+from app.models.payment import Payment
 from app.models.garment_catalog import LaundryGarmentItem
 from app.models.laundry import LaundryService
-from app.models.order import Order, OrderItem, OrderStatusEvent
+from app.repositories.laundry_customer import LaundryCustomerRepository
 from app.repositories.catalog import CatalogRepository
 from app.repositories.laundry import LaundryRepository
 from app.repositories.order import OrderRepository
@@ -64,6 +69,7 @@ class WalkInOrderService:
         self._platform_catalog = CatalogRepository(session)
         self._users = UserRepository(session)
         self._walk_in = WalkInOrderRepository(session)
+        self._shop_customers = LaundryCustomerRepository(session)
 
     async def create(
         self,
@@ -76,6 +82,8 @@ class WalkInOrderService:
         customer_gender: str | None = None,
         expected_ready_at: datetime | None = None,
         coupon_code: str | None = None,
+        customer_id: UUID | None = None,
+        advance_paid_inr: Decimal | None = None,
     ) -> Order:
         laundry = await self._laundries.get_by_owner(partner_user_id)
         if not laundry:
@@ -86,6 +94,23 @@ class WalkInOrderService:
 
         phone = customer_phone.strip()
         linked_user = await self._users.get_by_phone(phone)
+        shop_customer = None
+        if customer_id is not None:
+            shop_customer = await self._shop_customers.get_by_id(customer_id, laundry.id)
+            if shop_customer is None:
+                raise ValidationError("Customer not found")
+            phone = shop_customer.phone
+            linked_user = (
+                await self._users.get_by_id(shop_customer.user_id) if shop_customer.user_id else linked_user
+            )
+        shop_customer = await self._shop_customers.get_or_create(
+            laundry_id=laundry.id,
+            phone=phone,
+            full_name=customer_name,
+            gender=customer_gender,
+            user_id=linked_user.id if linked_user else (shop_customer.user_id if shop_customer else None),
+            registered_by_user_id=partner_user_id,
+        )
 
         line_items: list[OrderItem] = []
         subtotal = Decimal("0")
@@ -95,17 +120,18 @@ class WalkInOrderService:
                 raise ValidationError("Quantity must be at least 1")
 
             service = await self._resolve_line_service(laundry.id, raw)
-            line_total = (service.price_inr * quantity).quantize(Decimal("0.01"))
+            garments = await self._build_item_garments(laundry.id, raw)
+            unit_price, line_total = self._line_money(service.price_inr, quantity, raw, has_garments=bool(garments))
             subtotal += line_total
-            line_items.append(
-                OrderItem(
-                    service_id=service.id,
-                    service_name=service.name,
-                    quantity=quantity,
-                    unit_price_inr=service.price_inr,
-                    line_total_inr=line_total,
-                ),
+            order_item = OrderItem(
+                service_id=service.id,
+                service_name=service.name,
+                quantity=quantity,
+                unit_price_inr=unit_price,
+                line_total_inr=line_total,
+                garments=garments,
             )
+            line_items.append(order_item)
 
         discount_inr, applied_code = await PartnerCouponService(self._session).resolve_discount(
             partner_user_id,
@@ -116,10 +142,10 @@ class WalkInOrderService:
         taxable = subtotal - discount_inr
         if taxable < Decimal("0"):
             taxable = Decimal("0")
-        half_gst = (taxable * GST_RATE_PERCENT / Decimal("200")).quantize(Decimal("0.01"))
-        cgst = half_gst
-        sgst = half_gst
-        total = (taxable + cgst + sgst).quantize(Decimal("0.01"))
+        # Counter walk-in totals match the create-order UI (no GST on the ticket).
+        cgst = Decimal("0")
+        sgst = Decimal("0")
+        total = taxable.quantize(Decimal("0.01"))
 
         platform = PlatformConfigService(self._session)
         _min_amount, max_amount = await platform.get_order_limits()
@@ -134,12 +160,13 @@ class WalkInOrderService:
         ready_at = self._ensure_aware(expected_ready_at) if expected_ready_at else now + timedelta(days=2)
 
         order = Order(
-            user_id=linked_user.id if linked_user else None,
+            user_id=shop_customer.user_id or (linked_user.id if linked_user else None),
             laundry_id=laundry.id,
+            laundry_customer_id=shop_customer.id,
             address_id=None,
             order_source=OrderSource.walk_in,
-            customer_name=customer_name.strip(),
-            customer_phone=phone,
+            customer_name=shop_customer.full_name,
+            customer_phone=shop_customer.phone,
             partner_notes=self._compose_partner_notes(notes, customer_gender),
             status=OrderStatus.confirmed,
             tracking_code=tracking_code,
@@ -153,7 +180,7 @@ class WalkInOrderService:
             discount_inr=discount_inr,
             coupon_code=applied_code,
             delivery_fee_inr=Decimal("0"),
-            gst_rate=GST_RATE_PERCENT,
+            gst_rate=Decimal("0"),
             cgst_inr=cgst,
             sgst_inr=sgst,
             total_inr=total,
@@ -164,6 +191,25 @@ class WalkInOrderService:
         for item in line_items:
             item.order_id = order.id
             self._session.add(item)
+
+        advance = Decimal(str(advance_paid_inr or 0)).quantize(Decimal("0.01"))
+        if advance < 0:
+            advance = Decimal("0")
+        if advance > total:
+            advance = total
+        if advance > 0:
+            paid = advance >= total
+            order.payment_status = PaymentStatus.paid if paid else PaymentStatus.pending_cod
+            order.payment_method = PaymentMethod.cod
+            self._session.add(
+                Payment(
+                    order_id=order.id,
+                    amount_inr=advance,
+                    status=PaymentStatus.paid if paid else PaymentStatus.pending_cod,
+                    method=PaymentMethod.cod,
+                    metadata_json=json.dumps({"advance_inr": str(advance)}),
+                ),
+            )
 
         event = OrderStatusEvent(
             order_id=order.id,
@@ -241,6 +287,60 @@ class WalkInOrderService:
         if not service or not service.is_active or service.catalog_status != "active":
             raise ValidationError("One or more services are invalid or unavailable")
         return service
+
+    @staticmethod
+    def _line_money(
+        catalog_price: Decimal,
+        quantity: int,
+        raw: dict[str, Any],
+        *,
+        has_garments: bool,
+    ) -> tuple[Decimal, Decimal]:
+        explicit_total = raw.get("line_total_inr")
+        explicit_unit = raw.get("unit_price_inr")
+        if explicit_total is not None and str(explicit_total) != "":
+            line_total = Decimal(str(explicit_total)).quantize(Decimal("0.01"))
+            unit = (line_total / quantity).quantize(Decimal("0.01")) if quantity else line_total
+            return unit, line_total
+        if explicit_unit is not None and str(explicit_unit) != "":
+            unit = Decimal(str(explicit_unit)).quantize(Decimal("0.01"))
+            return unit, (unit * quantity).quantize(Decimal("0.01"))
+        if has_garments:
+            # Do not treat garment piece-count as kg. Charge the catalog rate once.
+            unit = catalog_price.quantize(Decimal("0.01"))
+            return unit, unit
+        unit = catalog_price.quantize(Decimal("0.01"))
+        return unit, (unit * quantity).quantize(Decimal("0.01"))
+
+    async def _build_item_garments(self, laundry_id: UUID, raw: dict[str, Any]) -> list[OrderItemGarment]:
+        rows: list[OrderItemGarment] = []
+        nested = raw.get("garments") or []
+        for entry in nested:
+            garment_id = entry.get("garment_id") or entry.get("garment_item_id")
+            if garment_id is None:
+                continue
+            item = await self._garment_catalog.get(UUID(str(garment_id)), laundry_id)
+            if not item or not item.is_visible:
+                raise ValidationError("One or more garments are invalid or unavailable")
+            rows.append(
+                OrderItemGarment(
+                    garment_item_id=item.id,
+                    garment_name=item.name,
+                    quantity=int(entry.get("quantity") or 1),
+                ),
+            )
+        garment_item_id = raw.get("garment_item_id")
+        if garment_item_id is not None and not nested:
+            item = await self._garment_catalog.get(UUID(str(garment_item_id)), laundry_id)
+            if item:
+                rows.append(
+                    OrderItemGarment(
+                        garment_item_id=item.id,
+                        garment_name=item.name,
+                        quantity=int(raw.get("quantity") or 1),
+                    ),
+                )
+        return rows
 
     async def _resolve_catalog_service(
         self,

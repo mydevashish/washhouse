@@ -50,7 +50,10 @@ import {
 import type { AssistedOrderCreateResult } from '@/features/partner/customer-desk/types';
 import { guestDeskProfile, type CustomerDeskProfile } from '@/features/partner/customer-desk/types';
 import type { PartnerCustomerGender } from '@/features/partner/components/partner-customer-gender-field';
-import { usePartnerAnalytics, usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
+import {
+  usePartnerAnalytics,
+  usePartnerQueriesEnabled,
+} from '@/features/partner/hooks/use-partner-operations';
 import { queryKeys } from '@/lib/query-keys';
 import { useVisibleGarmentCatalogItems } from '@/features/partner/garment-catalog/hooks/use-visible-garment-catalog-items';
 import { listAllPartnerServices } from '@/services/partner-service-catalog';
@@ -108,6 +111,7 @@ function invalidatePartnerOrderQueries(queryClient: ReturnType<typeof useQueryCl
   void queryClient.invalidateQueries({ queryKey: ['partner-analytics-overview'] });
   void queryClient.invalidateQueries({ queryKey: queryKeys.partnerOperationsDashboard() });
   void queryClient.invalidateQueries({ queryKey: queryKeys.partnerCustomerInsightsDashboard() });
+  void queryClient.invalidateQueries({ queryKey: ['partner-customer-insights'] });
 }
 
 export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComposerOptions = {}) {
@@ -142,9 +146,8 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   const [tileProcess, setTileProcess] = useState<Record<string, ClothWallProcess>>({});
   const [category, setCategory] = useState<ClothWallCategoryChip | 'all'>('all');
   const [createdOrder, setCreatedOrder] = useState<WalkInOrder | null>(null);
-  const [createdDoorstepOrder, setCreatedDoorstepOrder] = useState<AssistedOrderCreateResult | null>(
-    null,
-  );
+  const [createdDoorstepOrder, setCreatedDoorstepOrder] =
+    useState<AssistedOrderCreateResult | null>(null);
   const [addressLine1, setAddressLine1] = useState('');
   const [addressLine2, setAddressLine2] = useState('');
   const [addressCity, setAddressCity] = useState('');
@@ -222,11 +225,11 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     walkInLookupPhone ? { phone: walkInLookupPhone } : null,
     Boolean(
       lookupActive &&
-        walkInLookupPhone &&
-        !createdOrder &&
-        !createdDoorstepOrder &&
-        !lookupSuppressed &&
-        (!lookupOnlyOnCustomerStep || step === 'customer'),
+      walkInLookupPhone &&
+      !createdOrder &&
+      !createdDoorstepOrder &&
+      !lookupSuppressed &&
+      (!lookupOnlyOnCustomerStep || step === 'customer'),
     ),
   );
 
@@ -283,14 +286,11 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
 
   const walkInInsightEnabled = Boolean(
     walkInSnapshotProfile &&
-      (walkInSnapshotProfile.user_id ||
-        (walkInLookupPhone && isValidIndianMobileE164(walkInLookupPhone))),
+    (walkInSnapshotProfile.user_id ||
+      (walkInLookupPhone && isValidIndianMobileE164(walkInLookupPhone))),
   );
 
-  const walkInInsightQ = usePartnerCustomerInsightRow(
-    walkInSnapshotProfile,
-    walkInInsightEnabled,
-  );
+  const walkInInsightQ = usePartnerCustomerInsightRow(walkInSnapshotProfile, walkInInsightEnabled);
 
   const createMutation = useMutation({
     mutationFn: createWalkInOrder,
@@ -395,15 +395,10 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   }
 
   function setLineQty(lineKey: string, quantity: number) {
-
     const qty = roundClothWallQty(quantity);
 
     setGarmentLines((prev) => {
-      const next = prev.map((l) =>
-        l.key === lineKey
-          ? { ...l, quantity: qty }
-          : l,
-      );
+      const next = prev.map((l) => (l.key === lineKey ? { ...l, quantity: qty } : l));
       return next;
     });
   }
@@ -468,7 +463,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
       setGarmentLines((prev) => {
         // When decrementing from the global cloth wall, prefer the non-service-scoped line
         // so we don't accidentally decrement a per-weight line.
-        const target = prev.find((l) => l.key === key && (l.serviceId == null));
+        const target = prev.find((l) => l.key === key && l.serviceId == null);
         if (!target) return prev;
         return decrementClothWallQty(prev, target.key);
       });
@@ -483,8 +478,7 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
         catalogItemId: tile.catalogItemId,
         garmentItemId: tile.garmentItemId,
         serviceId: tile.serviceId,
-        process:
-          tile.source === 'catalog' || tile.source === 'garment' ? process : undefined,
+        process: tile.source === 'catalog' || tile.source === 'garment' ? process : undefined,
       }),
     );
   }
@@ -535,18 +529,18 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     const garmentRows: PartnerNewOrderLineRow[] = garmentLines
       .filter((line) => line.serviceId == null)
       .map((line) => {
-      const key = line.key;
-      const processName = line.process === 'press' ? 'Press' : 'Dry clean';
-      const rate = lineRateOverrides[key] ?? line.unitPriceInr;
-      return {
-        service_id: key,
-        quantity: line.quantity,
-        name: `${line.label} — ${processName}`,
-        rate,
-        amount: lineAmountInr(rate, line.quantity),
-        kind: line.process === 'press' ? 'press' : 'dry_clean',
-      };
-    });
+        const key = line.key;
+        const processName = line.process === 'press' ? 'Press' : 'Dry clean';
+        const rate = lineRateOverrides[key] ?? line.unitPriceInr;
+        return {
+          service_id: key,
+          quantity: line.quantity,
+          name: `${line.label} — ${processName}`,
+          rate,
+          amount: lineAmountInr(rate, line.quantity),
+          kind: line.process === 'press' ? 'press' : 'dry_clean',
+        };
+      });
 
     return [...serviceRows, ...garmentRows];
   }, [garmentLines, lineRateOverrides, serviceItems, services]);
@@ -600,7 +594,10 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     const discount =
       discountType === 'flat'
         ? Math.min(subtotal, Math.round(discountValue))
-        : Math.min(subtotal, Math.round((subtotal * Math.min(100, Number(discountValue || 0))) / 100));
+        : Math.min(
+            subtotal,
+            Math.round((subtotal * Math.min(100, Number(discountValue || 0))) / 100),
+          );
 
     setCouponDiscountInr(discount);
     setCouponApplied(true);
@@ -695,13 +692,38 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   }
 
   function buildWalkInItems(): WalkInOrderLineItem[] {
-    return [
-      ...serviceItems.map((item) => ({
+    const garmentsByService = new Map<string, { garment_id: string; quantity: number }[]>();
+    const standalone: WalkInOrderLineItem[] = [];
+    for (const line of garmentLines) {
+      if (line.serviceId && line.garmentItemId && !line.process) {
+        const next = garmentsByService.get(line.serviceId) ?? [];
+        next.push({ garment_id: line.garmentItemId, quantity: line.quantity });
+        garmentsByService.set(line.serviceId, next);
+        continue;
+      }
+      standalone.push(...buildWalkInItemsFromClothWallLines([line]));
+    }
+    const used = new Set<string>();
+    const fromServices: WalkInOrderLineItem[] = serviceItems.map((item) => {
+      used.add(item.service_id);
+      const row = lineRows.find((r) => r.service_id === `service:${item.service_id}`);
+      return {
         service_id: item.service_id,
         quantity: item.quantity,
-      })),
-      ...buildWalkInItemsFromClothWallLines(garmentLines),
-    ];
+        unit_price_inr: row?.rate,
+        line_total_inr: row?.amount,
+        garments: garmentsByService.get(item.service_id) ?? [],
+      };
+    });
+    for (const [serviceId, garments] of garmentsByService.entries()) {
+      if (used.has(serviceId)) continue;
+      fromServices.push({
+        service_id: serviceId,
+        quantity: 1,
+        garments,
+      });
+    }
+    return [...fromServices, ...standalone];
   }
 
   function validateForSubmit(): boolean {
@@ -722,7 +744,12 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
   }
 
   function submitOrder() {
-    if (createdOrder || createdDoorstepOrder || createMutation.isPending || createDoorstepMutation.isPending) {
+    if (
+      createdOrder ||
+      createdDoorstepOrder ||
+      createMutation.isPending ||
+      createDoorstepMutation.isPending
+    ) {
       return;
     }
     if (!validateForSubmit()) return;
@@ -766,12 +793,15 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
     }
 
     createMutation.mutate({
+      customer_id: walkInSnapshotProfile?.customer_id || undefined,
       customer_name: customerName.trim(),
       customer_phone: e164,
+      customer_gender: customerGender ?? undefined,
       items: buildWalkInItems(),
       notes: buildOrderNotes(),
       expected_ready_at: expectedReadyAt ? `${expectedReadyAt}T12:00:00.000Z` : undefined,
       coupon_code: couponApplied && couponCode.trim() ? couponCode.trim() : undefined,
+      advance_paid_inr: advancePaid > 0 ? advancePaid : undefined,
     });
   }
 
@@ -814,7 +844,8 @@ export function usePartnerWalkInOrderComposer(options: UsePartnerWalkInOrderComp
         subtotal: estimatedSubtotal,
         couponApplied,
         // normalize discountType so we don't pass 'none' where computePartnerCheckoutTotals expects undefined
-        couponDiscountType: discountType === 'none' ? undefined : (discountType as 'percent' | 'flat'),
+        couponDiscountType:
+          discountType === 'none' ? undefined : (discountType as 'percent' | 'flat'),
         couponDiscountInr,
         discountType,
         discountValue,

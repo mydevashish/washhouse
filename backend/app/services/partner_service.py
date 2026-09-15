@@ -14,6 +14,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.exceptions import NotFoundError
 from app.models.enums import OrderSource, OrderStatus, PaymentMethod, PaymentStatus
+from app.models.laundry_customer import LaundryCustomer
 from app.models.order import Order, OrderInventory, OrderItem
 from app.models.partner_staff import PartnerStaff
 from app.models.user import User
@@ -1237,16 +1238,32 @@ class PartnerService:
         laundry_ids = await self._laundry_ids_for_partner(partner_user_id)
         result = await self._session.execute(
             select(
-                Order.user_id,
-                User.full_name,
+                LaundryCustomer.id,
+                LaundryCustomer.user_id,
+                LaundryCustomer.full_name,
+                LaundryCustomer.phone,
                 func.count(Order.id).label("order_count"),
                 func.coalesce(func.sum(Order.total_inr), 0).label("total_spent"),
                 func.max(Order.created_at).label("last_order_at"),
             )
-            .join(User, User.id == Order.user_id)
-            .where(Order.laundry_id.in_(laundry_ids), Order.deleted_at.is_(None))
-            .group_by(Order.user_id, User.full_name)
-            .order_by(func.max(Order.created_at).desc()),
+            .outerjoin(
+                Order,
+                and_(
+                    Order.laundry_customer_id == LaundryCustomer.id,
+                    Order.deleted_at.is_(None),
+                ),
+            )
+            .where(
+                LaundryCustomer.laundry_id.in_(laundry_ids),
+                LaundryCustomer.deleted_at.is_(None),
+            )
+            .group_by(
+                LaundryCustomer.id,
+                LaundryCustomer.user_id,
+                LaundryCustomer.full_name,
+                LaundryCustomer.phone,
+            )
+            .order_by(func.max(Order.created_at).desc().nulls_last()),
         )
         rows = []
         for row in result.all():
@@ -1254,8 +1271,10 @@ class PartnerService:
             last_at = row.last_order_at
             rows.append(
                 {
-                    "user_id": row.user_id,
+                    "customer_id": row.id,
+                    "user_id": row.user_id or row.id,
                     "name": row.full_name,
+                    "phone": row.phone,
                     "order_count": int(row.order_count),
                     "total_spent_inr": str(total),
                     "last_order_at": last_at.isoformat() if last_at else None,
@@ -1296,8 +1315,9 @@ class PartnerService:
 
         laundry_ids = await self._laundry_ids_for_partner(partner_user_id)
         stmt = (
-            select(Order, User.full_name)
+            select(Order, User.full_name, LaundryCustomer.full_name)
             .outerjoin(User, User.id == Order.user_id)
+            .outerjoin(LaundryCustomer, LaundryCustomer.id == Order.laundry_customer_id)
             .where(Order.laundry_id.in_(laundry_ids), Order.deleted_at.is_(None))
         )
 
@@ -1385,6 +1405,8 @@ class PartnerService:
                 Order.customer_name.ilike(term),
                 Order.customer_phone.ilike(term),
                 User.full_name.ilike(term),
+                LaundryCustomer.full_name.ilike(term),
+                LaundryCustomer.phone.ilike(term),
                 Order.token_code.ilike(term),
             ]
             search_digits = re.sub(r"\D", "", raw)
@@ -1407,7 +1429,7 @@ class PartnerService:
             "tracking_code": Order.tracking_code,
             "status": Order.status,
             "total_inr": Order.total_inr,
-            "customer_name": func.coalesce(User.full_name, Order.customer_name),
+            "customer_name": func.coalesce(LaundryCustomer.full_name, User.full_name, Order.customer_name),
         }
         stmt = apply_sort(
             stmt,
@@ -1420,13 +1442,13 @@ class PartnerService:
         count_stmt = select(func.count()).select_from(stmt.order_by(None).subquery())
         total = int(await self._session.scalar(count_stmt) or 0)
         result = await self._session.execute(
-            stmt.options(selectinload(Order.items))
+            stmt.options(selectinload(Order.items).selectinload(OrderItem.garments))
             .offset(params.offset)
             .limit(params.page_size),
         )
         rows: list[tuple[Order, str]] = []
-        for order, user_name in result.all():
-            display_name = user_name or order.customer_name or "Walk-in customer"
+        for order, user_name, shop_name in result.all():
+            display_name = shop_name or user_name or order.customer_name or "Walk-in customer"
             rows.append((order, display_name))
 
         return build_paginated_response(

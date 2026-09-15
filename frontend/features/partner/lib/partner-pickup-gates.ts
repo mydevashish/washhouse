@@ -6,7 +6,13 @@ export type PickupGateContext = {
   hasInventory: boolean;
 };
 
-type PickupGateOrder = Pick<PartnerOrder, 'status' | 'order_source'>;
+type PickupGateOrder = Pick<PartnerOrder, 'status' | 'order_source'> & {
+  items?: PartnerOrder['items'];
+};
+
+export function orderHasLineGarments(order: { items?: PartnerOrder['items'] }): boolean {
+  return (order.items ?? []).some((item) => (item.garments?.length ?? 0) > 0);
+}
 
 /** Doorstep orders need pickup photos before picked_up. Walk-in never needs photos. */
 export function needsPickupEvidence(order: PickupGateOrder): boolean {
@@ -14,14 +20,12 @@ export function needsPickupEvidence(order: PickupGateOrder): boolean {
 }
 
 /**
- * Inventory is required before processing starts:
- * - Doorstep: at pickup_assigned → picked_up
- * - Walk-in counter: at confirmed → washing (skips photos)
+ * Inventory is required before processing starts unless garments were already
+ * recorded on the order lines (walk-in / counter intake).
  */
 export function needsPickupInventory(order: PickupGateOrder): boolean {
-  if (isWalkInOrder(order)) {
-    return order.status === 'confirmed';
-  }
+  if (isWalkInOrder(order)) return false;
+  if (orderHasLineGarments(order)) return false;
   return order.status === 'pickup_assigned';
 }
 

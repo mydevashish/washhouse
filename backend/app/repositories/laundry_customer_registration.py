@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.enums import OrderStatus, UserRole
 from app.models.laundry_customer_registration import LaundryCustomerRegistration
+from app.models.laundry_customer import LaundryCustomer
 from app.models.order import Order
 from app.models.user import User
 
@@ -123,6 +124,16 @@ class LaundryCustomerRegistrationRepository:
             .correlate(User)
             .exists()
         )
+        has_shop_customer = (
+            select(LaundryCustomer.id)
+            .where(
+                LaundryCustomer.laundry_id == laundry_id,
+                LaundryCustomer.deleted_at.is_(None),
+                (LaundryCustomer.user_id == User.id) | (LaundryCustomer.phone == User.phone),
+            )
+            .correlate(User)
+            .exists()
+        )
         stmt = (
             select(
                 User.id.label("user_id"),
@@ -141,6 +152,7 @@ class LaundryCustomerRegistrationRepository:
                 User.deleted_at.is_(None),
                 User.role == UserRole.customer,
                 ~has_order,
+                ~has_shop_customer,
             )
         )
         if search and search.strip():
@@ -181,6 +193,16 @@ class LaundryCustomerRegistrationRepository:
             .correlate(User)
             .exists()
         )
+        has_shop_customer = (
+            select(LaundryCustomer.id)
+            .where(
+                LaundryCustomer.laundry_id == laundry_id,
+                LaundryCustomer.deleted_at.is_(None),
+                (LaundryCustomer.user_id == User.id) | (LaundryCustomer.phone == User.phone),
+            )
+            .correlate(User)
+            .exists()
+        )
         stmt = (
             select(LaundryCustomerRegistration.id)
             .join(User, User.id == LaundryCustomerRegistration.user_id)
@@ -189,6 +211,7 @@ class LaundryCustomerRegistrationRepository:
                 User.deleted_at.is_(None),
                 User.role == UserRole.customer,
                 ~has_order,
+                ~has_shop_customer,
             )
         )
         if search and search.strip():

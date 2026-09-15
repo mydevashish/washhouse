@@ -261,8 +261,10 @@ class PartnerAnalyticsDashboardResponse(BaseModel):
 
 
 class PartnerCustomerSummary(BaseModel):
-    user_id: UUID
+    customer_id: UUID | None = None
+    user_id: UUID | None = None
     name: str
+    phone: str | None = None
     order_count: int
     total_spent_inr: str
     last_order_at: str | None
@@ -273,6 +275,13 @@ class PartnerCustomerCreateRequest(BaseModel):
 
     name: str = Field(min_length=1, max_length=200)
     phone: str = Field(max_length=20)
+    title: str | None = Field(default=None, max_length=10)
+    plan_name: str | None = Field(default=None, max_length=80)
+    address_line1: str | None = Field(default=None, max_length=255)
+    address_line2: str | None = Field(default=None, max_length=255)
+    city: str | None = Field(default=None, max_length=100)
+    state: str | None = Field(default=None, max_length=100)
+    pincode: str | None = Field(default=None, pattern=r"^\d{6}$")
 
     @field_validator("phone")
     @classmethod
@@ -311,6 +320,7 @@ class PartnerCustomerUpdateRequest(BaseModel):
 
 class PartnerCustomerUpdateResponse(BaseModel):
     user_id: UUID
+    customer_id: UUID | None = None
     name: str
     phone: str | None
     email: str | None = None
@@ -339,14 +349,19 @@ class PartnerOrderResponse(BaseModel):
     address_city: str | None = None
     address_pincode: str | None = None
     subtotal_inr: Decimal
+    discount_inr: Decimal = Decimal("0")
     delivery_fee_inr: Decimal
     cgst_inr: Decimal
     sgst_inr: Decimal
     total_inr: Decimal
+    ticket_total_inr: str = Field(
+        description="Amount shown on the partner list (walk-in ticket without GST; online = total_inr)",
+    )
     paid_inr: str = Field(description="Captured payments + COD advance (decimal string)")
-    pending_inr: str = Field(description="max(0, total_inr - paid_inr) (decimal string)")
+    pending_inr: str = Field(description="max(0, ticket_total_inr - paid_inr) (decimal string)")
     payment_status: str
     customer_name: str
     customer_phone: str | None = None
+    customer_id: UUID | None = None
     order_source: OrderSource = OrderSource.online
     items: list[OrderItemResponse] = Field(default_factory=list)

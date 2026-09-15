@@ -416,6 +416,9 @@ class OrderService:
         return order
 
     async def _require_recorded_inventory(self, order_id: UUID, *, action_phrase: str) -> None:
+        order = await self._orders.get_by_id(order_id)
+        if order and any(item.garments for item in order.items):
+            return
         if not await InventoryVerificationService(self._session).has_recorded_inventory(order_id):
             raise ValidationError(f"Record inventory before {action_phrase}")
 

@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import noload, selectinload
 
-from app.models.order import Order, OrderStatusEvent
+from app.models.order import Order, OrderItem, OrderStatusEvent
 
 
 class OrderRepository:
@@ -28,7 +28,10 @@ class OrderRepository:
         result = await self._session.execute(
             select(Order)
             .where(Order.id == order_id, Order.deleted_at.is_(None))
-            .options(selectinload(Order.items), selectinload(Order.events)),
+            .options(
+                selectinload(Order.items).selectinload(OrderItem.garments),
+                selectinload(Order.events),
+            ),
         )
         return result.scalar_one_or_none()
 

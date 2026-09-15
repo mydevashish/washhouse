@@ -82,8 +82,10 @@ export interface PartnerStaff {
 }
 
 export interface PartnerCustomer {
+  customer_id?: string | null;
   user_id: string;
   name: string;
+  phone?: string | null;
   order_count: number;
   total_spent_inr: string;
   last_order_at: string | null;
@@ -106,14 +108,17 @@ export interface PartnerOrder {
   address_pincode?: string | null;
   subtotal_inr: string;
   delivery_fee_inr: string;
-  // cgst_inr: string;
-  // sgst_inr: string;
+  discount_inr?: string;
+  cgst_inr?: string;
+  sgst_inr?: string;
   total_inr: string;
+  ticket_total_inr?: string;
   paid_inr: string;
   pending_inr: string;
   payment_status: string;
   customer_name: string;
   customer_phone?: string | null;
+  customer_id?: string | null;
   order_source?: 'online' | 'walk_in';
   items: OrderItem[];
 }

@@ -30,7 +30,8 @@ from app.models.inventory_verification import (
 )
 from app.models.catalog import LaundryItemPrice, PlatformCatalogItem
 from app.models.garment_catalog import LaundryGarmentItem, LaundryGarmentServiceRate
-from app.models.laundry import Laundry, LaundryService
+from app.models.laundry import Laundry, LaundryService, LaundryServiceGarment
+from app.models.laundry_customer import LaundryCustomer
 from app.models.laundry_customer_registration import LaundryCustomerRegistration
 from app.models.storefront import LaundryStorefront
 from app.models.loyalty import Coupon, LoyaltyAccount, ReferralCode
@@ -41,7 +42,7 @@ from app.models.marketing import (
     MarketingTestimonial,
 )
 from app.models.notification import Notification
-from app.models.order import Order, OrderInventory, OrderItem, OrderStatusEvent
+from app.models.order import Order, OrderInventory, OrderItem, OrderItemGarment, OrderStatusEvent
 from app.models.order_task_assignment import OrderTaskAssignment
 from app.models.pickup_evidence import PickupEvidencePhoto
 from app.models.otp_code import OtpCode
@@ -79,7 +80,9 @@ __all__ = [
     "ComplaintStatusEvent",
     "Coupon",
     "Laundry",
+    "LaundryCustomer",
     "LaundryCustomerRegistration",
+    "LaundryServiceGarment",
     "LaundryGarmentItem",
     "LaundryGarmentServiceRate",
     "LaundryItemPrice",
@@ -102,6 +105,7 @@ __all__ = [
     "Order",
     "OrderInventory",
     "OrderItem",
+    "OrderItemGarment",
     "OrderStatusEvent",
     "PickupEvidencePhoto",
     "OtpCode",

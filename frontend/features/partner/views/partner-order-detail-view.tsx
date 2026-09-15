@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Fragment } from 'react';
 
 import { QueryErrorState } from '@/components/feedback/query-error-state';
 import { Button } from '@/components/ui/button';
@@ -30,10 +31,12 @@ import {
   usePartnerQueriesEnabled,
 } from '@/features/partner/hooks/use-partner-operations';
 import { formatInr } from '@/features/discover/detail/order-pricing';
+import { partnerOrderServiceGroups } from '@/features/partner/lib/partner-derive';
 import {
   partnerOrderHasUnpaidBalance,
   partnerOrderPaidInr,
   partnerOrderPendingInr,
+  partnerOrderTicketTotalInr,
 } from '@/features/partner/lib/partner-order-payment';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { queryKeys } from '@/lib/query-keys';
@@ -86,9 +89,11 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
   // const tax = Number(order.cgst_inr) + Number(order.sgst_inr);
   const paidInr = partnerOrderPaidInr(order);
   const pendingInr = partnerOrderPendingInr(order);
+  const ticketTotal = partnerOrderTicketTotalInr(order);
   const printEmphasis = getPrintLifecycleEmphasis(order.status);
   const printHint = getPrintLifecycleHint(order.status);
   const walkIn = isWalkInOrder(order);
+  const serviceGroups = partnerOrderServiceGroups(order.items);
 
   return (
     <PartnerContent className="space-y-4">
@@ -189,22 +194,43 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {order.items.map((item, idx) => (
-                      <tr key={`${item.service_name}-${idx}`}>
-                        <td className="px-4 py-2 font-medium">{item.service_name}</td>
-                        <td className="px-4 py-2 tabular-nums">{item.quantity}</td>
-                        <td className="px-4 py-2 tabular-nums">
-                          {formatInr(
-                            item.quantity > 0
-                              ? Number(item.line_total_inr) / item.quantity
-                              : 0,
-                          )}
-                        </td>
-                        <td className="px-4 py-2 tabular-nums font-medium">
-                          {formatInr(Number(item.line_total_inr ?? 0))}
-                        </td>
-                      </tr>
-                    ))}
+                    {order.items.map((item, idx) => {
+                      const garments = item.garments?.filter((g) => g.quantity > 0) ?? [];
+                      const garmentQty = garments.reduce((sum, g) => sum + g.quantity, 0);
+                      const billedQty =
+                        garments.length > 0 && item.quantity === garmentQty ? 1 : item.quantity;
+                      const rate =
+                        billedQty > 0 ? Number(item.line_total_inr) / billedQty : 0;
+                      return (
+                        <Fragment key={`${item.service_name}-${idx}`}>
+                          <tr>
+                            <td className="px-4 py-2 font-medium">{item.service_name}</td>
+                            <td className="px-4 py-2 tabular-nums">{billedQty}</td>
+                            <td className="px-4 py-2 tabular-nums">
+                              {formatInr(rate)}
+                            </td>
+                            <td className="px-4 py-2 tabular-nums font-medium">
+                              {formatInr(Number(item.line_total_inr ?? 0))}
+                            </td>
+                          </tr>
+                          {garments.map((g) => (
+                            <tr
+                              key={`${item.service_name}-${g.garment_item_id}-${g.garment_name}`}
+                              className="bg-muted/20"
+                            >
+                              <td className="px-4 py-1.5 pl-8 text-sm text-muted-foreground">
+                                {g.garment_name}
+                              </td>
+                              <td className="px-4 py-1.5 tabular-nums text-sm text-muted-foreground">
+                                {g.quantity}
+                              </td>
+                              <td className="px-4 py-1.5 text-sm text-muted-foreground">—</td>
+                              <td className="px-4 py-1.5" />
+                            </tr>
+                          ))}
+                        </Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -282,6 +308,8 @@ export function PartnerOrderDetailView({ orderId }: PartnerOrderDetailViewProps)
         <div className="max-w-xl">
           <PartnerOrderCard
             order={order}
+            compact
+            className="border-0 shadow-none ring-0"
             onAccept={() => acceptMutation.mutate(order.id)}
             onReject={() => rejectMutation.mutate(order.id)}
             onAdvance={() => advanceOrder(order.id, order.status, order.order_source)}

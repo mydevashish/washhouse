@@ -109,5 +109,26 @@ describe('PartnerOrderCard pickup gates', () => {
       /record item inventory before continuing/i,
     );
     expect(screen.queryByText(/upload pickup photos/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId('inventory-form')).toBeInTheDocument();
+  });
+
+  it('replaces inventory with garments when lines already have garments', async () => {
+    renderCard({
+      ...baseOrder,
+      status: 'confirmed',
+      order_source: 'walk_in',
+      items: [
+        {
+          service_name: 'Wash & Fold',
+          quantity: 1,
+          line_total_inr: '80.00',
+          garments: [{ garment_item_id: 'g1', garment_name: 'Shirt', quantity: 2 }],
+        },
+      ],
+    });
+
+    expect(await screen.findByTestId('partner-order-garment-breakdown')).toHaveTextContent('Shirt');
+    expect(screen.queryByTestId('inventory-form')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('partner-pickup-blocker')).not.toBeInTheDocument();
   });
 });

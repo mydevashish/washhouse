@@ -43,6 +43,15 @@ class OrderTagsService:
         self._laundries = LaundryRepository(session)
         self._tokens = ColorTokenService(session)
 
+    @staticmethod
+    def _resolve_service_quantity(item: object) -> int:
+        garments = list(getattr(item, "garments", None) or [])
+        if garments:
+            total = sum(int(getattr(g, "quantity", 0) or 0) for g in garments if int(getattr(g, "quantity", 0) or 0) > 0)
+            if total > 0:
+                return total
+        return max(1, int(getattr(item, "quantity", 0) or 1))
+
     async def get_tags_for_partner(
         self,
         partner_user_id: UUID,
@@ -68,7 +77,7 @@ class OrderTagsService:
             raise NotFoundError("Order has no color token")
 
         items = list(order.items or [])
-        piece_count = sum(int(i.quantity) for i in items)
+        piece_count = sum(OrderTagsService._resolve_service_quantity(item) for item in items)
         tags: list[OrderTagLine] = [
             OrderTagLine(
                 kind=TagKind.bag_master,
@@ -79,25 +88,23 @@ class OrderTagsService:
         ]
 
         if per_piece:
-            running = 0
             for item in items:
-                qty = int(item.quantity)
-                for _ in range(qty):
-                    running += 1
+                qty = OrderTagsService._resolve_service_quantity(item)
+                for piece_index in range(1, qty + 1):
                     tags.append(
                         OrderTagLine(
                             kind=TagKind.item,
                             label=item.service_name,
                             service_name=item.service_name,
                             quantity=1,
-                            qty_index=f"{running}/{piece_count}",
-                            piece_index=running,
-                            piece_total=piece_count,
+                            qty_index=f"{piece_index}/{qty}",
+                            piece_index=piece_index,
+                            piece_total=qty,
                         ),
                     )
         else:
             for item in items:
-                qty = int(item.quantity)
+                qty = OrderTagsService._resolve_service_quantity(item)
                 tags.append(
                     OrderTagLine(
                         kind=TagKind.item,

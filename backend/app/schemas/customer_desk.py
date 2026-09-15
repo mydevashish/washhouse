@@ -17,8 +17,16 @@ class CustomerDeskProfile(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     user_id: UUID | None = None
+    customer_id: UUID | None = None
     name: str | None = None
     phone: str
+    title: str | None = None
+    plan_name: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    state: str | None = None
+    pincode: str | None = None
     email: str | None = None
     gender: str | None = None
     notes: str | None = None

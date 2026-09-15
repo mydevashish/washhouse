@@ -98,6 +98,71 @@ async def test_create_walk_in_order_rejects_invalid_phone(
 
 
 @patch("app.tasks.order_notifications.send_order_status_whatsapp")
+async def test_create_walk_in_order_accepts_counter_price_and_advance(
+    mock_whatsapp_task: MagicMock,
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """Counter-calculated fields are allowed, while the API still validates the order."""
+    mock_whatsapp_task.delay = MagicMock()
+    _partner, _laundry, service, token = await _seed_partner_laundry(db_session)
+
+    response = await client.post(
+        "/api/v1/partner/walk-in-orders",
+        headers=_partner_headers(token),
+        json={
+            "customer_name": "Ms Ramu Mali",
+            "customer_phone": "+918989898989",
+            "items": [
+                {
+                    "service_id": str(service.id),
+                    "quantity": 80,
+                    "unit_price_inr": 80,
+                    "line_total_inr": 6400,
+                },
+            ],
+            "advance_paid_inr": 500,
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()["data"]
+    assert body["total_inr"] == "6400.00"
+    assert body["payment_status"] == "pending_cod"
+
+
+@patch("app.tasks.order_notifications.send_order_status_whatsapp")
+async def test_walk_in_order_customer_appears_in_partner_directory(
+    mock_whatsapp_task: MagicMock,
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    mock_whatsapp_task.delay = MagicMock()
+    _partner, _laundry, service, token = await _seed_partner_laundry(db_session)
+
+    created = await client.post(
+        "/api/v1/partner/walk-in-orders",
+        headers=_partner_headers(token),
+        json={
+            "customer_name": "Directory Customer",
+            "customer_phone": "+919876543211",
+            "items": [{"service_id": str(service.id), "quantity": 1}],
+        },
+    )
+    assert created.status_code == 201, created.text
+
+    directory = await client.get(
+        "/api/v1/partner/customer-insights/customers",
+        headers=_partner_headers(token),
+        params={"search": "Directory Customer"},
+    )
+
+    assert directory.status_code == 200, directory.text
+    rows = directory.json()["data"]["items"]
+    assert any(row["name"] == "Directory Customer" for row in rows)
+
+
+@patch("app.tasks.order_notifications.send_order_status_whatsapp")
 async def test_create_walk_in_order_schedules_whatsapp(
     mock_whatsapp_task: MagicMock,
     client: AsyncClient,

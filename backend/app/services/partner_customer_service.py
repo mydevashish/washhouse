@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.models.enums import UserRole
+from app.repositories.laundry_customer import LaundryCustomerRepository
 from app.repositories.laundry_customer_registration import LaundryCustomerRegistrationRepository
 from app.repositories.user import UserRepository
 from app.services.customer_insights_service import CustomerInsightsService
@@ -19,6 +20,7 @@ class PartnerCustomerService:
         self._session = session
         self._users = UserRepository(session)
         self._registrations = LaundryCustomerRegistrationRepository(session)
+        self._shop_customers = LaundryCustomerRepository(session)
 
     async def create_or_link(
         self,
@@ -27,6 +29,13 @@ class PartnerCustomerService:
         actor_role: str,
         name: str,
         phone: str,
+        title: str | None = None,
+        plan_name: str | None = None,
+        address_line1: str | None = None,
+        address_line2: str | None = None,
+        city: str | None = None,
+        state: str | None = None,
+        pincode: str | None = None,
     ) -> dict:
         laundry = await CustomerInsightsService(self._session).resolve_laundry_for_actor(
             actor_user_id,
@@ -61,11 +70,33 @@ class PartnerCustomerService:
             user_id=user.id,
             registered_by_user_id=actor_user_id,
         )
+        shop = await self._shop_customers.get_or_create(
+            laundry_id=laundry.id,
+            phone=phone_e164,
+            full_name=clean_name,
+            title=title,
+            plan_name=plan_name,
+            address_line1=address_line1,
+            address_line2=address_line2,
+            city=city,
+            state=state,
+            pincode=pincode,
+            user_id=user.id,
+            registered_by_user_id=actor_user_id,
+        )
 
         return {
+            "customer_id": shop.id,
             "user_id": user.id,
-            "name": user.full_name,
-            "phone": user.phone,
+            "name": shop.full_name,
+            "phone": shop.phone,
+            "title": shop.title,
+            "plan_name": shop.plan_name,
+            "address_line1": shop.address_line1,
+            "address_line2": shop.address_line2,
+            "city": shop.city,
+            "state": shop.state,
+            "pincode": shop.pincode,
             "registered": True,
             "order_count": 0,
             "last_order_at": None,
@@ -121,13 +152,25 @@ class PartnerCustomerService:
             gender=gender,
             crm_notes=notes,
         )
+        shop = None
+        if user.phone:
+            shop = await self._shop_customers.get_or_create(
+                laundry_id=laundry.id,
+                phone=user.phone,
+                full_name=clean_name,
+                gender=gender,
+                notes=notes,
+                user_id=user.id,
+                registered_by_user_id=actor_user_id,
+            )
 
         return {
+            "customer_id": shop.id if shop else None,
             "user_id": user.id,
             "name": user.full_name,
             "phone": user.phone,
             "email": user.email,
-            "gender": registration.gender,
-            "notes": registration.crm_notes,
+            "gender": (shop.gender if shop else None) or registration.gender,
+            "notes": (shop.notes if shop else None) or registration.crm_notes,
             "registered": True,
         }

@@ -50,6 +50,7 @@ def _walk_in_order_response(order, *, laundry_name: str | None = None) -> WalkIn
         customer_phone=order.customer_phone or "",
         partner_notes=order.partner_notes,
         user_id=order.user_id,
+        customer_id=order.laundry_customer_id,
         expected_ready_at=order.delivery_at,
         items=[OrderItemResponse.model_validate(i) for i in order.items],
         whatsapp_order_received=whatsapp_meta,
@@ -72,6 +73,8 @@ async def create_walk_in_order(
         customer_gender=body.customer_gender.value if body.customer_gender else None,
         expected_ready_at=body.expected_ready_at,
         coupon_code=body.coupon_code,
+        customer_id=body.customer_id,
+        advance_paid_inr=body.advance_paid_inr,
     )
     from app.repositories.laundry import LaundryRepository
 

@@ -183,6 +183,13 @@ async def partner_customer_create(
         actor_role=payload["role"],
         name=body.name,
         phone=body.phone,
+        title=body.title,
+        plan_name=body.plan_name,
+        address_line1=body.address_line1,
+        address_line2=body.address_line2,
+        city=body.city,
+        state=body.state,
+        pincode=body.pincode,
     )
     return success_envelope(CustomerDeskProfile.model_validate(data), request)
 

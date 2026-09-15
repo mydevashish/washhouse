@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.enums import OrderSource
-from app.models.order import Order
+from app.models.order import Order, OrderItem
 
 
 class WalkInOrderRepository:
@@ -51,7 +51,7 @@ class WalkInOrderRepository:
         result = await self._session.execute(
             select(Order)
             .where(*self._base_where(laundry_id, search=search))
-            .options(selectinload(Order.items))
+            .options(selectinload(Order.items).selectinload(OrderItem.garments))
             .order_by(Order.created_at.desc())
             .limit(limit)
             .offset(offset),

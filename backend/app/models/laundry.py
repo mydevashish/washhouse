@@ -87,3 +87,36 @@ class LaundryService(Base, TimestampMixin, SoftDeleteMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     laundry: Mapped[Laundry] = relationship(back_populates="services")
+    service_garments: Mapped[list["LaundryServiceGarment"]] = relationship(  # noqa: F821
+        back_populates="service",
+        cascade="all, delete-orphan",
+    )
+
+
+class LaundryServiceGarment(Base, TimestampMixin):
+    """Which catalog garments may be used with this laundry service."""
+
+    __tablename__ = "laundry_service_garments"
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "laundry_service_id",
+            "garment_item_id",
+            name="uq_laundry_service_garments_service_garment",
+        ),
+        sa.Index("ix_laundry_service_garments_laundry_service_id", "laundry_service_id"),
+        sa.Index("ix_laundry_service_garments_garment_item_id", "garment_item_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    laundry_service_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("laundry_services.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    garment_item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("laundry_garment_items.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    service: Mapped[LaundryService] = relationship(back_populates="service_garments")

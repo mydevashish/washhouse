@@ -31,12 +31,14 @@ import {
   isOrderActive,
   isOrderNeedsAction,
 } from '@/features/partner/lib/partner-status';
+import { PartnerOrderGarmentBreakdown } from '@/features/partner/components/partner-order-garment-breakdown';
 import {
   canAdvancePastPickupGates,
   getPickupAdvanceBlockers,
   getPickupAdvanceDisabledReason,
   needsPickupEvidence,
   needsPickupInventory,
+  orderHasLineGarments,
 } from '@/features/partner/lib/partner-pickup-gates';
 import { queryKeys } from '@/lib/query-keys';
 import { listPartnerPickupEvidence } from '@/services/pickup-evidence';
@@ -53,6 +55,8 @@ import { cn } from '@/lib/utils';
 type PartnerOrderCardProps = {
   order: PartnerOrder;
   className?: string;
+  /** Hide duplicate header/items when the card sits on the order detail page. */
+  compact?: boolean;
   onAccept: () => void;
   onReject: () => void;
   onAdvance: () => void;
@@ -65,6 +69,7 @@ type PartnerOrderCardProps = {
 export function PartnerOrderCard({
   order,
   className,
+  compact = false,
   onAccept,
   onReject,
   onAdvance,
@@ -109,7 +114,8 @@ export function PartnerOrderCard({
   });
 
   const hasEvidence = (evidenceQ.data?.length ?? 0) > 0;
-  const hasInventory = (inventoryQ.data?.total_quantity ?? 0) > 0;
+  const hasLineGarments = orderHasLineGarments(order);
+  const hasInventory = (inventoryQ.data?.total_quantity ?? 0) > 0 || hasLineGarments;
   const hasDeliveryProof = Boolean(deliveryProofQ.data);
   const pickupBlockers = getPickupAdvanceBlockers(order, { hasEvidence, hasInventory });
   const pickupDisabledReason = getPickupAdvanceDisabledReason(pickupBlockers);
@@ -125,65 +131,59 @@ export function PartnerOrderCard({
       )}
     >
       <CardContent className={cn('space-y-3', className ? 'p-0' : 'p-3')}>
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <Link
-                href={`/partner/orders/${order.id}`}
-                className="font-mono text-sm font-semibold text-foreground hover:text-primary hover:underline"
-              >
-                #{order.tracking_code}
-              </Link>
-              <PartnerStatusBadge status={order.status} />
-              <PartnerOrderSourceBadge order={order} />
-              {order.token_code ? (
-                <ColorTokenChip
-                  colorToken={order.color_token}
-                  tokenCode={order.token_code}
-                  size="sm"
-                />
-              ) : null}
+        {!compact ? (
+          <>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Link
+                    href={`/partner/orders/${order.id}`}
+                    className="font-mono text-sm font-semibold text-foreground hover:text-primary hover:underline"
+                  >
+                    #{order.tracking_code}
+                  </Link>
+                  <PartnerStatusBadge status={order.status} />
+                  <PartnerOrderSourceBadge order={order} />
+                  {order.token_code ? (
+                    <ColorTokenChip
+                      colorToken={order.color_token}
+                      tokenCode={order.token_code}
+                      size="sm"
+                    />
+                  ) : null}
+                </div>
+                <p className="mt-0.5 truncate text-sm text-foreground">{order.customer_name}</p>
+                {order.customer_phone && (
+                  <p className="truncate text-xs text-muted-foreground">{order.customer_phone}</p>
+                )}
+              </div>
             </div>
-            <p className="mt-0.5 truncate text-sm text-foreground">{order.customer_name}</p>
-            {order.customer_phone && (
-              <p className="truncate text-xs text-muted-foreground">{order.customer_phone}</p>
-            )}
-          </div>
-        </div>
 
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span className="tabular-nums">
-            <strong className="text-foreground">{formatInr(Number(order.total_inr))}</strong> total
-          </span>
-          <span className="tabular-nums">
-            Paid <strong className="text-foreground">{formatInr(partnerOrderPaidInr(order))}</strong>
-          </span>
-          <span className="tabular-nums">
-            Pending{' '}
-            <strong className="text-foreground">{formatInr(partnerOrderPendingInr(order))}</strong>
-          </span>
-          {partnerOrderHasUnpaidBalance(order) ? (
-            <Badge
-              variant="outline"
-              className="border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-normal"
-            >
-              Unpaid
-            </Badge>
-          ) : null}
-          <span>
-            Pickup <ClientDate iso={order.pickup_at} mode="datetime" />
-          </span>
-        </div>
-
-        {order.items.length > 0 && (
-          <ul className="rounded-xl bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-            {order.items.map((item, i) => (
-              <li key={i}>
-                {item.service_name} × {item.quantity}
-              </li>
-            ))}
-          </ul>
-        )}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span className="tabular-nums">
+                <strong className="text-foreground">{formatInr(Number(order.total_inr))}</strong> total
+              </span>
+              <span className="tabular-nums">
+                Paid <strong className="text-foreground">{formatInr(partnerOrderPaidInr(order))}</strong>
+              </span>
+              <span className="tabular-nums">
+                Pending{' '}
+                <strong className="text-foreground">{formatInr(partnerOrderPendingInr(order))}</strong>
+              </span>
+              {partnerOrderHasUnpaidBalance(order) ? (
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-normal"
+                >
+                  Unpaid
+                </Badge>
+              ) : null}
+              <span>
+                Pickup <ClientDate iso={order.pickup_at} mode="datetime" />
+              </span>
+            </div>
+          </>
+        ) : null}
 
         {needsAction && (
           <div className="grid gap-2 sm:grid-cols-2">
@@ -236,7 +236,9 @@ export function PartnerOrderCard({
           />
         )}
 
-        {needsInventoryGate && (
+        {hasLineGarments ? (
+          <PartnerOrderGarmentBreakdown items={order.items} title="Garments" />
+        ) : needsInventoryGate ? (
           <InventoryVerificationForm
             orderId={order.id}
             verification={inventoryQ.data ?? null}
@@ -245,15 +247,13 @@ export function PartnerOrderCard({
               void queryClient.invalidateQueries({ queryKey: ['partner-orders'] });
             }}
           />
-        )}
-
-        {!needsInventoryGate && inventoryQ.data && inventoryQ.data.total_quantity > 0 && (
+        ) : inventoryQ.data && inventoryQ.data.total_quantity > 0 ? (
           <InventoryVerificationDisplay
             verification={inventoryQ.data}
             className="shadow-none ring-0"
             title="Recorded inventory"
           />
-        )}
+        ) : null}
 
         {hasEvidence && evidenceQ.data && (
           <PickupEvidenceGallery

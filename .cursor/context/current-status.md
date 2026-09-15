@@ -14,7 +14,7 @@
 - [x] **Phase 5 — Payments + subscriptions**: Razorpay/COD stubs, plans seed, notification stubs.
 - [x] **Phase 6 — Launch**: loyalty API, landing hero, runbooks, E2E smoke tests.
 
-## Currently shipping
+- **Partner create-order identity** (2026-09-13): shop `laundry_customers` (unique phone); orders store `laundry_customer_id`; garments on lines via `order_item_garments`.
 
 - Customer booking + tracking UI, partner/admin dashboards, review + commission APIs
 - **Partner Ops UX Phase 1 (A+B+C)** (2026-08-04): denser Partner/Admin shell; `/partner` dashboard KPI layout; `/partner/new-order` workspace; `/partner/orders/[id]` detail + stepper. Invoice/tags deferred → **Shop Floor Mode Phase 2+** ([partner-shop-floor.md](../../docs/features/partner-shop-floor.md), spec 2026-08-08).

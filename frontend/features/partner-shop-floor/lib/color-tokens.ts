@@ -107,11 +107,16 @@ export function isColorTokenKey(value: string | null | undefined): value is Colo
 export const TAG_PER_PIECE_STORAGE_KEY = 'dlm.partner_tag_per_piece';
 
 export function readTagPerPieceSetting(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') return true;
   try {
-    return window.localStorage.getItem(TAG_PER_PIECE_STORAGE_KEY) === '1';
+    const value = window.localStorage.getItem(TAG_PER_PIECE_STORAGE_KEY);
+    if (value === null) {
+      window.localStorage.setItem(TAG_PER_PIECE_STORAGE_KEY, '1');
+      return true;
+    }
+    return value === '1';
   } catch {
-    return false;
+    return true;
   }
 }
 

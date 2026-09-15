@@ -2,6 +2,35 @@
 
 > Append-only. Newest at the top. Use `.cursor/templates/log-entry.md`.
 
+## 2026-09-14 — Persist and display partner customers
+
+- **Type:** fix + test
+- **Scope:** partner customer directory and walk-in customer intake
+- **Files:** `frontend/features/partner/views/partner-customers-view.tsx`, `frontend/features/partner/components/ops-visual/partner-walk-in-order-workspace.tsx`, `frontend/features/partner/hooks/use-partner-walk-in-order-composer.ts`, `backend/tests/api/test_walk_in_orders.py`
+- **Summary:** Replaced the mock customer table with the laundry-scoped directory API and persisted both direct and order-intake customer additions. Order creation invalidates customer-directory caches, and an API regression test verifies a walk-in customer appears in the directory.
+- **Risks:** The pending `laundry_customers` migration must be applied before this flow can run against a database.
+- **Next:** Manual partner smoke test: add customer, refresh `/partner/customers`, then create a walk-in order for a new number.
+
+## 2026-09-13 — Walk-in counter pricing request contract
+
+- **Type:** fix + test
+- **Scope:** partner walk-in order creation
+- **Files:** `backend/app/schemas/walk_in_order.py`, `backend/app/services/walk_in_order_service.py`, `frontend/services/partner-walk-in-orders.ts`, `backend/tests/api/test_walk_in_orders.py`
+- **Summary:** The request contract accepts counter-computed line prices/totals and an advance payment, preserving garment selections. The API regression test submits the previously rejected price/advance fields and verifies the resulting total and partial-payment state.
+- **Risks:** The backend must be restarted for the changed Pydantic schema to be loaded.
+- **Next:** Apply the pending migration, restart the local API, and retry the counter order.
+
+---
+
+## 2026-09-13 — Shop customers + order garments as FKs
+
+- **Phase:** Partner MVP / counter
+- **Scope:** laundry_customers, order.laundry_customer_id, order_item_garments, laundry_service_garments
+- **Files:** Alembic `20260913_0048`, models, walk-in create/list, customer desk lookup/search, customer insights list, partner create-order payload
+- **Summary:** One customer row per laundry+phone. Orders reference `laundry_customer_id`. Service lines store selected garments by `garment_item_id`. Create-order and customer list/search use this identity.
+- **Next:** Restart API, save a walk-in order, confirm `SELECT * FROM laundry_customers` and `order_item_garments`.
+- **Refs:** `docs/database/schema.md`
+
 ---
 
 ## 2026-08-14 — Prompt 9: polish, QA matrix, docs

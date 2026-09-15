@@ -36,6 +36,7 @@ export interface CustomerInsightsDashboard {
 }
 
 export interface CustomerInsightRow {
+  customer_id?: string | null;
   user_id: string;
   name: string;
   /** E.164 or local mobile when available from user profile. */

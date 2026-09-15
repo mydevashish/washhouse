@@ -5,9 +5,10 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, SoftDeleteMixin, TimestampMixin
@@ -48,8 +49,15 @@ class Order(Base, TimestampMixin, SoftDeleteMixin):
         default=OrderSource.online,
         index=True,
     )
+    laundry_customer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("laundry_customers.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     customer_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     customer_phone: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
+    intake_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     partner_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
@@ -116,6 +124,7 @@ class Order(Base, TimestampMixin, SoftDeleteMixin):
         index=True,
     )
 
+    laundry_customer: Mapped["LaundryCustomer | None"] = relationship(back_populates="orders")  # noqa: F821
     items: Mapped[list[OrderItem]] = relationship(back_populates="order")  # noqa: F821
     events: Mapped[list[OrderStatusEvent]] = relationship(back_populates="order")  # noqa: F821
 
@@ -141,6 +150,32 @@ class OrderItem(Base, TimestampMixin):
     line_total_inr: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
 
     order: Mapped[Order] = relationship(back_populates="items")
+    garments: Mapped[list["OrderItemGarment"]] = relationship(
+        back_populates="order_item",
+        cascade="all, delete-orphan",
+    )
+
+
+class OrderItemGarment(Base, TimestampMixin):
+    __tablename__ = "order_item_garments"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    order_item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("order_items.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    garment_item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("laundry_garment_items.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    garment_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    order_item: Mapped[OrderItem] = relationship(back_populates="garments")
 
 
 class OrderStatusEvent(Base, TimestampMixin):

@@ -98,6 +98,16 @@ class CustomerDeskService:
                 raise ValidationError(str(exc)) from exc
             user = await self._users.get_by_phone(phone_e164)
 
+        from app.repositories.laundry_customer import LaundryCustomerRepository
+
+        shop_customer = None
+        shop_repo = LaundryCustomerRepository(self._session)
+        if laundry_id is not None:
+            if phone_e164:
+                shop_customer = await shop_repo.get_by_phone(laundry_id, phone_e164)
+            elif user is not None:
+                shop_customer = await shop_repo.get_by_phone(laundry_id, user.phone) if user.phone else None
+
         order_count, last_order_at, guest_name = await self._order_stats(
             phone_e164=phone_e164,
             user_id=user.id if user else None,
@@ -105,17 +115,16 @@ class CustomerDeskService:
         )
 
         if require_laundry_touch and laundry_id is not None:
-            # Partner: allow registered users (order_count may be 0) or any own-laundry touch.
-            if user is None and order_count == 0:
+            if user is None and shop_customer is None and order_count == 0:
                 raise NotFoundError("Customer not found")
 
-        display_phone = phone_e164 or (user.phone if user else None)
+        display_phone = phone_e164 or (user.phone if user else None) or (shop_customer.phone if shop_customer else None)
         if not display_phone:
             display_phone = ""
 
-        gender: str | None = None
-        notes: str | None = None
-        if laundry_id is not None and user is not None:
+        gender: str | None = shop_customer.gender if shop_customer else None
+        notes: str | None = shop_customer.notes if shop_customer else None
+        if laundry_id is not None and user is not None and shop_customer is None:
             from app.repositories.laundry_customer_registration import LaundryCustomerRegistrationRepository
 
             registration = await LaundryCustomerRegistrationRepository(self._session).get_for_laundry_user(
@@ -127,13 +136,16 @@ class CustomerDeskService:
                 notes = registration.crm_notes
 
         return {
-            "user_id": user.id if user else None,
-            "name": (user.full_name if user else None) or guest_name,
+            "customer_id": shop_customer.id if shop_customer else None,
+            "user_id": user.id if user else (shop_customer.user_id if shop_customer else None),
+            "name": (shop_customer.full_name if shop_customer else None)
+            or (user.full_name if user else None)
+            or guest_name,
             "phone": display_phone,
             "email": user.email if user else None,
             "gender": gender,
             "notes": notes,
-            "registered": user is not None,
+            "registered": user is not None or shop_customer is not None,
             "order_count": order_count,
             "last_order_at": last_order_at,
         }
@@ -187,6 +199,28 @@ class CustomerDeskService:
             return [profile]
 
         candidates: dict[str, dict[str, Any]] = {}
+        if laundry_id is not None:
+            from app.repositories.laundry_customer import LaundryCustomerRepository
+
+            for shop in await LaundryCustomerRepository(self._session).search(
+                laundry_id,
+                term=term,
+                limit=limit,
+            ):
+                key = shop.phone or str(shop.id)
+                candidates[key] = {
+                    "customer_id": shop.id,
+                    "user_id": shop.user_id,
+                    "name": shop.full_name,
+                    "phone": shop.phone,
+                    "email": None,
+                    "gender": shop.gender,
+                    "notes": shop.notes,
+                    "registered": True,
+                    "order_count": 0,
+                    "last_order_at": None,
+                }
+
         phone_digits = re.sub(r"\D", "", term)
         name_like = f"%{term}%"
         phone_like = f"%{phone_digits}%" if len(phone_digits) >= 4 else None

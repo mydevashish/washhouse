@@ -21,7 +21,7 @@ const SLUG_LABELS: Record<string, { hinglish: string; english: string }> = {
   'winter-hoodie': { hinglish: 'Hoodie', english: 'Hoodie' },
   'household-bedsheet-single': { hinglish: 'Bedsheet', english: 'Bedsheet' },
   'household-blanket': { hinglish: 'Blanket', english: 'Blanket' },
-  'kg-wash-fold': { hinglish: 'Wash & Fold', english: 'Wash & Fold / kg' },
+  'kg-wash-fold': { hinglish: 'Wash & Fold', english: 'Wash & Fold' },
 };
 
 function shortenEnglishName(name: string): string {

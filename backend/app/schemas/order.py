@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from sqlalchemy import inspect as sa_inspect
 
 from app.models.enums import OrderStatus
 from app.schemas.custody_event import CustodyTimelineResponse
@@ -33,12 +35,39 @@ class OrderCreateRequest(BaseModel):
     notes: str | None = Field(default=None, max_length=2000)
 
 
+class OrderItemGarmentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    garment_item_id: UUID
+    garment_name: str
+    quantity: int
+
+
 class OrderItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     service_name: str
     quantity: int
+    unit_price_inr: Decimal | None = None
     line_total_inr: Decimal
+    garments: list[OrderItemGarmentResponse] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def skip_unloaded_garments(cls, data: Any) -> Any:
+        if not hasattr(data, "_sa_instance_state"):
+            return data
+        payload = {
+            "service_name": data.service_name,
+            "quantity": data.quantity,
+            "unit_price_inr": getattr(data, "unit_price_inr", None),
+            "line_total_inr": data.line_total_inr,
+        }
+        if "garments" in sa_inspect(data).unloaded:
+            payload["garments"] = []
+        else:
+            payload["garments"] = list(data.garments or [])
+        return payload
 
 
 class OrderListItemResponse(BaseModel):

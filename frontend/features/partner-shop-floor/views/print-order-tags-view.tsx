@@ -18,30 +18,10 @@ import { FLOOR_VOICE_PRINT_TAGS } from '@/features/partner-shop-floor/lib/floor-
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { getPartnerOrderTags } from '@/services/partner-order-tags';
 import { cn } from '@/lib/utils';
-
-function stripTagCodeNoise(value: string): string {
-  return value
-    .replace(/\s*[·•|-]\s*(?:g(?:code)?|gc|code)\s*[-_ ]?[A-Za-z0-9-]*$/gi, '')
-    .replace(/\b(?:g(?:code)?|gc|code)\s*[-_ ]?[A-Za-z0-9-]*\b/gi, '')
-    .replace(/\s*[·•]\s*/g, ' ')
-    .trim();
-}
-
-function garmentCategoryShortForm(value: string): string {
-  const lower = value.toLowerCase();
-  if (lower.includes('women')) return 'W';
-  if (lower.includes('kids')) return 'K';
-  if (lower.includes('household')) return 'H';
-  if (lower.includes('men')) return 'M';
-  return '';
-}
-
-function formatTagServiceLabel(tag: { service_name?: string | null; label: string; qty_index?: string | null; piece_index?: number | null; piece_total?: number | null }): string {
-  const name = stripTagCodeNoise(tag.service_name ?? tag.label ?? 'Item');
-  if (tag.qty_index) return `${name} (${tag.qty_index})`;
-  if (tag.piece_index && tag.piece_total) return `${name} (${tag.piece_index}/${tag.piece_total})`;
-  return name;
-}
+import {
+  getServiceShortCode,
+  getTagCountLabel,
+} from '@/features/partner-shop-floor/lib/order-tag-format';
 
 function formatPrintDate(value: string): string {
   const date = new Date(value);
@@ -54,7 +34,7 @@ type PrintOrderTagsViewProps = {
 };
 
 export function PrintOrderTagsView({ orderId }: PrintOrderTagsViewProps) {
-  const [perPiece, setPerPiece] = useState(false);
+  const [perPiece, setPerPiece] = useState(true);
   const { speak, hydrated } = usePartnerFloorVoice();
   const spokenRef = useRef(false);
 
@@ -188,9 +168,10 @@ export function PrintOrderTagsView({ orderId }: PrintOrderTagsViewProps) {
 
       <div className="print-tags-sheet space-y-3 print:space-y-0">
         {payload.tags.filter((tag) => tag.kind !== 'bag_master').map((tag, idx) => {
-          const categoryShort = garmentCategoryShortForm(tag.label);
-          const serviceText = formatTagServiceLabel(tag);
+          const serviceCode = getServiceShortCode(tag.service_name ?? tag.label ?? 'Item');
+          const countLabel = getTagCountLabel(tag);
           const orderDate = formatPrintDate(payload.created_at);
+
           return (
             <article
               key={`${tag.kind}-${idx}`}
@@ -201,37 +182,36 @@ export function PrintOrderTagsView({ orderId }: PrintOrderTagsViewProps) {
               data-testid="tag-item"
             >
               <ColorTokenBar
-  colorToken={payload.color_token}
-  variant="bar"
-  className="h-6 w-full print:h-[5mm]"
-  label={`${payload.token_code} color bar`}
-/>
+                colorToken={payload.color_token}
+                variant="bar"
+                className="h-6 w-full print:h-[5mm]"
+                label={`${payload.token_code} color bar`}
+              />
               <div className="space-y-1 p-2 print:space-y-1 print:p-[2mm]">
-  <div className="border-b border-neutral-200 pb-1">
-    <p className="text-[8px] font-semibold uppercase tracking-wider text-neutral-500">
-      Order #{payload.tracking_code}
-    </p>
-    <p className="text-[10px] font-semibold leading-tight text-neutral-800">
-      {payload.customer_name}
-    </p>
-  </div>
+                <div className="border-b border-neutral-200 pb-1">
+                  <p className="text-[8px] font-semibold uppercase tracking-wider text-neutral-500">
+                    Order #{payload.tracking_code}
+                  </p>
+                  <p className="text-[10px] font-semibold leading-tight text-neutral-800">
+                    {payload.customer_name}
+                  </p>
+                </div>
 
-  <div>
-    <p className="text-[12px] font-black leading-tight text-neutral-900">
-      {serviceText}
-    </p>
+                <div className="space-y-0.5">
+                  <p className="text-[20px] font-black leading-none text-neutral-900">
+                    {serviceCode}
+                  </p>
+                  {countLabel ? (
+                    <p className="text-[11px] font-semibold leading-tight text-neutral-700">
+                      {countLabel}
+                    </p>
+                  ) : null}
+                </div>
 
-    {categoryShort ? (
-      <p className="text-[8px] leading-tight text-neutral-600">
-        {categoryShort}
-      </p>
-    ) : null}
-  </div>
-
-  <p className="text-[8px] font-medium uppercase leading-tight tracking-wide text-neutral-600">
-    {orderDate}
-  </p>
-</div>
+                <p className="text-[8px] font-medium uppercase leading-tight tracking-wide text-neutral-600">
+                  {orderDate}
+                </p>
+              </div>
             </article>
           );
         })}

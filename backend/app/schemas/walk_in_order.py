@@ -28,6 +28,13 @@ class WalkInCustomerGender(str, Enum):
     female = "female"
 
 
+class WalkInOrderGarmentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    garment_id: UUID
+    quantity: int = Field(ge=1, le=500)
+
+
 class WalkInOrderLineItemRequest(BaseModel):
     """Exactly one of ``service_id``, ``catalog_item_id``, or ``garment_item_id``."""
 
@@ -38,6 +45,9 @@ class WalkInOrderLineItemRequest(BaseModel):
     garment_item_id: UUID | None = None
     process: WalkInCatalogProcess | None = None
     quantity: int = Field(ge=1, le=500)
+    unit_price_inr: Decimal | None = Field(default=None, ge=0, le=1_000_000)
+    line_total_inr: Decimal | None = Field(default=None, ge=0, le=1_000_000)
+    garments: list[WalkInOrderGarmentRequest] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def require_exactly_one_source(self) -> WalkInOrderLineItemRequest:
@@ -54,12 +64,15 @@ class WalkInOrderLineItemRequest(BaseModel):
             raise ValueError("process is required with catalog_item_id")
         if self.garment_item_id is not None and self.process is None:
             raise ValueError("process is required with garment_item_id")
+        if self.garments and self.service_id is None:
+            raise ValueError("garments are only valid with service_id")
         return self
 
 
 class WalkInOrderCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    customer_id: UUID | None = None
     customer_name: str = Field(min_length=1, max_length=200)
     customer_phone: str = Field(pattern=r"^\+?[1-9]\d{9,14}$")
     customer_gender: WalkInCustomerGender | None = None
@@ -67,6 +80,7 @@ class WalkInOrderCreateRequest(BaseModel):
     notes: str | None = Field(default=None, max_length=2000)
     expected_ready_at: datetime | None = None
     coupon_code: str | None = Field(default=None, max_length=32)
+    advance_paid_inr: Decimal | None = Field(default=None, ge=0, le=1_000_000)
 
 
 class WalkInOrderWhatsAppNotifyResponse(BaseModel):
@@ -113,6 +127,7 @@ class WalkInOrderResponse(BaseModel):
     customer_phone: str
     partner_notes: str | None
     user_id: UUID | None
+    customer_id: UUID | None = None
     expected_ready_at: datetime | None = None
     items: list[OrderItemResponse] = Field(default_factory=list)
     whatsapp_order_received: WalkInOrderWhatsAppNotifyResponse | None = None

@@ -35,14 +35,29 @@ describe('partner-pickup-gates', () => {
     ).toBe(true);
   });
 
-  it('walk-in requires inventory only at confirmed', () => {
+  it('walk-in never requires shirt/trouser inventory (garments are on the ticket)', () => {
     expect(needsPickupEvidence(walkInConfirmed)).toBe(false);
-    expect(needsPickupInventory(walkInConfirmed)).toBe(true);
-    expect(getPickupAdvanceBlockers(walkInConfirmed, { hasEvidence: false, hasInventory: false })).toEqual([
-      'Record item inventory',
-    ]);
-    expect(getPickupAdvanceDisabledReason(['Record item inventory'])).toBe(
-      'Record item inventory before continuing',
-    );
+    expect(needsPickupInventory(walkInConfirmed)).toBe(false);
+    expect(
+      getPickupAdvanceBlockers(walkInConfirmed, { hasEvidence: false, hasInventory: false }),
+    ).toEqual([]);
+  });
+
+  it('skips inventory when garments are already on the order', () => {
+    const withGarments = {
+      ...walkInConfirmed,
+      items: [
+        {
+          service_name: 'Wash & Fold',
+          quantity: 1,
+          line_total_inr: '80.00',
+          garments: [{ garment_item_id: 'g1', garment_name: 'Shirt', quantity: 2 }],
+        },
+      ],
+    };
+    expect(needsPickupInventory(withGarments)).toBe(false);
+    expect(
+      getPickupAdvanceBlockers(withGarments, { hasEvidence: false, hasInventory: false }),
+    ).toEqual([]);
   });
 });

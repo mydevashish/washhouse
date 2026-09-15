@@ -187,9 +187,17 @@ class CustomerInsightsService:
 
     def _serialize_row(self, row: dict) -> dict:
         return {
-            "user_id": row["user_id"],
+            "customer_id": row.get("customer_id"),
+            "user_id": row["user_id"] or row.get("customer_id"),
             "name": row["name"],
             "phone": row.get("phone"),
+            "title": row.get("title"),
+            "plan_name": row.get("plan_name"),
+            "address_line1": row.get("address_line1"),
+            "address_line2": row.get("address_line2"),
+            "city": row.get("city"),
+            "state": row.get("state"),
+            "pincode": row.get("pincode"),
             "lifetime_spend_inr": str(row["total_spent_inr"]),
             "order_count": row["order_count"],
             "avg_order_value_inr": str(row["avg_order_value_inr"]),

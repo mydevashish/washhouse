@@ -9,7 +9,9 @@
 | `users`               | Customer / partner / admin accounts          | `auth`                  |
 | `user_addresses`      | Customer addresses                           | `users`                 |
 | `laundries`           | Partner-owned laundry businesses             | `laundries`             |
-| `laundry_services`    | Coarse services offered (wash, dry-clean, …) | `laundries`             |
+| `laundry_customers` | Shop counter customers — unique phone per laundry | `orders` |
+| `laundry_service_garments` | Which garments a laundry service may use | `laundries` |
+| `order_item_garments` | Garments attached to an order service line | `orders` |
 | `platform_catalog_items` | Platform master garment/kg catalog (WashHouse suggested defaults) | `laundries` / admin |
 | `laundry_item_prices` | Per-laundry prices + `is_offered` for catalog items | `laundries`      |
 | `laundry_garment_items` | Partner ops garment rate card (Default.xls import) | `laundries` |
@@ -243,6 +245,14 @@ Unique active `(laundry_id, lower(garment_code))` and `(garment_item_id, service
 **Cloth Wall bridge (planned Prompt 8):** read garment catalog when non-empty; fallback to price list → `laundry_services`.
 
 **Cloth Wall bridge (2026-08-08):** `POST /partner/walk-in-orders` accepts optional `catalog_item_id` + `process` (`dry_clean`\|`press`\|`single`) instead of `service_id`. Service find-or-creates a `laundry_services` row keyed by `description=catalog:{uuid}:{process}` and locks `order_items` unit price from `laundry_item_prices`. Full `catalog_item_id` on order lines remains Slice E.
+
+### `laundry_customers` (2026-09-13)
+
+> Migration: `20260913_0048`
+
+Shop directory for partner counter orders. Unique active `(laundry_id, phone)`. Walk-in create **get-or-creates** this row and stores `orders.laundry_customer_id` so the same phone does not spawn duplicate customer records.
+
+Garments on an order are `order_item_garments` (`garment_item_id` → `laundry_garment_items`). Optional catalog `laundry_service_garments` links which garments a service (Wash & Fold, Wash & Iron, …) may use; empty means all visible garments for that laundry.
 
 ## Shop Floor color tokens
 

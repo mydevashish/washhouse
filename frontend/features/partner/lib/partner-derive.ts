@@ -1,5 +1,55 @@
 import { isWalkInOrder } from '@/features/partner/components/partner-order-source-badge';
+import type { OrderItem } from '@/services/orders';
 import type { PartnerAnalytics, PartnerOrder } from '@/services/partner';
+
+const PIECE_PROCESS_LINE = /^(.+?)\s*[-–·]\s*(.+)$/;
+
+/** Nest garments under Wash & Fold / Dry clean / Press the same way as create-order. */
+export function partnerOrderServiceGroups(items: OrderItem[] | undefined): OrderItem[] {
+  if (!items?.length) return [];
+  const result: OrderItem[] = [];
+  const grouped = new Map<string, OrderItem>();
+
+  for (const item of items) {
+    const nested = item.garments?.filter((g) => g.garment_name && g.quantity > 0) ?? [];
+    if (nested.length) {
+      result.push(item);
+      continue;
+    }
+    const match = item.service_name.match(PIECE_PROCESS_LINE);
+    if (match) {
+      const garmentName = match[1].trim();
+      const process = match[2].trim();
+      const key = process.toLowerCase();
+      const garment = {
+        garment_item_id: item.service_name,
+        garment_name: garmentName,
+        quantity: item.quantity,
+      };
+      const existing = grouped.get(key);
+      if (existing) {
+        existing.garments = [...(existing.garments ?? []), garment];
+        existing.line_total_inr = String(
+          Number(existing.line_total_inr ?? 0) + Number(item.line_total_inr ?? 0),
+        );
+      } else {
+        const group: OrderItem = {
+          service_name: process,
+          quantity: 1,
+          unit_price_inr: item.line_total_inr,
+          line_total_inr: item.line_total_inr,
+          garments: [garment],
+        };
+        grouped.set(key, group);
+        result.push(group);
+      }
+      continue;
+    }
+    result.push(item);
+  }
+
+  return result;
+}
 
 export type AttentionItem = {
   id: string;
@@ -22,8 +72,18 @@ export function isDeliveryStage(status: string): boolean {
 }
 
 export function formatServices(order: PartnerOrder): string {
-  if (!order.items?.length) return '—';
-  return order.items.map((i) => `${i.quantity}× ${i.service_name}`).join(', ');
+  const groups = partnerOrderServiceGroups(order.items);
+  if (!groups.length) return '—';
+  return groups
+    .map((i) => {
+      const garments = i.garments?.filter((g) => g.garment_name && g.quantity > 0) ?? [];
+      if (garments.length) {
+        const names = garments.map((g) => `${g.garment_name} ×${g.quantity}`).join(', ');
+        return `${i.service_name} (${names})`;
+      }
+      return i.service_name;
+    })
+    .join(' · ');
 }
 
 export function buildAttentionItems(orders: PartnerOrder[], nowMs?: number): AttentionItem[] {

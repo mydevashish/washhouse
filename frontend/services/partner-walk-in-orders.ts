@@ -14,12 +14,11 @@ export interface WalkInOrder {
   delivery_at: string;
   subtotal_inr: string;
   delivery_fee_inr: string;
-  // cgst_inr: string;
-  // sgst_inr: string;
   total_inr: string;
   payment_status: string;
   customer_name: string;
   customer_phone: string;
+  customer_id?: string | null;
   partner_notes: string | null;
   user_id: string | null;
   expected_ready_at: string | null;
@@ -46,6 +45,9 @@ export interface WalkInOrderLineItem {
   garment_item_id?: string;
   process?: 'dry_clean' | 'press' | 'single';
   quantity: number;
+  unit_price_inr?: number;
+  line_total_inr?: number;
+  garments?: { garment_id: string; quantity: number }[];
 }
 
 export type ListWalkInOrdersParams = ListQueryState;
@@ -60,6 +62,7 @@ export async function listWalkInOrders(
 }
 
 export async function createWalkInOrder(body: {
+  customer_id?: string | null;
   customer_name: string;
   customer_phone: string;
   customer_gender?: 'male' | 'female';
@@ -67,6 +70,7 @@ export async function createWalkInOrder(body: {
   notes?: string;
   expected_ready_at?: string;
   coupon_code?: string;
+  advance_paid_inr?: number;
 }): Promise<WalkInOrder> {
   const { data } = await api.post<ApiEnvelope<WalkInOrder>>('/partner/walk-in-orders', body);
   return data.data;

@@ -1,7 +1,9 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Search } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +18,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { createPartnerCustomer } from '@/features/partner/customer-desk/api';
+import { usePartnerQueriesEnabled } from '@/features/partner/hooks/use-partner-operations';
 import {
   formatPhoneInputDisplay,
   getPartnerPhoneFieldError,
@@ -23,6 +27,9 @@ import {
   PARTNER_PHONE_INLINE_ERROR,
   partnerPhoneToE164,
 } from '@/features/partner/lib/partner-phone-schema';
+import { getApiErrorMessage } from '@/lib/api-error-message';
+import { queryKeys } from '@/lib/query-keys';
+import { listPartnerCustomerInsights } from '@/services/customer-insights';
 import { PartnerContent, PartnerPageHeader } from '../components/partner-content';
 
 type CustomerRole = 'franchise' | 'admin';
@@ -44,66 +51,11 @@ type CustomerDirectoryRow = {
 
 const currentRole: CustomerRole = 'franchise';
 
-const dummyCustomers: CustomerDirectoryRow[] = [
-  {
-    id: 'cust-101',
-    name: 'Priya Sharma',
-    number: '+91 98765 43210',
-    address: '12 Green Park Road',
-    state: 'Delhi',
-    pincode: '110016',
-    spend: 12500,
-    planName: 'Premium Care',
-    planAmount: 2999,
-    walletUsed: 1500,
-    walletRemaining: 1499,
-    franchiseName: 'WashHouse South',
-  },
-  {
-    id: 'cust-102',
-    name: 'Aman Verma',
-    number: '+91 99887 66554',
-    address: '4th Floor, Sector 15',
-    state: 'Gurugram',
-    pincode: '122001',
-    spend: 8900,
-    planName: 'Care Plus',
-    planAmount: 2499,
-    walletUsed: 1500,
-    walletRemaining: 999,
-    franchiseName: 'WashHouse Central',
-  },
-  {
-    id: 'cust-103',
-    name: 'Mehak Singh',
-    number: '+91 98111 22334',
-    address: 'Block B, Ashok Vihar',
-    state: 'Delhi',
-    pincode: '110052',
-    spend: 16450,
-    planName: 'Elite Laundry',
-    planAmount: 3999,
-    walletUsed: 1800,
-    walletRemaining: 2199,
-    franchiseName: 'WashHouse West',
-  },
-  {
-    id: 'cust-104',
-    name: 'Rohit Gupta',
-    number: '+91 97333 77888',
-    address: '22 Janpath Lane',
-    state: 'Noida',
-    pincode: '201301',
-    spend: 7200,
-    planName: 'Monthly Wash',
-    planAmount: 1999,
-    walletUsed: 1200,
-    walletRemaining: 799,
-    franchiseName: 'WashHouse East',
-  },
-];
-
-function formatCurrency(value: number) {
+function formatCurrency(value: number | string | null | undefined) {
+  const numeric = Number(value ?? 0);
+  if (!Number.isFinite(numeric)) {
+    return '₹0';
+  }
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
@@ -113,7 +65,12 @@ function formatCurrency(value: number) {
 
 export function PartnerCustomersView({ embedded = false }: { embedded?: boolean }) {
   const showFranchiseColumn = currentRole === 'admin';
-  const emptyCustomerForm = {
+  const queryClient = useQueryClient();
+  const enabled = usePartnerQueriesEnabled();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [customerForm, setCustomerForm] = useState({
     title: 'Ms',
     name: '',
     phone: '',
@@ -123,27 +80,65 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
     city: '',
     pincode: '',
     state: '',
-  };
+  });
 
-  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [customerForm, setCustomerForm] = useState(emptyCustomerForm);
+  const customerQuery = useQuery({
+    queryKey: ['partner-customer-insights', { page: 1, page_size: 10, search: searchTerm || undefined }],
+    queryFn: () =>
+      listPartnerCustomerInsights({
+        page: 1,
+        page_size: 10,
+        search: searchTerm || undefined,
+      }),
+    enabled,
+  });
+
+  const createCustomerMutation = useMutation({
+    mutationFn: () => {
+      const name = customerForm.name.trim();
+      const phone = partnerPhoneToE164(customerForm.phone);
+      if (!name) throw new Error('Customer name is required');
+      if (!isPartnerPhoneReady(customerForm.phone)) throw new Error(PARTNER_PHONE_INLINE_ERROR);
+      if (!isPartnerPhoneReady(phone)) throw new Error(PARTNER_PHONE_INLINE_ERROR);
+      return createPartnerCustomer({ name, phone });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['partner-customer-insights'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.partnerCustomerInsightsDashboard() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.partnerCustomers() });
+      toast.success('Customer saved');
+      setCustomerDialogOpen(false);
+      setCustomerForm({
+        title: 'Ms',
+        name: '',
+        phone: '',
+        plan: 'No plan',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        pincode: '',
+        state: '',
+      });
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, 'Could not save customer'));
+    },
+  });
 
   function openAddCustomerDialog() {
     setIsEditMode(false);
-    setCustomerForm(emptyCustomerForm);
+    setCustomerForm({
+      title: 'Ms',
+      name: '',
+      phone: '',
+      plan: 'No plan',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      pincode: '',
+      state: '',
+    });
     setCustomerDialogOpen(true);
-  }
-
-  function handleDeleteCustomer(customer: CustomerDirectoryRow) {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete ${customer.name}?`
-    );
-
-    if (!confirmed) return;
-
-    // TODO: Delete API call
-    console.log('Delete customer:', customer.id);
   }
 
   function openEditCustomerDialog(customer: CustomerDirectoryRow) {
@@ -164,22 +159,23 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
   }
 
   function submitCustomerDialog() {
-    const phone = partnerPhoneToE164(customerForm.phone);
-    const name = customerForm.name.trim();
-
-    if (!name) {
-      return;
-    }
-    if (!isPartnerPhoneReady(customerForm.phone)) {
-      return;
-    }
-
-    if (!isPartnerPhoneReady(phone)) {
-      return;
-    }
-
-    setCustomerDialogOpen(false);
+    createCustomerMutation.mutate();
   }
+
+  const customerRows: CustomerDirectoryRow[] = (customerQuery.data?.items ?? []).map((customer) => ({
+    id: customer.customer_id,
+    name: customer.name,
+    number: customer.phone ?? '',
+    address: customer.address_line_1 ?? customer.address ?? '',
+    state: customer.state ?? '',
+    pincode: customer.pincode ?? '',
+    spend: Number(customer.lifetime_spend_inr ?? 0),
+    planName: customer.segment_label ?? 'No plan',
+    planAmount: Number(customer.avg_order_value_inr ?? 0),
+    walletUsed: Number(customer.order_count ?? 0),
+    walletRemaining: Number(customer.retention_score ?? 0),
+    franchiseName: customer.segment_label,
+  }));
 
   const customerPhoneError = getPartnerPhoneFieldError(customerForm.phone);
   const canSaveCustomer = Boolean(customerForm.name.trim()) && isPartnerPhoneReady(customerForm.phone);
@@ -209,7 +205,8 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
             placeholder="Search by name or number…"
             className="h-10 pl-9"
             aria-label="Search customers"
-            defaultValue=""
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
           />
         </div>
       </div>
@@ -232,55 +229,63 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {dummyCustomers.map((customer) => (
-              <TableRow key={customer.id}>
-                <TableCell className="text-center font-medium text-foreground">{customer.name}</TableCell>
-                <TableCell className="text-center text-muted-foreground">{customer.number}</TableCell>
-                <TableCell className="text-center">{customer.address}</TableCell>
-                <TableCell className="text-center">{customer.state}</TableCell>
-                <TableCell className="text-center">{customer.pincode}</TableCell>
-                <TableCell className="text-center font-medium tabular-nums">
-                  {formatCurrency(customer.spend)}
-                </TableCell>
-                <TableCell className="text-center font-medium tabular-nums">
-                  {formatCurrency(customer.spend)}
-                </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex flex-col items-center">
-                    <span className="font-medium text-foreground">{customer.planName}</span>
-                    <span className="text-xs text-muted-foreground">
-                      Used {formatCurrency(customer.walletUsed)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Wallet {formatCurrency(customer.planAmount)}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center font-medium tabular-nums text-amber-600">
-                  {formatCurrency(customer.walletRemaining)}
-                </TableCell>
-                {showFranchiseColumn ? (
-                  <TableCell className="text-center text-muted-foreground">{customer.franchiseName}</TableCell>
-                ) : null}
-                <TableCell className="text-center">
-                  <div className="flex justify-center">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 gap-1.5 px-2.5 text-xs"
-                      onClick={() => openEditCustomerDialog(customer)}
-                      aria-label={`Edit ${customer.name}`}
-                    >
-                      <span className="flex items-center gap-1">
-                        <Pencil className="h-3.5 w-3.5" aria-hidden />
-                        Edit
-                      </span>
-                    </Button>
-                  </div>
+            {customerRows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={showFranchiseColumn ? 11 : 10} className="py-8 text-center text-muted-foreground">
+                  No customers found.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              customerRows.map((customer) => (
+                <TableRow key={customer.id}>
+                  <TableCell className="text-center font-medium text-foreground">{customer.name}</TableCell>
+                  <TableCell className="text-center text-muted-foreground">{customer.number}</TableCell>
+                  <TableCell className="text-center">{customer.address}</TableCell>
+                  <TableCell className="text-center">{customer.state}</TableCell>
+                  <TableCell className="text-center">{customer.pincode}</TableCell>
+                  <TableCell className="text-center font-medium tabular-nums">
+                    {formatCurrency(customer.spend)}
+                  </TableCell>
+                  <TableCell className="text-center font-medium tabular-nums">
+                    {formatCurrency(customer.walletUsed)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex flex-col items-center">
+                      <span className="font-medium text-foreground">{customer.planName}</span>
+                      <span className="text-xs text-muted-foreground">
+                        Used {formatCurrency(customer.walletUsed)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        Wallet {formatCurrency(customer.planAmount)}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center font-medium tabular-nums text-amber-600">
+                    {formatCurrency(customer.walletRemaining)}
+                  </TableCell>
+                  {showFranchiseColumn ? (
+                    <TableCell className="text-center text-muted-foreground">{customer.franchiseName}</TableCell>
+                  ) : null}
+                  <TableCell className="text-center">
+                    <div className="flex justify-center">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-1.5 px-2.5 text-xs"
+                        onClick={() => openEditCustomerDialog(customer)}
+                        aria-label={`Edit ${customer.name}`}
+                      >
+                        <span className="flex items-center gap-1">
+                          <Pencil className="h-3.5 w-3.5" aria-hidden />
+                          Edit
+                        </span>
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
@@ -408,8 +413,12 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
             <Button type="button" variant="outline" onClick={() => setCustomerDialogOpen(false)}>
               Cancel
             </Button>
-            <Button type="button" onClick={submitCustomerDialog} disabled={!canSaveCustomer}>
-              {isEditMode ? 'Save changes' : 'Add customer'}
+            <Button
+              type="button"
+              onClick={submitCustomerDialog}
+              disabled={!canSaveCustomer || createCustomerMutation.isPending}
+            >
+              {createCustomerMutation.isPending ? 'Saving…' : isEditMode ? 'Save changes' : 'Add customer'}
             </Button>
           </DialogFooter>
         </DialogContent>

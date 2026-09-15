@@ -8,7 +8,13 @@ import type { DeliveryVerificationStatus } from '@/services/delivery-otp';
 export interface OrderItem {
   service_name: string;
   quantity: number;
+  unit_price_inr?: string | null;
   line_total_inr: string;
+  garments?: {
+    garment_item_id: string;
+    garment_name: string;
+    quantity: number;
+  }[];
 }
 
 /** List endpoint — no line items (lighter payload). */

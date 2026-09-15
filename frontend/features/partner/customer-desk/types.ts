@@ -2,6 +2,7 @@
 
 export type CustomerDeskProfile = {
   user_id: string | null;
+  customer_id?: string | null;
   name: string | null;
   phone: string;
   email: string | null;
@@ -21,6 +22,7 @@ export type PartnerCustomerUpdatePayload = {
 
 export type PartnerCustomerUpdateResult = {
   user_id: string;
+  customer_id?: string | null;
   name: string;
   phone: string | null;
   email: string | null;
@@ -141,6 +143,7 @@ export function customerDeskLookupKey(params: CustomerDeskLookupParams): string 
 export function guestDeskProfile(phone: string): CustomerDeskProfile {
   return {
     user_id: null,
+    customer_id: null,
     name: null,
     phone,
     email: null,

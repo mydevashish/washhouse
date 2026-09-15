@@ -7,7 +7,6 @@ import { DataTablePagination } from '@/components/data-table/data-table-paginati
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PartnerOrderCard } from '@/features/partner/partner-order-card';
 import { PartnerOrderTableActionsMenu } from '@/features/partner/components/partner-order-table-actions-menu';
 import { PartnerPickupEvidenceDialog } from '@/features/partner/components/partner-pickup-evidence-dialog';
 import { CustodyTimelineDialog } from '@/features/chain-of-custody';
@@ -27,6 +26,7 @@ import {
   partnerOrderHasUnpaidBalance,
   partnerOrderPaidInr,
   partnerOrderPendingInr,
+  partnerOrderTicketTotalInr,
 } from '@/features/partner/lib/partner-order-payment';
 import { ClientDate } from '@/components/ui/client-date';
 import { useServerList } from '@/lib/pagination/use-server-list';
@@ -159,28 +159,7 @@ export function PartnerOrdersTable({
         </div>
       ) : (
         <>
-          <div className="space-y-3 md:hidden">
-            {list.rows.map((o) => (
-              <div
-                key={o.id}
-                className="rounded-xl border border-border bg-background p-4 shadow-sm"
-              >
-                <PartnerOrderCard
-                  order={o}
-                  className="border-0 bg-transparent shadow-none ring-0"
-                  onAccept={() => acceptMutation.mutate(o.id)}
-                  onReject={() => rejectMutation.mutate(o.id)}
-                  onAdvance={() => advanceOrder(o.id, o.status, o.order_source)}
-                  isAccepting={acceptMutation.isPending}
-                  isRejecting={rejectMutation.isPending}
-                  isAdvancing={advanceMutation.isPending}
-                />
-              </div>
-            ))}
-          </div>
-
-          <div className="hidden overflow-hidden rounded-xl border border-border md:block" data-testid="partner-orders-table-desktop">
-            <div className="overflow-x-auto">
+          <div className="overflow-x-auto" data-testid="partner-orders-table-desktop">
             <table className="w-full text-sm">
               <thead className="table-sticky-head border-b border-border/60 bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
@@ -221,12 +200,12 @@ export function PartnerOrdersTable({
                           <PartnerOrderSourceBadge order={o} />
                         </div>
                       </td>
-                      <td className="max-w-[120px] truncate px-4 py-2">{o.customer_name}</td>
-                      <td className="hidden max-w-[140px] truncate px-4 py-2 text-xs text-muted-foreground lg:table-cell">
-                        {formatServices(o)}
+                      <td className="px-4 py-2">{o.customer_name}</td>
+                      <td className="hidden px-4 py-2 text-xs text-muted-foreground lg:table-cell">
+                        <span className="whitespace-normal">{formatServices(o)}</span>
                       </td>
                       <td className="px-4 py-2 text-xs tabular-nums font-medium">
-                        {formatInr(Number(o.total_inr))}
+                        {formatInr(partnerOrderTicketTotalInr(o))}
                       </td>
                       <td className="px-4 py-2 text-xs tabular-nums text-muted-foreground">
                         {formatInr(partnerOrderPaidInr(o))}
@@ -280,7 +259,6 @@ export function PartnerOrdersTable({
                 })}
               </tbody>
             </table>
-            </div>
           </div>
           {!hidePagination ? (
             <DataTablePagination

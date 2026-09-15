@@ -39,9 +39,17 @@ class CustomerInsightsDashboard(BaseModel):
 class CustomerInsightRow(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    customer_id: UUID | None = None
     user_id: UUID
     name: str
     phone: str | None = None
+    title: str | None = None
+    plan_name: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    state: str | None = None
+    pincode: str | None = None
     lifetime_spend_inr: str
     order_count: int
     avg_order_value_inr: str

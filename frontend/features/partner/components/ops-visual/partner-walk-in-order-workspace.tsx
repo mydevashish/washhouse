@@ -40,7 +40,11 @@ import { OrderCreateSuccessPanel } from '@/features/partner-shop-floor/component
 import { ClothWallCategoryChips } from '@/features/partner-shop-floor/components/cloth-wall-category-chips';
 import { ClothWallTileButton } from '@/features/partner-shop-floor/components/cloth-wall-tile';
 import { unitPriceForTile } from '@/features/partner-shop-floor/lib/cloth-wall-items';
-import { catalogLineKey, garmentLineKey, serviceLineKey } from '@/features/partner-shop-floor/lib/cloth-wall-qty';
+import {
+  catalogLineKey,
+  garmentLineKey,
+  serviceLineKey,
+} from '@/features/partner-shop-floor/lib/cloth-wall-qty';
 import { WalkInSuccessPanel } from '@/features/partner-shop-floor/components/walk-in-success-panel';
 import {
   isValidIndianMobileE164,
@@ -54,7 +58,10 @@ import {
   partnerPhoneDisplayValue,
   partnerPhoneToE164,
 } from '@/features/partner/lib/partner-phone-schema';
-import { searchPartnerCustomers } from '@/features/partner/customer-desk/api';
+import {
+  createPartnerCustomer,
+  searchPartnerCustomers,
+} from '@/features/partner/customer-desk/api';
 import type { CustomerDeskProfile } from '@/features/partner/customer-desk/types';
 import { buildPartnerCreateOrderHref } from '@/features/partner/customer-desk/phone';
 import {
@@ -112,8 +119,7 @@ function StepRail({
       {STEPS.map((s, i) => {
         const done = i < idx;
         const current = s.id === step;
-        const disabled =
-          lockedAfter != null && STEPS.findIndex((x) => x.id === lockedAfter) < i;
+        const disabled = lockedAfter != null && STEPS.findIndex((x) => x.id === lockedAfter) < i;
         return (
           <li key={s.id} className="flex items-center gap-2">
             {i > 0 ? (
@@ -130,7 +136,7 @@ function StepRail({
                 current
                   ? 'bg-primary text-primary-foreground'
                   : done
-                    ? 'bg-muted text-foreground hover:bg-muted/80'
+                    ? 'hover:bg-muted/80 bg-muted text-foreground'
                     : 'bg-muted/50 text-muted-foreground',
               )}
               aria-current={current ? 'step' : undefined}
@@ -226,7 +232,9 @@ function PartnerWalkInOrderWorkspaceContent({
 
   const weightCards = weightCardOptions
     .map((option) => {
-      const service = (c.services ?? []).find((svc) => option.match((svc.name ?? '').toLowerCase()));
+      const service = (c.services ?? []).find((svc) =>
+        option.match((svc.name ?? '').toLowerCase()),
+      );
       return {
         ...option,
         serviceId: service?.id ?? option.id,
@@ -242,15 +250,17 @@ function PartnerWalkInOrderWorkspaceContent({
   const [dialogService, setDialogService] = useState<ServiceCatalogItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [garmentOfferOpen, setGarmentOfferOpen] = useState(false);
-  const [weightGarmentService, setWeightGarmentService] = useState<
-    | { serviceId: string; label: string; serviceName: string }
-    | null
-  >(null);
+  const [weightGarmentService, setWeightGarmentService] = useState<{
+    serviceId: string;
+    label: string;
+    serviceName: string;
+  } | null>(null);
   const [weightGarmentDialogOpen, setWeightGarmentDialogOpen] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
   const [customerSearchResults, setCustomerSearchResults] = useState<CustomerDeskProfile[]>([]);
   const [customerSelectionLocked, setCustomerSelectionLocked] = useState(false);
-  const [selectedCustomerProfile, setSelectedCustomerProfile] = useState<CustomerDeskProfile | null>(null);
+  const [selectedCustomerProfile, setSelectedCustomerProfile] =
+    useState<CustomerDeskProfile | null>(null);
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({
     title: 'Ms',
@@ -306,6 +316,23 @@ function PartnerWalkInOrderWorkspaceContent({
       }
     },
     onError: () => toast.error('Customer search failed'),
+  });
+
+  const createCustomerMutation = useMutation({
+    mutationFn: ({ name, phone }: { name: string; phone: string }) =>
+      createPartnerCustomer({ name, phone }),
+    onSuccess: (profile) => {
+      c.applyCustomerFromSearch(profile);
+      setCustomerSearchQuery('');
+      setCustomerSearchResults([]);
+      setCustomerSelectionLocked(true);
+      setSelectedCustomerProfile(profile);
+      setNewCustomerOpen(false);
+      void qc.invalidateQueries({ queryKey: ['partner-customer-insights'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.partnerCustomerInsightsDashboard() });
+      toast.success('Customer saved to your directory');
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error, 'Could not save customer')),
   });
 
   useEffect(() => {
@@ -370,37 +397,12 @@ function PartnerWalkInOrderWorkspaceContent({
       return;
     }
 
-    c.applyCustomerFromSearch({
-      name: `${newCustomerForm.title} ${name}`.trim(),
-      phone,
-      email: '',
-      registered: false,
-      user_id: null,
-      order_count: 0,
-      last_order_at: null,
-    });
     c.setAddressLine1(newCustomerForm.addressLine1.trim());
     c.setAddressCity(newCustomerForm.city.trim());
     c.setAddressPincode(newCustomerForm.pincode.trim());
     c.setAddressLine2(newCustomerForm.addressLine2.trim());
     c.setAddressLandmark(newCustomerForm.state.trim());
-    if (newCustomerForm.plan && newCustomerForm.plan !== 'No plan') {
-      toast.success(`Plan selected: ${newCustomerForm.plan}`);
-    }
-    setCustomerSearchQuery('');
-    setCustomerSearchResults([]);
-    setCustomerSelectionLocked(true);
-    setSelectedCustomerProfile({
-      name: `${newCustomerForm.title} ${name}`.trim(),
-      phone,
-      email: '',
-      registered: false,
-      user_id: null,
-      order_count: 0,
-      last_order_at: null,
-    } as CustomerDeskProfile);
-    setNewCustomerOpen(false);
-    toast.success('New customer added to the order');
+    createCustomerMutation.mutate({ name: `${newCustomerForm.title} ${name}`.trim(), phone });
   }
 
   useEffect(() => {
@@ -437,7 +439,11 @@ function PartnerWalkInOrderWorkspaceContent({
 
   if (c.createdDoorstepOrder && !(suppressSuccessScreen && isDialog)) {
     return (
-      <div className="space-y-4" id="partner-walk-in-workspace" data-testid="partner-walk-in-workspace">
+      <div
+        className="space-y-4"
+        id="partner-walk-in-workspace"
+        data-testid="partner-walk-in-workspace"
+      >
         <OrderCreateSuccessPanel
           order={{
             id: c.createdDoorstepOrder.id,
@@ -463,7 +469,11 @@ function PartnerWalkInOrderWorkspaceContent({
 
   if (c.createdOrder && !(suppressSuccessScreen && isDialog)) {
     return (
-      <div className="space-y-4" id="partner-walk-in-workspace" data-testid="partner-walk-in-workspace">
+      <div
+        className="space-y-4"
+        id="partner-walk-in-workspace"
+        data-testid="partner-walk-in-workspace"
+      >
         <WalkInSuccessPanel
           order={c.createdOrder}
           onStartWash={() => c.startWashMutation.mutate(c.createdOrder!.id)}
@@ -493,7 +503,11 @@ function PartnerWalkInOrderWorkspaceContent({
   }
 
   return (
-    <div className="space-y-4" id="partner-walk-in-workspace" data-testid="partner-walk-in-workspace">
+    <div
+      className="space-y-4"
+      id="partner-walk-in-workspace"
+      data-testid="partner-walk-in-workspace"
+    >
       {!hideTopChrome || isDialog ? (
         <PartnerOpsSurface className="space-y-4">
           {!hideTopChrome && !isDialog ? (
@@ -512,11 +526,7 @@ function PartnerWalkInOrderWorkspaceContent({
           ) : (
             <StepRail step={c.step} onJump={c.setStep} lockedAfter={null} />
           )}
-          <div
-            className="flex rounded-lg bg-muted/60 p-0.5"
-            role="tablist"
-            aria-label="Order type"
-          >
+          <div className="bg-muted/60 flex rounded-lg p-0.5" role="tablist" aria-label="Order type">
             {(
               [
                 { id: 'walk_in' as const, label: 'Walk-in' },
@@ -559,7 +569,7 @@ function PartnerWalkInOrderWorkspaceContent({
           <PartnerOpsSectionLabel>Step 1 — Customer</PartnerOpsSectionLabel>
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="relative flex-1 min-w-[260px]" ref={searchBoxRef}>
+              <div className="relative min-w-[260px] flex-1" ref={searchBoxRef}>
                 <Input
                   value={customerSearchQuery}
                   onChange={(e) => {
@@ -580,7 +590,7 @@ function PartnerWalkInOrderWorkspaceContent({
                       <li key={`${row.phone}-${row.user_id ?? 'guest'}`}>
                         <button
                           type="button"
-                          className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm hover:bg-muted/70"
+                          className="hover:bg-muted/70 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm"
                           onClick={() => selectCustomerSearchResult(row)}
                         >
                           <span className="font-medium">{row.name || row.phone}</span>
@@ -655,7 +665,7 @@ function PartnerWalkInOrderWorkspaceContent({
           ) : null}
 
           {c.fulfillment === 'doorstep' ? (
-            <fieldset className="space-y-3 rounded-xl border border-border/60 p-3">
+            <fieldset className="border-border/60 space-y-3 rounded-xl border p-3">
               <legend className="px-1 text-sm font-medium">Pickup &amp; delivery address</legend>
               <div className="space-y-1.5">
                 <Label htmlFor="ws-address1">Address line 1</Label>
@@ -755,7 +765,7 @@ function PartnerWalkInOrderWorkspaceContent({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <PartnerOpsSectionLabel>Step 2 — Add items</PartnerOpsSectionLabel>
             <div
-              className="flex rounded-lg bg-muted/60 p-0.5"
+              className="bg-muted/60 flex rounded-lg p-0.5"
               role="tablist"
               aria-label="Intake mode"
             >
@@ -817,7 +827,9 @@ function PartnerWalkInOrderWorkspaceContent({
                 <>
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {weightCards.map((card) => {
-                      const selectedQty = c.serviceItems.find((item) => item.service_id === card.serviceId)?.quantity ?? 0;
+                      const selectedQty =
+                        c.serviceItems.find((item) => item.service_id === card.serviceId)
+                          ?.quantity ?? 0;
                       const displayQty = selectedQty > 0 ? String(selectedQty) : '';
 
                       return (
@@ -836,15 +848,23 @@ function PartnerWalkInOrderWorkspaceContent({
                           <div className="space-y-3 p-4">
                             <div className="flex items-center justify-between gap-2">
                               <div>
-                                <p className="text-sm font-semibold text-foreground">{card.label}</p>
-                                <p className="text-[11px] text-muted-foreground">{card.serviceName}</p>
+                                <p className="text-sm font-semibold text-foreground">
+                                  {card.label}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground">
+                                  {card.serviceName}
+                                </p>
                               </div>
                               <Button
                                 type="button"
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
-                                  setWeightGarmentService({ serviceId: card.serviceId, label: card.label, serviceName: card.serviceName });
+                                  setWeightGarmentService({
+                                    serviceId: card.serviceId,
+                                    label: card.label,
+                                    serviceName: card.serviceName,
+                                  });
                                   setWeightGarmentDialogOpen(true);
                                 }}
                               >
@@ -858,7 +878,10 @@ function PartnerWalkInOrderWorkspaceContent({
                                 variant="outline"
                                 className="h-9 w-9 p-0"
                                 onClick={() => {
-                                  const nextQty = Math.max(0, Number((selectedQty - 0.5).toFixed(2)));
+                                  const nextQty = Math.max(
+                                    0,
+                                    Number((selectedQty - 0.5).toFixed(2)),
+                                  );
                                   if (nextQty <= 0) {
                                     c.removeServiceLine(card.serviceId);
                                     return;
@@ -958,7 +981,7 @@ function PartnerWalkInOrderWorkspaceContent({
                   applyPending={applySuggestedM.isPending}
                 />
               ) : (
-                <>   
+                <>
                   <div className="flex flex-wrap items-center gap-2">
                     <Input
                       value={garmentSearch}
@@ -966,7 +989,7 @@ function PartnerWalkInOrderWorkspaceContent({
                       placeholder="Search garments..."
                       className="min-h-9 sm:max-w-xs"
                     />
-                    
+
                     {(['dry_clean', 'press'] as const).map((process) => (
                       <button
                         key={process}
@@ -982,7 +1005,7 @@ function PartnerWalkInOrderWorkspaceContent({
                         {process === 'dry_clean' ? 'Dryclean' : 'Press'}
                       </button>
                     ))}
-                  
+
                     <div className="ml-auto text-xs text-muted-foreground">
                       {garmentSelectionTiles.length} items
                     </div>
@@ -1004,9 +1027,10 @@ function PartnerWalkInOrderWorkspaceContent({
                       />
                     ))}
                     {/* Hide the Add tile when viewing Dryclean or Press processes */}
-                    {!(c.intakeMode === 'garments' && (c.garmentProcess === 'dry_clean' || c.garmentProcess === 'press')) && (
-                      <PartnerGarmentAddTile onClick={() => setGarmentOfferOpen(true)} />
-                    )}
+                    {!(
+                      c.intakeMode === 'garments' &&
+                      (c.garmentProcess === 'dry_clean' || c.garmentProcess === 'press')
+                    ) && <PartnerGarmentAddTile onClick={() => setGarmentOfferOpen(true)} />}
                   </div>
 
                   {garmentSelectionTiles.length > GARMENT_PAGE_SIZE ? (
@@ -1092,7 +1116,7 @@ function PartnerWalkInOrderWorkspaceContent({
             </div>
 
             {isDialog ? (
-              <div className="space-y-3 rounded-2xl border border-border/60 p-3">
+              <div className="border-border/60 space-y-3 rounded-2xl border p-3">
                 <p className="text-sm font-medium">Order options</p>
                 {activeCoupons.length > 0 ? (
                   <div className="space-y-1.5">
@@ -1189,11 +1213,7 @@ function PartnerWalkInOrderWorkspaceContent({
               onExpressChargeChange={c.setExpressChargeOverride}
               submitPending={c.createMutation.isPending || c.createDoorstepMutation.isPending}
               submitDisabled={c.lineRows.length === 0}
-              submitLabel={
-                c.fulfillment === 'doorstep'
-                  ? 'Create doorstep order'
-                  : 'Create order'
-              }
+              submitLabel={c.fulfillment === 'doorstep' ? 'Create doorstep order' : 'Create order'}
               onSubmit={c.submitOrder}
               hideSubmitButton={isDialog}
               className={isDialog ? 'lg:max-h-none' : undefined}
@@ -1204,10 +1224,12 @@ function PartnerWalkInOrderWorkspaceContent({
       ) : null}
 
       <Dialog open={newCustomerOpen} onOpenChange={setNewCustomerOpen}>
-        <DialogContent className="sm:max-w-4xl max-w-[95vw] max-h-[85vh] overflow-auto">
+        <DialogContent className="max-h-[85vh] max-w-[95vw] overflow-auto sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>Add new customer</DialogTitle>
-            <DialogDescription>Fill the customer details and add them directly to this order.</DialogDescription>
+            <DialogDescription>
+              Fill the customer details and add them directly to this order.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
@@ -1249,7 +1271,9 @@ function PartnerWalkInOrderWorkspaceContent({
                     }
                     placeholder="e.g. 9876543210"
                     aria-invalid={Boolean(newCustomerPhoneError)}
-                    aria-describedby={newCustomerPhoneError ? 'new-customer-phone-error' : undefined}
+                    aria-describedby={
+                      newCustomerPhoneError ? 'new-customer-phone-error' : undefined
+                    }
                   />
                   {newCustomerPhoneError ? (
                     <p id="new-customer-phone-error" className="text-xs text-danger" role="alert">
@@ -1262,7 +1286,9 @@ function PartnerWalkInOrderWorkspaceContent({
                   <Select
                     id="new-customer-plan"
                     value={newCustomerForm.plan}
-                    onChange={(e) => setNewCustomerForm((prev) => ({ ...prev, plan: e.target.value }))}
+                    onChange={(e) =>
+                      setNewCustomerForm((prev) => ({ ...prev, plan: e.target.value }))
+                    }
                     className="min-h-9"
                   >
                     <option value="No plan">No plan</option>
@@ -1279,7 +1305,9 @@ function PartnerWalkInOrderWorkspaceContent({
               <Input
                 id="new-customer-address"
                 value={newCustomerForm.addressLine1}
-                onChange={(e) => setNewCustomerForm((prev) => ({ ...prev, addressLine1: e.target.value }))}
+                onChange={(e) =>
+                  setNewCustomerForm((prev) => ({ ...prev, addressLine1: e.target.value }))
+                }
                 placeholder="House / flat / building"
               />
             </div>
@@ -1288,7 +1316,9 @@ function PartnerWalkInOrderWorkspaceContent({
               <Input
                 id="new-customer-address2"
                 value={newCustomerForm.addressLine2}
-                onChange={(e) => setNewCustomerForm((prev) => ({ ...prev, addressLine2: e.target.value }))}
+                onChange={(e) =>
+                  setNewCustomerForm((prev) => ({ ...prev, addressLine2: e.target.value }))
+                }
                 placeholder="Area / landmark"
               />
             </div>
@@ -1306,7 +1336,9 @@ function PartnerWalkInOrderWorkspaceContent({
               <Input
                 id="new-customer-pincode"
                 value={newCustomerForm.pincode}
-                onChange={(e) => setNewCustomerForm((prev) => ({ ...prev, pincode: e.target.value }))}
+                onChange={(e) =>
+                  setNewCustomerForm((prev) => ({ ...prev, pincode: e.target.value }))
+                }
                 placeholder="Pincode"
               />
             </div>
@@ -1324,8 +1356,12 @@ function PartnerWalkInOrderWorkspaceContent({
             <Button type="button" variant="outline" onClick={() => setNewCustomerOpen(false)}>
               Cancel
             </Button>
-            <Button type="button" onClick={submitNewCustomer} disabled={!canSubmitNewCustomer}>
-              Add customer
+            <Button
+              type="button"
+              onClick={submitNewCustomer}
+              disabled={!canSubmitNewCustomer || createCustomerMutation.isPending}
+            >
+              {createCustomerMutation.isPending ? 'Saving…' : 'Add customer'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1339,10 +1375,12 @@ function PartnerWalkInOrderWorkspaceContent({
 
       <Dialog open={weightGarmentDialogOpen} onOpenChange={setWeightGarmentDialogOpen}>
         {/* <DialogContent className="sm:max-w-xl"> */}
-        <DialogContent className="w-[95vw] sm:!max-w-[1100px] max-h-[90vh] overflow-auto">
+        <DialogContent className="max-h-[90vh] w-[95vw] overflow-auto sm:!max-w-[1100px]">
           <DialogHeader>
             <DialogTitle>
-              {weightGarmentService ? `Add garments — ${weightGarmentService.label}` : 'Add garments'}
+              {weightGarmentService
+                ? `Add garments — ${weightGarmentService.label}`
+                : 'Add garments'}
             </DialogTitle>
             <DialogDescription>
               Select garments to associate with this weight service. Prices hidden in this view.
@@ -1361,17 +1399,20 @@ function PartnerWalkInOrderWorkspaceContent({
 
             <ClothWallCategoryChips value={c.category} onChange={c.setCategory} />
 
-            <div className="flex gap-2 py-2 overflow-x-auto flex-nowrap">
+            <div className="flex flex-nowrap gap-2 overflow-x-auto py-2">
               {garmentPageItems.map((tile) => {
                 const process = c.processForTile(tile);
                 // compute quantity scoped to the selected weight service
-                const qtyForWeight = (c.garmentLines ?? []).find((l) =>
-                  tile.catalogItemId
-                    ? l.catalogItemId === tile.catalogItemId && l.serviceId === weightGarmentService?.serviceId
-                    : tile.garmentItemId
-                    ? l.garmentItemId === tile.garmentItemId && l.serviceId === weightGarmentService?.serviceId
-                    : l.serviceId === weightGarmentService?.serviceId,
-                )?.quantity ?? 0;
+                const qtyForWeight =
+                  (c.garmentLines ?? []).find((l) =>
+                    tile.catalogItemId
+                      ? l.catalogItemId === tile.catalogItemId &&
+                        l.serviceId === weightGarmentService?.serviceId
+                      : tile.garmentItemId
+                        ? l.garmentItemId === tile.garmentItemId &&
+                          l.serviceId === weightGarmentService?.serviceId
+                        : l.serviceId === weightGarmentService?.serviceId,
+                  )?.quantity ?? 0;
 
                 return (
                   <ClothWallTileButton
@@ -1381,34 +1422,34 @@ function PartnerWalkInOrderWorkspaceContent({
                     process={process}
                     onIncrement={() => {
                       // build a service-scoped key so this tile is tracked under the weight service
-                        const svc = weightGarmentService?.serviceId ?? tile.serviceId;
-                        const p = process;
-                        const baseKey = tile.catalogItemId
-                          ? catalogLineKey(tile.catalogItemId, p)
-                          : tile.garmentItemId
+                      const svc = weightGarmentService?.serviceId ?? tile.serviceId;
+                      const p = process;
+                      const baseKey = tile.catalogItemId
+                        ? catalogLineKey(tile.catalogItemId, p)
+                        : tile.garmentItemId
                           ? garmentLineKey(tile.garmentItemId, p)
                           : svc
-                          ? serviceLineKey(svc)
-                          : `tile:${tile.id}`;
-                        const key = svc ? `${baseKey}::service:${svc}` : baseKey;
+                            ? serviceLineKey(svc)
+                            : `tile:${tile.id}`;
+                      const key = svc ? `${baseKey}::service:${svc}` : baseKey;
 
-                        const line = {
-                          key,
-                          quantity: 1,
-                          unitPriceInr: unitPriceForTile(tile, p),
-                          label: `${tile.hinglish} — ${weightGarmentService?.label ?? ''}`,
-                          catalogItemId: tile.catalogItemId,
-                          garmentItemId: tile.garmentItemId,
-                          serviceId: svc,
-                          // For service-scoped garments (added to a weight service)
-                          // do NOT set a garment process. If `process` is set to
-                          // 'dry_clean' or 'press', the review summary will show
-                          // them under Dry Clean/Press. Leaving `process` undefined
-                          // ensures these lines are treated as service items.
-                          process: svc ? undefined : p,
-                        } as const;
+                      const line = {
+                        key,
+                        quantity: 1,
+                        unitPriceInr: unitPriceForTile(tile, p),
+                        label: `${tile.hinglish} — ${weightGarmentService?.label ?? ''}`,
+                        catalogItemId: tile.catalogItemId,
+                        garmentItemId: tile.garmentItemId,
+                        serviceId: svc,
+                        // For service-scoped garments (added to a weight service)
+                        // do NOT set a garment process. If `process` is set to
+                        // 'dry_clean' or 'press', the review summary will show
+                        // them under Dry Clean/Press. Leaving `process` undefined
+                        // ensures these lines are treated as service items.
+                        process: svc ? undefined : p,
+                      } as const;
 
-                        c.addCatalogLines([line as any]);
+                      c.addCatalogLines([line as any]);
                     }}
                     onDecrement={() => {
                       const svc = weightGarmentService?.serviceId ?? tile.serviceId;
@@ -1424,9 +1465,7 @@ function PartnerWalkInOrderWorkspaceContent({
                       const key = svc ? `${baseKey}::service:${svc}` : baseKey;
 
                       const existing = (c.garmentLines ?? []).find(
-                        (l) =>
-                          l.key === key &&
-                          (l.serviceId ?? null) === (svc ?? null),
+                        (l) => l.key === key && (l.serviceId ?? null) === (svc ?? null),
                       );
 
                       if (!existing) {
@@ -1447,7 +1486,7 @@ function PartnerWalkInOrderWorkspaceContent({
                   />
                 );
               })}
-            </div>          
+            </div>
 
             {garmentSelectionTiles.length > GARMENT_PAGE_SIZE ? (
               <div className="flex items-center justify-between gap-2 pt-2">
@@ -1482,12 +1521,19 @@ function PartnerWalkInOrderWorkspaceContent({
               const lines = (c.garmentLines ?? []).filter((l) => l.serviceId === card.serviceId);
               if (lines.length === 0) return null;
               return (
-                <div key={`summary-${card.id}`} className="rounded-2xl border border-border bg-background p-3 shadow-sm">
+                <div
+                  key={`summary-${card.id}`}
+                  className="rounded-2xl border border-border bg-background p-3 shadow-sm"
+                >
                   <p className="text-sm font-semibold">{card.label}</p>
-                  <p className="mt-2 text-sm text-muted-foreground">{lines.length} {lines.length > 1 ? 'items' : 'item'}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {lines.length} {lines.length > 1 ? 'items' : 'item'}
+                  </p>
                   <div className="mt-2 text-xs text-muted-foreground">
                     {lines.slice(0, 5).map((l) => (
-                      <div key={l.key} className="truncate">{l.label}</div>
+                      <div key={l.key} className="truncate">
+                        {l.label}
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -1496,7 +1542,11 @@ function PartnerWalkInOrderWorkspaceContent({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setWeightGarmentDialogOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setWeightGarmentDialogOpen(false)}
+            >
               Done
             </Button>
           </DialogFooter>
