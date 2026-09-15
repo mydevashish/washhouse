@@ -194,6 +194,7 @@ export function PartnerOrderCheckoutAside({
   const walletAvailable = Number(walletRemainingInr ?? 0) > 0;
   const [splitCash, setSplitCash] = useState(0);
   const [splitUpi, setSplitUpi] = useState(0);
+  const [paymentAction, setPaymentAction] = useState<'pay_now' | 'partial' | 'pay_later'>('pay_now');
 
   const remainingAfterWallet = Math.max(0, totals.grandTotal - walletAmountUsed);
   const splitSummary = useMemo(() => {
@@ -228,9 +229,22 @@ export function PartnerOrderCheckoutAside({
         ]
       : []),
     ...(expressOrder ? [{ label: 'Express service', value: formatInr(totals.expressCharge) }] : []),
-    { label: 'Advance paid', value: `- ${formatInr(totals.advancePaid)}` },
-    { label: 'Balance due', value: formatInr(totals.balanceDue) },
   ];
+
+  const walletUsed = Math.max(0, walletAmountUsed || 0);
+  const advancePaidShown = Math.max(0, totals.advancePaid || 0);
+  const effectiveBalance = Math.max(0, totals.grandTotal - advancePaidShown - walletUsed);
+
+  if (walletUsed > 0) {
+    breakdown.push({ label: 'Wallet used', value: `- ${formatInr(walletUsed)}` });
+  }
+
+  if (advancePaidShown > 0) {
+    breakdown.push({ label: 'Advance paid', value: `- ${formatInr(advancePaidShown)}` });
+  }
+
+  breakdown.push({ label: 'Balance due', value: formatInr(effectiveBalance) });
+  
 
   useEffect(() => {
     if (deliveryType === 'Walk-in') {
@@ -437,7 +451,16 @@ export function PartnerOrderCheckoutAside({
                     type="checkbox"
                     className="h-4 w-4 rounded border-border"
                     checked={Boolean(walletEnabled)}
-                    onChange={(e) => onWalletEnabledChange?.(e.target.checked)}
+                    onChange={(e) => {
+                      const enabled = e.target.checked;
+                      onWalletEnabledChange?.(enabled);
+                      if (enabled) {
+                        const maxUse = Math.max(0, Math.min(Number(walletRemainingInr ?? 0), totals.grandTotal));
+                        onWalletAmountUsedChange?.(maxUse);
+                      } else {
+                        onWalletAmountUsedChange?.(0);
+                      }
+                    }}
                   />
                   Use wallet for this order
                 </label>
@@ -445,21 +468,35 @@ export function PartnerOrderCheckoutAside({
                   <div className="mt-3 space-y-2">
                     <div>
                       <Label htmlFor="po-wallet-amount">Wallet amount to use</Label>
-                      <Input
-                        id="po-wallet-amount"
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={walletAmountUsed === 0 ? '' : walletAmountUsed}
-                        onChange={(e) => onWalletAmountUsedChange?.(Number(e.target.value.replace(/[^\d]/g, '') || 0))}
-                        className="mt-1 min-h-9"
-                      />
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="po-wallet-amount"
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={walletAmountUsed === 0 ? '' : walletAmountUsed}
+                          onChange={(e) => onWalletAmountUsedChange?.(Number(e.target.value.replace(/[^\d]/g, '') || 0))}
+                          className="mt-1 min-h-9"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="mt-1 whitespace-nowrap"
+                          onClick={() => {
+                            const maxUse = Math.max(0, Math.min(Number(walletRemainingInr ?? 0), totals.grandTotal));
+                            onWalletAmountUsedChange?.(maxUse);
+                          }}
+                        >
+                          Use max
+                        </Button>
+                      </div>
                     </div>
                     <p className="text-[11px] text-muted-foreground">
                       Remaining due = {formatInr(Math.max(0, totals.grandTotal - walletAmountUsed))}. This amount can be paid by cash or UPI.
                     </p>
                     <p className="text-[11px] text-muted-foreground">
-                      Split rule: set wallet usage to the wallet share, then pay the balance by cash or UPI. Example: 40% cash + 60% wallet means use 60% of the total on wallet and pay the remaining 40% by cash.
+                      Wallet will be used first as priority up to the order total. If wallet covers the full amount, no cash/UPI is required. Otherwise wallet will cover up to {formatInr(Math.min(Number(walletRemainingInr ?? 0), totals.grandTotal))} and the remainder can be paid by cash or UPI.
                     </p>
                   </div>
                 ) : null}
@@ -467,16 +504,52 @@ export function PartnerOrderCheckoutAside({
             ) : null}
 
             <div>
-              <Label htmlFor="po-advance-paid">Advance payment</Label>
-              <Input
-                id="po-advance-paid"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={advancePaid === 0 ? '' : advancePaid}
-                onChange={(e) => onAdvancePaidChange(Number(e.target.value.replace(/[^\d]/g, '') || 0))}
-                className="mt-2 min-h-9"
-              />
+              <Label>Payment received</Label>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                <div className="sm:col-span-2">
+                  <Select
+                    id="po-payment-action"
+                    value={paymentAction}
+                    onChange={(e) => {
+                      const v = e.target.value as 'pay_now' | 'partial' | 'pay_later';
+                      setPaymentAction(v);
+                      if (v === 'pay_now') {
+                        // collect full remaining after wallet
+                        const remaining = Math.max(0, totals.grandTotal - walletAmountUsed);
+                        onAdvancePaidChange(remaining);
+                      }
+                      if (v === 'pay_later') {
+                        onAdvancePaidChange(0);
+                      }
+                    }}
+                    className="mt-1 min-h-9"
+                  >
+                    <option value="pay_now">Pay now (collect full remaining)</option>
+                    <option value="partial">Partial payment (collect part)</option>
+                    <option value="pay_later">Pay later / mark due</option>
+                  </Select>
+                </div>
+                <div>
+                  <Input
+                    id="po-payment-received"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={advancePaid === 0 ? '' : advancePaid}
+                    onChange={(e) => {
+                      const val = Number(e.target.value.replace(/[^\d]/g, '') || 0);
+                      const max = Math.max(0, totals.grandTotal - walletAmountUsed);
+                      onAdvancePaidChange(Math.min(max, val));
+                      // if user types a value, switch to Partial
+                      if (val > 0 && paymentAction !== 'partial') setPaymentAction('partial');
+                    }}
+                    className="mt-1 min-h-9"
+                  />
+                </div>
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Collected amount cannot exceed remaining payable: {formatInr(Math.max(0, totals.grandTotal - walletAmountUsed))}.
+              </p>
             </div>
 
             <label className="flex cursor-pointer items-center gap-2 text-sm">

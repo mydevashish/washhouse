@@ -84,6 +84,8 @@ class WalkInOrderService:
         coupon_code: str | None = None,
         customer_id: UUID | None = None,
         advance_paid_inr: Decimal | None = None,
+        wallet_amount_used_inr: Decimal | None = None,
+        payment_method: str | None = None,
     ) -> Order:
         laundry = await self._laundries.get_by_owner(partner_user_id)
         if not laundry:
@@ -193,23 +195,53 @@ class WalkInOrderService:
             self._session.add(item)
 
         advance = Decimal(str(advance_paid_inr or 0)).quantize(Decimal("0.01"))
+        wallet_used = Decimal(str(wallet_amount_used_inr or 0)).quantize(Decimal("0.01"))
         if advance < 0:
             advance = Decimal("0")
         if advance > total:
             advance = total
+        # Clamp wallet_used to available and to order total
+        try:
+            shop_wallet = int(getattr(shop_customer, 'wallet_balance', 0))
+        except Exception:
+            shop_wallet = 0
+        max_wallet_applicable = min(shop_wallet, int(total))
+        if wallet_used < 0:
+            wallet_used = Decimal("0")
+        if wallet_used > Decimal(str(max_wallet_applicable)):
+            wallet_used = Decimal(str(max_wallet_applicable))
+        if wallet_used + advance > total:
+            wallet_used = total - advance
         if advance > 0:
-            paid = advance >= total
+            # Determine payment status taking wallet into account
+            total_paid_via_sources = advance + wallet_used
+            paid = total_paid_via_sources >= total
             order.payment_status = PaymentStatus.paid if paid else PaymentStatus.pending_cod
-            order.payment_method = PaymentMethod.cod
+            # leave payment_method on order for legacy reasons if matches enum
+            try:
+                # only map to known enum values; else leave None
+                order.payment_method = PaymentMethod(payment_method) if payment_method else PaymentMethod.cod
+            except Exception:
+                order.payment_method = PaymentMethod.cod
+            # record a Payment row for the partner-collected advance (legacy behavior)
             self._session.add(
                 Payment(
                     order_id=order.id,
-                    amount_inr=advance,
+                    amount_inr=advance + wallet_used,
                     status=PaymentStatus.paid if paid else PaymentStatus.pending_cod,
                     method=PaymentMethod.cod,
-                    metadata_json=json.dumps({"advance_inr": str(advance)}),
+                    metadata_json=json.dumps({"advance_inr": str(advance), "wallet_used_inr": str(wallet_used), "requested_method": payment_method}),
                 ),
             )
+            # deduct wallet from shop_customer if used
+            if wallet_used > 0 and shop_customer is not None:
+                # wallet_balance stored as int (in INR rupees); convert and clamp
+                try:
+                    new_balance = max(0, int(shop_customer.wallet_balance) - int(wallet_used))
+                    shop_customer.wallet_balance = new_balance
+                    self._session.add(shop_customer)
+                except Exception:
+                    pass
 
         event = OrderStatusEvent(
             order_id=order.id,

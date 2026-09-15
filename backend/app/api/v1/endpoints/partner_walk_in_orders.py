@@ -75,6 +75,8 @@ async def create_walk_in_order(
         coupon_code=body.coupon_code,
         customer_id=body.customer_id,
         advance_paid_inr=body.advance_paid_inr,
+        wallet_amount_used_inr=body.wallet_amount_used_inr,
+        payment_method=body.payment_method,
     )
     from app.repositories.laundry import LaundryRepository
 
