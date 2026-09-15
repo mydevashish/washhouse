@@ -340,6 +340,13 @@ export async function listPartnerCustomers(): Promise<PartnerCustomer[]> {
   return data.data;
 }
 
+export async function collectPartnerOrderPayment(
+  orderId: string,
+  body: { amount_inr?: number | string; method?: 'cash' | 'wallet' | 'upi' },
+): Promise<void> {
+  await api.post(`/partner/orders/${orderId}/collect-payment`, body);
+}
+
 export async function listPartnerStaff(): Promise<PartnerStaff[]> {
   const { data } = await api.get<ApiEnvelope<PartnerStaff[]>>('/partner/staff');
   return data.data;

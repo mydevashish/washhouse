@@ -11,6 +11,9 @@ export type CustomerDeskProfile = {
   registered: boolean;
   order_count: number;
   last_order_at: string | null;
+  wallet_balance?: number | null;
+  wallet_used?: number | null;
+  wallet_remaining?: number | null;
 };
 
 export type PartnerCustomerUpdatePayload = {

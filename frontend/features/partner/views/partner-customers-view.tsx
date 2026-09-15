@@ -51,6 +51,7 @@ type CustomerDirectoryRow = {
   walletUsed: number;
   walletRemaining: number;
   franchiseName?: string;
+  raw?: any;
 };
 
 const currentRole: CustomerRole = 'franchise';
@@ -169,17 +170,26 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
 
   function openEditCustomerDialog(customer: CustomerDirectoryRow) {
     const formName = customer.name.replace(/^(Mr|Mrs|Ms)\s+/i, '').trim();
+    const raw = (customer as any).raw ?? {};
+    const planFromRaw = (raw.plan_name ?? raw.plan ?? customer.planName ?? 'No plan') as string | undefined;
+    function normalizePlan(p?: string | null) {
+      if (!p) return 'No plan';
+      const s = String(p).toLowerCase();
+      if (s.includes('mini')) return 'Mini Plan';
+      if (s.includes('value')) return 'Value Plan';
+      return 'No plan';
+    }
     setIsEditMode(true);
     setCustomerForm({
       title: customer.name.match(/^(Mr|Mrs|Ms)\b/i)?.[1] ?? 'Mr',
       name: formName,
       phone: customer.number,
-      plan: customer.planName || 'No plan',
-      addressLine1: customer.address,
-      addressLine2: '',
-      city: customer.state,
-      pincode: customer.pincode,
-      state: customer.state,
+      plan: normalizePlan(planFromRaw),
+      addressLine1: (raw.address_line1 ?? raw.address_line_1 ?? raw.address ?? '').trim(),
+      addressLine2: (raw.address_line2 ?? raw.address_line_2 ?? '').trim(),
+      city: (raw.city ?? raw.state ?? customer.state ?? '').trim(),
+      pincode: (raw.pincode ?? customer.pincode ?? '').trim(),
+      state: (raw.state ?? customer.state ?? '').trim(),
     });
     setCustomerDialogOpen(true);
   }
@@ -228,6 +238,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
       walletUsed,
       walletRemaining,
       franchiseName: customer.segment_label,
+      raw: customer,
     };
   });
 
@@ -395,6 +406,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
                     type="tel"
                     inputMode="tel"
                     value={customerForm.phone}
+                    disabled={isEditMode}
                     onChange={(e) =>
                       setCustomerForm((prev) => ({
                         ...prev,

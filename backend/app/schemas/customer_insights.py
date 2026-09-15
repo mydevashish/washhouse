@@ -45,6 +45,9 @@ class CustomerInsightRow(BaseModel):
     phone: str | None = None
     title: str | None = None
     plan_name: str | None = None
+    plan_amount_inr: str | None = None
+    wallet_used_inr: str | None = None
+    wallet_remaining_inr: str | None = None
     address_line1: str | None = None
     address_line2: str | None = None
     city: str | None = None

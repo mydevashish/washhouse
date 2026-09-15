@@ -31,6 +31,8 @@ class CustomerDeskProfile(BaseModel):
     gender: str | None = None
     notes: str | None = None
     wallet_balance: int = 0
+    wallet_used: int | None = None
+    wallet_remaining: int | None = None
     registered: bool = False
     order_count: int = 0
     last_order_at: datetime | None = None

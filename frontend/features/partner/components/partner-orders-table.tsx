@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PartnerOrderTableActionsMenu } from '@/features/partner/components/partner-order-table-actions-menu';
 import { PartnerPickupEvidenceDialog } from '@/features/partner/components/partner-pickup-evidence-dialog';
+import { PartnerPaymentCollectionDialog } from '@/features/partner/components/partner-payment-collection-dialog';
 import { CustodyTimelineDialog } from '@/features/chain-of-custody';
 import { PartnerStatusBadge } from '@/features/partner/components/partner-status-badge';
 import { PartnerOrderSourceBadge, isWalkInOrder } from '@/features/partner/components/partner-order-source-badge';
@@ -82,6 +83,7 @@ export function PartnerOrdersTable({
 }: PartnerOrdersTableProps) {
   const [evidenceOrder, setEvidenceOrder] = useState<PartnerOrder | null>(null);
   const [custodyOrder, setCustodyOrder] = useState<PartnerOrder | null>(null);
+  const [paymentOrder, setPaymentOrder] = useState<PartnerOrder | null>(null);
   const { acceptMutation, rejectMutation, advanceOrder, advanceMutation, isBusy } =
     usePartnerOrderMutations();
 
@@ -249,7 +251,13 @@ export function PartnerOrdersTable({
                           isAdvancing={advanceMutation.isPending}
                           onAccept={() => acceptMutation.mutate(o.id)}
                           onReject={() => rejectMutation.mutate(o.id)}
-                          onAdvance={() => advanceOrder(o.id, o.status, o.order_source)}
+                          onAdvance={() => {
+                            if (partnerOrderHasUnpaidBalance(o)) {
+                              setPaymentOrder(o);
+                            } else {
+                              advanceOrder(o.id, o.status, o.order_source);
+                            }
+                          }}
                           onPhotos={() => setEvidenceOrder(o)}
                           onCustody={() => setCustodyOrder(o)}
                         />
@@ -286,6 +294,16 @@ export function PartnerOrdersTable({
         onOpenChange={(open) => !open && setCustodyOrder(null)}
         queryFn={getPartnerCustodyTimeline}
         scope="partner"
+      />
+      <PartnerPaymentCollectionDialog
+        order={paymentOrder}
+        open={Boolean(paymentOrder)}
+        onOpenChange={(open) => !open && setPaymentOrder(null)}
+        onCollected={(orderId) => {
+          if (!paymentOrder) return;
+          advanceOrder(paymentOrder.id, paymentOrder.status, paymentOrder.order_source);
+          setPaymentOrder(null);
+        }}
       />
     </div>
   );

@@ -171,10 +171,10 @@ export function PartnerCustomerSnapshotCards({
             </dd>
           </div>
 
-          <div className="flex justify-between gap-2">
+          {/* <div className="flex justify-between gap-2">
             <dt className="text-muted-foreground">Segment</dt>
             <dd className="font-medium">{segment || 'No Plan is Active'}</dd>
-          </div>
+          </div> */}
 
           <div className="border-t border-border pt-2">
             <div className="flex justify-between gap-2">
