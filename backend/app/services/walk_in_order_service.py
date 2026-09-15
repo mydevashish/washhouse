@@ -86,6 +86,10 @@ class WalkInOrderService:
         advance_paid_inr: Decimal | None = None,
         wallet_amount_used_inr: Decimal | None = None,
         payment_method: str | None = None,
+        discount_inr: Decimal | None = None,
+        pickup_charge_inr: Decimal | None = None,
+        delivery_charge_inr: Decimal | None = None,
+        express_charge_inr: Decimal | None = None,
     ) -> Order:
         laundry = await self._laundries.get_by_owner(partner_user_id)
         if not laundry:
@@ -135,13 +139,22 @@ class WalkInOrderService:
             )
             line_items.append(order_item)
 
-        discount_inr, applied_code = await PartnerCouponService(self._session).resolve_discount(
-            partner_user_id,
-            coupon_code=coupon_code,
-            subtotal=subtotal,
-        )
+        # Prefer explicit discount from payload; otherwise resolve coupon
+        if discount_inr is None:
+            discount_inr, applied_code = await PartnerCouponService(self._session).resolve_discount(
+                partner_user_id,
+                coupon_code=coupon_code,
+                subtotal=subtotal,
+            )
+        else:
+            applied_code = coupon_code
+            discount_inr = Decimal(str(discount_inr)).quantize(Decimal("0.01"))
 
-        taxable = subtotal - discount_inr
+        pickup_charge = Decimal(str(pickup_charge_inr or 0)).quantize(Decimal("0.01"))
+        delivery_charge = Decimal(str(delivery_charge_inr or 0)).quantize(Decimal("0.01"))
+        express_charge = Decimal(str(express_charge_inr or 0)).quantize(Decimal("0.01"))
+
+        taxable = subtotal - discount_inr + pickup_charge + delivery_charge + express_charge
         if taxable < Decimal("0"):
             taxable = Decimal("0")
         # Counter walk-in totals match the create-order UI (no GST on the ticket).
@@ -160,6 +173,16 @@ class WalkInOrderService:
         token = await ColorTokenService(self._session).allocate(laundry.id)
         now = datetime.now(UTC)
         ready_at = self._ensure_aware(expected_ready_at) if expected_ready_at else now + timedelta(days=2)
+
+        intake_snapshot = {
+            "pickup_charge_inr": str(pickup_charge),
+            "delivery_charge_inr": str(delivery_charge),
+            "express_charge_inr": str(express_charge),
+            "wallet_amount_used_inr": str(wallet_amount_used_inr or 0),
+            "advance_paid_inr": str(advance_paid_inr or 0),
+            "discount_inr": str(discount_inr),
+            "coupon_code": applied_code,
+        }
 
         order = Order(
             user_id=shop_customer.user_id or (linked_user.id if linked_user else None),
@@ -181,13 +204,14 @@ class WalkInOrderService:
             subtotal_inr=subtotal,
             discount_inr=discount_inr,
             coupon_code=applied_code,
-            delivery_fee_inr=Decimal("0"),
+            delivery_fee_inr=(pickup_charge + delivery_charge + express_charge),
             gst_rate=Decimal("0"),
             cgst_inr=cgst,
             sgst_inr=sgst,
             total_inr=total,
             commission_rate=commission_rate,
         )
+        order.intake_snapshot = intake_snapshot
         order = await self._orders.create(order)
 
         for item in line_items:
