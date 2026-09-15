@@ -37,7 +37,7 @@ export function GlobalNavbar({
   laundryName,
   onOpenSidebar,
   notificationsHref,
-  settingsHref,
+  // settingsHref,
   className,
   sidebarFrom = 'lg',
 }: GlobalNavbarProps) {
@@ -94,7 +94,7 @@ export function GlobalNavbar({
               <NavbarThemeToggle />
             </div>
             <div className="shrink-0">
-              <NavbarUserMenu app={app} laundryName={laundryName} settingsHref={settingsHref} />
+              <NavbarUserMenu app={app} laundryName={laundryName} />
             </div>
             {showCustomerBrand ? <NavbarCustomerMenu /> : null}
           </div>

@@ -1292,10 +1292,8 @@ function PartnerWalkInOrderWorkspaceContent({
                     className="min-h-9"
                   >
                     <option value="No plan">No plan</option>
-                    <option value="Basic Care">Basic Care</option>
-                    <option value="Premium Care">Premium Care</option>
-                    <option value="Family Plan">Family Plan</option>
-                    <option value="Wallet Plan">Wallet Plan</option>
+                    <option value="Mini Plan">Mini Plan — Pay ₹2,000 / Get ₹2,200</option>
+                    <option value="Value Plan">Value Plan — Pay ₹5,000 / Get ₹5,500</option>
                   </Select>
                 </div>
               </div>

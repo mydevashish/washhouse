@@ -95,8 +95,14 @@ describe('PartnerCustomersView', () => {
 
     await waitFor(() => {
       expect(createPartnerCustomer).toHaveBeenCalledWith({
-        name: 'New Customer',
+        name: 'Mr New Customer',
         phone: '+919876543211',
+        address_line_1: undefined,
+        address_line_2: undefined,
+        city: undefined,
+        state: undefined,
+        pincode: undefined,
+        plan: 'No plan',
       });
     });
   });

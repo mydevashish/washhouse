@@ -21,11 +21,33 @@ function buildOrderParams(filters: CustomerDeskOrdersFilters = {}): Record<strin
 }
 
 /** Register or update a customer for this laundry (idempotent on phone). */
-export async function createPartnerCustomer(payload: {
+// export async function createPartnerCustomer(payload: {
+//   name: string;
+//   phone: string;
+// }): Promise<CustomerDeskProfile> {
+//   const { data } = await api.post<ApiEnvelope<CustomerDeskProfile>>('/partner/customers', payload);
+//   return data.data;
+// }
+
+export type PartnerCustomerCreatePayload = {
   name: string;
   phone: string;
-}): Promise<CustomerDeskProfile> {
-  const { data } = await api.post<ApiEnvelope<CustomerDeskProfile>>('/partner/customers', payload);
+  address_line_1?: string;
+  address_line_2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  plan?: 'No plan' | 'Mini Plan' | 'Value Plan';
+};
+
+export async function createPartnerCustomer(
+  payload: PartnerCustomerCreatePayload,
+): Promise<CustomerDeskProfile> {
+  const { data } = await api.post<ApiEnvelope<CustomerDeskProfile>>(
+    '/partner/customers',
+    payload,
+  );
+
   return data.data;
 }
 

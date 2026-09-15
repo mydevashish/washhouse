@@ -32,11 +32,11 @@ function AccountMenuPlaceholder() {
 export function NavbarUserMenu({
   app,
   laundryName,
-  settingsHref,
+  // settingsHref,
 }: {
   app: AppContext;
   laundryName?: string;
-  settingsHref: string;
+  // settingsHref: string;
 }) {
   const mounted = useMounted();
   const user = useAuthStore((s) => s.user);

@@ -60,7 +60,7 @@ function formatCurrency(value: number | string | null | undefined) {
     style: 'currency',
     currency: 'INR',
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(numeric);
 }
 
 export function PartnerCustomersView({ embedded = false }: { embedded?: boolean }) {
@@ -71,7 +71,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [customerForm, setCustomerForm] = useState({
-    title: 'Ms',
+    title: 'Mr',
     name: '',
     phone: '',
     plan: 'No plan',
@@ -97,10 +97,20 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
     mutationFn: () => {
       const name = customerForm.name.trim();
       const phone = partnerPhoneToE164(customerForm.phone);
+      const payloadName = `${customerForm.title} ${name}`.trim();
       if (!name) throw new Error('Customer name is required');
       if (!isPartnerPhoneReady(customerForm.phone)) throw new Error(PARTNER_PHONE_INLINE_ERROR);
       if (!isPartnerPhoneReady(phone)) throw new Error(PARTNER_PHONE_INLINE_ERROR);
-      return createPartnerCustomer({ name, phone });
+      return createPartnerCustomer({
+        name: payloadName,
+        phone,
+        address_line_1: customerForm.addressLine1.trim() || undefined,
+        address_line_2: customerForm.addressLine2.trim() || undefined,
+        city: customerForm.city.trim() || undefined,
+        state: customerForm.state.trim() || undefined,
+        pincode: customerForm.pincode.trim() || undefined,
+        plan: customerForm.plan as 'No plan' | 'Mini Plan' | 'Value Plan',
+      });
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['partner-customer-insights'] });
@@ -109,7 +119,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
       toast.success('Customer saved');
       setCustomerDialogOpen(false);
       setCustomerForm({
-        title: 'Ms',
+        title: 'Mr',
         name: '',
         phone: '',
         plan: 'No plan',
@@ -128,7 +138,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
   function openAddCustomerDialog() {
     setIsEditMode(false);
     setCustomerForm({
-      title: 'Ms',
+      title: 'Mr',
       name: '',
       phone: '',
       plan: 'No plan',
@@ -145,7 +155,7 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
     const formName = customer.name.replace(/^(Mr|Mrs|Ms)\s+/i, '').trim();
     setIsEditMode(true);
     setCustomerForm({
-      title: customer.name.match(/^(Mr|Mrs|Ms)\b/i)?.[1] ?? 'Ms',
+      title: customer.name.match(/^(Mr|Mrs|Ms)\b/i)?.[1] ?? 'Mr',
       name: formName,
       phone: customer.number,
       plan: customer.planName || 'No plan',
@@ -162,20 +172,33 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
     createCustomerMutation.mutate();
   }
 
-  const customerRows: CustomerDirectoryRow[] = (customerQuery.data?.items ?? []).map((customer) => ({
-    id: customer.customer_id,
-    name: customer.name,
-    number: customer.phone ?? '',
-    address: customer.address_line_1 ?? customer.address ?? '',
-    state: customer.state ?? '',
-    pincode: customer.pincode ?? '',
-    spend: Number(customer.lifetime_spend_inr ?? 0),
-    planName: customer.segment_label ?? 'No plan',
-    planAmount: Number(customer.avg_order_value_inr ?? 0),
-    walletUsed: Number(customer.order_count ?? 0),
-    walletRemaining: Number(customer.retention_score ?? 0),
-    franchiseName: customer.segment_label,
-  }));
+  const customerRows: CustomerDirectoryRow[] = (customerQuery.data?.items ?? []).map((customer, index) => {
+    const extra = customer as Partial<{
+      address_line_1?: string | null;
+      address?: string | null;
+      state?: string | null;
+      pincode?: string | null;
+      city?: string | null;
+      plan_amount_inr?: string | number | null;
+      wallet_used_inr?: string | number | null;
+      wallet_remaining_inr?: string | number | null;
+    }>;
+
+    return {
+      id: customer.customer_id ?? customer.user_id ?? `customer-${index}`,
+      name: customer.name,
+      number: customer.phone ?? '',
+      address: extra.address_line_1 ?? extra.address ?? '',
+      state: extra.state ?? '',
+      pincode: extra.pincode ?? '',
+      spend: Number(customer.lifetime_spend_inr ?? 0),
+      planName: customer.segment_label ?? 'No plan',
+      planAmount: Number(extra.plan_amount_inr ?? customer.avg_order_value_inr ?? 0),
+      walletUsed: Number(extra.wallet_used_inr ?? customer.order_count ?? 0),
+      walletRemaining: Number(extra.wallet_remaining_inr ?? customer.retention_score ?? 0),
+      franchiseName: customer.segment_label,
+    };
+  });
 
   const customerPhoneError = getPartnerPhoneFieldError(customerForm.phone);
   const canSaveCustomer = Boolean(customerForm.name.trim()) && isPartnerPhoneReady(customerForm.phone);
@@ -355,10 +378,8 @@ export function PartnerCustomersView({ embedded = false }: { embedded?: boolean 
                     className="min-h-9"
                   >
                     <option value="No plan">No plan</option>
-                    <option value="Basic Care">Basic Care</option>
-                    <option value="Premium Care">Premium Care</option>
-                    <option value="Family Plan">Family Plan</option>
-                    <option value="Wallet Plan">Wallet Plan</option>
+                    <option value="Mini Plan">Mini Plan — Pay ₹2,000 / Get ₹2,200</option>
+                    <option value="Value Plan">Value Plan — Pay ₹5,000 / Get ₹5,500</option>
                   </Select>
                 </div>
               </div>

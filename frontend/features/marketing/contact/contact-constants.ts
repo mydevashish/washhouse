@@ -37,7 +37,7 @@ export const CONTACT_CONFIG = {
   businessHours: envOrDefault('NEXT_PUBLIC_BUSINESS_HOURS', 'Mon–Sat, 10:00 AM – 7:00 PM IST'),
   officeAddress: envOrDefault(
     'NEXT_PUBLIC_OFFICE_ADDRESS',
-    'The WashHouse Laundry & Dryclean\nMahaveer Colony Park\nUdaipur, Rajasthan 313001\nIndia',
+    'The WashHouse Laundry & Dryclean\nNavratan near seven-eleven in front of The cross road school\nUdaipur, Rajasthan 313001\nIndia',
   ),
 } as const;
 

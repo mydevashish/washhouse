@@ -17,7 +17,7 @@ export function partnerOrderServiceGroups(items: OrderItem[] | undefined): Order
       continue;
     }
     const match = item.service_name.match(PIECE_PROCESS_LINE);
-    if (match) {
+    if (match?.[1] && match?.[2]) {
       const garmentName = match[1].trim();
       const process = match[2].trim();
       const key = process.toLowerCase();
