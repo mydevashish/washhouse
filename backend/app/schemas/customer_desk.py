@@ -30,6 +30,7 @@ class CustomerDeskProfile(BaseModel):
     email: str | None = None
     gender: str | None = None
     notes: str | None = None
+    wallet_balance: int = 0
     registered: bool = False
     order_count: int = 0
     last_order_at: datetime | None = None

@@ -1242,6 +1242,7 @@ class PartnerService:
                 LaundryCustomer.user_id,
                 LaundryCustomer.full_name,
                 LaundryCustomer.phone,
+                LaundryCustomer.wallet_balance,
                 func.count(Order.id).label("order_count"),
                 func.coalesce(func.sum(Order.total_inr), 0).label("total_spent"),
                 func.max(Order.created_at).label("last_order_at"),
@@ -1262,6 +1263,7 @@ class PartnerService:
                 LaundryCustomer.user_id,
                 LaundryCustomer.full_name,
                 LaundryCustomer.phone,
+                LaundryCustomer.wallet_balance,
             )
             .order_by(func.max(Order.created_at).desc().nulls_last()),
         )
@@ -1275,6 +1277,7 @@ class PartnerService:
                     "user_id": row.user_id or row.id,
                     "name": row.full_name,
                     "phone": row.phone,
+                    "wallet_balance": int(row.wallet_balance or 0),
                     "order_count": int(row.order_count),
                     "total_spent_inr": str(total),
                     "last_order_at": last_at.isoformat() if last_at else None,

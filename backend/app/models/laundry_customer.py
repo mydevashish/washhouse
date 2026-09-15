@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import ForeignKey, String, Text, text
+from sqlalchemy import ForeignKey, String, Text, Integer, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import sqlalchemy as sa
@@ -54,5 +54,6 @@ class LaundryCustomer(Base, TimestampMixin, SoftDeleteMixin):
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
+    wallet_balance: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     orders: Mapped[list["Order"]] = relationship(back_populates="laundry_customer")  # noqa: F821

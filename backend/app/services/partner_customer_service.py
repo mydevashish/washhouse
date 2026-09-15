@@ -65,11 +65,24 @@ class PartnerCustomerService:
             user.full_name = clean_name
             await self._users.update(user)
 
+        # Prevent duplicate shop-scoped customer creation: require unique phone per laundry
+        existing = await self._shop_customers.get_by_phone(laundry.id, phone_e164)
+        if existing:
+            raise ValidationError("Mobile number already registered")
+
         await self._registrations.upsert(
             laundry_id=laundry.id,
             user_id=user.id,
             registered_by_user_id=actor_user_id,
         )
+
+        # Initialize wallet balance for certain plans
+        wallet_balance = 0
+        if plan_name and plan_name.strip().lower() == 'mini plan':
+            wallet_balance = 2200
+        elif plan_name and plan_name.strip().lower() == 'value plan':
+            wallet_balance = 2500
+
         shop = await self._shop_customers.get_or_create(
             laundry_id=laundry.id,
             phone=phone_e164,
@@ -83,6 +96,7 @@ class PartnerCustomerService:
             pincode=pincode,
             user_id=user.id,
             registered_by_user_id=actor_user_id,
+            wallet_balance=wallet_balance,
         )
 
         return {
@@ -97,6 +111,7 @@ class PartnerCustomerService:
             "city": shop.city,
             "state": shop.state,
             "pincode": shop.pincode,
+            "wallet_balance": getattr(shop, 'wallet_balance', 0),
             "registered": True,
             "order_count": 0,
             "last_order_at": None,

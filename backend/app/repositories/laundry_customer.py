@@ -67,6 +67,7 @@ class LaundryCustomerRepository:
         pincode: str | None = None,
         gender: str | None = None,
         notes: str | None = None,
+        wallet_balance: int | None = None,
         user_id: UUID | None = None,
         registered_by_user_id: UUID | None = None,
     ) -> LaundryCustomer:
@@ -112,6 +113,7 @@ class LaundryCustomerRepository:
             notes=notes.strip() if notes and notes.strip() else None,
             user_id=user_id,
             registered_by_user_id=registered_by_user_id,
+            wallet_balance=wallet_balance or 0,
         )
         self._session.add(row)
         await self._session.flush()

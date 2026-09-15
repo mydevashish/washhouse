@@ -265,20 +265,21 @@ class PartnerCustomerSummary(BaseModel):
     user_id: UUID | None = None
     name: str
     phone: str | None = None
+    wallet_balance: int | None = 0
     order_count: int
     total_spent_inr: str
     last_order_at: str | None
 
 
 class PartnerCustomerCreateRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     name: str = Field(min_length=1, max_length=200)
     phone: str = Field(max_length=20)
     title: str | None = Field(default=None, max_length=10)
-    plan_name: str | None = Field(default=None, max_length=80)
-    address_line1: str | None = Field(default=None, max_length=255)
-    address_line2: str | None = Field(default=None, max_length=255)
+    plan_name: str | None = Field(default=None, max_length=80, alias="plan")
+    address_line1: str | None = Field(default=None, max_length=255, alias="address_line_1")
+    address_line2: str | None = Field(default=None, max_length=255, alias="address_line_2")
     city: str | None = Field(default=None, max_length=100)
     state: str | None = Field(default=None, max_length=100)
     pincode: str | None = Field(default=None, pattern=r"^\d{6}$")
