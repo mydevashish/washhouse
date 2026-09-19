@@ -41,8 +41,6 @@ function getTransporter() {
   const port = Number(process.env.SMTP_PORT ?? 587);
   const secure = process.env.SMTP_USE_SSL === 'true' || port === 465;
 
-  console.log(`Using SMTP server ${requiredEnv('SMTP_HOST')}:${port} (secure: ${secure})`);
-
   return nodemailer.createTransport({
     host: requiredEnv('SMTP_HOST'),
     port,
@@ -58,8 +56,6 @@ function getTransporter() {
 function sendMail(payload: MarketingPayload, subject: string, text: string) {
   const from = requiredEnv('SMTP_FROM_EMAIL');
   const to = process.env.SUPPORT_EMAIL?.trim() || from;
-
-  console.log(`Sending marketing email from ${from} to ${to} (subject: ${subject})`);
 
   return getTransporter().sendMail({
     from,

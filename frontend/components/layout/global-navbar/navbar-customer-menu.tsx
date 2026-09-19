@@ -10,7 +10,6 @@ import { NavbarThemeInline } from '@/components/layout/global-navbar/navbar-them
 import { useMounted } from '@/lib/hooks/use-mounted';
 import {
   MARKETING_NAV_LINKS,
-  MARKETING_STAFF_HREF,
   isMarketingNavLinkActive,
 } from '@/lib/navigation/marketing-nav';
 import { useAuthStore } from '@/store/auth.store';
