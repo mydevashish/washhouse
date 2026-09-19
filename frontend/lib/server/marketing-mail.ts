@@ -16,6 +16,9 @@ type MarketingPayload = MarketingContactCreate | MarketingFranchiseInquiryCreate
 const recentSubmissions = new Map<string, number[]>();
 const WINDOW_MS = 60 * 60 * 1000;
 const MAX_SUBMISSIONS_PER_IP = 5;
+const SMTP_TIMEOUT_MS = 10_000;
+
+let transporter: ReturnType<typeof nodemailer.createTransport> | undefined;
 
 function requiredEnv(name: string): string {
   const value = process.env[name]?.trim();
@@ -38,10 +41,12 @@ export function checkMarketingRateLimit(request: Request): boolean {
 }
 
 function getTransporter() {
+  if (transporter) return transporter;
+
   const port = Number(process.env.SMTP_PORT ?? 587);
   const secure = process.env.SMTP_USE_SSL === 'true' || port === 465;
 
-  return nodemailer.createTransport({
+  transporter = nodemailer.createTransport({
     host: requiredEnv('SMTP_HOST'),
     port,
     secure,
@@ -50,7 +55,12 @@ function getTransporter() {
       pass: requiredEnv('SMTP_PASSWORD'),
     },
     requireTLS: process.env.SMTP_USE_TLS !== 'false' && !secure,
+    connectionTimeout: SMTP_TIMEOUT_MS,
+    greetingTimeout: SMTP_TIMEOUT_MS,
+    socketTimeout: SMTP_TIMEOUT_MS,
   });
+
+  return transporter;
 }
 
 function sendMail(payload: MarketingPayload, subject: string, text: string) {

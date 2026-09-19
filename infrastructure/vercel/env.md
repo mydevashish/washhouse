@@ -14,6 +14,24 @@ Validated at build time by `frontend/lib/env.ts`.
 | `NEXT_PUBLIC_APP_URL` | `https://dlm.app` *(current: `https://washhouse.vercel.app`)* | `https://staging.dlm.app` | `http://localhost:3000` |
 | `NEXT_TELEMETRY_DISABLED` | `1` | `1` | `1` |
 
+## Server-only marketing email
+
+These variables are read by the Node.js route handlers for `/api/marketing/contact`,
+`/api/marketing/franchise-inquiries`, and `/api/marketing/book-now`. Add them in
+Vercel Project Settings -> Environment Variables. Do not use the `NEXT_PUBLIC_`
+prefix, and set them for every environment where the forms are enabled.
+
+| Variable | Example / notes |
+| -------- | -------------- |
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `587` for STARTTLS or `465` for SSL |
+| `SMTP_USERNAME` | SMTP account username |
+| `SMTP_PASSWORD` | SMTP app password or provider password, never a normal Gmail password |
+| `SMTP_FROM_EMAIL` | Verified sender; for Gmail use the authenticated account |
+| `SMTP_USE_TLS` | `true` for port `587` |
+| `SMTP_USE_SSL` | `true` for port `465`, otherwise `false` |
+| `SUPPORT_EMAIL` | Inbox that receives marketing submissions |
+
 ## Feature flags
 
 | Variable | Production | Staging | Notes |
