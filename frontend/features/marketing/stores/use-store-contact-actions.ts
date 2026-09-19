@@ -24,6 +24,7 @@ type UseStoreContactActionsOptions = {
   laundryId: string;
   laundryName: string;
   source: StoreContactSource;
+  contactOverride?: ContactInfo;
   /** When false, contact query stays idle (e.g. directory card not in view). Default true. */
   enabled?: boolean;
 };
@@ -45,6 +46,7 @@ export function useStoreContactActions({
   laundryId,
   laundryName,
   source,
+  contactOverride,
   enabled = true,
 }: UseStoreContactActionsOptions) {
   const router = useRouter();
@@ -56,7 +58,7 @@ export function useStoreContactActions({
     queryKey: ['contact-info', laundryId],
     queryFn: () => getContactInfo(laundryId),
     staleTime: 60_000,
-    enabled,
+    enabled: enabled && !contactOverride,
   });
 
   const trackM = useMutation({
@@ -64,7 +66,7 @@ export function useStoreContactActions({
       trackContactEvent(laundryId, { event_type, source }),
   });
 
-  const c = contactQ.data;
+  const c = contactOverride ?? contactQ.data;
   const showCall = Boolean(c?.contact_available && c?.show_call);
   const showWhatsApp = Boolean(c?.contact_available && c?.show_whatsapp);
   const directionsUrl = resolveDirectionsUrl(c);

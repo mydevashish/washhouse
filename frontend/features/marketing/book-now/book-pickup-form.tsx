@@ -20,13 +20,9 @@ import {
   type BookNowServiceId,
 } from '@/features/marketing/book-now/book-now-constants';
 import { BookPickupSuccess } from '@/features/marketing/book-now/book-pickup-success';
-import {
-  mapBookPickupToBookingRequest,
-  resolveBookingRequestSource,
-} from '@/features/marketing/book-now/map-book-pickup-to-request';
 import { getMarketingSubmitErrorMessage } from '@/features/marketing/lib/marketing-form-errors';
 import { applyApiFieldErrors } from '@/lib/api-field-errors';
-import { submitBookingRequest } from '@/lib/api/booking-requests';
+import { submitMarketingBookNow } from '@/lib/api/marketing';
 import { cn } from '@/lib/utils';
 
 const serviceValues = BOOK_NOW_SERVICES.map((s) => s.value) as [
@@ -119,9 +115,7 @@ type BookPickupFormProps = {
 };
 
 /**
- * Book Now pickup form — POSTs to POST /booking-requests.
- * On success shows confirmation with public_code (e.g. BR-K7M2QX).
- * General contact form still uses POST /marketing/contact.
+ * Book Now pickup form — sends a support email through the marketing mail route.
  */
 export function BookPickupForm({
   defaultService,
@@ -131,8 +125,8 @@ export function BookPickupForm({
 }: BookPickupFormProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SuccessState | null>(null);
-  const submitBooking = useMutation({
-    mutationFn: submitBookingRequest,
+  const submitBookNow = useMutation({
+    mutationFn: submitMarketingBookNow,
   });
   const resolvedService = defaultService ?? BOOK_NOW_SERVICES[0]?.value ?? 'wash-fold';
 
@@ -151,7 +145,7 @@ export function BookPickupForm({
   const { errors, isSubmitting } = form.formState;
   const { setValue } = form;
   const errorCount = Object.keys(errors).length;
-  const isPending = isSubmitting || submitBooking.isPending;
+  const isPending = isSubmitting || submitBookNow.isPending;
 
   useEffect(() => {
     if (defaultService) {
@@ -162,10 +156,17 @@ export function BookPickupForm({
   const onSubmit = async (values: BookPickupFormValues) => {
     setSubmitError(null);
     try {
-      const payload = mapBookPickupToBookingRequest(values, resolveBookingRequestSource());
-      const result = await submitBooking.mutateAsync(payload);
-      const publicCode = result.data.public_code;
-      const duplicateWarning = Boolean(result.meta.duplicate_warning);
+      // const payload = mapBookPickupToBookingRequest(values, resolveBookingRequestSource());
+      // await submitBookingRequest(payload);
+      const result = await submitBookNow.mutateAsync({
+        name: values.name,
+        phone: values.phone,
+        service: values.service,
+        preferred_time: values.preferredTime,
+        message: values.message?.trim() || 'Please call me to confirm pickup details.',
+      });
+      const publicCode = `BN-${result.id.slice(0, 8).toUpperCase()}`;
+      const duplicateWarning = false;
       setSuccess({ publicCode, duplicateWarning });
       onConfirmationChange?.(true);
       form.reset({
@@ -177,7 +178,7 @@ export function BookPickupForm({
       });
       if (duplicateWarning) {
         toast.success(
-          `Request ${publicCode} sent — we already have an open request and will follow up on both.`,
+          `Request ${publicCode} sent — we'll follow up shortly.`,
         );
       } else {
         toast.success(`Pickup request ${publicCode} sent — we'll call or WhatsApp you shortly.`);

@@ -153,13 +153,13 @@ export function NavbarCustomerMenu() {
                     Account
                   </Link>
                 )}
-                <Link
+                {/* <Link
                   href={MARKETING_STAFF_HREF}
                   className="flex min-h-11 items-center rounded-md px-3 text-sm font-semibold text-foreground hover:bg-muted"
                   onClick={close}
                 >
                   Staff login
-                </Link>
+                </Link> */}
               </div>
             </nav>
           </>,

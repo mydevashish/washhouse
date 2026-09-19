@@ -55,11 +55,20 @@ export const marketingFranchiseInquiryCreateSchema = z.object({
   message: z.string().min(10).max(2000),
 });
 
+export const marketingBookNowCreateSchema = z.object({
+  name: z.string().min(1).max(100),
+  phone: z.string().min(8).max(20),
+  service: z.string().min(1).max(100),
+  preferred_time: z.string().min(1).max(100),
+  message: z.string().min(10).max(2000),
+});
+
 export type MarketingSubmissionResponse = z.infer<typeof marketingSubmissionResponseSchema>;
 export type MarketingPublicStats = z.infer<typeof marketingPublicStatsSchema>;
 export type MarketingTestimonialApi = z.infer<typeof marketingTestimonialSchema>;
 export type MarketingContactCreate = z.infer<typeof marketingContactCreateSchema>;
 export type MarketingFranchiseInquiryCreate = z.infer<typeof marketingFranchiseInquiryCreateSchema>;
+export type MarketingBookNowCreate = z.infer<typeof marketingBookNowCreateSchema>;
 
 function parseEnvelope<T>(schema: z.ZodType<T>, payload: unknown): T {
   return schema.parse(payload);
@@ -81,7 +90,23 @@ export async function submitMarketingContact(
   payload: MarketingContactCreate,
 ): Promise<MarketingSubmissionResponse> {
   const body = marketingContactCreateSchema.parse(payload);
-  const { data } = await api.post<ApiEnvelope<unknown>>('/marketing/contact', body);
+  const response = await fetch('/api/marketing/contact', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const data = (await response.json().catch(() => ({}))) as {
+    data?: unknown;
+    error?: { message?: string };
+  };
+
+  if (!response.ok) {
+    throw new Error(
+      data.error?.message ?? 'Could not send your message. Try again or email us directly.',
+    );
+  }
+
   return parseEnvelope(marketingSubmissionResponseSchema, data.data);
 }
 
@@ -89,6 +114,46 @@ export async function submitMarketingFranchiseInquiry(
   payload: MarketingFranchiseInquiryCreate,
 ): Promise<MarketingSubmissionResponse> {
   const body = marketingFranchiseInquiryCreateSchema.parse(payload);
-  const { data } = await api.post<ApiEnvelope<unknown>>('/marketing/franchise-inquiries', body);
+  const response = await fetch('/api/marketing/franchise-inquiries', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const data = (await response.json().catch(() => ({}))) as {
+    data?: unknown;
+    error?: { message?: string };
+  };
+
+  if (!response.ok) {
+    throw new Error(
+      data.error?.message ?? 'Could not submit your application. Try again or email us directly.',
+    );
+  }
+
+  return parseEnvelope(marketingSubmissionResponseSchema, data.data);
+}
+
+export async function submitMarketingBookNow(
+  payload: MarketingBookNowCreate,
+): Promise<MarketingSubmissionResponse> {
+  const body = marketingBookNowCreateSchema.parse(payload);
+  const response = await fetch('/api/marketing/book-now', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const data = (await response.json().catch(() => ({}))) as {
+    data?: unknown;
+    error?: { message?: string };
+  };
+
+  if (!response.ok) {
+    throw new Error(
+      data.error?.message ?? 'Could not send your pickup request. Try again or call us directly.',
+    );
+  }
+
   return parseEnvelope(marketingSubmissionResponseSchema, data.data);
 }

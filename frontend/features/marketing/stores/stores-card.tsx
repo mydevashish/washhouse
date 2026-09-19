@@ -3,7 +3,15 @@
 import Image from 'next/image';
 import { useState, type MouseEvent } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { BadgeCheck, MapPin, MessageCircle, Navigation, Phone } from 'lucide-react';
+import {
+  BadgeCheck,
+  CalendarDays,
+  MapPin,
+  MessageCircle,
+  Navigation,
+  Phone,
+  Users,
+} from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +24,7 @@ import {
 import { StoreNavSurface } from '@/features/marketing/stores/store-nav-surface';
 import { useCardInView } from '@/features/marketing/stores/use-card-in-view';
 import { StoreDistanceBadge } from '@/features/marketing/stores/store-distance-badge';
+import type { ContactInfo } from '@/services/customer-experience';
 import {
   STORE_WHATSAPP_OUTLINE_CLASS,
   useStoreContactActions,
@@ -31,6 +40,12 @@ type StoresCardProps = {
   index?: number;
   /** Featured density for nearest #1 on /stores. */
   variant?: 'default' | 'featured';
+  contactOverride?: ContactInfo;
+  details?: {
+    address: string;
+    opening: string;
+    proprietors: string;
+  };
   className?: string;
 };
 
@@ -44,6 +59,8 @@ export function StoresCard({
   laundry,
   index = 0,
   variant = 'default',
+  contactOverride,
+  details,
   className,
 }: StoresCardProps) {
   const reduce = useReducedMotion();
@@ -70,6 +87,7 @@ export function StoresCard({
     laundryId: laundry.id,
     laundryName: laundry.name,
     source: CONTACT_SOURCE,
+    contactOverride,
     enabled: inView,
   });
 
@@ -179,6 +197,23 @@ export function StoresCard({
           </p>
         </div>
       </StoreNavSurface>
+
+      {details ? (
+        <div className="space-y-2 px-3 pt-3 text-sm text-muted-foreground sm:px-4 sm:pt-4">
+          <p className="flex items-start gap-2">
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <span>{details.address}</span>
+          </p>
+          <p className="flex items-start gap-2">
+            <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <span>Grand opening: {details.opening}</span>
+          </p>
+          <p className="flex items-start gap-2">
+            <Users className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <span>Proprietors: {details.proprietors}</span>
+          </p>
+        </div>
+      ) : null}
 
       {showContactActions ? (
         <div className="mt-auto flex flex-1 flex-col justify-end p-3 sm:p-4">

@@ -4,26 +4,56 @@ import { useEffect, useRef, useState } from 'react';
 import { Search, Store } from 'lucide-react';
 
 import { SectionHeader } from '@/components/marketplace/section-header';
-import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useLaundryDiscovery } from '@/features/discover/hooks/use-laundry-discovery';
-import {
-  ANY_DISTANCE_KM,
-  DEFAULT_FILTERS,
-  type LaundryFilters,
-  type SortOption,
-} from '@/features/discover/listing/filter-laundries';
+import type { EnrichedLaundry } from '@/features/discover/lib/laundry-meta';
 import { StoresCard } from '@/features/marketing/stores/stores-card';
-import { StoresCardSkeleton } from '@/features/marketing/stores/stores-card-skeleton';
 import { StoresCta } from '@/features/marketing/stores/stores-cta';
 import { StoresHero } from '@/features/marketing/stores/stores-hero';
 import { StoresNearMeControl } from '@/features/marketing/stores/stores-near-me-control';
 import { useGeolocation } from '@/hooks/use-geolocation';
+import type { ContactInfo } from '@/services/customer-experience';
 import { cn } from '@/lib/utils';
 
-const NEAR_ME_PARTIAL =
-  'Location on, but store map pins are not published yet. Search by area or browse the list.';
+const STATIC_STORE_CONTACT: ContactInfo = {
+  can_contact: true,
+  contact_available: true,
+  requires_login: false,
+  show_call: true,
+  show_whatsapp: true,
+  show_callback: false,
+  show_directions: true,
+  phone: '+919977751122',
+  whatsapp_number: '+919977751122',
+  whatsapp_url: 'https://wa.me/919977751122',
+  address_line: 'Navratna Complex, near Seven Eleven Shop',
+  city: 'Udaipur, Rajasthan',
+  full_address: 'Navratna Complex, near Seven Eleven Shop, Udaipur, Rajasthan',
+  map_url: 'https://www.google.com/maps/search/?api=1&query=Navratna+Complex+Udaipur+Rajasthan',
+  google_maps_url: 'https://www.google.com/maps/search/?api=1&query=Navratna+Complex+Udaipur+Rajasthan',
+  apple_maps_url: null,
+  geo_url: null,
+  latitude: null,
+  longitude: null,
+  working_hours: { opening: '21 September 2026, 11:00 AM' },
+};
+
+const STATIC_STORE: EnrichedLaundry = {
+  id: 'washhouse-udaipur',
+  name: 'The WashHouse Laundry & Dryclean',
+  slug: 'washhouse-udaipur',
+  city: 'Udaipur, Rajasthan',
+  avg_rating: '0',
+  review_count: 0,
+  is_verified: true,
+  latitude: null,
+  longitude: null,
+  distanceKm: Number.NaN,
+  deliveryHours: 48,
+  startPrice: null,
+  distanceIsApproximate: true,
+  image: '/catalog/services/wash-fold.webp',
+};
 
 /**
  * Search + Near me cluster. Sticky under marketing nav on phone/tablet.
@@ -155,43 +185,23 @@ function StoresFilterCluster({
 
 export function StoresPageView() {
   const geo = useGeolocation();
-  const priorSortRef = useRef<SortOption>('top_rated');
-  const [filters, setFilters] = useState<LaundryFilters>({
-    ...DEFAULT_FILTERS,
-    // Directory mode: sort Near me by distance — never radius-filter the full list away
-    maxDistance: ANY_DISTANCE_KM,
-    sort: 'top_rated',
-  });
+  const [search, setSearch] = useState('');
 
   const filterAnchorRef = useRef<HTMLDivElement>(null);
   const [filtersCompact, setFiltersCompact] = useState(false);
 
-  const {
-    filtered,
-    enriched,
-    isPending,
-    isError,
-    refetch,
-    isFetching,
-    isSearching,
-    isDebouncing,
-  } = useLaundryDiscovery(filters, { userLocation: geo.position });
-
-  // Initial paint only — never skeleton on search debounce / background refetch (discover bug class).
-  const showSkeletons = !isError && enriched.length === 0 && (isPending || isFetching);
-
-  const isNearest = filters.sort === 'nearest';
-  const nearMeActive = geo.status === 'granted' && isNearest;
-  const hasGpsDistance =
-    Boolean(geo.position) && enriched.some((l) => !l.distanceIsApproximate);
-  const nearMePartial =
-    nearMeActive && Boolean(geo.position) && !hasGpsDistance && enriched.length > 0
-      ? NEAR_ME_PARTIAL
-      : null;
+  // Backend store discovery is intentionally disabled while the Udaipur location launches.
+  // const discovery = useLaundryDiscovery(filters, { userLocation: geo.position });
+  const filtered = search.trim()
+    ? STATIC_STORE.name.toLowerCase().includes(search.trim().toLowerCase()) ||
+      STATIC_STORE.city.toLowerCase().includes(search.trim().toLowerCase())
+      ? [STATIC_STORE]
+      : []
+    : [STATIC_STORE];
+  const nearMeActive = false;
+  const nearMePartial = null;
   const sectionDescription =
-    nearMeActive && hasGpsDistance
-      ? "Here's what's closest to you. Services and pricing are the same across stores — call, message, or get directions for the one that works."
-      : "Find a verified partner near you by name or neighbourhood. Services and pricing are the same across stores — call, message, or get directions when you're ready.";
+    "Our Udaipur partner is opening soon. Call, message, or get directions when you're ready.";
 
   const handleNearMe = () => {
     void geo.request();
@@ -199,27 +209,7 @@ export function StoresPageView() {
 
   const handleClearNearMe = () => {
     geo.clear();
-    const restore =
-      priorSortRef.current === 'nearest' ? 'top_rated' : priorSortRef.current;
-    setFilters((f) => ({
-      ...f,
-      sort: restore,
-    }));
   };
-
-  // Single source of truth: granted GPS → nearest sort (ANY_DISTANCE_KM). Clear restores prior.
-  useEffect(() => {
-    if (geo.status !== 'granted' || !geo.position) return;
-    setFilters((f) => {
-      if (f.sort === 'nearest') return f;
-      priorSortRef.current = f.sort;
-      return {
-        ...f,
-        sort: 'nearest',
-        maxDistance: ANY_DISTANCE_KM,
-      };
-    });
-  }, [geo.status, geo.position]);
 
   // Compact sticky chrome once the filter cluster pins under the nav (phone/tablet only).
   // Top sticky only — MarketingShell bottom CTA stays at z-50 fixed bottom.
@@ -278,20 +268,20 @@ export function StoresPageView() {
             description={sectionDescription}
           />
 
-          {/* Sentinel sits above sticky cluster so IO can detect pin-under-nav */}
+          {/* Search and Near me are temporarily disabled for the single launch store. */}
+          {/*
           <div ref={filterAnchorRef} className="h-px w-full" aria-hidden />
           <div
             className={cn(
               'sticky top-[var(--nav-height)] z-30',
-              // Desktop lg+: stay in-flow chrome only (no compact sticky fight with wide layout)
               'lg:static lg:z-auto',
             )}
             data-stores-sticky-filters={filtersCompact ? 'compact' : 'docked'}
           >
             <StoresFilterCluster
-              search={filters.search}
-              onSearchChange={(search) => setFilters((f) => ({ ...f, search }))}
-              isSearching={isSearching && (isDebouncing || isFetching)}
+              search={search}
+              onSearchChange={setSearch}
+              isSearching={false}
               geoStatus={geo.status}
               geoError={geo.errorMessage}
               nearMeActive={nearMeActive}
@@ -301,50 +291,7 @@ export function StoresPageView() {
               compact={filtersCompact}
             />
           </div>
-
-          {showSkeletons && (
-            <div
-              className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 lg:gap-6"
-              role="status"
-              aria-busy="true"
-            >
-              <span className="sr-only">Loading stores</span>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <StoresCardSkeleton key={i} />
-              ))}
-            </div>
-          )}
-
-          {isError && (
-            <EmptyState
-              icon={Store}
-              title="Could not load stores"
-              description="Check your connection and try again."
-              secondaryAction={{
-                label: isFetching ? 'Retrying…' : 'Try again',
-                onClick: () => void refetch(),
-              }}
-            />
-          )}
-
-          {!showSkeletons && !isError && enriched.length === 0 && !isSearching && (
-            <EmptyState
-              title="No stores in your area yet"
-              description="We're expanding to more neighbourhoods. Check back soon, or refresh to try again."
-              action={{ label: 'Refresh', href: '/stores' }}
-            />
-          )}
-
-          {!showSkeletons && !isError && isSearching && filtered.length === 0 && (
-            <EmptyState
-              title="No stores match your search"
-              description={`Nothing found for "${filters.search.trim()}". Try another name or neighbourhood.`}
-              secondaryAction={{
-                label: 'Clear search',
-                onClick: () => setFilters((f) => ({ ...f, search: '' })),
-              }}
-            />
-          )}
+          */}
 
           {filtered.length > 0 && (
             <ul
@@ -352,7 +299,7 @@ export function StoresPageView() {
               aria-label="WashHouse partner stores"
             >
               {filtered.map((laundry, index) => {
-                const featured = nearMeActive && hasGpsDistance && index === 0;
+                const featured = index === 0;
                 return (
                   <li
                     key={laundry.id}
@@ -362,6 +309,12 @@ export function StoresPageView() {
                       laundry={laundry}
                       index={index}
                       variant={featured ? 'featured' : 'default'}
+                      contactOverride={STATIC_STORE_CONTACT}
+                      details={{
+                        address: 'Navratna Complex, near Seven Eleven Shop, Udaipur, Rajasthan',
+                        opening: '21 September 2026 at 11:00 AM',
+                        proprietors: 'Aman Patidar, Ravindra Patidar, Shyam Patidar',
+                      }}
                     />
                   </li>
                 );

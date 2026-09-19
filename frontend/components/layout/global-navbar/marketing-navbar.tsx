@@ -214,7 +214,7 @@ export function MarketingNavbar() {
             <NavbarThemeToggle />
           </div>
           <div className="hidden shrink-0 items-center gap-1 sm:flex sm:gap-1.5">
-            <Button
+            {/* <Button
               asChild
               variant="ghost"
               size="sm"
@@ -224,7 +224,7 @@ export function MarketingNavbar() {
                 <span className="xl:hidden">Staff</span>
                 <span className="hidden xl:inline">Staff login</span>
               </a>
-            </Button>
+            </Button> */}
             <BookNowCta size="sm" className="rounded-full px-4 font-semibold">
               Book Now
             </BookNowCta>

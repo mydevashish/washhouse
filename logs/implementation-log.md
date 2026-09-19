@@ -2,6 +2,24 @@
 
 > Append-only. Newest at the top. Use `.cursor/templates/log-entry.md`.
 
+## 2026-09-17 — Show the Udaipur launch store statically
+
+- **Type:** fix + UI
+- **Scope:** marketing stores directory
+- **Files:** `frontend/features/marketing/stores/stores-page-view.tsx`, `frontend/features/marketing/stores/stores-card.tsx`, `frontend/features/marketing/stores/use-store-contact-actions.ts`
+- **Summary:** Commented out backend store discovery for the stores page and replaced the loading directory with one static Udaipur store card. The card includes the invitation address, 21 September 2026 opening time, proprietors, phone, WhatsApp, and map details.
+- **Risks:** The directory is intentionally limited to this launch location until backend store discovery is re-enabled.
+- **Next:** Re-enable the discovery query and remove the static card once the store record is published in the backend.
+
+## 2026-09-17 — Route Book Now inquiries to support email
+
+- **Type:** fix + test
+- **Scope:** marketing contact, franchise, and Book Now mail submissions
+- **Files:** `frontend/app/api/marketing/book-now/route.ts`, `frontend/features/marketing/book-now/book-pickup-form.tsx`, `frontend/lib/api/marketing.ts`, `frontend/lib/server/marketing-mail.ts`, `frontend/lib/api/marketing-mailto.test.ts`, `frontend/.env.example`
+- **Summary:** Book Now now sends its customer, service, pickup-time, and notes data through the existing marketing SMTP flow. The previous booking API call is commented out, and the support inbox is configured as `vishalvishwakarma652000@gmail.com`.
+- **Risks:** SMTP credentials and the configured recipient must be present in the deployment environment; Book Now no longer creates a booking-request record.
+- **Next:** Submit Contact, Franchise, and Book Now once in the deployed environment and confirm delivery in the requested inbox.
+
 ## 2026-09-14 — Persist and display partner customers
 
 - **Type:** fix + test
