@@ -81,6 +81,12 @@ class WalkInOrderCreateRequest(BaseModel):
     expected_ready_at: datetime | None = None
     coupon_code: str | None = Field(default=None, max_length=32)
     advance_paid_inr: Decimal | None = Field(default=None, ge=0, le=1_000_000)
+    wallet_amount_used_inr: Decimal | None = Field(default=None, ge=0, le=1_000_000)
+    payment_method: str | None = Field(default=None, max_length=32)
+    discount_inr: Decimal | None = Field(default=None, ge=0, le=1_000_000)
+    pickup_charge_inr: Decimal | None = Field(default=None, ge=0, le=1_000_000)
+    delivery_charge_inr: Decimal | None = Field(default=None, ge=0, le=1_000_000)
+    express_charge_inr: Decimal | None = Field(default=None, ge=0, le=1_000_000)
 
 
 class WalkInOrderWhatsAppNotifyResponse(BaseModel):

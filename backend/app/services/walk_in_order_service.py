@@ -84,6 +84,12 @@ class WalkInOrderService:
         coupon_code: str | None = None,
         customer_id: UUID | None = None,
         advance_paid_inr: Decimal | None = None,
+        wallet_amount_used_inr: Decimal | None = None,
+        payment_method: str | None = None,
+        discount_inr: Decimal | None = None,
+        pickup_charge_inr: Decimal | None = None,
+        delivery_charge_inr: Decimal | None = None,
+        express_charge_inr: Decimal | None = None,
     ) -> Order:
         laundry = await self._laundries.get_by_owner(partner_user_id)
         if not laundry:
@@ -133,13 +139,22 @@ class WalkInOrderService:
             )
             line_items.append(order_item)
 
-        discount_inr, applied_code = await PartnerCouponService(self._session).resolve_discount(
-            partner_user_id,
-            coupon_code=coupon_code,
-            subtotal=subtotal,
-        )
+        # Prefer explicit discount from payload; otherwise resolve coupon
+        if discount_inr is None:
+            discount_inr, applied_code = await PartnerCouponService(self._session).resolve_discount(
+                partner_user_id,
+                coupon_code=coupon_code,
+                subtotal=subtotal,
+            )
+        else:
+            applied_code = coupon_code
+            discount_inr = Decimal(str(discount_inr)).quantize(Decimal("0.01"))
 
-        taxable = subtotal - discount_inr
+        pickup_charge = Decimal(str(pickup_charge_inr or 0)).quantize(Decimal("0.01"))
+        delivery_charge = Decimal(str(delivery_charge_inr or 0)).quantize(Decimal("0.01"))
+        express_charge = Decimal(str(express_charge_inr or 0)).quantize(Decimal("0.01"))
+
+        taxable = subtotal - discount_inr + pickup_charge + delivery_charge + express_charge
         if taxable < Decimal("0"):
             taxable = Decimal("0")
         # Counter walk-in totals match the create-order UI (no GST on the ticket).
@@ -158,6 +173,16 @@ class WalkInOrderService:
         token = await ColorTokenService(self._session).allocate(laundry.id)
         now = datetime.now(UTC)
         ready_at = self._ensure_aware(expected_ready_at) if expected_ready_at else now + timedelta(days=2)
+
+        intake_snapshot = {
+            "pickup_charge_inr": str(pickup_charge),
+            "delivery_charge_inr": str(delivery_charge),
+            "express_charge_inr": str(express_charge),
+            "wallet_amount_used_inr": str(wallet_amount_used_inr or 0),
+            "advance_paid_inr": str(advance_paid_inr or 0),
+            "discount_inr": str(discount_inr),
+            "coupon_code": applied_code,
+        }
 
         order = Order(
             user_id=shop_customer.user_id or (linked_user.id if linked_user else None),
@@ -179,13 +204,14 @@ class WalkInOrderService:
             subtotal_inr=subtotal,
             discount_inr=discount_inr,
             coupon_code=applied_code,
-            delivery_fee_inr=Decimal("0"),
+            delivery_fee_inr=(pickup_charge + delivery_charge + express_charge),
             gst_rate=Decimal("0"),
             cgst_inr=cgst,
             sgst_inr=sgst,
             total_inr=total,
             commission_rate=commission_rate,
         )
+        order.intake_snapshot = intake_snapshot
         order = await self._orders.create(order)
 
         for item in line_items:
@@ -193,23 +219,53 @@ class WalkInOrderService:
             self._session.add(item)
 
         advance = Decimal(str(advance_paid_inr or 0)).quantize(Decimal("0.01"))
+        wallet_used = Decimal(str(wallet_amount_used_inr or 0)).quantize(Decimal("0.01"))
         if advance < 0:
             advance = Decimal("0")
         if advance > total:
             advance = total
+        # Clamp wallet_used to available and to order total
+        try:
+            shop_wallet = int(getattr(shop_customer, 'wallet_balance', 0))
+        except Exception:
+            shop_wallet = 0
+        max_wallet_applicable = min(shop_wallet, int(total))
+        if wallet_used < 0:
+            wallet_used = Decimal("0")
+        if wallet_used > Decimal(str(max_wallet_applicable)):
+            wallet_used = Decimal(str(max_wallet_applicable))
+        if wallet_used + advance > total:
+            wallet_used = total - advance
         if advance > 0:
-            paid = advance >= total
+            # Determine payment status taking wallet into account
+            total_paid_via_sources = advance + wallet_used
+            paid = total_paid_via_sources >= total
             order.payment_status = PaymentStatus.paid if paid else PaymentStatus.pending_cod
-            order.payment_method = PaymentMethod.cod
+            # leave payment_method on order for legacy reasons if matches enum
+            try:
+                # only map to known enum values; else leave None
+                order.payment_method = PaymentMethod(payment_method) if payment_method else PaymentMethod.cod
+            except Exception:
+                order.payment_method = PaymentMethod.cod
+            # record a Payment row for the partner-collected advance (legacy behavior)
             self._session.add(
                 Payment(
                     order_id=order.id,
-                    amount_inr=advance,
+                    amount_inr=advance + wallet_used,
                     status=PaymentStatus.paid if paid else PaymentStatus.pending_cod,
                     method=PaymentMethod.cod,
-                    metadata_json=json.dumps({"advance_inr": str(advance)}),
+                    metadata_json=json.dumps({"advance_inr": str(advance), "wallet_used_inr": str(wallet_used), "requested_method": payment_method}),
                 ),
             )
+            # deduct wallet from shop_customer if used
+            if wallet_used > 0 and shop_customer is not None:
+                # wallet_balance stored as int (in INR rupees); convert and clamp
+                try:
+                    new_balance = max(0, int(shop_customer.wallet_balance) - int(wallet_used))
+                    shop_customer.wallet_balance = new_balance
+                    self._session.add(shop_customer)
+                except Exception:
+                    pass
 
         event = OrderStatusEvent(
             order_id=order.id,

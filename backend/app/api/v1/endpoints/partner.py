@@ -320,6 +320,70 @@ async def accept_order(
     return success_envelope(OrderResponse.model_validate(order), request)
 
 
+@router.post("/orders/{order_id}/collect-payment")
+async def partner_collect_payment(
+    order_id: UUID,
+    body: Annotated[dict, Query()] | dict,
+    request: Request,
+    session: SessionDep,
+    payload: Annotated[dict, Depends(get_current_partner)],
+) -> dict:
+    """Partner records a manual payment (cash/wallet/upi) for a walk-in order.
+
+    NOTE: This is a pragmatic helper to allow partners to record counter payments.
+    It upserts a Payment row and marks the order as paid.
+    """
+    from decimal import Decimal
+    from sqlalchemy import select
+
+    from app.models.payment import Payment
+    from app.models.enums import PaymentStatus, PaymentMethod
+
+    partner_id = UUID(payload["sub"])
+    order = await OrderRepository(session).get_by_id(order_id)
+    if not order:
+        raise NotFoundError("Order not found")
+
+    laundries = await LaundryRepository(session).list_by_owner(partner_id)
+    if not any(l.id == order.laundry_id for l in laundries):
+        raise NotFoundError("Order not found")
+
+    # Expect a minimal payload: {"amount_inr": 123, "method": "cash|wallet|upi"}
+    amount = body.get("amount_inr") if isinstance(body, dict) else None
+    method_raw = (body.get("method") if isinstance(body, dict) else None) or "cash"
+    try:
+        amount_dec = Decimal(str(amount)) if amount is not None else order.total_inr
+    except Exception:
+        raise ValidationError("Invalid amount")
+
+    # Map partner-friendly methods to existing DB enum values.
+    method_map = {
+        "cash": PaymentMethod.cod,
+        "wallet": PaymentMethod.razorpay,
+        "upi": PaymentMethod.razorpay,
+    }
+    method = method_map.get(method_raw, PaymentMethod.razorpay)
+
+    payment = await session.scalar(select(Payment).where(Payment.order_id == order.id))
+    if payment is None:
+        payment = Payment(
+            order_id=order.id,
+            amount_inr=amount_dec,
+            status=PaymentStatus.paid,
+            method=method,
+        )
+        session.add(payment)
+    else:
+        payment.amount_inr = amount_dec
+        payment.status = PaymentStatus.paid
+        payment.method = method
+
+    order.payment_status = PaymentStatus.paid
+    await session.flush()
+
+    return success_envelope(OrderResponse.model_validate(order), request)
+
+
 @router.post("/orders/{order_id}/reject")
 async def reject_order(
     order_id: UUID,

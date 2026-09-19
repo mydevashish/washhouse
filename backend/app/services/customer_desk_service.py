@@ -135,6 +135,23 @@ class CustomerDeskService:
                 gender = registration.gender
                 notes = registration.crm_notes
 
+        wallet_balance = int(getattr(shop_customer, 'wallet_balance', 0) if shop_customer is not None else 0)
+        plan = shop_customer.plan_name if shop_customer is not None else None
+        initial_credit = None
+        if plan:
+            lp = plan.strip().lower()
+            if 'mini' in lp:
+                initial_credit = 2200
+            elif 'value' in lp:
+                initial_credit = 5500
+
+        wallet_used = None
+        wallet_remaining = None
+        if wallet_balance is not None:
+            wallet_remaining = wallet_balance
+            if initial_credit is not None:
+                wallet_used = max(0, initial_credit - wallet_balance)
+
         return {
             "customer_id": shop_customer.id if shop_customer else None,
             "user_id": user.id if user else (shop_customer.user_id if shop_customer else None),
@@ -148,6 +165,10 @@ class CustomerDeskService:
             "registered": user is not None or shop_customer is not None,
             "order_count": order_count,
             "last_order_at": last_order_at,
+            "plan_name": plan,
+            "wallet_balance": wallet_balance,
+            "wallet_used": wallet_used,
+            "wallet_remaining": wallet_remaining,
         }
 
     async def search(
@@ -167,6 +188,14 @@ class CustomerDeskService:
         if len(term) < _SEARCH_MIN_LEN:
             raise ValidationError(f"Search query must be at least {_SEARCH_MIN_LEN} characters")
         limit = max(1, min(int(limit), _SEARCH_MAX))
+
+        # Prepare shop repo when in partner scope
+        if laundry_id is not None:
+            from app.repositories.laundry_customer import LaundryCustomerRepository
+
+            shop_repo = LaundryCustomerRepository(self._session)
+        else:
+            shop_repo = None
 
         # Exact user_id paste
         if _UUID_RE.fullmatch(term):
@@ -200,9 +229,7 @@ class CustomerDeskService:
 
         candidates: dict[str, dict[str, Any]] = {}
         if laundry_id is not None:
-            from app.repositories.laundry_customer import LaundryCustomerRepository
-
-            for shop in await LaundryCustomerRepository(self._session).search(
+            for shop in await shop_repo.search(
                 laundry_id,
                 term=term,
                 limit=limit,
@@ -349,6 +376,28 @@ class CustomerDeskService:
                 (r["name"] or "").lower(),
             ),
         )
+        # Enrich search results with shop-scoped wallet data when available
+        if laundry_id is not None:
+            for r in results:
+                try:
+                    shop = await shop_repo.get_by_phone(laundry_id, r.get("phone"))
+                except Exception:
+                    shop = None
+                if shop is not None:
+                    wb = int(getattr(shop, 'wallet_balance', 0))
+                    plan = shop.plan_name
+                    initial = None
+                    if plan:
+                        lp = plan.strip().lower()
+                        if 'mini' in lp:
+                            initial = 2200
+                        elif 'value' in lp:
+                            initial = 5500
+                    r['plan_name'] = plan
+                    r['wallet_balance'] = wb
+                    r['wallet_remaining'] = wb
+                    r['wallet_used'] = (initial - wb) if initial is not None else None
+
         return results[:limit]
 
     async def list_orders(

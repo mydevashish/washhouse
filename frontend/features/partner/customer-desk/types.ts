@@ -11,6 +11,9 @@ export type CustomerDeskProfile = {
   registered: boolean;
   order_count: number;
   last_order_at: string | null;
+  wallet_balance?: number | null;
+  wallet_used?: number | null;
+  wallet_remaining?: number | null;
 };
 
 export type PartnerCustomerUpdatePayload = {
@@ -18,6 +21,15 @@ export type PartnerCustomerUpdatePayload = {
   email?: string | null;
   gender?: 'male' | 'female' | null;
   notes?: string | null;
+};
+export type PartnerCustomerUpdateByPhonePayload = PartnerCustomerUpdatePayload & {
+  title?: string | null;
+  plan?: 'No plan' | 'Mini Plan' | 'Value Plan' | null;
+  address_line_1?: string | null;
+  address_line_2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
 };
 
 export type PartnerCustomerUpdateResult = {

@@ -299,6 +299,13 @@ class PartnerCustomerUpdateRequest(BaseModel):
     email: str | None = Field(default=None, max_length=320)
     gender: str | None = Field(default=None, max_length=10)
     notes: str | None = Field(default=None, max_length=2000)
+    title: str | None = Field(default=None, max_length=10)
+    plan_name: str | None = Field(default=None, max_length=80, alias="plan")
+    address_line1: str | None = Field(default=None, max_length=255, alias="address_line_1")
+    address_line2: str | None = Field(default=None, max_length=255, alias="address_line_2")
+    city: str | None = Field(default=None, max_length=100)
+    state: str | None = Field(default=None, max_length=100)
+    pincode: str | None = Field(default=None, pattern=r"^\d{6}$")
 
     @field_validator("gender")
     @classmethod

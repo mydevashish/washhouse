@@ -81,7 +81,7 @@ class PartnerCustomerService:
         if plan_name and plan_name.strip().lower() == 'mini plan':
             wallet_balance = 2200
         elif plan_name and plan_name.strip().lower() == 'value plan':
-            wallet_balance = 2500
+            wallet_balance = 5500
 
         shop = await self._shop_customers.get_or_create(
             laundry_id=laundry.id,
@@ -128,6 +128,13 @@ class PartnerCustomerService:
         email: str | None = None,
         gender: str | None = None,
         notes: str | None = None,
+        title: str | None = None,
+        plan_name: str | None = None,
+        address_line1: str | None = None,
+        address_line2: str | None = None,
+        city: str | None = None,
+        state: str | None = None,
+        pincode: str | None = None,
     ) -> dict:
         laundry = await CustomerInsightsService(self._session).resolve_laundry_for_actor(
             actor_user_id,
@@ -169,15 +176,55 @@ class PartnerCustomerService:
         )
         shop = None
         if user.phone:
-            shop = await self._shop_customers.get_or_create(
-                laundry_id=laundry.id,
-                phone=user.phone,
-                full_name=clean_name,
-                gender=gender,
-                notes=notes,
-                user_id=user.id,
-                registered_by_user_id=actor_user_id,
-            )
+            # If updating plan, adjust wallet balance: add new plan credit to existing remaining
+            existing = await self._shop_customers.get_by_phone(laundry.id, user.phone)
+            plan_credit = 0
+            if plan_name and plan_name.strip():
+                pn = plan_name.strip().lower()
+                if 'mini' in pn:
+                    plan_credit = 2200
+                elif 'value' in pn:
+                    plan_credit = 5500
+
+            if existing:
+                # preserve existing wallet and add plan credit only if plan changed
+                new_wallet = int(getattr(existing, 'wallet_balance', 0) or 0)
+                if plan_credit > 0 and (not existing.plan_name or existing.plan_name.strip().lower() != plan_name.strip().lower()):
+                    new_wallet = new_wallet + plan_credit
+                existing.full_name = clean_name
+                existing.title = title
+                existing.plan_name = plan_name
+                existing.address_line1 = address_line1
+                existing.address_line2 = address_line2
+                existing.city = city
+                existing.state = state
+                existing.pincode = pincode
+                existing.gender = gender
+                existing.notes = notes
+                existing.user_id = user.id
+                existing.registered_by_user_id = actor_user_id
+                existing.wallet_balance = new_wallet
+                await self._session.flush()
+                shop = existing
+            else:
+                # create new shop customer; initialize wallet with plan credit
+                shop = await self._shop_customers.get_or_create(
+                    laundry_id=laundry.id,
+                    phone=user.phone,
+                    full_name=clean_name,
+                    title=title,
+                    plan_name=plan_name,
+                    address_line1=address_line1,
+                    address_line2=address_line2,
+                    city=city,
+                    state=state,
+                    pincode=pincode,
+                    gender=gender,
+                    notes=notes,
+                    user_id=user.id,
+                    registered_by_user_id=actor_user_id,
+                    wallet_balance=plan_credit,
+                )
 
         return {
             "customer_id": shop.id if shop else None,
