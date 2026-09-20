@@ -23,14 +23,14 @@ const STATIC_STORE_CONTACT: ContactInfo = {
   show_whatsapp: true,
   show_callback: false,
   show_directions: true,
-  phone: '+919977751122',
-  whatsapp_number: '+919977751122',
-  whatsapp_url: 'https://wa.me/919977751122',
+  phone: '+919977751133',
+  whatsapp_number: '+919977751133',
+  whatsapp_url: 'https://wa.me/919977751133',
   address_line: 'Navratna Complex, near Seven Eleven Shop',
   city: 'Udaipur, Rajasthan',
   full_address: 'Navratna Complex, near Seven Eleven Shop, Udaipur, Rajasthan',
-  map_url: 'https://www.google.com/maps/search/?api=1&query=Navratna+Complex+Udaipur+Rajasthan',
-  google_maps_url: 'https://www.google.com/maps/search/?api=1&query=Navratna+Complex+Udaipur+Rajasthan',
+  map_url: 'https://maps.app.goo.gl/JJEYk5ZndgEy5R2g8',
+  google_maps_url: 'https://maps.app.goo.gl/JJEYk5ZndgEy5R2g8',
   apple_maps_url: null,
   geo_url: null,
   latitude: null,
@@ -313,7 +313,7 @@ export function StoresPageView() {
                       details={{
                         address: 'Navratna Complex, near Seven Eleven Shop, Udaipur, Rajasthan',
                         opening: '21 September 2026 at 11:00 AM',
-                        proprietors: 'Aman Patidar, Ravindra Patidar, Shyam Patidar',
+                        mapsUrl: 'https://maps.app.goo.gl/JJEYk5ZndgEy5R2g8',
                       }}
                     />
                   </li>

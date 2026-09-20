@@ -190,10 +190,20 @@ function OfficeAddress() {
         Office
       </h2>
       <Card variant="default" className="mt-4">
-        <CardContent className="space-y-1 p-4 text-sm leading-relaxed text-muted-foreground">
-          {lines.map((line) => (
-            <p key={line}>{line}</p>
-          ))}
+        <CardContent className="p-4 text-sm leading-relaxed text-muted-foreground">
+          <a
+            href={CONTACT_CONFIG.mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block space-y-1 text-primary underline-offset-4 hover:underline"
+          >
+            {lines.map((line) => (
+              <span key={line} className="block">
+                {line}
+              </span>
+            ))}
+            <span className="mt-2 inline-block text-xs font-semibold">Open in Google Maps</span>
+          </a>
         </CardContent>
       </Card>
     </address>

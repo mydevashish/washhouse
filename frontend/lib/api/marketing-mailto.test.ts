@@ -16,7 +16,8 @@ describe('marketing submission API', () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({
-        data: { id: '123e4567-e89b-12d3-a456-426614174000', status: 'received' },
+        success: true,
+        message: 'Your request has been submitted successfully.',
       }),
     });
 
@@ -41,7 +42,8 @@ describe('marketing submission API', () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({
-        data: { id: '123e4567-e89b-12d3-a456-426614174001', status: 'received' },
+        success: true,
+        message: 'Your request has been submitted successfully.',
       }),
     });
 
@@ -67,7 +69,8 @@ describe('marketing submission API', () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({
-        data: { id: '123e4567-e89b-12d3-a456-426614174002', status: 'received' },
+        success: true,
+        message: 'Your request has been submitted successfully.',
       }),
     });
 

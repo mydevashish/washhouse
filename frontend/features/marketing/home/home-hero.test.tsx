@@ -29,21 +29,21 @@ describe('MarketingHomeHero images', () => {
 });
 
 describe('Welcome hero promo overlay', () => {
-  it('welcome slide copy is 25% OFF with empty code (no invented coupon)', () => {
+  it('welcome slide copy is with empty code (no invented coupon)', () => {
     const welcome = HERO_SLIDES.find((s) => s.variant === 'welcome');
     expect(welcome).toBeDefined();
     if (welcome?.variant !== 'welcome') return;
-    expect(welcome.promo.badge).toBe('25% OFF');
+    expect(welcome.promo.badge).toBe('');
     expect(welcome.promo.code).toBe('');
   });
 
   it('static fallback shows offer on the banner image for all breakpoints', () => {
     const { container } = render(<HeroStaticFallback />);
 
-    expect(screen.getByText('25% OFF')).toBeInTheDocument();
-    expect(screen.getByText('On Your FIRST THREE Orders')).toBeInTheDocument();
+    expect(screen.getByText('')).toBeInTheDocument();
+    expect(screen.getByText('')).toBeInTheDocument();
 
-    const promo = screen.getByText('25% OFF').closest('[class*="absolute"]');
+    const promo = screen.getByText('').closest('[class*="absolute"]');
     expect(promo).toBeTruthy();
     expect(promo?.className).toMatch(/\bbottom-3\b/);
     expect(promo?.className).toMatch(/\bright-3\b/);

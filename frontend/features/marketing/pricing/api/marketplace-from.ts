@@ -4,6 +4,7 @@ import type {
 } from '@/features/marketing/pricing/types';
 import { washhouseSuggestedFromItems } from '@/features/marketing/pricing/washhouse-suggested-from';
 import { abortSignalAfter } from '@/lib/abort-signal-after';
+import { shouldSkipRemoteBackendFetch } from '@/lib/remote-backend';
 
 type Envelope = { data: MarketplaceFromResponse };
 
@@ -17,8 +18,8 @@ export const MARKETPLACE_FROM_FETCH_TIMEOUT_MS = 5_000;
  */
 export async function loadMarketplaceFromItems(): Promise<MarketplaceFromItem[]> {
   const fallback = washhouseSuggestedFromItems();
-  const base = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '');
-  if (!base) return fallback;
+  const base = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') ?? '';
+  if (shouldSkipRemoteBackendFetch(base)) return fallback;
 
   try {
     const res = await fetch(`${base}/catalog/marketplace-from`, {

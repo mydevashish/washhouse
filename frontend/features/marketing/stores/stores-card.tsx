@@ -10,7 +10,6 @@ import {
   MessageCircle,
   Navigation,
   Phone,
-  Users,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -44,7 +43,7 @@ type StoresCardProps = {
   details?: {
     address: string;
     opening: string;
-    proprietors: string;
+    mapsUrl?: string;
   };
   className?: string;
 };
@@ -202,15 +201,22 @@ export function StoresCard({
         <div className="space-y-2 px-3 pt-3 text-sm text-muted-foreground sm:px-4 sm:pt-4">
           <p className="flex items-start gap-2">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-            <span>{details.address}</span>
+            {details.mapsUrl ? (
+              <a
+                href={details.mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline-offset-4 hover:underline"
+              >
+                {details.address}
+              </a>
+            ) : (
+              <span>{details.address}</span>
+            )}
           </p>
           <p className="flex items-start gap-2">
             <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
             <span>Grand opening: {details.opening}</span>
-          </p>
-          <p className="flex items-start gap-2">
-            <Users className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-            <span>Proprietors: {details.proprietors}</span>
           </p>
         </div>
       ) : null}

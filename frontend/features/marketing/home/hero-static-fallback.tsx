@@ -118,7 +118,6 @@ export function HeroStaticFallback() {
                 </p>
               ) : null}
               <p className="mt-1 text-[11px] leading-snug text-foreground/80 sm:text-xs">
-                On Your FIRST THREE Orders
               </p>
             </GlassSurface>
           </div>

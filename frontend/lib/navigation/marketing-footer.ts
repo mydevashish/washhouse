@@ -27,6 +27,7 @@ export const MARKETING_FOOTER_GROUPS: readonly MarketingFooterGroup[] = [
     title: 'Our Services',
     links: [
       { href: '/services#wash-fold', label: 'Wash & Fold' },
+      { href: '/services#wash-iron', label: 'Wash & Iron' },
       { href: '/services#dry-clean', label: 'Dry Cleaning' },
       { href: '/services#steam-iron', label: 'Steam Iron / Press' },
       { href: '/services#express', label: 'Express / Same-day' },
@@ -48,7 +49,7 @@ export const MARKETING_FOOTER_GROUPS: readonly MarketingFooterGroup[] = [
     id: 'partners-staff',
     title: 'Partners & Staff',
     links: [
-      { href: '/staff', label: 'Staff Portal' },
+      { href: '/staff', label: 'Staff Login' },
       { href: '/login?audience=partner', label: 'Laundry Login' },
       { href: '/login?audience=admin', label: 'Admin Login' },
       { href: '/franchise', label: 'Become a Partner' },

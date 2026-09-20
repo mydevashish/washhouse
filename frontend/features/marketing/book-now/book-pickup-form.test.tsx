@@ -1,13 +1,16 @@
+process.env.NEXT_PUBLIC_API_URL ??= 'http://localhost:8000/api/v1';
+process.env.NEXT_PUBLIC_APP_URL ??= 'http://localhost:3000';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 
 import { BookPickupForm } from '@/features/marketing/book-now/book-pickup-form';
-import { submitBookingRequest } from '@/lib/api/booking-requests';
+import { submitMarketingBookNow } from '@/lib/api/marketing';
 
-jest.mock('@/lib/api/booking-requests', () => ({
-  submitBookingRequest: jest.fn(),
+jest.mock('@/lib/api/marketing', () => ({
+  submitMarketingBookNow: jest.fn(),
 }));
 
 jest.mock('sonner', () => ({
@@ -17,7 +20,7 @@ jest.mock('sonner', () => ({
   },
 }));
 
-const mockSubmit = submitBookingRequest as jest.MockedFunction<typeof submitBookingRequest>;
+const mockSubmit = submitMarketingBookNow as jest.MockedFunction<typeof submitMarketingBookNow>;
 
 function wrap(children: ReactNode) {
   const client = new QueryClient({
@@ -31,15 +34,11 @@ describe('BookPickupForm submit mapping', () => {
     mockSubmit.mockReset();
   });
 
-  it('POSTs mapped booking-request fields and shows public_code confirmation', async () => {
+  it('POSTs book-now fields and shows confirmation', async () => {
     const user = userEvent.setup();
     mockSubmit.mockResolvedValue({
-      data: {
-        id: '11111111-1111-4111-8111-111111111111',
-        public_code: 'BR-K7M2QX',
-        status: 'new',
-      },
-      meta: { duplicate_warning: false, open_request_ids: [] },
+      success: true,
+      message: 'Your request has been submitted successfully.',
     });
 
     const onDone = jest.fn();
@@ -56,17 +55,16 @@ describe('BookPickupForm submit mapping', () => {
     await waitFor(() => expect(mockSubmit).toHaveBeenCalledTimes(1));
     expect(mockSubmit.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({
-        customer_name: 'Priya Sharma',
+        name: 'Priya Sharma',
         phone: '+919876543210',
-        service_type: 'wash-fold',
-        preferred_time_window: 'morning',
-        notes: 'Near metro',
-        source: expect.stringMatching(/^(marketing_home|deep_link|stores|services)$/),
+        service: 'wash-fold',
+        preferred_time: 'morning',
+        message: 'Near metro',
       }),
     );
 
     expect(await screen.findByTestId('book-pickup-success')).toBeInTheDocument();
-    expect(screen.getByTestId('book-pickup-public-code')).toHaveTextContent('BR-K7M2QX');
+    expect(screen.getByTestId('book-pickup-public-code')).toBeInTheDocument();
     expect(screen.getByText(/what happens next/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /whatsapp us/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /call us/i })).toBeInTheDocument();

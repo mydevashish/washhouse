@@ -103,6 +103,7 @@ function FormField({ id, label, error, required, children, hint }: FieldProps) {
  */
 export function ContactForm({ defaultSubject }: { defaultSubject?: ContactFormValues['subject'] }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const submitContact = useSubmitContact();
   const resolvedSubject = defaultSubject ?? 'general';
 
@@ -130,15 +131,19 @@ export function ContactForm({ defaultSubject }: { defaultSubject?: ContactFormVa
 
   const onSubmit = async (values: ContactFormValues) => {
     setSubmitError(null);
+    setSubmitSuccess(null);
     try {
-      await submitContact.mutateAsync({
+      const result = await submitContact.mutateAsync({
         name: values.name,
         phone: values.phone,
         email: values.email?.trim() ? values.email.trim() : undefined,
         subject: values.subject,
         message: values.message,
       });
-      toast.success("Message sent — we'll get back to you within one business day.");
+      const successMessage =
+        result.message || "Message sent — we'll get back to you within one business day.";
+      setSubmitSuccess(successMessage);
+      toast.success(successMessage);
       form.reset({
         name: '',
         phone: '',
@@ -186,6 +191,11 @@ export function ContactForm({ defaultSubject }: { defaultSubject?: ContactFormVa
       </div>
 
       <div aria-live="polite" aria-atomic="true">
+        {submitSuccess ? (
+          <p className="rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success" role="status">
+            {submitSuccess}
+          </p>
+        ) : null}
         {submitError ? (
           <p className="rounded-lg border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger" role="alert">
             {submitError}

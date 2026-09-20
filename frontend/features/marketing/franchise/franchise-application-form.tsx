@@ -103,6 +103,7 @@ function FormField({ id, label, error, required, children, hint }: FieldProps) {
 
 export function FranchiseApplicationForm() {
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const submitFranchise = useSubmitFranchiseInquiry();
 
   const form = useForm<FranchiseFormValues>({
@@ -124,8 +125,9 @@ export function FranchiseApplicationForm() {
 
   const onSubmit = async (values: FranchiseFormValues) => {
     setSubmitError(null);
+    setSubmitSuccess(null);
     try {
-      await submitFranchise.mutateAsync({
+      const result = await submitFranchise.mutateAsync({
         name: values.name,
         phone: values.phone,
         email: values.email,
@@ -133,7 +135,10 @@ export function FranchiseApplicationForm() {
         investment_range: values.investment_range,
         message: values.message,
       });
-      toast.success("Application received — we'll contact you within two business days.");
+      const successMessage =
+        result.message || "Application received — we'll contact you within two business days.";
+      setSubmitSuccess(successMessage);
+      toast.success(successMessage);
       form.reset({
         name: '',
         phone: '',
@@ -181,6 +186,14 @@ export function FranchiseApplicationForm() {
       </div>
 
       <div aria-live="polite" aria-atomic="true">
+        {submitSuccess ? (
+          <p
+            className="rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success"
+            role="status"
+          >
+            {submitSuccess}
+          </p>
+        ) : null}
         {submitError ? (
           <p
             className="rounded-lg border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger"

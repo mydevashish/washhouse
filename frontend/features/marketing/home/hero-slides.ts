@@ -80,7 +80,7 @@ export const HERO_SLIDES: readonly HeroSlide[] = [
       { label: 'Express turnaround', icon: Clock },
       { label: 'Quality guaranteed', icon: ShieldCheck },
     ],
-    promo: { badge: '25% OFF', code: '' },
+    promo: { badge: '', code: '' },
     image: MARKETING_HERO_IMAGES.welcome.src,
     imageAlt: MARKETING_HERO_IMAGES.welcome.alt,
     overlayClassName: MARKETING_HERO_SLIDE_OVERLAYS.welcome,

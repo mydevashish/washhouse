@@ -5,6 +5,7 @@ import {
   ShoppingBasket,
   Sparkles,
   Timer,
+  Wind,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -51,9 +52,21 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     icon: ShoppingBasket,
     accent: 'bg-primary/10 text-primary',
     turnaround: '24–48 hours',
-    priceFrom: 'from ₹79/kg',
+    priceFrom: 'from ₹89/kg',
     image: P.wash_fold.src,
     imageAlt: P.wash_fold.alt,
+  },
+  {
+    id: 'wash-iron',
+    title: 'Wash & Iron',
+    description:
+      'Freshly washed garments pressed and folded so they are ready to wear straight from the bag.',
+    icon: Wind,
+    accent: 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400',
+    turnaround: '24–48 hours',
+    priceFrom: 'from ₹119/kg',
+    image: P.wash_iron.src,
+    imageAlt: P.wash_iron.alt,
   },
   {
     id: 'dry-clean',

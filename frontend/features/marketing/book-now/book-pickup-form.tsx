@@ -158,14 +158,14 @@ export function BookPickupForm({
     try {
       // const payload = mapBookPickupToBookingRequest(values, resolveBookingRequestSource());
       // await submitBookingRequest(payload);
-      const result = await submitBookNow.mutateAsync({
+      await submitBookNow.mutateAsync({
         name: values.name,
         phone: values.phone,
         service: values.service,
         preferred_time: values.preferredTime,
         message: values.message?.trim() || 'Please call me to confirm pickup details.',
       });
-      const publicCode = `BN-${result.id.slice(0, 8).toUpperCase()}`;
+      const publicCode = `BN-${Date.now().toString(36).toUpperCase().slice(-6)}`;
       const duplicateWarning = false;
       setSuccess({ publicCode, duplicateWarning });
       onConfirmationChange?.(true);

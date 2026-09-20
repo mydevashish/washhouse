@@ -13,7 +13,7 @@ const PLANS = [
   {
     name: 'Basic',
     subtitle: 'Wash & Fold',
-    price: '₹99',
+    price: '₹89',
     unit: '/kg',
     features: ['Wash & dry', 'Neat folding', '48h standard delivery'],
     highlighted: false,
@@ -21,7 +21,7 @@ const PLANS = [
   {
     name: 'Standard',
     subtitle: 'Wash + Iron',
-    price: '₹149',
+    price: '₹119',
     unit: '/kg',
     features: ['Everything in Basic', 'Professional ironing', '36h delivery'],
     highlighted: false,

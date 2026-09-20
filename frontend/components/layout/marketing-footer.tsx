@@ -90,15 +90,22 @@ export function MarketingFooter({ className, desktopContactActions }: MarketingF
                     <span className="break-all">{CONTACT_CONFIG.supportEmail}</span>
                   </a>
                 </li>
-                <li className="flex gap-2">
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-                  <address className="min-w-0 break-words not-italic leading-relaxed">
-                    {addressLines.map((line) => (
-                      <span key={line} className="block">
-                        {line}
-                      </span>
-                    ))}
-                  </address>
+                <li>
+                  <a
+                    href={CONTACT_CONFIG.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={contactLinkClassName}
+                  >
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                    <address className="min-w-0 break-words not-italic leading-relaxed">
+                      {addressLines.map((line) => (
+                        <span key={line} className="block">
+                          {line}
+                        </span>
+                      ))}
+                    </address>
+                  </a>
                 </li>
               </ul>
             </div>

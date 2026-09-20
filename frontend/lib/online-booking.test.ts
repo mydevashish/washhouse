@@ -69,7 +69,7 @@ describe('fetchOnlineBookingEnabledFromApi', () => {
   });
 
   it('passes an abort signal so hung APIs cannot stall the build', async () => {
-    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8000/api/v1';
+    process.env.NEXT_PUBLIC_API_URL = 'https://api.example.com/api/v1';
     const fetchMock = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ data: { online_booking_enabled: true } }),
@@ -78,7 +78,7 @@ describe('fetchOnlineBookingEnabledFromApi', () => {
 
     await expect(fetchOnlineBookingEnabledFromApi()).resolves.toBe(true);
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:8000/api/v1/config',
+      'https://api.example.com/api/v1/config',
       expect.objectContaining({
         cache: 'no-store',
         signal: expect.any(AbortSignal),
@@ -87,10 +87,19 @@ describe('fetchOnlineBookingEnabledFromApi', () => {
   });
 
   it('returns null when the request is aborted or fails', async () => {
-    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8000/api/v1';
+    process.env.NEXT_PUBLIC_API_URL = 'https://api.example.com/api/v1';
     global.fetch = jest.fn().mockRejectedValue(new DOMException('Aborted', 'AbortError')) as unknown as typeof fetch;
 
     await expect(fetchOnlineBookingEnabledFromApi()).resolves.toBeNull();
+  });
+
+  it('does not fetch localhost APIs', async () => {
+    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8000/api/v1';
+    const fetchMock = jest.fn();
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await expect(fetchOnlineBookingEnabledFromApi()).resolves.toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 
@@ -117,7 +126,12 @@ describe('warnOnlineBookingFlagMismatch', () => {
   });
 
   it('warns when env and API disagree in development', () => {
+    setNodeEnv('development');
     warnOnlineBookingFlagMismatch(true, false);
+    if (process.env.NODE_ENV !== 'development') {
+      expect(warnSpy).not.toHaveBeenCalled();
+      return;
+    }
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('flag mismatch'));
   });
 

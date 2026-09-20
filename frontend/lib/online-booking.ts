@@ -1,4 +1,5 @@
 import { abortSignalAfter } from '@/lib/abort-signal-after';
+import { shouldSkipRemoteBackendFetch } from '@/lib/remote-backend';
 
 /** Client-side online booking feature flag (NEXT_PUBLIC_*). */
 
@@ -45,11 +46,12 @@ export function warnOnlineBookingFlagMismatch(
 /** Cap build/SSR waits so a down or firewalled API cannot stall `next build`. */
 export const ONLINE_BOOKING_CONFIG_FETCH_TIMEOUT_MS = 5_000;
 
-/** Server components — fetch backend `/config` without caching. */
+/** Server components — fetch backend `/config` without caching. Skipped at build / localhost. */
 export async function fetchOnlineBookingEnabledFromApi(): Promise<boolean | null> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
+  if (shouldSkipRemoteBackendFetch(apiUrl)) return null;
   try {
-    const res = await fetch(`${apiUrl}/config`, {
+    const res = await fetch(`${apiUrl.replace(/\/$/, '')}/config`, {
       cache: 'no-store',
       signal: abortSignalAfter(ONLINE_BOOKING_CONFIG_FETCH_TIMEOUT_MS),
     });

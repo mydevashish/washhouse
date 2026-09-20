@@ -44,7 +44,9 @@ function getTransporter() {
   if (transporter) return transporter;
 
   const port = Number(process.env.SMTP_PORT ?? 587);
-  const secure = process.env.SMTP_USE_SSL === 'true' || port === 465;
+  const useSsl = process.env.SMTP_USE_SSL === 'true';
+  const useTls = process.env.SMTP_USE_TLS !== 'false';
+  const secure = useSsl || port === 465;
 
   transporter = nodemailer.createTransport({
     host: requiredEnv('SMTP_HOST'),
@@ -54,7 +56,7 @@ function getTransporter() {
       user: requiredEnv('SMTP_USERNAME'),
       pass: requiredEnv('SMTP_PASSWORD'),
     },
-    requireTLS: process.env.SMTP_USE_TLS !== 'false' && !secure,
+    requireTLS: useTls && !secure,
     connectionTimeout: SMTP_TIMEOUT_MS,
     greetingTimeout: SMTP_TIMEOUT_MS,
     socketTimeout: SMTP_TIMEOUT_MS,

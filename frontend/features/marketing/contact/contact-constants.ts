@@ -32,13 +32,14 @@ function envOrDefault(key: string, fallback: string): string {
 
 export const CONTACT_CONFIG = {
   supportEmail: envOrDefault('NEXT_PUBLIC_SUPPORT_EMAIL', 'thewashhousesolutions@gmail.com'),
-  phone: envOrDefault('NEXT_PUBLIC_SUPPORT_PHONE', '+91 99777 51122'),
-  whatsapp: envOrDefault('NEXT_PUBLIC_WHATSAPP_NUMBER', '+91 99777 51122'),
+  phone: envOrDefault('NEXT_PUBLIC_SUPPORT_PHONE', '+91 99777 51133'),
+  whatsapp: envOrDefault('NEXT_PUBLIC_WHATSAPP_NUMBER', '+91 99777 51133'),
   businessHours: envOrDefault('NEXT_PUBLIC_BUSINESS_HOURS', 'Mon–Sat, 10:00 AM – 7:00 PM IST'),
   officeAddress: envOrDefault(
     'NEXT_PUBLIC_OFFICE_ADDRESS',
     'The WashHouse Laundry & Dryclean\nNavratan near seven-eleven in front of The cross road school\nUdaipur, Rajasthan 313001\nIndia',
   ),
+  mapsUrl: envOrDefault('NEXT_PUBLIC_GOOGLE_MAPS_URL', 'https://maps.app.goo.gl/JJEYk5ZndgEy5R2g8'),
 } as const;
 
 export type SocialPlatform = 'instagram';
