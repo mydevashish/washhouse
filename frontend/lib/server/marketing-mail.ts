@@ -94,8 +94,6 @@ function createTransporter(forceImplicitTls: boolean) {
       pass: smtpPassword(),
     },
     requireTLS: useTls && !secure,
-    // Vercel/Gmail: prefer IPv4; IPv6 from serverless often times out.
-    family: 4,
     tls: {
       minVersion: 'TLSv1.2',
       servername: host,
