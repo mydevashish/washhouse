@@ -1,6 +1,6 @@
 import { marketingFranchiseInquiryCreateSchema } from '@/lib/api/marketing';
 import {
-  isMarketingValidationError,
+  marketingCatchResponse,
   marketingError,
   marketingSuccess,
   readJsonBody,
@@ -12,6 +12,7 @@ import {
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
 
 export async function POST(request: Request) {
   if (!checkMarketingRateLimit(request)) {
@@ -23,10 +24,9 @@ export async function POST(request: Request) {
     await sendMarketingFranchiseInquiry(payload);
     return marketingSuccess('Your request has been submitted successfully.');
   } catch (error) {
-    if (error instanceof SyntaxError || isMarketingValidationError(error)) {
-      return marketingError('Please check the required fields.', 400);
-    }
-    console.error('marketing.franchise_email.failed', error instanceof Error ? error.message : 'unknown');
-    return marketingError('Could not submit your application. Please try again later.', 500);
+    return marketingCatchResponse(
+      error,
+      'Could not submit your application. Please try again later.',
+    );
   }
 }
