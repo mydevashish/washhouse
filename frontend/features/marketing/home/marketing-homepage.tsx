@@ -59,13 +59,13 @@ const FranchiseTeaser = dynamic(
   { loading: () => <section className="min-h-[20rem] bg-brand-900/20" aria-hidden /> },
 );
 
-const PartnerLoginStrip = dynamic(
-  () =>
-    import('@/features/marketing/home/partner-login-strip').then((m) => ({
-      default: m.PartnerLoginStrip,
-    })),
-  { loading: () => <section className="min-h-[12rem] border-y border-border/60" aria-hidden /> },
-);
+// const PartnerLoginStrip = dynamic(
+//   () =>
+//     import('@/features/marketing/home/partner-login-strip').then((m) => ({
+//       default: m.PartnerLoginStrip,
+//     })),
+//   { loading: () => <section className="min-h-[12rem] border-y border-border/60" aria-hidden /> },
+// );
 
 const AppPromoSection = dynamic(
   () =>
@@ -97,7 +97,7 @@ export function MarketingHomepage() {
       <DeliveryOptionsBand />
       <FeaturedStoresTeaser />
       <FranchiseTeaser />
-      <PartnerLoginStrip />
+      {/* <PartnerLoginStrip /> */}
       <AppPromoSection />
       <FinalCtaBand />
     </div>

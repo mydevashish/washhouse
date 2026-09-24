@@ -11,49 +11,14 @@ import { StoresCard } from '@/features/marketing/stores/stores-card';
 import { StoresCta } from '@/features/marketing/stores/stores-cta';
 import { StoresHero } from '@/features/marketing/stores/stores-hero';
 import { StoresNearMeControl } from '@/features/marketing/stores/stores-near-me-control';
+import {
+  LAUNCH_STORE,
+  LAUNCH_STORE_CONTACT,
+  LAUNCH_STORE_DETAILS,
+} from '@/features/marketing/stores/launch-store';
 import { useGeolocation } from '@/hooks/use-geolocation';
 import type { ContactInfo } from '@/services/customer-experience';
 import { cn } from '@/lib/utils';
-
-const STATIC_STORE_CONTACT: ContactInfo = {
-  can_contact: true,
-  contact_available: true,
-  requires_login: false,
-  show_call: true,
-  show_whatsapp: true,
-  show_callback: false,
-  show_directions: true,
-  phone: '+919977751133',
-  whatsapp_number: '+919977751133',
-  whatsapp_url: 'https://wa.me/919977751133',
-  address_line: 'Navratna Complex, near Seven Eleven Shop',
-  city: 'Udaipur, Rajasthan',
-  full_address: 'Navratna Complex, near Seven Eleven Shop, Udaipur, Rajasthan',
-  map_url: 'https://maps.app.goo.gl/JJEYk5ZndgEy5R2g8',
-  google_maps_url: 'https://maps.app.goo.gl/JJEYk5ZndgEy5R2g8',
-  apple_maps_url: null,
-  geo_url: null,
-  latitude: null,
-  longitude: null,
-  working_hours: { opening: '21 September 2026, 11:00 AM' },
-};
-
-const STATIC_STORE: EnrichedLaundry = {
-  id: 'washhouse-udaipur',
-  name: 'The WashHouse Laundry & Dryclean',
-  slug: 'washhouse-udaipur',
-  city: 'Udaipur, Rajasthan',
-  avg_rating: '0',
-  review_count: 0,
-  is_verified: true,
-  latitude: null,
-  longitude: null,
-  distanceKm: Number.NaN,
-  deliveryHours: 48,
-  startPrice: null,
-  distanceIsApproximate: true,
-  image: '/catalog/services/wash-fold.webp',
-};
 
 /**
  * Search + Near me cluster. Sticky under marketing nav on phone/tablet.
@@ -193,11 +158,11 @@ export function StoresPageView() {
   // Backend store discovery is intentionally disabled while the Udaipur location launches.
   // const discovery = useLaundryDiscovery(filters, { userLocation: geo.position });
   const filtered = search.trim()
-    ? STATIC_STORE.name.toLowerCase().includes(search.trim().toLowerCase()) ||
-      STATIC_STORE.city.toLowerCase().includes(search.trim().toLowerCase())
-      ? [STATIC_STORE]
+    ? LAUNCH_STORE.name.toLowerCase().includes(search.trim().toLowerCase()) ||
+      LAUNCH_STORE.city.toLowerCase().includes(search.trim().toLowerCase())
+      ? [LAUNCH_STORE]
       : []
-    : [STATIC_STORE];
+    : [LAUNCH_STORE];
   const nearMeActive = false;
   const nearMePartial = null;
   const sectionDescription =
@@ -309,12 +274,8 @@ export function StoresPageView() {
                       laundry={laundry}
                       index={index}
                       variant={featured ? 'featured' : 'default'}
-                      contactOverride={STATIC_STORE_CONTACT}
-                      details={{
-                        address: 'Navratna Complex, near Seven Eleven Shop, Udaipur, Rajasthan',
-                        opening: '21 September 2026 at 11:00 AM',
-                        mapsUrl: 'https://maps.app.goo.gl/JJEYk5ZndgEy5R2g8',
-                      }}
+                      contactOverride={LAUNCH_STORE_CONTACT}
+                      details={LAUNCH_STORE_DETAILS}
                     />
                   </li>
                 );

@@ -302,12 +302,6 @@ test.describe('staff portal access', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
-
-    const staffLink = page.getByRole('link', { name: /staff login/i });
-    await expect(staffLink).toBeVisible();
-    await staffLink.click();
-    await expect(page).toHaveURL(/\/staff$/);
-    await expect(page.getByRole('heading', { name: /staff portal/i })).toBeVisible();
   });
 
   test('staff portal offers laundry and admin login', async ({ page }) => {

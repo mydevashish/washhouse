@@ -3,7 +3,6 @@
 import { usePathname } from 'next/navigation';
 import { Menu, Phone, Store, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
 import { WashhouseLogo } from '@/components/brand/washhouse-logo';
 import {
   NavbarThemeInline,
@@ -20,7 +19,6 @@ import {
   getSamePageHash,
   isMarketingNavLinkActive,
   MARKETING_NAV_LINKS,
-  MARKETING_STAFF_HREF,
   MARKETING_STORES_HREF,
 } from '@/lib/navigation/marketing-nav';
 import { cn } from '@/lib/utils';
@@ -297,13 +295,13 @@ export function MarketingNavbar() {
           </div>
 
           <div className="mt-4 border-t border-border/60 pt-4">
-            <a
+            {/* <a
               href={MARKETING_STAFF_HREF}
               onClick={closeMobile}
               className="flex min-h-11 items-center rounded-md px-3 text-sm font-semibold text-primary hover:bg-primary/10"
             >
               Staff login
-            </a>
+            </a> */}
           </div>
 
           <div className="mt-4 flex flex-col gap-2 border-t border-border/60 pt-4 sm:hidden">

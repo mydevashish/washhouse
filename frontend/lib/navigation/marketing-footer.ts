@@ -45,14 +45,14 @@ export const MARKETING_FOOTER_GROUPS: readonly MarketingFooterGroup[] = [
       { href: '/privacy', label: 'Privacy Policy' },
     ],
   },
-  {
-    id: 'partners-staff',
-    title: 'Partners & Staff',
-    links: [
-      { href: '/staff', label: 'Staff Login' },
-      { href: '/login?audience=partner', label: 'Laundry Login' },
-      { href: '/login?audience=admin', label: 'Admin Login' },
-      { href: '/franchise', label: 'Become a Partner' },
-    ],
-  },
+  // {
+  //   id: 'partners-staff',
+  //   title: 'Partners & Staff',
+  //   links: [
+  //     // { href: '/staff', label: 'Staff Login' },
+  //     // { href: '/login?audience=partner', label: 'Laundry Login' },
+  //     // { href: '/login?audience=admin', label: 'Admin Login' },
+  //     // { href: '/franchise', label: 'Become a Partner' },
+  //   ],
+  // },
 ] as const;
