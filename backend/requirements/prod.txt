@@ -9,4 +9,4 @@ resend>=2.0,<3
 twilio>=9.3,<10
 
 # Payments (India — see docs/decisions/ADR-001-payment-provider.md)
-razorpay>=1.4,<2
+razorpay>=2.0.1,<3
